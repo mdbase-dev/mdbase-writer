@@ -68,7 +68,7 @@ export interface Assembly {
   readonly diagnostics: readonly AssemblyDiagnostic[];
   readonly labels: ReadonlySet<string>;
   readonly citations: { readonly mode: CiteprocMode; readonly ms: number; readonly clusters: number };
-  /** Rendered clusters in document order and bibliography entries (for tests). */
+  /** Rendered clusters in document order (for tests) and bibliography entries (for tests and the editor's hovers). */
   readonly debug: { readonly citations: readonly string[]; readonly bibliography: readonly { key: string; text: string }[] };
 }
 

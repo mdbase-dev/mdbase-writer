@@ -11,6 +11,7 @@ import { Wordmark } from "./ui/Brand.js";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { Home } from "./ui/Home.js";
 import { applyTheme, loadTheme, type ThemePreference } from "./ui/theme.js";
+import { ThemeButton, TopbarSlot } from "./ui/topbar.js";
 import { WorkspaceView } from "./ui/WorkspaceView.js";
 import { ManuscriptWorkspace } from "./workspace/workspace.js";
 
@@ -36,23 +37,19 @@ function useManuscriptParam(): [string | null, (path: string | null) => void] {
 
 export function App() {
   const [theme, setTheme] = useState<ThemePreference>(loadTheme);
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => applyTheme(theme), [theme]);
   return (
-    <div className="app">
-      <header className="topbar">
-        <Wordmark />
-        <span className="topbar-spacer" />
-        <label className="theme-select">
-          <span className="visually-hidden">Theme</span>
-          <select value={theme} onChange={(e) => setTheme(e.target.value as ThemePreference)}>
-            <option value="system">System</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
-      </header>
-      <ErrorBoundary>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
-    </div>
+    <TopbarSlot.Provider value={slot}>
+      <div className="app">
+        <header className="topbar">
+          <Wordmark />
+          <div className="topbar-slot" ref={setSlot} />
+          <ThemeButton theme={theme} onChange={setTheme} />
+        </header>
+        <ErrorBoundary>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
+      </div>
+    </TopbarSlot.Provider>
   );
 }
 

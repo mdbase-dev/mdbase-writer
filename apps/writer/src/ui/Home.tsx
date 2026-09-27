@@ -4,6 +4,9 @@ import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
 import { useEffect, useState } from "react";
 
 import type { ManuscriptSummary, WriterBackend } from "../backend/types.js";
+import { Dialog } from "./Dialog.js";
+import { PlusIcon } from "./icons.js";
+import { relativeTime, styleName, templateName } from "./names.js";
 
 export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path: string): void }) {
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
@@ -16,6 +19,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
   const [notePath, setNotePath] = useState("");
   const [adopting, setAdopting] = useState(false);
   const [sources, setSources] = useState<number | null>(null);
+  const [dialog, setDialog] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -59,34 +63,49 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
   };
   const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
   const candidates = notes.filter((p) => !manuscriptPaths.has(p));
+  const newButton = (
+    <button type="button" className="button primary with-icon" onClick={() => setDialog(true)}>
+      <PlusIcon />
+      New manuscript
+    </button>
+  );
 
   return (
     <main className="home">
       <section>
-        <h1>Manuscripts</h1>
-        <p className="muted">
-          In <strong>{backend.collectionName}</strong>. A manuscript is a Markdown record; embed chapters with <code>![[path]]</code>.
-        </p>
+        <header className="home-header">
+          <div>
+            <h1>Manuscripts</h1>
+            <p className="muted">
+              In <strong>{backend.collectionName}</strong>
+              {sources !== null && sources > 0 && <> · {sources} {sources === 1 ? "source" : "sources"} to cite from mdbase Reader</>}
+            </p>
+          </div>
+          {manuscripts && manuscripts.length > 0 && newButton}
+        </header>
         {manuscripts === null && !problem && <p className="muted" role="status">Loading…</p>}
         {manuscripts?.length === 0 && (
-          <ol className="first-run">
-            <li>
-              <strong>Sources.</strong>{" "}
-              {sources === null
-                ? "Looking for sources…"
-                : sources > 0
-                  ? `${sources} ${sources === 1 ? "source" : "sources"} from mdbase Reader can be cited here.`
-                  : "None yet. Add what you read in mdbase Reader (import a PDF, a DOI or a BibTeX file); each source gets a citekey."}
-            </li>
-            <li>
-              <strong>A manuscript.</strong> Create one below, or use a note you already have. It stays an ordinary Markdown record in this collection.
-            </li>
-            <li>
-              <strong>Write.</strong> Cite with <code>[@citekey, p. 12]</code> (or find sources by author and title in the Sources panel), label with{" "}
-              <code>{"{#fig-plan}"}</code> and refer with <code>@fig-plan</code>, embed chapters with <code>![[chapters/one]]</code>. Export a PDF or a Word
-              document.
-            </li>
-          </ol>
+          <div className="first-run">
+            <ol>
+              <li>
+                <strong>Sources.</strong>{" "}
+                {sources === null
+                  ? "Looking for sources…"
+                  : sources > 0
+                    ? `${sources} ${sources === 1 ? "source" : "sources"} from mdbase Reader can be cited here.`
+                    : "None yet. Add what you read in mdbase Reader (import a PDF, a DOI or a BibTeX file); each source gets a citekey."}
+              </li>
+              <li>
+                <strong>A manuscript.</strong> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection.
+              </li>
+              <li>
+                <strong>Write.</strong> Cite with <code>[@citekey, p. 12]</code> (or find sources by author and title in the Sources panel), label with{" "}
+                <code>{"{#fig-plan}"}</code> and refer with <code>@fig-plan</code>, embed chapters with <code>![[chapters/one]]</code>. Export a PDF or a Word
+                document.
+              </li>
+            </ol>
+            {newButton}
+          </div>
         )}
         {manuscripts && manuscripts.length > 0 && (
           <ul className="manuscripts">
@@ -95,28 +114,36 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
                 <button type="button" className="manuscript-row" onClick={() => onOpen(m.path)}>
                   <span className="manuscript-title">{m.title}</span>
                   <span className="manuscript-meta">
-                    <code>{m.path}</code>
-                    {m.template && <span>{m.template}</span>}
+                    {[
+                      m.template ? templateName(m.template) : null,
+                      m.style ? styleName(m.style) : null,
+                      m.embeds ? `${m.embeds} ${m.embeds === 1 ? "chapter" : "chapters"}` : m.words !== undefined ? `${m.words.toLocaleString()} ${m.words === 1 ? "word" : "words"}` : null,
+                      m.modified ? `edited ${relativeTime(m.modified)}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
+                  <code className="manuscript-path">{m.path}</code>
                 </button>
               </li>
             ))}
           </ul>
         )}
+        {problem && !dialog && <p className="problem" role="alert">{problem}</p>}
       </section>
-      <section>
-        <h2>New manuscript</h2>
+
+      <Dialog open={dialog} onClose={() => setDialog(false)} title="New manuscript" className="new-dialog">
         <form className="new-manuscript" onSubmit={(e) => void create(e)}>
-          <label>
+          <label className="span-2">
             Title
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="On the limits of the possible" required />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="On the limits of the possible" required autoFocus />
           </label>
           <label>
             Layout
             <select value={template} onChange={(e) => setTemplate(e.target.value as TemplateName)}>
               {TEMPLATES.map((t) => (
                 <option key={t} value={t}>
-                  {t === "article" ? "Article" : "Thesis or book"}
+                  {templateName(t)}
                 </option>
               ))}
             </select>
@@ -135,12 +162,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
             {creating ? "Creating…" : "Create manuscript"}
           </button>
         </form>
-      </section>
-      <section>
-        <h2>Use an existing note</h2>
-        <p className="muted">
-          Adds the manuscript type to a note you already have, wherever it lives. Its other types, text and location stay as they are.
-        </p>
+        <div className="or-divider" role="separator"><span>or use a note you already have</span></div>
         <form className="adopt-note" onSubmit={(e) => void adopt(e)}>
           <label>
             Note
@@ -155,8 +177,9 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
             {adopting ? "Updating…" : "Use as manuscript"}
           </button>
         </form>
-      </section>
-      {problem && <p className="problem" role="alert">{problem}</p>}
+        <p className="muted small">Adds the manuscript type to the note. Its other types, text and location stay as they are.</p>
+        {problem && <p className="problem" role="alert">{problem}</p>}
+      </Dialog>
     </main>
   );
 }

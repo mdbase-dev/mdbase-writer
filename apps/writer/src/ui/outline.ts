@@ -1,4 +1,6 @@
 // The headings of a record's Markdown, for the outline.
+import { wordCount } from "../words.js";
+
 export interface OutlineHeading {
   readonly level: number;
   readonly text: string;
@@ -22,4 +24,19 @@ export function headings(body: string): OutlineHeading[] {
     offset += line.length + 1;
   }
   return out;
+}
+
+/** Words in each heading's section, its subsections included (the heading itself is not counted). */
+export function sectionWords(body: string, list: readonly OutlineHeading[]): number[] {
+  return list.map((h, i) => {
+    const end = list.slice(i + 1).find((n) => n.level <= h.level)?.offset ?? body.length;
+    return wordCount(body.slice(h.offset, end).replace(/^[^\n]*\n?/, ""));
+  });
+}
+
+/** The heading a body offset falls under (the last one at or before it). */
+export function headingAt(list: readonly OutlineHeading[], offset: number): OutlineHeading | undefined {
+  let hit: OutlineHeading | undefined;
+  for (const h of list) if (h.offset <= offset) hit = h;
+  return hit;
 }

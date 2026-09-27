@@ -1,9 +1,10 @@
 // The mdbase Frontmatter mark (geometry from mdbase-connect/assets), inverted
 // per app: the bars take the app's colour and the highlighted line stays ink.
 // The wordmark opens a menu for opening this collection in the other apps.
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import { useId, useRef, useState, type RefObject } from "react";
 
 import { mdbaseAppHref, mdbaseApps, type MdbaseApp, type MdbaseAppId } from "./apps.js";
+import { moveMenuFocus, usePopover } from "./popover.js";
 
 const inkRects = [
   { x: 22, y: 22, width: 20, height: 10 },
@@ -78,10 +79,10 @@ export function Wordmark() {
 
 function AppMenu({ id, triggerRef, onClose }: { id: string; triggerRef: RefObject<HTMLButtonElement | null>; onClose: (refocus: boolean) => void }) {
   const menuRef = useRef<HTMLDivElement>(null);
-  useMenuPlacement(menuRef, triggerRef, onClose);
+  usePopover(menuRef, triggerRef, onClose, { width: 320, focus: 'a[role="menuitem"]' });
   const heading = new URL(location.href).searchParams.has("collection") ? "Open this collection in" : "mdbase apps";
   return (
-    <div ref={menuRef} id={id} className="app-menu" popover="manual" role="menu" aria-label={heading} tabIndex={-1} onKeyDown={(e) => moveFocus(e, menuRef.current)}>
+    <div ref={menuRef} id={id} className="app-menu" popover="manual" role="menu" aria-label={heading} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, menuRef.current)}>
       <div className="app-menu-heading" role="presentation">{heading}</div>
       {mdbaseApps.map((app) => (
         <AppItem key={app.id} app={app} onOpen={() => onClose(false)} />
@@ -118,59 +119,4 @@ function AppItem({ app, onOpen }: { app: MdbaseApp; onOpen: () => void }) {
       <span className="visually-hidden"> (opens in a new tab)</span>
     </a>
   );
-}
-
-// Drops the menu below its trigger in the top layer, and closes it on an
-// outside pointer, Escape (returning focus to the trigger), Tab or a resize.
-function useMenuPlacement(menuRef: RefObject<HTMLDivElement | null>, triggerRef: RefObject<HTMLButtonElement | null>, onClose: (refocus: boolean) => void) {
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useLayoutEffect(() => {
-    const menu = menuRef.current;
-    const trigger = triggerRef.current;
-    if (!menu || !trigger) return undefined;
-    if (typeof menu.showPopover === "function") menu.showPopover();
-    const box = trigger.getBoundingClientRect();
-    const width = Math.min(320, window.innerWidth - 16);
-    menu.style.width = `${width}px`;
-    menu.style.top = `${box.bottom + 6}px`;
-    menu.style.left = `${Math.max(8, Math.min(box.left, window.innerWidth - width - 8))}px`;
-    menu.querySelector<HTMLElement>('a[role="menuitem"]')?.focus();
-    return () => {
-      if (typeof menu.hidePopover === "function" && menu.matches(":popover-open")) menu.hidePopover();
-    };
-  }, [menuRef, triggerRef]);
-  useEffect(() => {
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as Node | null;
-      if (target && !menuRef.current?.contains(target) && !triggerRef.current?.contains(target)) closeRef.current(false);
-    };
-    const onKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-        closeRef.current(true);
-      } else if (e.key === "Tab") {
-        closeRef.current(false);
-      }
-    };
-    const onResize = () => closeRef.current(false);
-    document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown, true);
-    window.addEventListener("resize", onResize);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown, true);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [menuRef, triggerRef]);
-}
-
-function moveFocus(e: KeyboardEvent, menu: HTMLElement | null) {
-  if (!menu || !["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
-  e.preventDefault();
-  const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-  const current = items.indexOf(document.activeElement as HTMLElement);
-  const next = e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : (current + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-  items[next]?.focus();
 }

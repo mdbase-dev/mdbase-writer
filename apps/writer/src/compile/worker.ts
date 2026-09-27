@@ -167,6 +167,7 @@ async function compile(c: TypstCompiler): Promise<CompileResult> {
     unloaded: assembly.unloaded,
     neededAssets,
     labels: [...assembly.labels],
+    references: assembly.debug.bibliography,
     timings: {
       assembleMs: assembled - started,
       compileMs: performance.now() - assembled,

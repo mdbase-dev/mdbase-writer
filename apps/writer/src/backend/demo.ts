@@ -6,7 +6,7 @@ import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import type { CslItem } from "@mdbase-writer/core";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
 
-import { fail, manuscriptSlug, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import { bodySummary, fail, manuscriptSlug, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -35,7 +35,12 @@ export async function createDemoBackend(): Promise<WriterBackend> {
   for (const path of paths) {
     const { frontmatter } = splitFrontmatter(markdown[`../../demo/${path}`] ?? "");
     if (frontmatter["type"] === "writer-manuscript") {
-      manuscripts.set(path, { path, title: String(frontmatter["title"] ?? path), template: String(frontmatter["template"] ?? "article") });
+      manuscripts.set(path, {
+        path,
+        title: String(frontmatter["title"] ?? path),
+        template: String(frontmatter["template"] ?? "article"),
+        ...(typeof frontmatter["csl"] === "string" ? { style: frontmatter["csl"] } : {}),
+      });
     }
   }
 
@@ -46,7 +51,18 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     collectionName: "Demo collection",
     records: authority.records,
     async listManuscripts() {
-      return ok([...manuscripts.values()].sort((a, b) => a.title.localeCompare(b.title)));
+      const out: ManuscriptSummary[] = [];
+      for (const m of manuscripts.values()) {
+        // The body as it is now, edits in this demo included.
+        const opened = await authority.records.open(m.path, { autosave: false });
+        if (!opened.ok) {
+          out.push(m);
+          continue;
+        }
+        out.push({ ...m, ...bodySummary(opened.value.session.getSnapshot().body) });
+        opened.value.release();
+      }
+      return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
     },
     async createManuscript(input: NewManuscript): Promise<Result<string>> {
       let path = `manuscripts/${manuscriptSlug(input.title)}.md`;

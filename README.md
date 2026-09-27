@@ -31,6 +31,10 @@ its chapters. The preview is typeset by Typst in the browser as you type.
   the Markdown line that caused them. Clicking the preview jumps to the block
   it came from, and the preview follows the cursor. Problems with a setting
   point at the setting.
+- **Writing aids.** Hover a citation for its bibliography entry, or a
+  cross-reference for what it labels; Ctrl/⌘-click goes there. Word counts
+  for the manuscript and each section, F8 for the next problem, and a layout
+  (sidebar, editor/preview split, zoom) that is remembered in the browser.
 - **Export.** PDF; Word (DOCX), made in the browser by Pandoc's WebAssembly
   build, with cross-references resolved and the layout's Word styles; and a
   Pandoc/Quarto bundle (zip) to build other formats yourself.

@@ -1,4 +1,4 @@
-// The manuscript's settings: its frontmatter, edited as fields. Each field
+// The manuscript's settings: its frontmatter, edited as fields in a dialog. Each field
 // keeps its own draft while focused and commits after a pause or on blur, so
 // typing never writes a half-parsed value per keystroke, and a change made
 // elsewhere (another app, "Use theirs") shows up in every field not being
@@ -10,6 +10,8 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
+import { Dialog } from "./Dialog.js";
+import { templateName } from "./names.js";
 
 type JsonValue = JsonObject[string];
 
@@ -37,7 +39,7 @@ export function Settings({
   filePaths,
   problems,
   open,
-  onToggle,
+  onClose,
   focus,
 }: {
   workspace: ManuscriptWorkspace;
@@ -45,7 +47,7 @@ export function Settings({
   filePaths: readonly string[];
   problems: readonly WriterDiagnostic[];
   open: boolean;
-  onToggle(open: boolean): void;
+  onClose(): void;
   focus: SettingsFocus | null;
 }) {
   if (!view) return null;
@@ -58,45 +60,50 @@ export function Settings({
   const typFiles = filePaths.filter((p) => /\.typ$/i.test(p)).sort();
   const style = str("csl") || "chicago-notes-bibliography";
   const template = str("template") || "article";
-  const settingProblems = problems.filter((d) => d.field).length;
   // Pandoc writes `author`, the manuscript type `authors`: edit the one the record has.
   const authorsKey = !("authors" in fm) && "author" in fm ? "author" : "authors";
 
   return (
-    <details className="settings" open={open} onToggle={(e) => onToggle((e.currentTarget as HTMLDetailsElement).open)}>
-      <summary>
-        Manuscript settings {settingProblems > 0 && <span className="count" title={`${settingProblems} problems`}>{settingProblems}</span>}
-      </summary>
-      <TextField label="Title" value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
-      <TextField label="Subtitle" value={str("subtitle")} onCommit={(v) => patch({ subtitle: v || null })} {...props("subtitle")} />
-      <TextField
-        label="Authors"
-        hint="one per line; “Name; Affiliation”"
-        multiline={2}
-        value={authorsText(fm["authors"] ?? fm["author"])}
-        onCommit={(v) => patch({ [authorsKey]: parseAuthors(v) })}
-        {...props("authors")}
-      />
-      <TextField label="Date" value={str("date")} onCommit={(v) => patch({ date: v || null })} {...props("date")} />
-      <TextField label="Abstract" multiline={4} value={str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
-      <SelectField label="Citation style" value={style} onCommit={(v) => patch({ csl: v })} {...props("csl")}>
-        {STYLES.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-        <FileOptions label="From the collection" files={cslFiles} current={style} bundled={STYLES.map((s) => s.id)} />
-      </SelectField>
-      <SelectField label="Layout" value={template} onCommit={(v) => patch({ template: v })} {...props("template")}>
-        {TEMPLATES.map((t) => <option key={t} value={t}>{t === "article" ? "Article" : "Thesis or book"}</option>)}
-        <FileOptions label="Typst templates in the collection" files={typFiles} current={template} bundled={TEMPLATES} />
-      </SelectField>
-      <TextField
-        label="Language"
-        hint="for citation terms and hyphenation"
-        placeholder="The style’s own (usually en-US)"
-        list={LOCALES.map((l) => [l, LANGUAGE_NAMES[l] ?? l])}
-        value={str("lang")}
-        onCommit={(v) => patch({ lang: v.trim() || null })}
-        {...props("lang")}
-      />
-    </details>
+    <Dialog open={open} onClose={onClose} title="Manuscript settings" className="settings-dialog">
+      <div className="settings">
+        <div className="span-2">
+          <TextField label="Title" value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
+        </div>
+        <div className="span-2">
+          <TextField label="Subtitle" value={str("subtitle")} onCommit={(v) => patch({ subtitle: v || null })} {...props("subtitle")} />
+        </div>
+        <TextField
+          label="Authors"
+          hint="one per line; “Name; Affiliation”"
+          multiline={3}
+          value={authorsText(fm["authors"] ?? fm["author"])}
+          onCommit={(v) => patch({ [authorsKey]: parseAuthors(v) })}
+          {...props("authors")}
+        />
+        <TextField label="Date" hint="as it should appear" value={str("date")} onCommit={(v) => patch({ date: v || null })} {...props("date")} />
+        <div className="span-2">
+          <TextField label="Abstract" multiline={7} value={str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
+        </div>
+        <SelectField label="Citation style" value={style} onCommit={(v) => patch({ csl: v })} {...props("csl")}>
+          {STYLES.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+          <FileOptions label="From the collection" files={cslFiles} current={style} bundled={STYLES.map((s) => s.id)} />
+        </SelectField>
+        <SelectField label="Layout" value={template} onCommit={(v) => patch({ template: v })} {...props("template")}>
+          {TEMPLATES.map((t) => <option key={t} value={t}>{templateName(t)}</option>)}
+          <FileOptions label="Typst templates in the collection" files={typFiles} current={template} bundled={TEMPLATES} />
+        </SelectField>
+        <TextField
+          label="Language"
+          hint="for citation terms and hyphenation"
+          placeholder="The style’s own (usually en-US)"
+          list={LOCALES.map((l) => [l, LANGUAGE_NAMES[l] ?? l])}
+          value={str("lang")}
+          onCommit={(v) => patch({ lang: v.trim() || null })}
+          {...props("lang")}
+        />
+      </div>
+      <p className="muted small dialog-note">Changes are saved to the manuscript’s frontmatter as you type.</p>
+    </Dialog>
   );
 }
 

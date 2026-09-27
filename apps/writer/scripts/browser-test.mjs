@@ -67,6 +67,11 @@ const previewFingerprint = (record) => page.evaluate(async (rec) => {
   for (let i = 0; i < url.length; i += 7) h = (h * 31 + url.charCodeAt(i)) | 0;
   return `${url.length}:${h}`;
 }, record);
+const exportAs = async (format) => {
+  await page.locator(".toast.tone-busy").waitFor({ state: "detached", timeout: 120_000 });
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  await page.getByRole("menuitem", { name: format }).click();
+};
 const editorText = () => page.evaluate(() => document.querySelector(".cm-content")?.textContent ?? "");
 
 async function typeAtEndOfParagraph(needle, text) {
@@ -85,15 +90,16 @@ await step("home lists the demo manuscripts", async () => {
 });
 
 await step("an existing note becomes a manuscript, keeping its type and fields", async () => {
+  await page.getByRole("button", { name: "New manuscript" }).click();
   await page.locator(".adopt-note input").fill("drafts/on-inoperativity.md");
   await page.getByRole("button", { name: "Use as manuscript" }).click();
-  await page.locator(".subbar-title", { hasText: "On inoperativity" }).waitFor();
+  await page.locator(".bar-title", { hasText: "On inoperativity" }).waitFor();
   await waitFor(() => document.querySelectorAll(".preview-pages canvas.page").length > 0, null);
   const fm = await page.evaluate(() => window.writer.workspace.getSnapshot().records.get("drafts/on-inoperativity.md").snapshot.frontmatter);
   assert.deepEqual(fm.type, ["note", "writer-manuscript"]);
   assert.deepEqual(fm.tags, ["draft"]);
   assert.equal(fm.title, "On inoperativity");
-  await page.getByRole("button", { name: "← Manuscripts" }).click();
+  await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
   const titles = await page.locator(".manuscript-title").allTextContents();
   assert.ok(titles.includes("On inoperativity"), titles.join(", "));
 });
@@ -145,6 +151,7 @@ await step("citekey completion finds sources by title words", async () => {
 
 await step("a Reader quotation goes in with its citation and page", async () => {
   await typeAtEndOfParagraph("which it occurs", " ");
+  await page.getByRole("tab", { name: /Sources/ }).click();
   await page.locator(".sources input[type=search]").fill("potentialities");
   await page.locator(".source-row", { hasText: "Potentialities" }).click();
   await page.getByRole("button", { name: "Insert quotation" }).click();
@@ -163,13 +170,17 @@ await step("a setting's problem opens the setting", async () => {
   const before = (await snapshot()).revision;
   await page.evaluate(() => window.writer.workspace.patchFrontmatter("manuscripts/potentiality.md", { lang: "tlh" }));
   await waitForRevisionAfter(before);
+  await page.locator("button.bar-problems").click();
   await page.locator(".problem-row", { hasText: "no terms for" }).click();
-  await page.locator(".settings[open] .field-problem", { hasText: "no terms for" }).waitFor();
+  await page.locator(".settings-dialog[open] .field-problem", { hasText: "no terms for" }).waitFor();
   assert.equal(await page.evaluate(() => document.activeElement?.value), "tlh");
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.type("en-GB");
   await page.keyboard.press("Tab");
   await waitFor(() => window.writer.workspace.getSnapshot().result?.meta.locale === "en-GB", null, 10_000);
+  await page.keyboard.press("Escape");
+  await page.locator(".settings-dialog[open]").waitFor({ state: "detached", timeout: 2_000 }).catch(() => {});
+  assert.equal(await page.locator("dialog[open]").count(), 0);
 });
 
 await step("an unknown citekey is reported in Problems and in the editor", async () => {
@@ -178,8 +189,71 @@ await step("an unknown citekey is reported in Problems and in the editor", async
   await waitForRevisionAfter(before);
   const s = await snapshot();
   assert.ok(s.diagnostics.some((d) => d.includes("No source in the library has the citekey nosuchsource2020")), s.diagnostics.join("\n"));
+  await page.locator("button.bar-problems").click();
   await page.locator(".problem-row", { hasText: "nosuchsource2020" }).waitFor();
+  await page.keyboard.press("Escape");
   await page.locator(".cm-lintRange-error").first().waitFor({ timeout: 5_000 });
+});
+
+await step("hovering a citation shows its bibliography entry; Mod-click on a cross-reference goes to its section", async () => {
+  const at = (needle, into = 3) =>
+    page.evaluate(([needle, into]) => {
+      const walker = document.createTreeWalker(document.querySelector(".cm-content"), NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const n = walker.currentNode;
+        const i = n.textContent.indexOf(needle);
+        if (i < 0) continue;
+        const r = document.createRange();
+        r.setStart(n, i + into);
+        r.setEnd(n, i + into + 1);
+        const b = r.getBoundingClientRect();
+        return { x: b.x + 2, y: b.y + b.height / 2 };
+      }
+      return null;
+    }, [needle, into]);
+  const hover = async (point) => {
+    // A hover starts with the pointer arriving from outside the editor.
+    await page.mouse.move(5, 5);
+    await page.waitForTimeout(300);
+    await page.mouse.move(point.x, point.y, { steps: 4 });
+  };
+  await page.getByRole("tab", { name: "Outline" }).click();
+  await page.evaluate(() => document.querySelector(".cm-scroller").scrollTo(0, 0));
+  await page.waitForTimeout(100);
+  const cite = await at("agambenPotentialities99, 177");
+  assert.ok(cite, "citation on screen");
+  await hover(cite);
+  await page.locator(".cm-ref-tip", { hasText: "Stanford University Press" }).waitFor({ timeout: 5_000 });
+  assert.equal(await page.locator(".cm-ref-tip em").first().textContent(), "Potentialities: Collected Essays in Philosophy");
+  const ref = await at("@sec-badiou", 4);
+  await hover(ref);
+  await page.locator(".cm-ref-tip", { hasText: "Badiou: the event as supplement" }).waitFor({ timeout: 5_000 });
+  await page.keyboard.down("ControlOrMeta");
+  await page.mouse.click(ref.x, ref.y);
+  await page.keyboard.up("ControlOrMeta");
+  await page.locator(".heading-row[aria-current=location]", { hasText: "Badiou: the event as supplement" }).waitFor({ timeout: 5_000 });
+});
+
+await step("F8 goes to the next problem", async () => {
+  await page.locator(".cm-content").focus();
+  await page.keyboard.press("ControlOrMeta+Home");
+  await page.keyboard.press("F8");
+  await page.waitForTimeout(200);
+  const line = await page.evaluate(() => window.getSelection()?.anchorNode?.parentElement?.closest(".cm-line")?.textContent ?? "");
+  assert.match(line, /nosuchsource2020/);
+});
+
+await step("the sidebar and preview can be hidden, and the layout is remembered", async () => {
+  await page.getByRole("button", { name: "Sidebar" }).click();
+  assert.equal(await page.locator(".outline").isVisible(), false);
+  await page.getByRole("button", { name: "Editor only" }).click();
+  assert.equal(await page.locator(".preview-pane").isVisible(), false);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("mdbase-writer:layout")));
+  assert.equal(saved.sidebar, false);
+  assert.equal(saved.view, "write");
+  await page.getByRole("button", { name: "Sidebar" }).click();
+  await page.getByRole("button", { name: "Editor and preview" }).click();
+  await page.locator(".preview-pane").waitFor({ state: "visible" });
 });
 
 await step("clicking the preview moves the editor to that block", async () => {
@@ -200,7 +274,7 @@ await step("clicking the preview moves the editor to that block", async () => {
 });
 
 await step("a thesis follows embedded chapter records", async () => {
-  await page.getByRole("button", { name: "← Manuscripts" }).click();
+  await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
   await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
   await waitFor(() => (window.writer?.workspace?.getSnapshot().result?.order.length ?? 0) === 3 && document.querySelectorAll(".preview-pages canvas.page").length >= 4, null, 60_000);
   const s = await snapshot();
@@ -238,7 +312,7 @@ await step("an edit made elsewhere during typing becomes a resolvable conflict",
 await step("Export PDF downloads a PDF", async () => {
   const [file] = await Promise.all([
     page.waitForEvent("download", { timeout: 30_000 }),
-    page.getByRole("button", { name: "Export PDF" }).click(),
+    exportAs("PDF"),
   ]);
   const path = `out/${file.suggestedFilename()}`;
   await file.saveAs(path);
@@ -249,7 +323,7 @@ await step("Export PDF downloads a PDF", async () => {
 await step("Export Word downloads a DOCX made by Pandoc in the browser", async () => {
   const [file] = await Promise.all([
     page.waitForEvent("download", { timeout: 120_000 }),
-    page.getByRole("button", { name: "Export Word" }).click(),
+    exportAs("Word (DOCX)"),
   ]);
   const path = `out/${file.suggestedFilename()}`;
   await file.saveAs(path);
@@ -262,7 +336,7 @@ await step("Export Word downloads a DOCX made by Pandoc in the browser", async (
 await step("the Pandoc bundle downloads a zip", async () => {
   const [file] = await Promise.all([
     page.waitForEvent("download", { timeout: 30_000 }),
-    page.getByRole("button", { name: "Pandoc bundle" }).click(),
+    exportAs("Pandoc bundle (zip)"),
   ]);
   const path = `out/${file.suggestedFilename()}`;
   await file.saveAs(path);

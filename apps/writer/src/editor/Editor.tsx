@@ -11,6 +11,7 @@ import { useEffect, useRef } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { writerCompletions, type CompletionData } from "./completions.js";
+import { writerInsight, type EditorInsight, type FollowTarget } from "./insight.js";
 import { writerLanguage } from "./language.js";
 
 const remote = Annotation.define<boolean>();
@@ -27,21 +28,27 @@ export interface EditorProps {
   readOnly: boolean;
   diagnostics: readonly WriterDiagnostic[];
   completion: CompletionData;
+  insight: EditorInsight;
   onChange(text: string): void;
+  /** Mod-click on a citation or cross-reference. */
+  onFollow?(target: FollowTarget): void;
   onReady?(handle: EditorHandle): void;
   /** The cursor moved (by typing, clicking or keys), to its body offset. */
   onCursor?(offset: number): void;
 }
 
-export function Editor({ path, text, readOnly, diagnostics, completion, onChange, onReady, onCursor }: EditorProps) {
+export function Editor({ path, text, readOnly, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
   // through React, possibly after more typing; an echo must never be adopted
   // as an external change, or it would undo the keystrokes since.
   const emitted = useRef<string[]>([]);
-  const latest = useRef({ onChange, completion, onCursor });
-  latest.current = { onChange, completion, onCursor };
+  // Only a real change to the problems is dispatched: redrawing lint marks
+  // replaces the line's DOM, which would cancel a hover in progress.
+  const shownDiagnostics = useRef("");
+  const latest = useRef({ onChange, completion, insight, onCursor, onFollow });
+  latest.current = { onChange, completion, insight, onCursor, onFollow };
 
   // One view per record path.
   useEffect(() => {
@@ -63,6 +70,7 @@ export function Editor({ path, text, readOnly, diagnostics, completion, onChange
           autocompletion({ override: [writerCompletions(() => latest.current.completion)], icons: false }),
           keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap, indentWithTab]),
           writerLanguage(),
+          writerInsight(() => latest.current.insight, (target) => latest.current.onFollow?.(target)),
           EditorView.lineWrapping,
           EditorState.readOnly.of(readOnly),
           placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
@@ -79,6 +87,7 @@ export function Editor({ path, text, readOnly, diagnostics, completion, onChange
       }),
     });
     view.current = v;
+    shownDiagnostics.current = "";
     onReady?.({
       reveal(offset) {
         const at = Math.min(offset, v.state.doc.length);
@@ -127,6 +136,9 @@ export function Editor({ path, text, readOnly, diagnostics, completion, onChange
   useEffect(() => {
     const v = view.current;
     if (!v) return;
+    const signature = JSON.stringify(diagnostics.map((d) => [d.from, d.to, d.severity, d.message]));
+    if (signature === shownDiagnostics.current) return;
+    shownDiagnostics.current = signature;
     const length = v.state.doc.length;
     const cm: CmDiagnostic[] = diagnostics.map((d) => {
       const from = Math.min(d.from, length);

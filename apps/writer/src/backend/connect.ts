@@ -2,6 +2,7 @@
 import type { CollectionFileDescriptor, JsonObject, MdbaseConnection } from "@mdbase-dev/connect";
 
 import {
+  bodySummary,
   fail,
   libraryEntry,
   manuscriptSlug,
@@ -59,7 +60,7 @@ export class ConnectBackend implements WriterBackend {
 
   async listManuscripts(): Promise<Result<ManuscriptSummary[]>> {
     const out: ManuscriptSummary[] = [];
-    for await (const page of this.connection.queryPages({ contract: manuscriptContract, frontmatterMode: "effective" }, { pageSize: 500 })) {
+    for await (const page of this.connection.queryPages({ contract: manuscriptContract, frontmatterMode: "effective", includeBody: true }, { pageSize: 500 })) {
       if (!page.ok) return fail(problemMessage(page));
       for (const r of page.value.results) {
         const fm = r.effectiveFrontmatter ?? r.frontmatter ?? {};
@@ -68,6 +69,8 @@ export class ConnectBackend implements WriterBackend {
           title: typeof fm["title"] === "string" ? fm["title"] : r.path,
           ...(typeof fm["template"] === "string" ? { template: fm["template"] } : {}),
           ...(typeof fm["csl"] === "string" ? { style: fm["csl"] } : {}),
+          ...(r.file.mtime ? { modified: r.file.mtime } : {}),
+          ...bodySummary(r.body),
         });
       }
     }

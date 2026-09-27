@@ -2,6 +2,8 @@
 // list; only pages near the viewport are drawn (to canvas), so the cost of an
 // update stays proportional to what is on screen rather than to the length
 // of the manuscript. Clicking a page jumps to the Markdown block it came from.
+// Pages fit the pane's width, or are shown at a zoom (1 = the page's printed
+// size at 96 CSS pixels per inch).
 import { createTypstRenderer, type RenderSession } from "@myriaddreamin/typst.ts/renderer";
 import rendererWasm from "@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url";
 import { useEffect, useRef, useState } from "react";
@@ -46,11 +48,27 @@ export interface PreviewProps {
   onJump(position: BlockPosition): void;
   /** The block at the editor's cursor: scrolled into view when it is off screen. */
   follow?: BlockPosition | undefined;
+  /** "fit" to the pane's width, or a scale of the printed size. */
+  zoom: number | "fit";
+  /** The page at the top of the view and the scale pages are shown at, as they change. */
+  onView?(view: PreviewView): void;
+  /** A click above the first block (the title block). */
+  onTitleClick?(): void;
 }
+
+export interface PreviewView {
+  readonly page: number;
+  readonly pages: number;
+  /** Shown size over printed size. */
+  readonly scale: number;
+}
+
+/** CSS pixels per typographic point at 100%. */
+const PX_PER_PT = 96 / 72;
 
 const NEAR_VIEWPORT = "900px 0px";
 
-export function Preview({ artifact, revision, positions, stale, onJump, follow }: PreviewProps) {
+export function Preview({ artifact, revision, positions, stale, onJump, follow, zoom, onView, onTitleClick }: PreviewProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const pagesHost = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<readonly PageBox[]>([]);
@@ -59,9 +77,10 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow }
   const version = useRef(0);
   const visible = useRef(new Set<number>());
   const drawn = useRef(new Map<number, number>());
+  const drawnWidth = useRef(new Map<number, number>());
   const drawing = useRef<Promise<void>>(Promise.resolve());
-  const latest = useRef({ positions, onJump, revision });
-  latest.current = { positions, onJump, revision };
+  const latest = useRef({ positions, onJump, revision, onView, onTitleClick });
+  latest.current = { positions, onJump, revision, onView, onTitleClick };
 
   useEffect(() => {
     let live = true;
@@ -84,11 +103,12 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow }
       if (!s || !host) return;
       const v = version.current;
       for (const index of [...visible.current].sort((a, b) => a - b)) {
-        if (drawn.current.get(index) === v) continue;
         const canvas = host.querySelector<HTMLCanvasElement>(`canvas[data-page="${index}"]`);
         const box = pagesRef.current[index];
         if (!canvas || !box) continue;
         const cssWidth = canvas.clientWidth || 600;
+        // Drawn for this document at this size (a zoom or a wider pane needs more pixels).
+        if (drawn.current.get(index) === v && drawnWidth.current.get(index) === cssWidth) continue;
         const pixelPerPt = Math.min(4, Math.max(1, (cssWidth / box.width) * (window.devicePixelRatio || 1)));
         const next = document.createElement("canvas");
         next.width = Math.round(box.width * pixelPerPt);
@@ -102,6 +122,7 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow }
         canvas.height = next.height;
         canvas.getContext("2d")?.drawImage(next, 0, 0);
         drawn.current.set(index, v);
+        drawnWidth.current.set(index, cssWidth);
         canvas.dataset["version"] = String(v);
       }
       const r = latest.current.revision;
@@ -153,6 +174,47 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-observe when the page list changes
   }, [pages]);
 
+  // Report the page at the top third of the view and the scale pages are shown at.
+  const report = useRef(0);
+  const reportView = () => {
+    cancelAnimationFrame(report.current);
+    report.current = requestAnimationFrame(() => {
+      const root = scroller.current;
+      const canvases = pagesHost.current?.querySelectorAll<HTMLCanvasElement>("canvas[data-page]");
+      const first = pagesRef.current[0];
+      if (!root || !canvases?.length || !first) return;
+      const line = root.scrollTop + root.clientHeight / 3;
+      let page = 1;
+      canvases.forEach((c, i) => {
+        if (c.offsetTop <= line) page = i + 1;
+      });
+      latest.current.onView?.({ page, pages: canvases.length, scale: (canvases[0] as HTMLCanvasElement).clientWidth / (first.width * PX_PER_PT) });
+    });
+  };
+
+  // A different zoom or pane size: pages near the view are redrawn at the new size.
+  useEffect(() => {
+    const root = scroller.current;
+    if (!root) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const observer = new ResizeObserver(() => {
+      reportView();
+      clearTimeout(timer);
+      timer = setTimeout(drawVisible, 120);
+    });
+    observer.observe(root);
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawVisible and reportView read refs only
+  }, []);
+  useEffect(() => {
+    reportView();
+    drawVisible();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- as above
+  }, [zoom, pages]);
+
   // Editor → preview: bring the cursor's block into view, leaving the scroll
   // alone while it is visible so typing does not make the preview jump.
   useEffect(() => {
@@ -178,15 +240,22 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow }
     const before = latest.current.positions.filter((p) => p.page < page || (p.page === page && p.y <= y + 2));
     const hit = before[before.length - 1];
     if (hit) latest.current.onJump(hit);
+    else if (page === 1) latest.current.onTitleClick?.();
   };
 
   return (
-    <div ref={scroller} className={`preview${stale ? " is-stale" : ""}`} aria-label={`Typeset preview, ${pages.length} ${pages.length === 1 ? "page" : "pages"}`}>
+    <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} aria-label={`Typeset preview, ${pages.length} ${pages.length === 1 ? "page" : "pages"}`} onScroll={reportView}>
       {!artifact && <p className="preview-empty">Typesetting…</p>}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer shortcut; Problems and the outline offer the same navigation */}
       <div className="preview-pages" ref={pagesHost} onClick={onClick}>
         {pages.map((p, i) => (
-          <canvas key={i} data-page={i} className="page" style={{ aspectRatio: `${p.width} / ${p.height}` }} aria-label={`Page ${i + 1}`} />
+          <canvas
+            key={i}
+            data-page={i}
+            className="page"
+            style={{ aspectRatio: `${p.width} / ${p.height}`, ...(zoom === "fit" ? {} : { width: `${Math.round(p.width * PX_PER_PT * zoom)}px` }) }}
+            aria-label={`Page ${i + 1}`}
+          />
         ))}
       </div>
     </div>

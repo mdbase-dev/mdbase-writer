@@ -3,6 +3,8 @@
 import type { JsonObject, MdbaseRecords } from "@mdbase-dev/connect";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
 
+import { embedCount, wordCount } from "../words.js";
+
 export type Result<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly message: string };
 
 export const ok = <T>(value: T): Result<T> => ({ ok: true, value });
@@ -13,6 +15,17 @@ export interface ManuscriptSummary {
   readonly title: string;
   readonly template?: string;
   readonly style?: string;
+  /** When the manuscript record was last written (ISO 8601), when the collection says. */
+  readonly modified?: string;
+  /** Words in the manuscript record itself (embedded records are not counted). */
+  readonly words?: number;
+  /** Records embedded on a line of their own (chapters). */
+  readonly embeds?: number;
+}
+
+/** What the manuscript list shows of a record's body. */
+export function bodySummary(body: string | undefined): Pick<ManuscriptSummary, "words" | "embeds"> {
+  return body === undefined ? {} : { words: wordCount(body), embeds: embedCount(body) };
 }
 
 /** A Reader source that can be cited. */
