@@ -1,0 +1,89 @@
+# Architecture
+
+## Data
+
+- **Manuscripts** implement `dev.mdbase.writer.manuscript` (title, subtitle,
+  authors, abstract, date, `csl` style id, `template`). The body is Markdown.
+- **Chapters** are any Markdown records, embedded by a line holding only
+  `![[path]]`. They need no type.
+- **Sources** are records implementing `dev.mdbase.reader.source`; the citekey
+  is `csl.id`. The writer's type pack carries byte-identical copies of Reader's
+  contract and starter type, so setting up a collection for the writer also
+  makes it Reader-compatible, and doing so where Reader already runs is a
+  no-op. `apps/writer/scripts/manifest.test.mjs` checks the copies still match
+  Reader's.
+- **Images** are collection files, referenced relative to the record
+  (`![Caption](figures/plot.png){#fig-plot}`) or by wikilink (`![[plot.png]]`).
+
+The manifest declares capability groups `collection.read`, `records.create`
+and `records.edit` (v2) and file `list`/`read`. The writer never deletes or
+renames records.
+
+## Pipeline
+
+```text
+record sessions (main thread)            compile worker
+─────────────────────────────            ─────────────────────────────────────────
+connection.records.open(path)  ──body──▶ translateRecord (per record, cached by body)
+  one per manuscript record               └─ placeholders for citations, images, embeds
+  and per embedded record                ManuscriptAssembler (whole manuscript)
+                                           ├─ include order, cycle and missing checks
+          ◀── unloaded records ──────────  ├─ @key → cross-reference or citation
+          ◀── needed images ─────────────  ├─ citeproc (incremental) → Typst markup
+                                           ├─ images → collection files or placeholders
+                                           └─ source maps shifted through substitution
+                                         Typst (WASM): compile → vector + block positions
+canvas preview  ◀──── artifact ────────  raw-block isolation: a broken ```{=typst}``` block
+  (pages near viewport only)               is replaced by an error box and recompiled
+```
+
+- **Translation** (`core/translate.ts`) walks the lezer tree of one body.
+  Everything that depends on other records is a placeholder. Every emitted run
+  records an anchor (Typst offset → body offset), and each top-level block gets
+  an invisible `#metadata((md-file, offset))<md-src>` marker (inside headings,
+  so it lands on the heading's page even when a template breaks the page).
+- **Assembly** (`core/assemble.ts`) resolves placeholders across the
+  manuscript and runs citeproc once over all clusters in document order, so
+  note numbers, ibid and disambiguation are right across chapters. It follows
+  Pandoc's rules: notes after punctuation, narrative citations as author plus
+  author-suppressed note, full inline citations inside footnotes, capitalised
+  notes.
+- **Citeproc** (`core/citeproc.ts`) emits Typst through a custom citeproc-js
+  output format. When one cluster is inserted or changed it uses
+  `processCitationCluster` instead of re-running the document; a property test
+  checks this equals a full rebuild after every edit. Unchanged sequences are
+  cached, so typing never touches citeproc.
+- **The worker** (`app/compile/worker.ts`) coalesces edits (it yields to the
+  message queue before each compile), pushes only changed Typst files, maps
+  Typst diagnostics back to records, and queries block positions for
+  click-to-source.
+- **The preview** (`app/preview/Preview.tsx`) keeps one typst.ts render
+  session, sizes a placeholder per page, and draws only pages near the
+  viewport (IntersectionObserver), so update cost follows what is on screen.
+- **The editor** (`app/editor`) uses the same lezer extensions as the
+  translator. It never adopts an echo of its own earlier text from the session
+  (that would undo keystrokes typed since).
+
+## Measured
+
+Chromium, demo collection, keystroke to painted preview (p50): 4-page paper
+83 ms; 30-page paper 116 ms (before virtualised drawing: 1.3 s); 6-page thesis
+of three records 77 ms. Compiling a 141-page thesis takes about 350 ms per
+keystroke (from the spike). Download: about 9.4 MB compressed, mostly the
+Typst compiler, cached after the first visit.
+
+## Known limits
+
+- Not yet run against a real Connect collection (see the README).
+- Deleting a citation, or adding a footnote before existing citations, still
+  rebuilds citeproc (about 1 s at 1,000 clusters); inserting or changing a
+  citation is incremental.
+- Word output goes through a Pandoc/Quarto bundle rather than in the browser.
+  Plain Pandoc leaves Quarto cross-references unresolved; Quarto resolves them.
+- Two templates (article, thesis) and six citation styles are bundled.
+- typst.ts 0.7.0 quirks worked around here: `renderToSvg` caches by container
+  width and needs `window.typstProcessSvg`; `world.compile`/`world.vector`
+  return nothing for `diagnostics: "none"`.
+- Reader data the writer depends on has shapes Pandoc rejects (array
+  `keyword`, empty `literal` names) and ISO 639-2 `language` codes (`eng`) that
+  change title-casing; the Word export cleans the first two.
