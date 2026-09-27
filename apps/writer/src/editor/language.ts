@@ -4,7 +4,7 @@ import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { styleTags, tags as t, Tag } from "@lezer/highlight";
 import type { MarkdownConfig } from "@lezer/markdown";
-import { writerMarkdown } from "@mdbase-writer/core";
+import { writerMarkdown } from "@mdbase-writer/core/markdown";
 
 export const writerTags = {
   citation: Tag.define(),

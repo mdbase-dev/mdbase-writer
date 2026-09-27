@@ -1,7 +1,8 @@
 // Top level: pick the backend (Connect, or the development demo), then show
 // the manuscript list or an open manuscript. The open manuscript lives in the
 // URL (`?manuscript=path`) so reloads and links land in the same place.
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { externalStore } from "@mdbase-dev/connect";
+import { Component, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { ConnectBackend } from "./backend/connect.js";
 import type { WriterBackend } from "./backend/types.js";
@@ -50,9 +51,27 @@ export function App() {
           </select>
         </label>
       </header>
-      {demoRequested ? <DemoRoot /> : <ConnectRoot />}
+      <ErrorBoundary>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
     </div>
   );
+}
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  override state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  override render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <main className="gate">
+        <h1>Something went wrong</h1>
+        <p>{this.state.error.message}</p>
+        <p className="muted">Your saved text is in your collection. Reload to continue.</p>
+        <button className="button" type="button" onClick={() => location.reload()}>Reload</button>
+      </main>
+    );
+  }
 }
 
 // Instances with a lifetime (sessions, backends, workspaces) are created in
@@ -83,7 +102,8 @@ function ConnectRoot() {
 }
 
 function ConnectedRoot({ session }: { session: WriterSession }) {
-  const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const store = useMemo(() => externalStore(session), [session]);
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const connection = snapshot.status === "ready" ? session.connection() : null;
   const backend = useOwned(() => (connection ? new ConnectBackend(connection) : null), (b) => b.dispose(), [connection]);
   if (!backend) return <ConnectGate session={session} snapshot={snapshot} />;

@@ -3,7 +3,8 @@
 // Loaded only in development builds.
 import type { JsonObject } from "@mdbase-dev/connect";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
-import { splitFrontmatter, type CslItem } from "@mdbase-writer/core";
+import type { CslItem } from "@mdbase-writer/core";
+import { splitFrontmatter } from "@mdbase-writer/core/records";
 
 import { fail, manuscriptSlug, ok, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 

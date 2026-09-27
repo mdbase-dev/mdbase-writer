@@ -5,6 +5,8 @@ import { useState, type ReactNode } from "react";
 
 import type { WriterSession } from "../connect/session.js";
 
+const isLocalBuild = location.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+
 const RESOURCE_ACTION: Record<string, string> = {
   create: "will be added",
   update: "will be updated",
@@ -53,6 +55,12 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
       return (
         <Centered title="mdbase connect is unavailable">
           <p>{snapshot.problem.message}</p>
+          {isLocalBuild && (
+            <p className="muted">
+              This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use
+              Connect's local environment (<code>pnpm dev:environment:up</code> in mdbase-connect) or open the <a href="?demo">demo collection</a>.
+            </p>
+          )}
           <button className="button" type="button" onClick={() => void run(() => session.start() as Promise<{ ok: boolean }>)} disabled={busy}>
             Try again
           </button>

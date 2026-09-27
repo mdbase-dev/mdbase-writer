@@ -6,3 +6,5 @@ coverage/
 test-results/
 out/
 apps/writer/public/.well-known/
+apps/writer/out/
+apps/writer/src/generated/

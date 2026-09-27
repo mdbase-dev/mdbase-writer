@@ -1,6 +1,7 @@
 // An open manuscript: outline, editor and preview.
 import type { JsonObject } from "@mdbase-dev/connect";
-import { STYLES, TEMPLATES } from "@mdbase-writer/core";
+import { TEMPLATES } from "@mdbase-writer/core/meta";
+import { STYLES } from "@mdbase-writer/core/styles";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";

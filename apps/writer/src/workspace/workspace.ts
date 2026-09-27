@@ -6,17 +6,27 @@
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
 import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
-import { BUNDLE_README, materialize, STYLES, type CslItem, type WriterRecord } from "@mdbase-writer/core";
+import type { CslItem, WriterRecord } from "@mdbase-writer/core";
+import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
+import { STYLES } from "@mdbase-writer/core/styles";
 
 import type { LibraryEntry, WriterBackend } from "../backend/types.js";
 import { CompileClient } from "../compile/client.js";
 import type { CompileResult } from "../compile/protocol.js";
 import { zip } from "../export/zip.js";
 
-const styleFiles = import.meta.glob("../../../../packages/core/assets/csl/*.csl", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-const localeXml = (import.meta.glob("../../../../packages/core/assets/csl/locales-en-US.xml", { query: "?raw", import: "default", eager: true }) as Record<string, string>)[
-  "../../../../packages/core/assets/csl/locales-en-US.xml"
-] ?? "";
+// Styles and the locale are fetched, not bundled: only the worker needs most of them.
+const cslUrls = import.meta.glob("../../../../packages/core/assets/csl/*.{csl,xml}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
+const cslUrl = (file: string) => cslUrls[`../../../../packages/core/assets/csl/${file}`] ?? "";
+let stylesPromise: Promise<{ styles: Map<string, string>; locale: string }> | undefined;
+function loadStyles() {
+  stylesPromise ??= (async () => {
+    const text = (url: string) => fetch(url).then((r) => r.text());
+    const [locale, ...styles] = await Promise.all([text(cslUrl("locales-en-US.xml")), ...STYLES.map((s) => text(cslUrl(`${s.id}.csl`)))]);
+    return { styles: new Map(STYLES.map((s, i) => [s.id, styles[i] ?? ""])), locale };
+  })();
+  return stylesPromise;
+}
 
 export type SessionSnapshot = MdbaseRecordSessionSnapshot<RecordDocument<JsonObject>>;
 
@@ -77,7 +87,7 @@ export class ManuscriptWorkspace {
   }
 
   private async start(): Promise<void> {
-    const [index, library] = await Promise.all([this.backend.index(), this.backend.library()]);
+    const [index, library, csl] = await Promise.all([this.backend.index(), this.backend.library(), loadStyles()]);
     if (!index.ok || !library.ok) {
       this.update({ phase: "failed", problem: !index.ok ? index.message : library.ok ? "" : library.message });
       return;
@@ -86,8 +96,8 @@ export class ManuscriptWorkspace {
     this.compile.send({
       type: "init",
       library: items,
-      styles: STYLES.map((s) => [s.id, styleFiles[`../../../../packages/core/assets/csl/${s.id}.csl`] ?? ""] as [string, string]),
-      locale: localeXml,
+      styles: [...csl.styles],
+      locale: csl.locale,
       baseUrl: import.meta.env.BASE_URL,
     });
     this.compile.send({ type: "collection", recordPaths: index.value.recordPaths, filePaths: index.value.filePaths });
@@ -190,7 +200,7 @@ export class ManuscriptWorkspace {
     const records = new Map<string, WriterRecord>(
       [...snap.records].map(([path, r]) => [path, { path, body: r.snapshot.body, frontmatter: r.snapshot.frontmatter }]),
     );
-    const styles = new Map(STYLES.map((s) => [s.id, styleFiles[`../../../../packages/core/assets/csl/${s.id}.csl`] ?? ""] as [string, string]));
+    const { styles } = await loadStyles();
     const out = materialize({
       main: this.main,
       records,

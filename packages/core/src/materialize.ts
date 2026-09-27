@@ -6,7 +6,7 @@
 import type { SyntaxNode } from "@lezer/common";
 import { stringify as yamlStringify } from "yaml";
 
-import { manuscriptMeta } from "./assemble.js";
+import { manuscriptMeta } from "./meta.js";
 import type { CslItem } from "./citeproc.js";
 import { CITEKEY, markdownParser } from "./markdown.js";
 import { IMAGE_EXTENSION, resolveLinkTarget, type WriterRecord } from "./records.js";

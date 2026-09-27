@@ -10,13 +10,12 @@
 import type { CiteItem } from "./cite-items.js";
 import { Citeproc, type Bibliography, type CitationRequest, type CiteprocMode, type CslItem } from "./citeproc.js";
 import { typstLabel, typstString } from "./escape.js";
-import { IMAGE_EXTENSION, resolveLinkTarget, type Frontmatter, type WriterRecord } from "./records.js";
+import { IMAGE_EXTENSION, resolveLinkTarget, type WriterRecord } from "./records.js";
 import { HEADER, PLACEHOLDER, translateInline, translateRecord, type Diagnostic, type TranslatedRecord } from "./translate.js";
 
+import { manuscriptMeta, type ManuscriptMeta } from "./meta.js";
+
 export const MAIN = "/__main__.typ";
-export const TEMPLATES = ["article", "thesis"] as const;
-export type TemplateName = (typeof TEMPLATES)[number];
-export const DEFAULT_STYLE = "chicago-notes-bibliography";
 
 /** Collection path of a record → path of its generated Typst file. */
 export const typstPathFor = (recordPath: string) => `/${recordPath.replace(/\.md$/i, "")}.typ`;
@@ -31,15 +30,6 @@ export interface AssemblyDiagnostic extends Diagnostic {
   readonly record: string;
 }
 
-export interface ManuscriptMeta {
-  readonly title?: string;
-  readonly subtitle?: string;
-  readonly authors: readonly { name: string; affiliation?: string }[];
-  readonly abstract?: string;
-  readonly date?: string;
-  readonly style: string;
-  readonly template: TemplateName;
-}
 
 export interface AssemblyInput {
   readonly main: string;
@@ -90,47 +80,6 @@ interface Rendered {
   text: string;
   /** A generated note: moves after following punctuation (Pandoc's notes-after-punctuation). */
   note?: boolean;
-}
-
-export function manuscriptMeta(frontmatter: Frontmatter, styles: ReadonlyMap<string, string>): { meta: ManuscriptMeta; problems: string[] } {
-  const problems: string[] = [];
-  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
-  const rawAuthors = frontmatter["authors"] ?? frontmatter["author"];
-  const authors = (Array.isArray(rawAuthors) ? rawAuthors : rawAuthors ? [rawAuthors] : []).flatMap((a): { name: string; affiliation?: string }[] => {
-    if (typeof a === "string") return [{ name: a }];
-    if (a && typeof a === "object" && typeof (a as Record<string, unknown>)["name"] === "string") {
-      const o = a as Record<string, unknown>;
-      const affiliation = str(o["affiliation"]);
-      return [{ name: String(o["name"]), ...(affiliation ? { affiliation } : {}) }];
-    }
-    return [];
-  });
-  let style = str(frontmatter["csl"]) ?? str(frontmatter["citation_style"]) ?? DEFAULT_STYLE;
-  if (!styles.has(style)) {
-    problems.push(`Unknown citation style "${style}"; using ${DEFAULT_STYLE}.`);
-    style = DEFAULT_STYLE;
-  }
-  let template = (str(frontmatter["template"]) ?? "article") as TemplateName;
-  if (!TEMPLATES.includes(template)) {
-    problems.push(`Unknown template "${template}"; using article.`);
-    template = "article";
-  }
-  const title = str(frontmatter["title"]);
-  const subtitle = str(frontmatter["subtitle"]);
-  const abstract = str(frontmatter["abstract"]);
-  const date = frontmatter["date"] instanceof Date ? frontmatter["date"].toISOString().slice(0, 10) : str(frontmatter["date"]);
-  return {
-    meta: {
-      authors,
-      style,
-      template,
-      ...(title ? { title } : {}),
-      ...(subtitle ? { subtitle } : {}),
-      ...(abstract ? { abstract } : {}),
-      ...(date ? { date } : {}),
-    },
-    problems,
-  };
 }
 
 export class ManuscriptAssembler {

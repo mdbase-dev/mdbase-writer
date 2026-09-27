@@ -1,5 +1,6 @@
 // The collection's manuscripts, and creating a new one.
-import { STYLES, TEMPLATES, type StyleId, type TemplateName } from "@mdbase-writer/core";
+import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
+import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
 import { useEffect, useState } from "react";
 
 import type { ManuscriptSummary, WriterBackend } from "../backend/types.js";
