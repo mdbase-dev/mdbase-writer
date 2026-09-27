@@ -21,7 +21,8 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     paths.add(relative(key));
   }
   authority.records.follow(authority.watch);
-  const library = (await import("../../../../packages/core/test/fixtures/library.json")).default as CslItem[];
+  // Only the sources the demo manuscripts cite (the demo ships with public builds).
+  const library = (await import("../../demo/library.json")).default as CslItem[];
   const entries: LibraryEntry[] = library.map((item) => ({
     key: item.id,
     item,
