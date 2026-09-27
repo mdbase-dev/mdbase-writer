@@ -1,4 +1,4 @@
-// Serves large WebAssembly modules (the Typst compiler) from R2 on the
+// Serves large WebAssembly modules (the Typst compiler, Pandoc) from R2 on the
 // writer's own origin. Keys are versioned, so responses are immutable.
 interface R2ObjectBody {
   body: ReadableStream;

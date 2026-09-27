@@ -71,6 +71,9 @@ importers:
       '@myriaddreamin/typst.ts':
         specifier: 0.7.0
         version: 0.7.0(@myriaddreamin/typst-ts-renderer@0.7.0)(@myriaddreamin/typst-ts-web-compiler@0.7.0)
+      pandoc-wasm:
+        specifier: 1.1.0
+        version: 1.1.0
       react:
         specifier: ^19.2.8
         version: 19.3.0
@@ -205,6 +208,9 @@ packages:
   '@babel/types@7.29.8':
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
+
+  '@bjorn3/browser_wasi_shim@0.4.2':
+    resolution: {integrity: sha512-/iHkCVUG3VbcbmEHn5iIUpIrh7a7WPiwZ3sHy4HZKZzBdSadwdddYDZAII2zBvQYV0Lfi8naZngPCN7WPHI/hA==}
 
   '@bufbuild/cel-spec@0.6.1':
     resolution: {integrity: sha512-m0Ac9qA669yxxC0Hy45qGsUZemjImVfxPl6r9jLbkJviEvv3R9hSYyH2ItGRbDguekX6eId0cb62ulNBK97ezg==}
@@ -763,6 +769,9 @@ packages:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
     engines: {node: '>=12.20.0'}
 
+  pandoc-wasm@1.1.0:
+    resolution: {integrity: sha512-IoWBsC/cbSZe71rcRtxXUxG+Auf8aGDHKYOQZA6OdwmUL2xdpQaqrSGhPa+6zfLdSar7cnyAmTWt6KU9n5kBjQ==}
+
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
@@ -1097,6 +1106,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@bjorn3/browser_wasi_shim@0.4.2': {}
 
   '@bufbuild/cel-spec@0.6.1(@bufbuild/protobuf@2.15.0)':
     dependencies:
@@ -1625,6 +1636,10 @@ snapshots:
   node-releases@2.0.57: {}
 
   obug@2.2.1: {}
+
+  pandoc-wasm@1.1.0:
+    dependencies:
+      '@bjorn3/browser_wasi_shim': 0.4.2
 
   pathe@2.0.3: {}
 

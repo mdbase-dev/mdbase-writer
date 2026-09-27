@@ -69,6 +69,29 @@ describe("materialize", () => {
     // Plain Pandoc leaves Quarto cross-references unresolved; the bundle README says to use Quarto for them.
     expect(text).toContain("(fig-site?)");
   });
+
+  it.skipIf(!hasPandoc())("resolves cross-references for a plain Pandoc DOCX", () => {
+    const resolved = materialize({ ...input, crossReferences: "resolved" });
+    expect(resolved.markdown).toContain("see [Figure 1](#fig-site) and [Section 1](#sec-one)");
+    expect(resolved.markdown).toContain("# 1 One {#sec-one}");
+    expect(resolved.markdown).toContain("lang: en-US");
+    expect(resolved.styleXml).toBe(loadStyles().get("apa"));
+    const dir = mkdtempSync(join(tmpdir(), "writer-docx-"));
+    writeFileSync(join(dir, "manuscript.md"), resolved.markdown);
+    writeFileSync(join(dir, "references.json"), JSON.stringify(resolved.references));
+    writeFileSync(join(dir, "style.csl"), resolved.styleXml);
+    for (const [, bundled] of resolved.media) {
+      mkdirSync(join(dir, dirname(bundled)), { recursive: true });
+      writeFileSync(join(dir, bundled), '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>');
+    }
+    execFileSync("pandoc", ["manuscript.md", "--citeproc", "-o", "manuscript.docx"], { cwd: dir, stdio: "ignore" });
+    const text = execFileSync("pandoc", ["manuscript.docx", "-t", "plain"], { cwd: dir, encoding: "utf8" });
+    expect(text).toContain("see Figure 1 and Section 1");
+    expect(text).toContain("Figure 1: Site");
+    expect(text).toContain("2 Two");
+    expect(text).not.toContain("?)");
+    expect(text).toContain("Bibliography");
+  });
 });
 
 function hasPandoc(): boolean {

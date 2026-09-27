@@ -1,6 +1,7 @@
 export * from "./assemble.js";
 export * from "./cite-items.js";
 export * from "./citeproc.js";
+export * from "./crossref.js";
 export * from "./escape.js";
 export * from "./latex.js";
 export * from "./markdown.js";

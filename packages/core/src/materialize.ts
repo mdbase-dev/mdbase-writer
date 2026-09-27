@@ -1,11 +1,12 @@
 // Materialises a manuscript into standalone Pandoc/Quarto Markdown: embedded
 // records are inlined, images point into a media folder, and the cited
-// sources become a CSL-JSON bibliography. The result builds with
-// `quarto render manuscript.md --to docx` (cross-references included) or
-// `pandoc manuscript.md --citeproc -o manuscript.docx`.
+// sources become a CSL-JSON bibliography. With Quarto cross-references kept
+// it builds with `quarto render manuscript.md --to docx`; with them resolved
+// (the in-browser Word export) plain `pandoc --citeproc` builds it.
 import type { SyntaxNode } from "@lezer/common";
 import { stringify as yamlStringify } from "yaml";
 
+import { resolveCrossReferences } from "./crossref.js";
 import { manuscriptMeta } from "./meta.js";
 import type { CslItem } from "./citeproc.js";
 import { CITEKEY, markdownParser } from "./markdown.js";
@@ -17,7 +18,17 @@ export interface MaterializeInput {
   readonly recordPaths: ReadonlySet<string>;
   readonly filePaths: ReadonlySet<string>;
   readonly library: ReadonlyMap<string, CslItem>;
+  /** Bundled citation styles by id. */
   readonly styles: ReadonlyMap<string, string>;
+  /** CSL locales by tag, to settle the document language as the preview does. */
+  readonly locales?: ReadonlyMap<string, string>;
+  /** Collection text files loaded so far (a .csl style the settings name). */
+  readonly texts?: ReadonlyMap<string, string>;
+  /**
+   * "quarto" keeps `{#fig-x}`/`@fig-x` for Quarto to number; "resolved"
+   * writes the numbers into the text and captions for plain Pandoc.
+   */
+  readonly crossReferences?: "quarto" | "resolved";
 }
 
 export interface MaterializedManuscript {
@@ -25,6 +36,10 @@ export interface MaterializedManuscript {
   /** CSL-JSON for every cited source, cleaned for strict processors (Pandoc). */
   readonly references: readonly CslItem[];
   readonly style: string;
+  /** The style's CSL XML. */
+  readonly styleXml: string;
+  /** The document language (BCP 47). */
+  readonly lang: string;
   /** Collection file path → path inside the bundle. */
   readonly media: ReadonlyMap<string, string>;
   readonly problems: readonly string[];
@@ -101,23 +116,36 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
   };
 
   const main = input.records.get(input.main);
-  const { meta } = manuscriptMeta(main?.frontmatter ?? {}, input.styles);
-  const body = expand(input.main, []);
+  const { meta } = manuscriptMeta(main?.frontmatter ?? {}, {
+    styles: input.styles,
+    main: input.main,
+    filePaths: input.filePaths,
+    ...(input.locales ? { locales: new Set(input.locales.keys()) } : {}),
+    ...(input.texts ? { texts: input.texts } : {}),
+  });
+  const expanded = expand(input.main, []);
+  const body = input.crossReferences === "resolved" ? resolveCrossReferences(expanded, meta.lang).markdown : expanded;
   const front: Record<string, unknown> = {
     ...(meta.title ? { title: meta.title } : {}),
     ...(meta.subtitle ? { subtitle: meta.subtitle } : {}),
     ...(meta.authors.length ? { author: meta.authors.map((a) => (a.affiliation ? { name: a.name, affiliation: a.affiliation } : a.name)) } : {}),
     ...(meta.date ? { date: meta.date } : {}),
     ...(meta.abstract ? { abstract: meta.abstract } : {}),
+    lang: meta.lang,
+    // Both bundled templates number headings 1.1 (resolved output has the numbers written in).
+    ...(input.crossReferences === "resolved" ? {} : { "number-sections": true }),
     bibliography: "references.json",
     csl: "style.csl",
     "link-citations": true,
+    "reference-section-title": "Bibliography",
   };
   const references = [...cited].sort().map((key) => cleanForPandoc(input.library.get(key) as CslItem));
   return {
     markdown: `---\n${yamlStringify(front).trimEnd()}\n---\n\n${body.trim()}\n`,
     references,
     style: meta.style,
+    styleXml: input.styles.get(meta.style) ?? input.texts?.get(meta.style) ?? "",
+    lang: meta.lang,
     media,
     problems,
   };
