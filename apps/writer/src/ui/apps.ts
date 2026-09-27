@@ -26,7 +26,7 @@ export const mdbaseApps: readonly MdbaseApp[] = [
     id: "writer",
     name: "Writer",
     description: "Write manuscripts that cite your sources",
-    url: "https://lab.mdbase-writer.pages.dev/",
+    url: "https://writer.mdbase.dev/",
   },
 ];
 

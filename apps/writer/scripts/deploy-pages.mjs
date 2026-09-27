@@ -1,13 +1,16 @@
 // Builds mdbase writer for a deployment target and uploads it to Cloudflare
-// Pages. Usage: MDBASE_ENV=lab node scripts/deploy-pages.mjs
-import { spawn } from "node:child_process";
+// Pages. Usage: MDBASE_ENV=lab|staging|production node scripts/deploy-pages.mjs
+import { execFileSync, spawn } from "node:child_process";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { pagesProject, writerDeploymentFor } from "./deployment-environment.mjs";
+import { assertReproducibleDeployment, pagesProject, writerDeploymentFor } from "./deployment-environment.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const { target, deployment } = writerDeploymentFor(process.env);
+const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+assertReproducibleDeployment(target, git("status", "--porcelain", "--untracked-files=all"), process.env);
+const commit = git("rev-parse", "--short=12", "HEAD");
 const PAGES_FILE_LIMIT = 25 * 1024 * 1024;
 
 await run("pnpm", ["build"], {
@@ -18,7 +21,7 @@ await run("pnpm", ["build"], {
   ...(deployment.demo ? { VITE_WRITER_DEMO: "1" } : {}),
 });
 await verify();
-await run("pnpm", ["dlx", "wrangler@4.120.0", "pages", "deploy", "dist", "--project-name", pagesProject, "--branch", deployment.branch, "--commit-dirty=true"]);
+await run("pnpm", ["dlx", "wrangler@4.120.0", "pages", "deploy", "dist", "--project-name", pagesProject, "--branch", deployment.branch, "--commit-hash", commit, "--commit-dirty=true"]);
 console.log(`Deployed ${target}: ${deployment.origin}/`);
 
 async function verify() {
