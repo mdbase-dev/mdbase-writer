@@ -102,7 +102,7 @@ Chromium, demo collection, keystroke to painted preview (p50): 4-page paper
 of three records 77 ms. Compiling a 141-page thesis takes about 350 ms per
 keystroke (from the spike). Download: about 9.4 MB compressed, mostly the
 Typst compiler, cached after the first visit. The Word export adds about
-10.8 MB (Pandoc) on its first use; the demo paper converts in about a second.
+16 MB (Pandoc) on its first use; the demo paper converts in about a second.
 
 ## Known limits
 

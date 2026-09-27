@@ -96,7 +96,7 @@ at `?demo`.
 The Typst compiler (28 MB) and Pandoc (58 MB) are over Pages' 25 MiB file
 limit, so they live in the R2 bucket `mdbase-writer-assets` and
 `functions/wasm/[name].ts` serves them on the same origin (brotli, immutable
-caching; about 9.8 and 10.8 MB transferred; Pandoc only on the first Word
+caching; about 9.8 and 16 MB transferred; Pandoc only on the first Word
 export). Upload new versions when typst.ts or pandoc-wasm is upgraded:
 
 ```sh

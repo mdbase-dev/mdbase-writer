@@ -122,7 +122,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     setExporting(null);
   };
   const exportDocx = async () => {
-    setExporting("Making the Word document… (the first export loads Pandoc, about 11 MB)");
+    setExporting("Making the Word document… (the first export loads Pandoc, about 16 MB)");
     const out = await workspace.exportDocx();
     if (!out.bytes) {
       setExporting(out.error ?? "Export failed.");
