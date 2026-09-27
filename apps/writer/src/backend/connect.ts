@@ -1,10 +1,26 @@
 // The writer on a real collection through mdbase connect.
 import type { CollectionFileDescriptor, JsonObject, MdbaseConnection } from "@mdbase-dev/connect";
 
-import { fail, libraryEntry, manuscriptSlug, ok, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import {
+  fail,
+  libraryEntry,
+  manuscriptSlug,
+  ok,
+  sourceAnnotation,
+  titleFromNote,
+  withType,
+  type CollectionIndex,
+  type LibraryEntry,
+  type ManuscriptSummary,
+  type NewManuscript,
+  type Result,
+  type SourceAnnotation,
+  type WriterBackend,
+} from "./types.js";
 
-export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.1" } as const;
+export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2" } as const;
 export const sourceContract = { id: "dev.mdbase.reader.source", version: "1.0.0-beta.1" } as const;
+export const annotationContract = { id: "dev.mdbase.reader.annotation", version: "1.0.0-beta.1" } as const;
 
 const problemMessage = (outcome: { ok: false; problem: { message?: string; code: string } }) => outcome.problem.message ?? outcome.problem.code;
 
@@ -137,6 +153,24 @@ export class ConnectBackend implements WriterBackend {
       }
     }
     return ok(entries);
+  }
+
+  async annotations(): Promise<Result<SourceAnnotation[]>> {
+    // The writer does not provision Reader's annotation contract; where Reader
+    // has, query through it, else by Reader's starter type name.
+    const collect = async (query: Parameters<MdbaseConnection<JsonObject>["queryPages"]>[0]): Promise<Result<SourceAnnotation[]>> => {
+      const out: SourceAnnotation[] = [];
+      for await (const page of this.connection.queryPages(query, { pageSize: 500 })) {
+        if (!page.ok) return fail(problemMessage(page));
+        for (const r of page.value.results) {
+          const a = sourceAnnotation(r.path, r.effectiveFrontmatter ?? r.frontmatter, r.body ?? "");
+          if (a) out.push(a);
+        }
+      }
+      return ok(out);
+    };
+    const byContract = await collect({ contract: annotationContract, frontmatterMode: "effective", includeBody: true });
+    return byContract.ok ? byContract : collect({ types: ["reader-annotation"], frontmatterMode: "persisted", includeBody: true });
   }
 
   async readFile(path: string): Promise<Result<Uint8Array>> {

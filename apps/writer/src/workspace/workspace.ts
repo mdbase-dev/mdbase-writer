@@ -8,22 +8,29 @@
 import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
 import type { CslItem, WriterRecord } from "@mdbase-writer/core";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
-import { STYLES } from "@mdbase-writer/core/styles";
+import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import type { LibraryEntry, WriterBackend } from "../backend/types.js";
 import { CompileClient } from "../compile/client.js";
 import type { CompileResult } from "../compile/protocol.js";
+import { toDocx } from "../export/pandoc.js";
 import { zip } from "../export/zip.js";
 
-// Styles and the locale are fetched, not bundled: only the worker needs most of them.
+// Styles and locales are fetched, not bundled: only the worker needs most of them.
 const cslUrls = import.meta.glob("../../../../packages/core/assets/csl/*.{csl,xml}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
 const cslUrl = (file: string) => cslUrls[`../../../../packages/core/assets/csl/${file}`] ?? "";
-let stylesPromise: Promise<{ styles: Map<string, string>; locale: string }> | undefined;
+let stylesPromise: Promise<{ styles: Map<string, string>; locales: Map<string, string> }> | undefined;
 function loadStyles() {
   stylesPromise ??= (async () => {
     const text = (url: string) => fetch(url).then((r) => r.text());
-    const [locale, ...styles] = await Promise.all([text(cslUrl("locales-en-US.xml")), ...STYLES.map((s) => text(cslUrl(`${s.id}.csl`)))]);
-    return { styles: new Map(STYLES.map((s, i) => [s.id, styles[i] ?? ""])), locale };
+    const [styles, locales] = await Promise.all([
+      Promise.all(STYLES.map((s) => text(cslUrl(`${s.id}.csl`)))),
+      Promise.all(LOCALES.map((l) => text(cslUrl(`locales-${l}.xml`)))),
+    ]);
+    return {
+      styles: new Map(STYLES.map((s, i) => [s.id, styles[i] ?? ""])),
+      locales: new Map(LOCALES.map((l, i) => [l, locales[i] ?? ""])),
+    };
   })();
   return stylesPromise;
 }
@@ -56,6 +63,8 @@ export class ManuscriptWorkspace {
   private readonly opening = new Set<string>();
   private readonly sent = new Map<string, string>();
   private readonly requestedAssets = new Set<string>();
+  /** Collection text files loaded for the settings (a .csl style, a .typ template). */
+  private readonly texts = new Map<string, string>();
   private readonly listeners = new Set<() => void>();
   private readonly cleanups: (() => void)[] = [];
   private refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -97,7 +106,7 @@ export class ManuscriptWorkspace {
       type: "init",
       library: items,
       styles: [...csl.styles],
-      locale: csl.locale,
+      locales: [...csl.locales],
       baseUrl: import.meta.env.BASE_URL,
     });
     this.compile.send({ type: "collection", recordPaths: index.value.recordPaths, filePaths: index.value.filePaths });
@@ -152,13 +161,18 @@ export class ManuscriptWorkspace {
     const files: [string, Uint8Array][] = [];
     for (const path of paths) {
       const read = await this.backend.readFile(path);
-      if (read.ok) files.push([path, read.value]);
+      if (!read.ok) continue;
+      if (/\.(csl|typ)$/i.test(path)) this.texts.set(path, new TextDecoder().decode(read.value));
+      files.push([path, read.value]);
     }
     if (files.length) this.compile.send({ type: "assets", files }, files.map(([, b]) => b.buffer as ArrayBuffer));
   }
 
   private onExternalChange(paths: readonly string[]): void {
-    if (paths.every((p) => this.leases.has(p))) return; // record sessions follow their own records
+    // An image, style or template the document uses changed: send its new bytes.
+    const assets = paths.filter((p) => this.requestedAssets.has(p));
+    if (assets.length) void this.loadAssets(assets);
+    if (paths.every((p) => this.leases.has(p) || this.requestedAssets.has(p))) return; // record sessions follow their own records
     clearTimeout(this.refreshTimer);
     this.refreshTimer = setTimeout(() => void this.refreshCollection(), 2_000);
   }
@@ -187,20 +201,23 @@ export class ManuscriptWorkspace {
     this.leases.get(path)?.lease.session.resolve({ keep });
   }
 
+  private annotationsPromise: ReturnType<WriterBackend["annotations"]> | undefined;
+  /** Reader annotations, loaded once per open manuscript (on first use). */
+  annotations = (): ReturnType<WriterBackend["annotations"]> => {
+    this.annotationsPromise ??= this.backend.annotations();
+    return this.annotationsPromise;
+  };
+
   exportPdf(): Promise<{ bytes?: Uint8Array; error?: string }> {
     return this.compile.exportPdf();
   }
 
-  /**
-   * A Pandoc/Quarto bundle (zip): the manuscript as one Markdown file with
-   * embeds inlined, the cited sources as CSL-JSON, the style and the images.
-   */
-  async exportBundle(): Promise<{ bytes: Uint8Array; problems: readonly string[] }> {
+  private async materialize(crossReferences: "quarto" | "resolved") {
     const snap = this.current;
     const records = new Map<string, WriterRecord>(
       [...snap.records].map(([path, r]) => [path, { path, body: r.snapshot.body, frontmatter: r.snapshot.frontmatter }]),
     );
-    const { styles } = await loadStyles();
+    const { styles, locales } = await loadStyles();
     const out = materialize({
       main: this.main,
       records,
@@ -208,20 +225,55 @@ export class ManuscriptWorkspace {
       filePaths: new Set(snap.filePaths),
       library: new Map(snap.library.map((e) => [e.key, e.item])),
       styles,
+      locales,
+      texts: this.texts,
+      crossReferences,
     });
+    const problems = [...out.problems];
+    const media: [string, Uint8Array][] = [];
+    for (const [collectionPath, bundled] of out.media) {
+      const read = await this.backend.readFile(collectionPath);
+      if (read.ok) media.push([bundled, read.value]);
+      else problems.push(`${collectionPath}: ${read.message}`);
+    }
+    return { out, media, problems };
+  }
+
+  /**
+   * A Pandoc/Quarto bundle (zip): the manuscript as one Markdown file with
+   * embeds inlined, the cited sources as CSL-JSON, the style and the images.
+   */
+  async exportBundle(): Promise<{ bytes: Uint8Array; problems: readonly string[] }> {
+    const { out, media, problems } = await this.materialize("quarto");
     const files: [string, Uint8Array | string][] = [
       ["manuscript.md", out.markdown],
       ["references.json", `${JSON.stringify(out.references, null, 2)}\n`],
-      ["style.csl", styles.get(out.style) ?? ""],
+      ["style.csl", out.styleXml],
       ["README.md", BUNDLE_README],
+      ...media,
     ];
-    const problems = [...out.problems];
-    for (const [collectionPath, bundled] of out.media) {
-      const read = await this.backend.readFile(collectionPath);
-      if (read.ok) files.push([bundled, read.value]);
-      else problems.push(`${collectionPath}: ${read.message}`);
-    }
     return { bytes: zip(files), problems };
+  }
+
+  /**
+   * A Word document, made in the browser by Pandoc: cross-references are
+   * resolved to text, citations formatted by Pandoc's citeproc with the same
+   * style, and the layout's reference document supplies the Word styles.
+   */
+  async exportDocx(): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {
+    const { out, media, problems } = await this.materialize("resolved");
+    const template = this.current.result?.meta.customTemplate ? "article" : (this.current.result?.meta.template ?? "article");
+    // The layout's Word styles (public/docx, from scripts/reference-docx.mjs).
+    const referenceResponse = await fetch(`${import.meta.env.BASE_URL}docx/${template}.docx`);
+    const reference = referenceResponse.ok ? new Uint8Array(await referenceResponse.arrayBuffer()) : undefined;
+    const converted = await toDocx(out.markdown, [
+      ["references.json", JSON.stringify(out.references)],
+      ["style.csl", out.styleXml],
+      ...(reference ? [["reference.docx", reference] as const] : []),
+      ...media,
+    ]);
+    if (converted.error !== undefined) return { error: converted.error, problems };
+    return { bytes: converted.bytes, problems: [...problems, ...converted.warnings] };
   }
 
   /** Saves what is left, then releases every session and stops the worker. */

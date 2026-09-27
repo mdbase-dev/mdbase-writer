@@ -15,6 +15,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
   const [notes, setNotes] = useState<string[]>([]);
   const [notePath, setNotePath] = useState("");
   const [adopting, setAdopting] = useState(false);
+  const [sources, setSources] = useState<number | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -22,6 +23,9 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
       else setProblem(r.message);
+    });
+    void backend.library().then((r) => {
+      if (live) setSources(r.ok ? r.value.length : 0);
     });
     void backend.index().then((r) => {
       if (live && r.ok) setNotes(r.value.recordPaths.filter((p) => p.toLowerCase().endsWith(".md")).sort());
@@ -64,7 +68,26 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
           In <strong>{backend.collectionName}</strong>. A manuscript is a Markdown record; embed chapters with <code>![[path]]</code>.
         </p>
         {manuscripts === null && !problem && <p className="muted" role="status">Loading…</p>}
-        {manuscripts?.length === 0 && <p>No manuscripts yet. Create one below.</p>}
+        {manuscripts?.length === 0 && (
+          <ol className="first-run">
+            <li>
+              <strong>Sources.</strong>{" "}
+              {sources === null
+                ? "Looking for sources…"
+                : sources > 0
+                  ? `${sources} ${sources === 1 ? "source" : "sources"} from mdbase Reader can be cited here.`
+                  : "None yet. Add what you read in mdbase Reader (import a PDF, a DOI or a BibTeX file); each source gets a citekey."}
+            </li>
+            <li>
+              <strong>A manuscript.</strong> Create one below, or use a note you already have. It stays an ordinary Markdown record in this collection.
+            </li>
+            <li>
+              <strong>Write.</strong> Cite with <code>[@citekey, p. 12]</code> (or find sources by author and title in the Sources panel), label with{" "}
+              <code>{"{#fig-plan}"}</code> and refer with <code>@fig-plan</code>, embed chapters with <code>![[chapters/one]]</code>. Export a PDF or a Word
+              document.
+            </li>
+          </ol>
+        )}
         {manuscripts && manuscripts.length > 0 && (
           <ul className="manuscripts">
             {manuscripts.map((m) => (

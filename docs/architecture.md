@@ -3,7 +3,9 @@
 ## Data
 
 - **Manuscripts** implement `dev.mdbase.writer.manuscript` (title, subtitle,
-  authors, abstract, date, `csl` style id, `template`). The body is Markdown.
+  authors, abstract, date, `csl` style, `template`, `lang`). The body is
+  Markdown. `csl` and `template` name a bundled style or layout, or a `.csl`
+  or `.typ` file in the collection, loaded like images.
   A record is a manuscript because it declares the type
   (`type: writer-manuscript`, or in a list with its other types), not because
   of where it lives: the starter type has no path rule, only
@@ -21,6 +23,10 @@
   makes it Reader-compatible, and doing so where Reader already runs is a
   no-op. `apps/writer/scripts/manifest.test.mjs` checks the copies still match
   Reader's.
+- **Annotations** are Reader's `dev.mdbase.reader.annotation` records (queried
+  through the contract where the collection has it, else by Reader's type
+  name). The first blockquote of the body is the quotation; `locator.label`
+  ("p. 12") becomes the citation's locator.
 - **Images** are collection files, referenced relative to the record
   (`![Caption](figures/plot.png){#fig-plot}`) or by wikilink (`![[plot.png]]`).
 
@@ -71,7 +77,23 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   viewport (IntersectionObserver), so update cost follows what is on screen.
 - **The editor** (`app/editor`) uses the same lezer extensions as the
   translator. It never adopts an echo of its own earlier text from the session
-  (that would undo keystrokes typed since).
+  (that would undo keystrokes typed since). The cursor's block is scrolled into
+  view in the preview when it is off screen.
+- **Settings problems.** A diagnostic about the frontmatter carries its
+  `field`; Typst errors in the generated main file are mapped to the setting
+  written on that line, and errors in a template to `template`.
+
+## Word export
+
+`materialize` (core) inlines embeds and, in `resolved` mode, numbers
+cross-references as the templates do (`crossref.ts`: sections 1.1, figures,
+tables and equations each counted) and writes the numbers into headings,
+captions, equations and references, since Pandoc's DOCX writer numbers none
+of them. Pandoc's official WebAssembly build (`pandoc-wasm`) runs in its own
+worker, started on the first export; it formats citations with its own
+citeproc from the same CSL and CSL-JSON, and takes Word styles from
+`public/docx/<template>.docx`. The Pandoc bundle uses `quarto` mode instead
+and leaves cross-references to Quarto.
 
 ## Measured
 
@@ -79,7 +101,8 @@ Chromium, demo collection, keystroke to painted preview (p50): 4-page paper
 83 ms; 30-page paper 116 ms (before virtualised drawing: 1.3 s); 6-page thesis
 of three records 77 ms. Compiling a 141-page thesis takes about 350 ms per
 keystroke (from the spike). Download: about 9.4 MB compressed, mostly the
-Typst compiler, cached after the first visit.
+Typst compiler, cached after the first visit. The Word export adds about
+10.8 MB (Pandoc) on its first use; the demo paper converts in about a second.
 
 ## Known limits
 
@@ -87,9 +110,14 @@ Typst compiler, cached after the first visit.
 - Deleting a citation, or adding a footnote before existing citations, still
   rebuilds citeproc (about 1 s at 1,000 clusters); inserting or changing a
   citation is incremental.
-- Word output goes through a Pandoc/Quarto bundle rather than in the browser.
-  Plain Pandoc leaves Quarto cross-references unresolved; Quarto resolves them.
-- Two templates (article, thesis) and six citation styles are bundled.
+- Word output takes its structure from Pandoc, not from the Typst template: a
+  collection template affects the PDF only (the Word export uses the article
+  styles). Cross-reference words ("Figure", "Abschnitt") cover the bundled
+  locales' languages.
+- Two templates (article, thesis), six citation styles and eight CSL locales
+  are bundled; others come from the collection (styles, templates) or fall
+  back to en-US (locales).
+- A collection template is one file: files it imports are not loaded.
 - typst.ts 0.7.0 quirks worked around here: `renderToSvg` caches by container
   width and needs `window.typstProcessSvg`; `world.compile`/`world.vector`
   return nothing for `diagnostics: "none"`.

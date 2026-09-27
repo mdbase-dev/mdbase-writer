@@ -17,6 +17,8 @@ const remote = Annotation.define<boolean>();
 
 export interface EditorHandle {
   reveal(offset: number): void;
+  /** Replaces the selection with text (a citation, a quotation) and leaves the cursor after it. */
+  insert(text: string): void;
 }
 
 export interface EditorProps {
@@ -27,17 +29,19 @@ export interface EditorProps {
   completion: CompletionData;
   onChange(text: string): void;
   onReady?(handle: EditorHandle): void;
+  /** The cursor moved (by typing, clicking or keys), to its body offset. */
+  onCursor?(offset: number): void;
 }
 
-export function Editor({ path, text, readOnly, diagnostics, completion, onChange, onReady }: EditorProps) {
+export function Editor({ path, text, readOnly, diagnostics, completion, onChange, onReady, onCursor }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
   // through React, possibly after more typing; an echo must never be adopted
   // as an external change, or it would undo the keystrokes since.
   const emitted = useRef<string[]>([]);
-  const latest = useRef({ onChange, completion });
-  latest.current = { onChange, completion };
+  const latest = useRef({ onChange, completion, onCursor });
+  latest.current = { onChange, completion, onCursor };
 
   // One view per record path.
   useEffect(() => {
@@ -64,6 +68,7 @@ export function Editor({ path, text, readOnly, diagnostics, completion, onChange
           placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
           EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
           EditorView.updateListener.of((u) => {
+            if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);
             if (!u.docChanged || u.transactions.some((tr) => tr.annotation(remote))) return;
             const next = u.state.doc.toString();
             emitted.current.push(next);
@@ -78,6 +83,11 @@ export function Editor({ path, text, readOnly, diagnostics, completion, onChange
       reveal(offset) {
         const at = Math.min(offset, v.state.doc.length);
         v.dispatch({ selection: { anchor: at }, effects: EditorView.scrollIntoView(at, { y: "center" }) });
+        v.focus();
+      },
+      insert(insertion) {
+        if (v.state.readOnly) return;
+        v.dispatch(v.state.replaceSelection(insertion), { scrollIntoView: true, userEvent: "input" });
         v.focus();
       },
     });

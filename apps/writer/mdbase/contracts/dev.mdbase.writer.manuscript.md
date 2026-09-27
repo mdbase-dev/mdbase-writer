@@ -2,7 +2,7 @@
 kind: mdbase.contract
 contract_type: record
 id: dev.mdbase.writer.manuscript
-version: 1.0.0-beta.1
+version: 1.0.0-beta.2
 name: mdbase writer manuscript
 description: A document to typeset — a paper, chapter, book or thesis — whose Markdown body may embed other records.
 record_schema:
@@ -39,7 +39,10 @@ record_schema:
         minLength: 1
       template:
         type: string
-        enum: [article, thesis]
+        minLength: 1
+      lang:
+        type: string
+        minLength: 1
 ---
 
 # mdbase writer manuscript
@@ -50,6 +53,10 @@ and mdbase embeds: a line holding only `![[chapters/one]]` includes that
 record, so a book is a manuscript whose body embeds its chapters. Embedded
 records need no particular type.
 
-`csl` names the citation style and `template` the page layout. Citations are
-resolved against records implementing `dev.mdbase.reader.source` by their
-`csl.id`.
+`csl` names the citation style: a bundled style id, or the path of a `.csl`
+file in the collection. `template` names the page layout: `article`,
+`thesis`, or the path of a Typst file in the collection that defines
+`template(title:, subtitle:, authors:, abstract:, date:, body)`. `lang` is the
+document's language (BCP 47, as in Pandoc), for citation terms and
+hyphenation. Citations are resolved against records implementing
+`dev.mdbase.reader.source` by their `csl.id`.

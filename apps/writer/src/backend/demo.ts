@@ -6,7 +6,7 @@ import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import type { CslItem } from "@mdbase-writer/core";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
 
-import { fail, manuscriptSlug, ok, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import { fail, manuscriptSlug, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -77,6 +77,16 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     },
     async library() {
       return ok(entries);
+    },
+    async annotations() {
+      const out = [];
+      for (const path of paths) {
+        const { body, frontmatter } = splitFrontmatter(markdown[`../../demo/${path}`] ?? "");
+        if (frontmatter["type"] !== "reader-annotation") continue;
+        const a = sourceAnnotation(path, frontmatter as JsonObject, body);
+        if (a) out.push(a);
+      }
+      return ok(out);
     },
     async readFile(path: string) {
       const url = files.get(path);

@@ -44,11 +44,13 @@ export interface PreviewProps {
   positions: readonly BlockPosition[];
   stale: boolean;
   onJump(position: BlockPosition): void;
+  /** The block at the editor's cursor: scrolled into view when it is off screen. */
+  follow?: BlockPosition | undefined;
 }
 
 const NEAR_VIEWPORT = "900px 0px";
 
-export function Preview({ artifact, revision, positions, stale, onJump }: PreviewProps) {
+export function Preview({ artifact, revision, positions, stale, onJump, follow }: PreviewProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const pagesHost = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<readonly PageBox[]>([]);
@@ -150,6 +152,19 @@ export function Preview({ artifact, revision, positions, stale, onJump }: Previe
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-observe when the page list changes
   }, [pages]);
+
+  // Editor → preview: bring the cursor's block into view, leaving the scroll
+  // alone while it is visible so typing does not make the preview jump.
+  useEffect(() => {
+    const root = scroller.current;
+    const box = follow ? pagesRef.current[follow.page - 1] : undefined;
+    const canvas = follow ? pagesHost.current?.querySelector<HTMLCanvasElement>(`canvas[data-page="${follow.page - 1}"]`) : null;
+    if (!root || !follow || !box || !canvas) return;
+    const top = canvas.offsetTop + (follow.y / box.height) * canvas.clientHeight;
+    const margin = root.clientHeight * 0.15;
+    if (top >= root.scrollTop + margin && top <= root.scrollTop + root.clientHeight - margin) return;
+    root.scrollTo({ top: Math.max(0, top - root.clientHeight / 3), behavior: "smooth" });
+  }, [follow, pages]);
 
   const onClick = (event: React.MouseEvent) => {
     const target = (event.target as HTMLElement).closest<HTMLCanvasElement>("canvas[data-page]");

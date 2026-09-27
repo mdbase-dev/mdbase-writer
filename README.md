@@ -15,10 +15,13 @@ its chapters. The preview is typeset by Typst in the browser as you type.
 - **Typeset preview while typing.** Markdown is translated to Typst and
   compiled in a Web Worker; only pages near the viewport are drawn.
 - **Citations from Reader.** Sources are the collection's records implementing
-  `dev.mdbase.reader.source`; each one's `csl` field is its CSL-JSON. Citekeys
-  complete as you type (`@`, `[@`). Citations are formatted by citeproc-js
-  (six bundled styles) and match Pandoc's citeproc, including notes after
-  punctuation, narrative citations in note styles and ibid/short forms.
+  `dev.mdbase.reader.source`; each one's `csl` field is its CSL-JSON. Sources
+  complete as you type (`@`, `[@`) by citekey, author, title or year, and the
+  Sources panel inserts a citation, or a quotation highlighted in Reader with
+  its page. Citations are formatted by citeproc-js (six bundled styles, or a
+  `.csl` file in the collection; the manuscript's `lang` picks the locale) and
+  match Pandoc's citeproc, including notes after punctuation, narrative
+  citations in note styles and ibid/short forms.
 - **Multi-record manuscripts.** Every embedded record gets its own record
   session: autosave, conflict detection when something else edits it, exact
   recovery of interrupted saves. Notes, citations and cross-references run
@@ -26,10 +29,13 @@ its chapters. The preview is typeset by Typst in the browser as you type.
 - **Problems where they happen.** Unknown citekeys, missing labels, embeds or
   images, unused footnotes, malformed LaTeX and Typst errors are reported on
   the Markdown line that caused them. Clicking the preview jumps to the block
-  it came from.
-- **Export.** PDF, and a Pandoc/Quarto bundle (zip) for Word: the manuscript
-  as one Markdown file with embeds inlined, the cited sources as CSL-JSON, the
-  style and the images. `quarto render manuscript.md --to docx`.
+  it came from, and the preview follows the cursor. Problems with a setting
+  point at the setting.
+- **Export.** PDF; Word (DOCX), made in the browser by Pandoc's WebAssembly
+  build, with cross-references resolved and the layout's Word styles; and a
+  Pandoc/Quarto bundle (zip) to build other formats yourself.
+- **Layouts.** Article and thesis templates, or a Typst file in the collection
+  defining `template(title:, subtitle:, authors:, abstract:, date:, body)`.
 
 ## Layout
 
@@ -74,22 +80,31 @@ Connect service and local connector (defaults: production and 28485).
 ## Deploy
 
 Deployments are Cloudflare Pages branches of the `mdbase-writer` project
-(targets in `apps/writer/scripts/deployment-environment.mjs`). Only lab exists:
+(targets in `apps/writer/scripts/deployment-environment.mjs`), as for mdbase
+Reader:
 
 ```sh
-pnpm --filter @mdbase-writer/app deploy:lab   # https://lab.mdbase-writer.pages.dev, lab Connect, connector 28487
+pnpm --filter @mdbase-writer/app deploy:lab       # https://lab.mdbase-writer.pages.dev, lab Connect, connector 28487
+pnpm --filter @mdbase-writer/app deploy:staging   # https://staging.mdbase-writer.pages.dev, staging Connect, connector 28486
+pnpm --filter @mdbase-writer/app deploy:prod      # https://writer.mdbase.dev, production Connect, connector 28485
 ```
 
-The Typst compiler (28 MB) is over Pages' 25 MiB file limit, so it lives in
-the R2 bucket `mdbase-writer-assets` and `functions/wasm/[name].ts` serves it on
-the same origin (brotli, immutable caching, about 9.8 MB transferred). Upload a
-new version when typst.ts is upgraded:
+Staging and production refuse to deploy uncommitted changes
+(`MDBASE_WRITER_ALLOW_DIRTY=1` overrides). Only lab serves the demo collection
+at `?demo`.
+
+The Typst compiler (28 MB) and Pandoc (58 MB) are over Pages' 25 MiB file
+limit, so they live in the R2 bucket `mdbase-writer-assets` and
+`functions/wasm/[name].ts` serves them on the same origin (brotli, immutable
+caching; about 9.8 and 10.8 MB transferred; Pandoc only on the first Word
+export). Upload new versions when typst.ts or pandoc-wasm is upgraded:
 
 ```sh
 pnpm --filter @mdbase-writer/app upload:compiler
 ```
 
-The lab build also serves the demo collection at `?demo`.
+The Word styles are generated from Pandoc's default reference document
+(`node apps/writer/scripts/reference-docx.mjs`, needs a local pandoc).
 
 ## Status
 

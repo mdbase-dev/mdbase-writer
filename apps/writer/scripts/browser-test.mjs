@@ -132,6 +132,46 @@ await step("citekey completion offers library sources", async () => {
   assert.match(await editorText(), /See \[@badiouEthics01\]\./);
 });
 
+await step("citekey completion finds sources by title words", async () => {
+  await typeAtEndOfParagraph("which it occurs", " Compare [@contingency");
+  await page.locator(".cm-tooltip-autocomplete").waitFor({ timeout: 5_000 });
+  const options = await page.locator(".cm-tooltip-autocomplete li").allTextContents();
+  assert.ok(options[0]?.includes("agambenBartleby99"), `options were: ${options.slice(0, 5).join(" | ")}`);
+  await page.waitForTimeout(250);
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("].");
+  assert.match(await editorText(), /Compare \[@agambenBartleby99\]\./);
+});
+
+await step("a Reader quotation goes in with its citation and page", async () => {
+  await typeAtEndOfParagraph("which it occurs", " ");
+  await page.locator(".sources input[type=search]").fill("potentialities");
+  await page.locator(".source-row", { hasText: "Potentialities" }).click();
+  await page.getByRole("button", { name: "Insert quotation" }).click();
+  assert.match(await editorText(), /“To be potential means: to be one's own lack, to be in relation to one's own incapacity\.” \[@agambenPotentialities99, p\. 182\]/);
+});
+
+await step("the preview follows the cursor", async () => {
+  await page.evaluate(() => (document.querySelector(".preview").scrollTop = 0));
+  await page.locator(".cm-content").focus();
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.waitForFunction(() => document.querySelector(".preview").scrollTop > 200, null, { timeout: 5_000 });
+  await page.keyboard.press("ControlOrMeta+Home");
+});
+
+await step("a setting's problem opens the setting", async () => {
+  const before = (await snapshot()).revision;
+  await page.evaluate(() => window.writer.workspace.patchFrontmatter("manuscripts/potentiality.md", { lang: "tlh" }));
+  await waitForRevisionAfter(before);
+  await page.locator(".problem-row", { hasText: "no terms for" }).click();
+  await page.locator(".settings[open] .field-problem", { hasText: "no terms for" }).waitFor();
+  assert.equal(await page.evaluate(() => document.activeElement?.value), "tlh");
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.type("en-GB");
+  await page.keyboard.press("Tab");
+  await waitFor(() => window.writer.workspace.getSnapshot().result?.meta.locale === "en-GB", null, 10_000);
+});
+
 await step("an unknown citekey is reported in Problems and in the editor", async () => {
   const before = (await snapshot()).revision;
   await typeAtEndOfParagraph("which it occurs", " Also [@nosuchsource2020].");
@@ -206,10 +246,23 @@ await step("Export PDF downloads a PDF", async () => {
   assert.equal(readFileSync(path).subarray(0, 5).toString(), "%PDF-");
 });
 
-await step("Export for Word downloads a Pandoc bundle", async () => {
+await step("Export Word downloads a DOCX made by Pandoc in the browser", async () => {
+  const [file] = await Promise.all([
+    page.waitForEvent("download", { timeout: 120_000 }),
+    page.getByRole("button", { name: "Export Word" }).click(),
+  ]);
+  const path = `out/${file.suggestedFilename()}`;
+  await file.saveAs(path);
+  const { execFileSync } = await import("node:child_process");
+  const text = execFileSync("pandoc", [path, "-t", "plain"], { encoding: "utf8" });
+  assert.match(text, /Refusing the Possible|Potentiality/);
+  assert.doesNotMatch(text, /\((sec|fig|tbl|eq)-[\w-]+\?\)/);
+});
+
+await step("the Pandoc bundle downloads a zip", async () => {
   const [file] = await Promise.all([
     page.waitForEvent("download", { timeout: 30_000 }),
-    page.getByRole("button", { name: "Export for Word" }).click(),
+    page.getByRole("button", { name: "Pandoc bundle" }).click(),
   ]);
   const path = `out/${file.suggestedFilename()}`;
   await file.saveAs(path);

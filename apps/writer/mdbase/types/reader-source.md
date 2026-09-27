@@ -60,9 +60,6 @@ schema:
             relation: { type: string }
             target: { type: string }
       csl: { type: object }
-match:
-  path_glob: sources/**/*.md
-  fields_present: [id, title, kind]
 collection:
   unique:
     - field: id

@@ -1,13 +1,13 @@
 // An open manuscript: outline, editor and preview.
-import type { JsonObject } from "@mdbase-dev/connect";
-import { TEMPLATES } from "@mdbase-writer/core/meta";
-import { STYLES } from "@mdbase-writer/core/styles";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
 import { Preview } from "../preview/Preview.js";
 import type { ManuscriptWorkspace, RecordView, SessionSnapshot } from "../workspace/workspace.js";
+import { headings } from "./outline.js";
+import { Settings, type SettingsFocus } from "./Settings.js";
+import { SourcesPanel } from "./SourcesPanel.js";
 
 const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
   saved: "Saved",
@@ -38,13 +38,18 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [exporting, setExporting] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
   const pendingReveal = useRef<number | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsFocus, setSettingsFocus] = useState<SettingsFocus | null>(null);
+  const [cursor, setCursor] = useState<{ record: string; offset: number } | null>(null);
+  const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const order = snap.result?.order.length ? snap.result.order : [workspace.main];
   const activeView = snap.records.get(active);
   const diagnostics = snap.result?.diagnostics ?? [];
   const byRecord = useMemo(() => {
     const map = new Map<string, WriterDiagnostic[]>();
-    for (const d of diagnostics) map.set(d.record, [...(map.get(d.record) ?? []), d]);
+    // Problems with a setting belong to the settings panel, not to a line of the body.
+    for (const d of diagnostics) if (!d.field) map.set(d.record, [...(map.get(d.record) ?? []), d]);
     return map;
   }, [diagnostics]);
   const completion = useMemo(
@@ -58,6 +63,26 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
   }, [manuscriptTitle]);
+
+  const showSetting = (field: SettingsFocus["field"]) => {
+    setPane("outline");
+    setSettingsOpen(true);
+    setSettingsFocus((f) => ({ field, nonce: (f?.nonce ?? 0) + 1 }));
+  };
+
+  // The preview follows the cursor's block (after the cursor rests briefly).
+  const onCursor = useCallback((offset: number) => {
+    clearTimeout(cursorTimer.current);
+    cursorTimer.current = setTimeout(() => setCursor({ record: active, offset }), 120);
+  }, [active]);
+  useEffect(() => () => clearTimeout(cursorTimer.current), []);
+  const positions = snap.result?.positions;
+  const follow = useMemo(() => {
+    if (!cursor || !positions) return undefined;
+    let hit: BlockPosition | undefined;
+    for (const p of positions) if (p.record === cursor.record && p.offset <= cursor.offset && (!hit || p.offset >= hit.offset)) hit = p;
+    return hit;
+  }, [cursor, positions]);
 
   const jump = useCallback((record: string, offset: number) => {
     setPane("write");
@@ -96,6 +121,16 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     download(out.bytes, "application/pdf", `${fileStem}.pdf`);
     setExporting(null);
   };
+  const exportDocx = async () => {
+    setExporting("Making the Word document… (the first export loads Pandoc, about 11 MB)");
+    const out = await workspace.exportDocx();
+    if (!out.bytes) {
+      setExporting(out.error ?? "Export failed.");
+      return;
+    }
+    download(out.bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", `${fileStem}.docx`);
+    setExporting(out.problems.length ? `Exported with ${out.problems.length} ${out.problems.length === 1 ? "problem" : "problems"}: ${out.problems[0]}` : null);
+  };
   const exportBundle = async () => {
     setExporting("Exporting…");
     const out = await workspace.exportBundle();
@@ -131,8 +166,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         </span>
         <span className="subbar-spacer" />
         {exporting && <span className="muted" role="status">{exporting}</span>}
-        <button type="button" className="button" onClick={() => void exportBundle()} disabled={snap.phase !== "ready"} title="A zip for Pandoc or Quarto: build Word (DOCX) or other formats">
-          Export for Word
+        <button type="button" className="button link-button" onClick={() => void exportBundle()} disabled={snap.phase !== "ready"} title="The manuscript as Pandoc/Quarto Markdown with its sources, style and images (zip), to build other formats yourself">
+          Pandoc bundle
+        </button>
+        <button type="button" className="button" onClick={() => void exportDocx()} disabled={snap.phase !== "ready"} title="A Word document (DOCX), made in your browser by Pandoc">
+          Export Word
         </button>
         <button type="button" className="button" onClick={() => void exportPdf()} disabled={!snap.artifact}>
           Export PDF
@@ -163,11 +201,21 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
                     {count > 0 && <span className="count" title={`${count} problems`}>{count}</span>}
                   </span>
                 </button>
+                <RecordHeadings body={view?.snapshot.body} onJump={(offset) => jump(path, offset)} />
               </li>
             );
           })}
         </ol>
-        <Settings workspace={workspace} view={snap.records.get(workspace.main)} />
+        <SourcesPanel library={snap.library} loadAnnotations={workspace.annotations} canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted")} onInsert={(text) => { setPane("write"); editor.current?.insert(text); }} />
+        <Settings
+          workspace={workspace}
+          view={snap.records.get(workspace.main)}
+          filePaths={snap.filePaths}
+          problems={diagnostics}
+          open={settingsOpen}
+          onToggle={setSettingsOpen}
+          focus={settingsFocus}
+        />
         <section className="problems" aria-label="Problems">
           <h2>Problems {diagnostics.length > 0 && <span className="count">{diagnostics.length}</span>}</h2>
           {diagnostics.length === 0 ? (
@@ -176,9 +224,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             <ul>
               {diagnostics.map((d, i) => (
                 <li key={`${d.record}:${d.from}:${i}`}>
-                  <button type="button" className={`problem-row severity-${d.severity}`} onClick={() => jump(d.record, d.from)}>
+                  <button type="button" className={`problem-row severity-${d.severity}`} onClick={() => (d.field ? showSetting(d.field) : jump(d.record, d.from))}>
                     <span>{d.message}</span>
-                    <span className="record-path">{d.record}</span>
+                    <span className="record-path">{d.field ? `Manuscript settings · ${d.field}` : d.record}</span>
                   </button>
                 </li>
               ))}
@@ -214,6 +262,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             completion={completion}
             onChange={(text) => workspace.setBody(active, text)}
             onReady={onEditorReady}
+            onCursor={onCursor}
           />
         ) : (
           <p className="muted pad">Opening…</p>
@@ -234,48 +283,26 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           positions={snap.result?.positions ?? []}
           stale={Boolean(snap.result && !snap.result.artifact)}
           onJump={(p: BlockPosition) => jump(p.record, p.offset)}
+          follow={follow}
         />
       </section>
     </div>
   );
 }
 
-function Settings({ workspace, view }: { workspace: ManuscriptWorkspace; view: RecordView | undefined }) {
-  const fm = view?.snapshot.frontmatter ?? {};
-  const str = (k: string) => (typeof fm[k] === "string" ? (fm[k] as string) : "");
-  const authors = Array.isArray(fm["authors"])
-    ? (fm["authors"] as unknown[]).map((a) => (typeof a === "string" ? a : a && typeof a === "object" ? [String((a as JsonObject)["name"] ?? ""), (a as JsonObject)["affiliation"]].filter(Boolean).join("; ") : "")).join("\n")
-    : "";
-  const patch = (p: JsonObject) => workspace.patchFrontmatter(workspace.main, p);
-  const parseAuthors = (text: string) =>
-    text.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
-      const [name = "", affiliation] = l.split(";").map((s) => s.trim());
-      return affiliation ? { name, affiliation } : { name };
-    });
-  if (!view) return null;
+function RecordHeadings({ body, onJump }: { body: string | undefined; onJump(offset: number): void }) {
+  const list = useMemo(() => (body ? headings(body) : []), [body]);
+  if (!list.length) return null;
+  const top = Math.min(...list.map((h) => h.level));
   return (
-    <details className="settings">
-      <summary>Manuscript settings</summary>
-      <label>Title<input defaultValue={str("title")} onChange={(e) => patch({ title: e.target.value })} /></label>
-      <label>Subtitle<input defaultValue={str("subtitle")} onChange={(e) => patch({ subtitle: e.target.value })} /></label>
-      <label>
-        Authors <span className="muted small">one per line; “Name; Affiliation”</span>
-        <textarea rows={2} defaultValue={authors} onChange={(e) => patch({ authors: parseAuthors(e.target.value) })} />
-      </label>
-      <label>Date<input defaultValue={str("date")} onChange={(e) => patch({ date: e.target.value })} /></label>
-      <label>Abstract<textarea rows={4} defaultValue={str("abstract")} onChange={(e) => patch({ abstract: e.target.value })} /></label>
-      <label>
-        Citation style
-        <select defaultValue={str("csl") || "chicago-notes-bibliography"} onChange={(e) => patch({ csl: e.target.value })}>
-          {STYLES.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-        </select>
-      </label>
-      <label>
-        Layout
-        <select defaultValue={str("template") || "article"} onChange={(e) => patch({ template: e.target.value })}>
-          {TEMPLATES.map((t) => <option key={t} value={t}>{t === "article" ? "Article" : "Thesis or book"}</option>)}
-        </select>
-      </label>
-    </details>
+    <ol className="headings">
+      {list.map((h) => (
+        <li key={h.offset} style={{ paddingLeft: `${(h.level - top) * 0.75}rem` }}>
+          <button type="button" className="heading-row" onClick={() => onJump(h.offset)}>
+            {h.text}
+          </button>
+        </li>
+      ))}
+    </ol>
   );
 }

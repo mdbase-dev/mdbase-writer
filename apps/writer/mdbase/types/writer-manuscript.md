@@ -30,7 +30,8 @@ schema:
       abstract: { type: string }
       date: { type: string }
       csl: { type: string, minLength: 1 }
-      template: { type: string, enum: [article, thesis] }
+      template: { type: string, minLength: 1 }
+      lang: { type: string, minLength: 1 }
 # A record is a manuscript because it says so (`type: writer-manuscript`),
 # wherever it lives. The explicit type field decides this on its own; the rule
 # below keeps it working in collections that turn explicit type keys off.
@@ -40,7 +41,7 @@ match:
       contains: writer-manuscript
 implements:
   - contract: dev.mdbase.writer.manuscript
-    version: 1.0.0-beta.1
+    version: 1.0.0-beta.2
     fields:
       title: title
       subtitle: subtitle
@@ -49,6 +50,7 @@ implements:
       date: date
       csl: csl
       template: template
+      lang: lang
 ---
 
 # Writer manuscript
