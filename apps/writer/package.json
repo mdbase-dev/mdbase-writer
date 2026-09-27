@@ -11,7 +11,9 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "pnpm manifest && node --test scripts/*.test.mjs && vitest run",
     "test:browser": "node scripts/browser-test.mjs",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "deploy:lab": "MDBASE_ENV=lab node scripts/deploy-pages.mjs",
+    "upload:compiler": "node scripts/upload-compiler.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

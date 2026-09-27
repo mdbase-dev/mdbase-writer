@@ -1,0 +1,10 @@
+// Cloudflare Pages project for mdbase writer. This file is the source of truth
+// for the project's Functions bindings (the dashboard shows them read-only).
+{
+  "name": "mdbase-writer",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-09-27",
+  // The Typst compiler (28 MB) exceeds Pages' 25 MiB asset limit, so it lives
+  // in R2 and functions/wasm serves it on the writer's own origin.
+  "r2_buckets": [{ "binding": "WRITER_ASSETS", "bucket_name": "mdbase-writer-assets" }]
+}

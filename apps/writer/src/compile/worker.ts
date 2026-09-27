@@ -5,7 +5,7 @@
 // compile uses the newest of everything.
 import { createTypstCompiler, type TypstCompiler } from "@myriaddreamin/typst.ts/compiler";
 import { disableDefaultFontAssets, loadFonts } from "@myriaddreamin/typst.ts/options.init";
-import compilerWasm from "@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url";
+import compilerPackage from "@myriaddreamin/typst-ts-web-compiler/package.json";
 import {
   MAIN,
   ManuscriptAssembler,
@@ -26,6 +26,18 @@ const FONTS = ["LibertinusSerif-Regular.otf", "LibertinusSerif-Italic.otf", "Lib
 const MITEX = ["lib.typ", "mitex.typ", "mitex.wasm", "specs/mod.typ", "specs/prelude.typ", "specs/latex/standard.typ"];
 /** Shown for an image until its bytes arrive. */
 const PENDING_IMAGE = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120"/>');
+
+/**
+ * The compiler module is 28 MB, over Cloudflare Pages' 25 MiB file limit, so
+ * deployed builds fetch it from functions/wasm (backed by R2) under a
+ * versioned name. Development serves it straight from node_modules.
+ */
+async function compilerUrl(baseUrl: string): Promise<string> {
+  if (import.meta.env.DEV) {
+    return (await import("@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url")).default;
+  }
+  return `${baseUrl}wasm/typst_ts_web_compiler-${compilerPackage.version}.wasm`;
+}
 
 let compiler: TypstCompiler | undefined;
 const assembler = new ManuscriptAssembler();
@@ -57,7 +69,8 @@ async function init(message: Extract<ToWorker, { type: "init" }>) {
     Promise.all(MITEX.map((f) => bytes(`${message.baseUrl}typst/mitex/${f}`))),
   ]);
   const c = createTypstCompiler();
-  await c.init({ getModule: () => fetch(compilerWasm), beforeBuild: [disableDefaultFontAssets(), loadFonts(fonts)] });
+  const wasmUrl = await compilerUrl(message.baseUrl);
+  await c.init({ getModule: () => fetch(wasmUrl), beforeBuild: [disableDefaultFontAssets(), loadFonts(fonts)] });
   MITEX.forEach((f, i) => c.mapShadow(`/vendor/mitex/${f}`, mitex[i] ?? new Uint8Array()));
   for (const [path, source] of Object.entries(runtime)) c.addSource(path.replace(/^\.\.\/\.\.\/typst/, ""), source);
   compiler = c;

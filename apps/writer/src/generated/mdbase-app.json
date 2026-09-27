@@ -2,10 +2,10 @@
   "manifest_version": 1,
   "id": "dev.mdbase.writer",
   "name": "mdbase writer",
-  "homepage": "https://writer.mdbase.dev/",
-  "icon": "https://writer.mdbase.dev/favicon.svg",
+  "homepage": "https://lab.mdbase-writer.pages.dev/",
+  "icon": "https://lab.mdbase-writer.pages.dev/favicon.svg",
   "redirect_uris": [
-    "https://writer.mdbase.dev/"
+    "https://lab.mdbase-writer.pages.dev/"
   ],
   "requirements": {
     "access": "full_collection",

@@ -71,8 +71,29 @@ MDBASE_WRITER_ORIGIN=https://writer.example pnpm --filter @mdbase-writer/app bui
 `VITE_MDBASE_CONNECT_URL` and `VITE_MDBASE_CONNECT_LOOPBACK_URL` select the
 Connect service and local connector (defaults: production and 28485).
 
+## Deploy
+
+Deployments are Cloudflare Pages branches of the `mdbase-writer` project
+(targets in `apps/writer/scripts/deployment-environment.mjs`). Only lab exists:
+
+```sh
+pnpm --filter @mdbase-writer/app deploy:lab   # https://lab.mdbase-writer.pages.dev, lab Connect, connector 28487
+```
+
+The Typst compiler (28 MB) is over Pages' 25 MiB file limit, so it lives in
+the R2 bucket `mdbase-writer-assets` and `functions/wasm/[name].ts` serves it on
+the same origin (brotli, immutable caching, about 9.8 MB transferred). Upload a
+new version when typst.ts is upgraded:
+
+```sh
+pnpm --filter @mdbase-writer/app upload:compiler
+```
+
+The lab build also serves the demo collection at `?demo`.
+
 ## Status
 
-First version. Tested end to end against the demo collection only; it has not
-yet been run against a real Connect collection. See
+First version, deployed to lab. The end-to-end browser test passes against
+the lab deployment (demo collection); it has not yet been run against a real
+Connect collection. See
 [docs/architecture.md](docs/architecture.md#known-limits) for known limits.
