@@ -76,6 +76,15 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     }
   }, []);
 
+  const fileStem = manuscriptTitle.replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "manuscript";
+  const download = (bytes: Uint8Array, type: string, name: string) => {
+    const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  };
   const exportPdf = async () => {
     setExporting("Exporting…");
     const out = await workspace.exportPdf();
@@ -83,13 +92,14 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       setExporting(out.error ?? "Export failed.");
       return;
     }
-    const url = URL.createObjectURL(new Blob([out.bytes as BlobPart], { type: "application/pdf" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${manuscriptTitle.replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "manuscript"}.pdf`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    download(out.bytes, "application/pdf", `${fileStem}.pdf`);
     setExporting(null);
+  };
+  const exportBundle = async () => {
+    setExporting("Exporting…");
+    const out = await workspace.exportBundle();
+    download(out.bytes, "application/zip", `${fileStem} (Pandoc).zip`);
+    setExporting(out.problems.length ? `Exported with ${out.problems.length} ${out.problems.length === 1 ? "problem" : "problems"}: ${out.problems[0]}` : null);
   };
 
   if (snap.phase === "failed") {
@@ -120,6 +130,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         </span>
         <span className="subbar-spacer" />
         {exporting && <span className="muted" role="status">{exporting}</span>}
+        <button type="button" className="button" onClick={() => void exportBundle()} disabled={snap.phase !== "ready"} title="A zip for Pandoc or Quarto: build Word (DOCX) or other formats">
+          Export for Word
+        </button>
         <button type="button" className="button" onClick={() => void exportPdf()} disabled={!snap.artifact}>
           Export PDF
         </button>

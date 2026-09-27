@@ -7,3 +7,4 @@ export * from "./markdown.js";
 export * from "./records.js";
 export * from "./styles.js";
 export * from "./translate.js";
+export * from "./materialize.js";

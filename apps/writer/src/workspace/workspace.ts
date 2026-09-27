@@ -6,11 +6,12 @@
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
 import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
-import { STYLES, type CslItem } from "@mdbase-writer/core";
+import { BUNDLE_README, materialize, STYLES, type CslItem, type WriterRecord } from "@mdbase-writer/core";
 
 import type { LibraryEntry, WriterBackend } from "../backend/types.js";
 import { CompileClient } from "../compile/client.js";
 import type { CompileResult } from "../compile/protocol.js";
+import { zip } from "../export/zip.js";
 
 const styleFiles = import.meta.glob("../../../../packages/core/assets/csl/*.csl", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const localeXml = (import.meta.glob("../../../../packages/core/assets/csl/locales-en-US.xml", { query: "?raw", import: "default", eager: true }) as Record<string, string>)[
@@ -35,6 +36,7 @@ export interface WorkspaceSnapshot {
   readonly artifactRevision?: number;
   readonly library: readonly LibraryEntry[];
   readonly recordPaths: readonly string[];
+  readonly filePaths: readonly string[];
   readonly compiling: boolean;
 }
 
@@ -54,7 +56,7 @@ export class ManuscriptWorkspace {
     private readonly backend: WriterBackend,
     readonly main: string,
   ) {
-    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], compiling: true };
+    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], compiling: true };
     this.cleanups.push(this.compile.onResult((r) => this.onResult(r)));
     this.cleanups.push(this.compile.onFailure((message) => this.update({ problem: message })));
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
@@ -90,7 +92,7 @@ export class ManuscriptWorkspace {
     });
     this.compile.send({ type: "collection", recordPaths: index.value.recordPaths, filePaths: index.value.filePaths });
     this.compile.send({ type: "main", path: this.main });
-    this.update({ library: library.value, recordPaths: [...index.value.recordPaths] });
+    this.update({ library: library.value, recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
     const opened = await this.open(this.main);
     this.update({ phase: opened ? "ready" : "failed" });
   }
@@ -155,7 +157,7 @@ export class ManuscriptWorkspace {
     const [index, library] = await Promise.all([this.backend.index(), this.backend.library()]);
     if (index.ok) {
       this.compile.send({ type: "collection", recordPaths: index.value.recordPaths, filePaths: index.value.filePaths });
-      this.update({ recordPaths: [...index.value.recordPaths] });
+      this.update({ recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
     }
     if (library.ok) {
       this.compile.send({ type: "library", library: library.value.map((e) => e.item) as CslItem[] });
@@ -177,6 +179,39 @@ export class ManuscriptWorkspace {
 
   exportPdf(): Promise<{ bytes?: Uint8Array; error?: string }> {
     return this.compile.exportPdf();
+  }
+
+  /**
+   * A Pandoc/Quarto bundle (zip): the manuscript as one Markdown file with
+   * embeds inlined, the cited sources as CSL-JSON, the style and the images.
+   */
+  async exportBundle(): Promise<{ bytes: Uint8Array; problems: readonly string[] }> {
+    const snap = this.current;
+    const records = new Map<string, WriterRecord>(
+      [...snap.records].map(([path, r]) => [path, { path, body: r.snapshot.body, frontmatter: r.snapshot.frontmatter }]),
+    );
+    const styles = new Map(STYLES.map((s) => [s.id, styleFiles[`../../../../packages/core/assets/csl/${s.id}.csl`] ?? ""] as [string, string]));
+    const out = materialize({
+      main: this.main,
+      records,
+      recordPaths: new Set(snap.recordPaths),
+      filePaths: new Set(snap.filePaths),
+      library: new Map(snap.library.map((e) => [e.key, e.item])),
+      styles,
+    });
+    const files: [string, Uint8Array | string][] = [
+      ["manuscript.md", out.markdown],
+      ["references.json", `${JSON.stringify(out.references, null, 2)}\n`],
+      ["style.csl", styles.get(out.style) ?? ""],
+      ["README.md", BUNDLE_README],
+    ];
+    const problems = [...out.problems];
+    for (const [collectionPath, bundled] of out.media) {
+      const read = await this.backend.readFile(collectionPath);
+      if (read.ok) files.push([bundled, read.value]);
+      else problems.push(`${collectionPath}: ${read.message}`);
+    }
+    return { bytes: zip(files), problems };
   }
 
   /** Saves what is left, then releases every session and stops the worker. */

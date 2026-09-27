@@ -192,6 +192,21 @@ await step("Export PDF downloads a PDF", async () => {
   assert.equal(readFileSync(path).subarray(0, 5).toString(), "%PDF-");
 });
 
+await step("Export for Word downloads a Pandoc bundle", async () => {
+  const [file] = await Promise.all([
+    page.waitForEvent("download", { timeout: 30_000 }),
+    page.getByRole("button", { name: "Export for Word" }).click(),
+  ]);
+  const path = `out/${file.suggestedFilename()}`;
+  await file.saveAs(path);
+  const { execFileSync } = await import("node:child_process");
+  const listing = execFileSync("unzip", ["-l", path], { encoding: "utf8" });
+  for (const name of ["manuscript.md", "references.json", "style.csl", "README.md"]) assert.match(listing, new RegExp(name.replace(".", "\\.")));
+  const md = execFileSync("unzip", ["-p", path, "manuscript.md"], { encoding: "utf8" });
+  assert.match(md, /# Potentiality \{#sec-potentiality\}/);
+  assert.match(md, /# The event \(theirs\)|# The event/);
+});
+
 await step("the phone layout switches between write, preview and outline", async () => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Preview", exact: true }).click();
