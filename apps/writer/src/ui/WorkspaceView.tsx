@@ -216,6 +216,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         </header>
         <Preview
           {...(snap.artifact ? { artifact: snap.artifact } : {})}
+          {...(snap.artifactRevision !== undefined ? { revision: snap.artifactRevision } : {})}
           positions={snap.result?.positions ?? []}
           stale={Boolean(snap.result && !snap.result.artifact)}
           onJump={(p: BlockPosition) => jump(p.record, p.offset)}

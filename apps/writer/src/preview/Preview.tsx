@@ -21,13 +21,15 @@ function renderer() {
 
 export interface PreviewProps {
   artifact?: Uint8Array;
+  /** Compile revision of the artifact; recorded on the element once drawn. */
+  revision?: number;
   positions: readonly BlockPosition[];
   stale: boolean;
   onJump(position: BlockPosition): void;
   onRendered?(ms: number): void;
 }
 
-export function Preview({ artifact, positions, stale, onJump, onRendered }: PreviewProps) {
+export function Preview({ artifact, revision, positions, stale, onJump, onRendered }: PreviewProps) {
   const host = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState(0);
   const latest = useRef({ positions, onJump });
@@ -40,9 +42,13 @@ export function Preview({ artifact, positions, stale, onJump, onRendered }: Prev
     const started = performance.now();
     void renderer().then(async (r) => {
       if (cancelled) return;
-      // The worker transfers artifacts; render from a copy we own.
+      // renderToSvg skips work when the container's recorded width is
+      // unchanged (`data-applied-width`), which would leave a stale document
+      // on screen. Every artifact is a new document, so clear the marker.
+      el.removeAttribute("data-applied-width");
       await r.renderToSvg({ artifactContent: artifact, format: "vector", container: el } as Parameters<typeof r.renderToSvg>[0]);
       if (cancelled) return;
+      if (revision !== undefined) el.dataset["renderedRevision"] = String(revision);
       setPages(el.querySelectorAll("g.typst-page").length);
       onRendered?.(performance.now() - started);
     });

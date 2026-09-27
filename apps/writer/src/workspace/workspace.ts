@@ -32,6 +32,7 @@ export interface WorkspaceSnapshot {
   readonly result?: CompileResult;
   /** The latest artifact that compiled (kept while later edits have errors). */
   readonly artifact?: Uint8Array;
+  readonly artifactRevision?: number;
   readonly library: readonly LibraryEntry[];
   readonly recordPaths: readonly string[];
   readonly compiling: boolean;
@@ -128,7 +129,7 @@ export class ManuscriptWorkspace {
   }
 
   private onResult(result: CompileResult): void {
-    this.update({ result, compiling: false, ...(result.artifact ? { artifact: result.artifact } : {}) });
+    this.update({ result, compiling: false, ...(result.artifact ? { artifact: result.artifact, artifactRevision: result.revision } : {}) });
     for (const path of result.unloaded) void this.open(path);
     const wanted = result.neededAssets.filter((a) => !this.requestedAssets.has(a));
     for (const a of wanted) this.requestedAssets.add(a);

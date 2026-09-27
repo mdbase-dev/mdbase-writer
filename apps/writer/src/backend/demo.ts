@@ -37,7 +37,9 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     }
   }
 
-  return {
+  const backend: WriterBackend & { authority: typeof authority } = {
+    /** Exposed so browser tests can simulate other applications' edits. */
+    authority,
     kind: "demo",
     collectionName: "Demo collection",
     records: authority.records,
@@ -74,4 +76,5 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       listeners.clear();
     },
   };
+  return backend;
 }

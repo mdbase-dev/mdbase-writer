@@ -333,7 +333,8 @@ export class ManuscriptAssembler {
         image: (i) => imageExpression(path, i),
         include: (i) => {
           const t = targets[i];
-          return t ? `#include ${typstString(typstPathFor(t))}` : "";
+          // An embedded record that is still loading is left out until it arrives.
+          return t && input.records.has(t) ? `#include ${typstString(typstPathFor(t))}` : "";
         },
       });
       const bound = bindRecordPath(substituted, path);

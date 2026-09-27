@@ -175,7 +175,8 @@ async function typeset(c: TypstCompiler): Promise<{ artifact?: Uint8Array; diagn
     const compiled = await world.compile({ diagnostics: "full" });
     const diagnostics = ((compiled.diagnostics ?? []) as TypstDiagnostic[]).filter((d) => d.severity === "error" || d.severity === "warning");
     if (compiled.hasError) return { diagnostics, positions: [] };
-    const vector = await world.vector({ diagnostics: "none" });
+    // typst.ts 0.7.0 returns no result for diagnostics: "none"; always ask for "full".
+    const vector = await world.vector({ diagnostics: "full" });
     let positions: BlockPosition[] = [];
     try {
       const q = (await world.query({ selector: "<md-pos>", field: "value" })) as [[[string, number], { page: number; y: string }][]];
@@ -232,9 +233,9 @@ function dedupe(list: WriterDiagnostic[]): WriterDiagnostic[] {
 async function exportPdf(c: TypstCompiler, id: number) {
   try {
     const out = await c.runWithWorld({ mainFilePath: MAIN }, async (world) => {
-      const compiled = await world.compile({ diagnostics: "none" });
+      const compiled = await world.compile({ diagnostics: "full" });
       if (compiled.hasError) return undefined;
-      return (await world.pdf({ diagnostics: "none" })).result;
+      return (await world.pdf({ diagnostics: "full" })).result;
     });
     if (out) post({ type: "pdf", id, bytes: out }, [out.buffer]);
     else post({ type: "pdf", id, error: "The document has errors; fix them to export." });

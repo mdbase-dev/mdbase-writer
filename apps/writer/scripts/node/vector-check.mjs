@@ -1,0 +1,21 @@
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { createTypstCompiler } from "@myriaddreamin/typst.ts/compiler";
+import { disableDefaultFontAssets, loadFonts } from "@myriaddreamin/typst.ts/options.init";
+const require = createRequire(import.meta.url);
+const wasm = readFileSync(require.resolve("@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm"));
+const c = createTypstCompiler();
+await c.init({ getModule: () => wasm, beforeBuild: [disableDefaultFontAssets(), loadFonts([new Uint8Array(readFileSync("public/fonts/LibertinusSerif-Regular.otf"))])] });
+const run = async (label) => c.runWithWorld({ mainFilePath: "/main.typ" }, async (world) => {
+  const compiled = await world.compile({ diagnostics: "full" });
+  const v = await world.vector({ diagnostics: "full" });
+  const pdf = await world.pdf({ diagnostics: "full" });
+  const pages = (Buffer.from(pdf.result).toString("latin1").match(/\/Type\s*\/Page\b/g) ?? []).length;
+  console.log(label, "hasError", compiled.hasError, "vector bytes", v.result?.length, "pdf pages", pages);
+});
+c.addSource("/main.typ", "= One\nfirst");
+await run("rev1");
+c.addSource("/main.typ", "= One\nfirst\n#pagebreak()\n= Two\nsecond\n#pagebreak()\nthird");
+await run("rev2");
+const direct = await c.compile({ mainFilePath: "/main.typ", format: 0, diagnostics: "full" });
+console.log("compile(format vector) bytes", direct.result?.length);

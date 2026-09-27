@@ -32,6 +32,10 @@ export interface EditorProps {
 export function Editor({ path, text, readOnly, diagnostics, completion, onChange, onReady }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
+  // Texts this editor reported, newest last. The session echoes them back
+  // through React, possibly after more typing; an echo must never be adopted
+  // as an external change, or it would undo the keystrokes since.
+  const emitted = useRef<string[]>([]);
   const latest = useRef({ onChange, completion });
   latest.current = { onChange, completion };
 
@@ -60,7 +64,11 @@ export function Editor({ path, text, readOnly, diagnostics, completion, onChange
           placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
           EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
           EditorView.updateListener.of((u) => {
-            if (u.docChanged && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onChange(u.state.doc.toString());
+            if (!u.docChanged || u.transactions.some((tr) => tr.annotation(remote))) return;
+            const next = u.state.doc.toString();
+            emitted.current.push(next);
+            if (emitted.current.length > 50) emitted.current.shift();
+            latest.current.onChange(next);
           }),
         ],
       }),
@@ -85,7 +93,16 @@ export function Editor({ path, text, readOnly, diagnostics, completion, onChange
     const v = view.current;
     if (!v) return;
     const current = v.state.doc.toString();
-    if (current === text) return;
+    if (current === text) {
+      emitted.current = [];
+      return;
+    }
+    const echo = emitted.current.indexOf(text);
+    if (echo >= 0) {
+      emitted.current = emitted.current.slice(echo + 1);
+      return;
+    }
+    emitted.current = [];
     let from = 0;
     while (from < current.length && from < text.length && current[from] === text[from]) from++;
     let endA = current.length;
