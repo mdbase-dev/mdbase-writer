@@ -71,7 +71,7 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
       return (
         <Centered title="Write from your collection">
           <p>
-            mdbase writer typesets Markdown records in an mdbase collection into PDF, with citations from your mdbase Reader library.
+            mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library.
             Connect a collection to choose what it can access.
           </p>
           <button className="button primary" type="button" onClick={() => void authorize(snapshot.status === "authorization_required" ? "selected" : "choose")} disabled={busy}>
