@@ -43,7 +43,7 @@ describe("translateRecord", () => {
     expect(tr.labels).toEqual([
       "sec-intro", "sec-agamben", "sec-sources", "sec-badiou", "eq-cantor", "eq-matheme", "tbl-contrast", "fig-site", "sec-politics", "sec-conclusion",
     ]);
-    expect(tr.typst).toContain("#heading(level: 1)[Introduction] <sec-intro>");
+    expect(tr.typst).toMatch(/#heading\(level: 1\)\[#metadata\(\(md-file, \d+\)\)<md-src>Introduction\] <sec-intro>/);
     expect(tr.typst).toContain('#mitex("\\\\lvert \\\\mathcal{P}(S)\\\\rvert  > \\\\lvert S\\\\rvert  \\\\quad \\\\text{for every set } S", numbering: "(1)") <eq-cantor>');
     expect(tr.typst).toMatch(/#figure\(kind: table, table\(columns: 3/);
     expect(tr.typst).toContain("#footnote[The modal picture");
@@ -62,14 +62,15 @@ describe("translateRecord", () => {
   it("anchors increase and point into the body", () => {
     for (let i = 2; i < tr.anchors.length; i += 2) expect(tr.anchors[i]).toBeGreaterThan(tr.anchors[i - 2] ?? -1);
     const body = paper?.body ?? "";
-    const at = tr.typst.indexOf("#heading(level: 1)[Badiou");
+    const at = tr.typst.lastIndexOf("\n#heading", tr.typst.indexOf("Badiou: the event")) + 1;
     const nearest = [...tr.anchors].filter((_, i) => i % 2 === 0).filter((o) => o <= at).pop() ?? 0;
     const src = tr.anchors[tr.anchors.indexOf(nearest) + 1] ?? 0;
     expect(body.slice(src, src + 9)).toBe("# Badiou:");
   });
 
   it("places a source marker before each top-level block, without changing content", () => {
-    expect(tr.typst).toMatch(/#metadata\(\(md-file, \d+\)\)<md-src>#heading\(level: 1\)\[Introduction\]/);
+    expect(tr.typst).toMatch(/#heading\(level: 1\)\[#metadata\(\(md-file, \d+\)\)<md-src>Introduction\]/);
+    expect(tr.typst).toMatch(/#metadata\(\(md-file, \d+\)\)<md-src>Contemporary continental/);
     expect(translateRecord("# A\n\nText", { markers: false }).typst).not.toContain("md-src");
   });
 

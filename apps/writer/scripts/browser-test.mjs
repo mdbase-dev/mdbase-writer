@@ -24,8 +24,10 @@ async function step(name, fn) {
   try {
     await fn();
     results.push(`ok    ${name} (${Math.round(performance.now() - t)} ms)`);
+    console.log(results.at(-1));
   } catch (e) {
     results.push(`FAIL  ${name}: ${e instanceof Error ? e.message : String(e)}`);
+    console.log(results.at(-1).slice(0, 400));
     await page.screenshot({ path: `out/fail-${name.replace(/\W+/g, "-")}.png` });
   }
 }
@@ -40,7 +42,7 @@ const snapshot = () => page.evaluate(() => {
     order: s.result?.order ?? [],
     diagnostics: (s.result?.diagnostics ?? []).map((d) => `${d.record}: ${d.message}`),
     states: Object.fromEntries([...s.records].map(([p, r]) => [p, r.snapshot.state])),
-    pages: document.querySelectorAll(".preview-pages g.typst-page").length,
+    pages: document.querySelectorAll(".preview-pages canvas.page").length,
   };
 });
 const waitFor = (predicate, arg, timeout = 30_000) => page.waitForFunction(predicate, arg, { timeout });
@@ -51,12 +53,20 @@ const waitForRevisionAfter = (revision) =>
     const shown = Number(document.querySelector(".preview-pages")?.dataset.renderedRevision ?? 0);
     return (s?.result?.revision ?? 0) > r && !s.compiling && shown === s.artifactRevision;
   }, revision);
-const previewFingerprint = () => page.evaluate(() => {
-  const html = document.querySelector(".preview-pages")?.innerHTML ?? "";
+// Pixels of the drawn page(s) showing `record`; scrolls that page into view first.
+const previewFingerprint = (record) => page.evaluate(async (rec) => {
+  const s = window.writer.workspace.getSnapshot();
+  // The record's first paragraph (its first block may be a heading at a page break).
+  const mine = (s.result?.positions ?? []).filter((x) => x.record === rec);
+  const p = (mine[1] ?? mine[0])?.page ?? 1;
+  const canvas = document.querySelector(`.preview-pages canvas[data-page="${p - 1}"]`);
+  canvas?.scrollIntoView({ block: "center" });
+  await new Promise((r) => setTimeout(r, 400));
+  const url = canvas?.toDataURL() ?? "";
   let h = 0;
-  for (let i = 0; i < html.length; i++) h = (h * 31 + html.charCodeAt(i)) | 0;
-  return `${html.length}:${h}`;
-});
+  for (let i = 0; i < url.length; i += 7) h = (h * 31 + url.charCodeAt(i)) | 0;
+  return `${url.length}:${h}`;
+}, record);
 const editorText = () => page.evaluate(() => document.querySelector(".cm-content")?.textContent ?? "");
 
 async function typeAtEndOfParagraph(needle, text) {
@@ -76,7 +86,7 @@ await step("home lists the demo manuscripts", async () => {
 
 await step("opening a paper typesets it with no problems", async () => {
   await page.locator(".manuscript-row", { hasText: "Potentiality and the Event" }).click();
-  await waitFor(() => document.querySelectorAll(".preview-pages g.typst-page").length > 0, null);
+  await waitFor(() => document.querySelectorAll(".preview-pages canvas.page").length > 0, null);
   const s = await snapshot();
   assert.ok(s.pages >= 4, `expected at least 4 pages, got ${s.pages}`);
   assert.deepEqual(s.diagnostics, []);
@@ -86,12 +96,12 @@ await step("opening a paper typesets it with no problems", async () => {
 let keystrokeMs = 0;
 await step("typing autosaves and updates the preview", async () => {
   const before = (await snapshot()).revision;
-  const shownBefore = await previewFingerprint();
+  const shownBefore = await previewFingerprint("manuscripts/potentiality.md");
   const started = Date.now();
   await typeAtEndOfParagraph("which it occurs", " Indeed.");
   await waitForRevisionAfter(before);
   keystrokeMs = Date.now() - started;
-  assert.notEqual(await previewFingerprint(), shownBefore, "the preview did not change");
+  assert.notEqual(await previewFingerprint("manuscripts/potentiality.md"), shownBefore, "the preview did not change");
   await waitFor(() => Object.values(Object.fromEntries([...window.writer.workspace.getSnapshot().records].map(([p, r]) => [p, r.snapshot.state]))).every((s) => s === "saved"), null, 10_000);
   const saved = await page.evaluate(() => window.writer.backend.authority.writes.at(-1)?.body ?? window.writer.backend.authority.writes.at(-1));
   assert.match(JSON.stringify(saved), /Indeed\./);
@@ -119,13 +129,12 @@ await step("an unknown citekey is reported in Problems and in the editor", async
 });
 
 await step("clicking the preview moves the editor to that block", async () => {
-  const target = await page.evaluate(() => {
-    const svg = document.querySelector(".preview-pages svg");
-    const g = document.querySelectorAll(".preview-pages g.typst-page")[1];
-    g.scrollIntoView({ block: "center" });
-    const top = g.transform.baseVal.consolidate().matrix.f;
-    const p = new DOMPoint(200, top + 300).matrixTransform(svg.getScreenCTM());
-    return { x: p.x, y: p.y };
+  const target = await page.evaluate(async () => {
+    const canvas = document.querySelectorAll(".preview-pages canvas.page")[1];
+    canvas.scrollIntoView({ block: "center" });
+    await new Promise((r) => setTimeout(r, 300));
+    const r = canvas.getBoundingClientRect();
+    return { x: r.left + r.width * 0.3, y: r.top + r.height * 0.4 };
   });
   await page.mouse.click(target.x, target.y);
   await page.waitForTimeout(300);
@@ -139,7 +148,7 @@ await step("clicking the preview moves the editor to that block", async () => {
 await step("a thesis follows embedded chapter records", async () => {
   await page.getByRole("button", { name: "← Manuscripts" }).click();
   await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
-  await waitFor(() => (window.writer?.workspace?.getSnapshot().result?.order.length ?? 0) === 3 && document.querySelectorAll(".preview-pages g.typst-page").length >= 4, null, 60_000);
+  await waitFor(() => (window.writer?.workspace?.getSnapshot().result?.order.length ?? 0) === 3 && document.querySelectorAll(".preview-pages canvas.page").length >= 4, null, 60_000);
   const s = await snapshot();
   assert.deepEqual(s.order, ["manuscripts/refusing-the-possible.md", "chapters/potentiality.md", "chapters/event.md"]);
   assert.deepEqual(s.diagnostics, []);
@@ -152,11 +161,11 @@ await step("editing a chapter re-typesets the whole manuscript", async () => {
   await page.locator(".record-row", { hasText: "The event" }).click();
   await page.locator(".pane-path", { hasText: "chapters/event.md" }).waitFor();
   const before = (await snapshot()).revision;
-  const shownBefore = await previewFingerprint();
+  const shownBefore = await previewFingerprint("chapters/event.md");
   await typeAtEndOfParagraph("For Badiou the event", " (as a matter of ontology)");
   await waitForRevisionAfter(before);
   assert.deepEqual((await snapshot()).diagnostics, []);
-  assert.notEqual(await previewFingerprint(), shownBefore, "the preview did not change");
+  assert.notEqual(await previewFingerprint("chapters/event.md"), shownBefore, "the preview did not change");
 });
 
 await step("an edit made elsewhere during typing becomes a resolvable conflict", async () => {
@@ -173,9 +182,10 @@ await step("an edit made elsewhere during typing becomes a resolvable conflict",
 });
 
 await step("Export PDF downloads a PDF", async () => {
-  const download = page.waitForEvent("download", { timeout: 30_000 });
-  await page.getByRole("button", { name: "Export PDF" }).click();
-  const file = await download;
+  const [file] = await Promise.all([
+    page.waitForEvent("download", { timeout: 30_000 }),
+    page.getByRole("button", { name: "Export PDF" }).click(),
+  ]);
   const path = `out/${file.suggestedFilename()}`;
   await file.saveAs(path);
   const { readFileSync } = await import("node:fs");
@@ -196,7 +206,6 @@ await step("the phone layout switches between write, preview and outline", async
 });
 
 await browser.close();
-console.log(results.join("\n"));
 console.log(`keystroke → typeset preview (first edit, with autosave running): ${keystrokeMs} ms`);
 if (errors.length) console.log(`page errors:\n  ${errors.slice(0, 10).join("\n  ")}`);
 process.exitCode = results.some((r) => r.startsWith("FAIL")) || errors.length ? 1 : 0;

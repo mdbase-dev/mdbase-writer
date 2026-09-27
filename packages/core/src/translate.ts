@@ -267,7 +267,11 @@ class BodyTranslator {
     const attrs = attr ? parseAttrs(attr[1] ?? "") : { classes: [], kv: {} };
     if (attr) to = from + attr.index;
     this.out.anchor(this.src(node.from));
-    this.out.write(`\n#heading(level: ${level}${attrs.classes.includes("unnumbered") ? ", numbering: none" : ""})[`);
+    // The source marker goes inside the heading: templates may start a new
+    // page in a heading's show rule, and the marker must land on that page.
+    const marker = this.out.pendingMarker;
+    this.out.pendingMarker = "";
+    this.out.write(`\n#heading(level: ${level}${attrs.classes.includes("unnumbered") ? ", numbering: none" : ""})[${marker}`);
     this.inline(node, from, to, true);
     this.out.write("]");
     this.label(attrs.id);
