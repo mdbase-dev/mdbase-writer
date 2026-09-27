@@ -2,5 +2,11 @@ packages:
   - apps/*
   - packages/*
 
+minimumReleaseAgeExclude:
+  - '@mdbase-dev/connect-protocol@0.1.0-beta.112'
+  - '@mdbase-dev/connect-testing@0.1.0-beta.112'
+  - '@mdbase-dev/connect@0.1.0-beta.112'
+  - '@mdbase-dev/connect-dev@0.1.0-beta.112'
+
 onlyBuiltDependencies:
   - esbuild

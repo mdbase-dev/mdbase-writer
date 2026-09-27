@@ -1,3 +1,4 @@
+/// <reference path="./citeproc-module.d.ts" />
 // Citation formatting with citeproc-js, emitting Typst markup directly
 // through a custom output format. Typst never sees CSL; it lays out the
 // strings produced here, so PDF output and Pandoc/citeproc DOCX output agree.

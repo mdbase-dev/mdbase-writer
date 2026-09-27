@@ -1,0 +1,48 @@
+{
+  "name": "@mdbase-writer/app",
+  "version": "0.1.0-beta.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm manifest && pnpm manifest:validate && vite build",
+    "dev": "pnpm manifest && vite --host 127.0.0.1",
+    "manifest": "node scripts/write-manifest.mjs",
+    "manifest:validate": "mdbase-connect-dev validate-manifest public/.well-known/mdbase-app.json",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "pnpm manifest && node --test scripts/*.test.mjs && vitest run",
+    "test:browser": "node scripts/browser-test.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.10.1",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/language": "^6.12.1",
+    "@codemirror/lint": "^6.9.7",
+    "@codemirror/search": "^6.7.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.43.8",
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
+    "@fontsource/azeret-mono": "^5.3.0",
+    "@lezer/highlight": "^1.2.3",
+    "@lezer/markdown": "^1.4.3",
+    "@mdbase-dev/connect": "0.1.0-beta.112",
+    "@mdbase-writer/core": "workspace:*",
+    "@myriaddreamin/typst-ts-renderer": "0.7.0",
+    "@myriaddreamin/typst-ts-web-compiler": "0.7.0",
+    "@myriaddreamin/typst.ts": "0.7.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@callumalpass/mdbase": "0.3.0-rc.5",
+    "@mdbase-dev/connect-dev": "0.1.0-beta.112",
+    "@mdbase-dev/connect-testing": "0.1.0-beta.112",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "playwright": "1.61.1",
+    "vite": "^8.3.1",
+    "yaml": "^2.9.0"
+  }
+}

@@ -1,0 +1,114 @@
+// The Markdown editor for one record. The record session owns the text; the
+// editor reports edits and adopts external changes as remote transactions.
+import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { bracketMatching, indentOnInput } from "@codemirror/language";
+import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
+import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
+import { Annotation, EditorState } from "@codemirror/state";
+import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
+import { useEffect, useRef } from "react";
+
+import type { WriterDiagnostic } from "../compile/protocol.js";
+import { writerCompletions, type CompletionData } from "./completions.js";
+import { writerLanguage } from "./language.js";
+
+const remote = Annotation.define<boolean>();
+
+export interface EditorHandle {
+  reveal(offset: number): void;
+}
+
+export interface EditorProps {
+  path: string;
+  text: string;
+  readOnly: boolean;
+  diagnostics: readonly WriterDiagnostic[];
+  completion: CompletionData;
+  onChange(text: string): void;
+  onReady?(handle: EditorHandle): void;
+}
+
+export function Editor({ path, text, readOnly, diagnostics, completion, onChange, onReady }: EditorProps) {
+  const host = useRef<HTMLDivElement>(null);
+  const view = useRef<EditorView | null>(null);
+  const latest = useRef({ onChange, completion });
+  latest.current = { onChange, completion };
+
+  // One view per record path.
+  useEffect(() => {
+    if (!host.current) return;
+    const v = new EditorView({
+      parent: host.current,
+      state: EditorState.create({
+        doc: text,
+        extensions: [
+          history(),
+          drawSelection(),
+          indentOnInput(),
+          bracketMatching(),
+          closeBrackets(),
+          highlightActiveLine(),
+          highlightSelectionMatches(),
+          search({ top: true }),
+          lintGutter(),
+          autocompletion({ override: [writerCompletions(() => latest.current.completion)], icons: false }),
+          keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap, indentWithTab]),
+          writerLanguage(),
+          EditorView.lineWrapping,
+          EditorState.readOnly.of(readOnly),
+          placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
+          EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
+          EditorView.updateListener.of((u) => {
+            if (u.docChanged && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onChange(u.state.doc.toString());
+          }),
+        ],
+      }),
+    });
+    view.current = v;
+    onReady?.({
+      reveal(offset) {
+        const at = Math.min(offset, v.state.doc.length);
+        v.dispatch({ selection: { anchor: at }, effects: EditorView.scrollIntoView(at, { y: "center" }) });
+        v.focus();
+      },
+    });
+    return () => {
+      v.destroy();
+      view.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the view is recreated per record
+  }, [path, readOnly]);
+
+  // Adopt text the session changed underneath us (another view, a resolved conflict).
+  useEffect(() => {
+    const v = view.current;
+    if (!v) return;
+    const current = v.state.doc.toString();
+    if (current === text) return;
+    let from = 0;
+    while (from < current.length && from < text.length && current[from] === text[from]) from++;
+    let endA = current.length;
+    let endB = text.length;
+    while (endA > from && endB > from && current[endA - 1] === text[endB - 1]) {
+      endA--;
+      endB--;
+    }
+    v.dispatch({ changes: { from, to: endA, insert: text.slice(from, endB) }, annotations: [remote.of(true)] });
+  }, [text]);
+
+  useEffect(() => {
+    const v = view.current;
+    if (!v) return;
+    const length = v.state.doc.length;
+    const cm: CmDiagnostic[] = diagnostics.map((d) => {
+      const from = Math.min(d.from, length);
+      const line = v.state.doc.lineAt(from);
+      const to = d.to > d.from ? Math.min(d.to, length) : Math.min(line.to, from + 1);
+      return { from, to: Math.max(to, from), severity: d.severity, message: d.message, source: d.origin === "typst" ? "Typst" : "writer" };
+    });
+    v.dispatch(setDiagnostics(v.state, cm));
+  }, [diagnostics]);
+
+  return <div className="editor" ref={host} />;
+}

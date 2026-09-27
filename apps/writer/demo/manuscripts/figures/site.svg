@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 220" font-family="serif" font-size="14">
+  <rect x="10" y="10" width="380" height="200" rx="16" fill="none" stroke="#333" stroke-width="2"/>
+  <text x="24" y="34">Situation S</text>
+  <circle cx="110" cy="120" r="28" fill="#ddd" stroke="#333"/>
+  <circle cx="190" cy="90" r="18" fill="#ddd" stroke="#333"/>
+  <ellipse cx="290" cy="130" rx="70" ry="50" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="270" y="95">Site X</text>
+  <circle cx="265" cy="140" r="6" fill="none" stroke="#999"/>
+  <circle cx="300" cy="150" r="6" fill="none" stroke="#999"/>
+  <circle cx="320" cy="125" r="6" fill="none" stroke="#999"/>
+  <text x="245" y="195" font-size="12" fill="#555">elements not presented</text>
+</svg>
