@@ -60,7 +60,7 @@ export class ConnectBackend implements WriterBackend {
 
   async listManuscripts(): Promise<Result<ManuscriptSummary[]>> {
     const out: ManuscriptSummary[] = [];
-    for await (const page of this.connection.queryPages({ contract: manuscriptContract, frontmatterMode: "effective", includeBody: true }, { pageSize: 500 })) {
+    for await (const page of this.connection.queryPages({ contract: manuscriptContract, frontmatterMode: "effective" }, { pageSize: 500 })) {
       if (!page.ok) return fail(problemMessage(page));
       for (const r of page.value.results) {
         const fm = r.effectiveFrontmatter ?? r.frontmatter ?? {};
@@ -70,11 +70,18 @@ export class ConnectBackend implements WriterBackend {
           ...(typeof fm["template"] === "string" ? { template: fm["template"] } : {}),
           ...(typeof fm["csl"] === "string" ? { style: fm["csl"] } : {}),
           ...(r.file.mtime ? { modified: r.file.mtime } : {}),
-          ...bodySummary(r.body),
         });
       }
     }
-    return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
+    // A contract-view query cannot include bodies; read each manuscript for its
+    // word count (a manuscript that cannot be read is listed without one).
+    const summaries = await Promise.all(
+      out.map(async (m) => {
+        const read = await this.connection.read({ path: m.path });
+        return read.ok ? { ...m, ...bodySummary(read.value.body) } : m;
+      }),
+    );
+    return ok(summaries.sort((a, b) => a.title.localeCompare(b.title)));
   }
 
   /**
