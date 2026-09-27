@@ -1,0 +1,21 @@
+{
+  "name": "mdbase-writer",
+  "version": "0.1.0-beta.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12 <23"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm typecheck && pnpm test",
+    "dev": "pnpm --filter @mdbase-writer/app dev",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.11",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  }
+}

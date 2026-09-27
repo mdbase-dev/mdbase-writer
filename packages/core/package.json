@@ -1,0 +1,17 @@
+{
+  "name": "@mdbase-writer/core",
+  "version": "0.1.0-beta.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@lezer/common": "^1.2.3",
+    "@lezer/markdown": "^1.4.3",
+    "citeproc": "2.4.63",
+    "yaml": "^2.9.0"
+  }
+}
