@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { ManuscriptAssembler } from "../src/index.js";
-import { fixturesDir, loadFixture, loadLibrary, loadStyles, locale } from "./helpers.js";
+import { fixturesDir, loadFixture, loadLibrary, loadStyles, locales } from "./helpers.js";
 
 const hasPandoc = (() => {
   try {
@@ -135,7 +135,7 @@ describe.skipIf(!hasPandoc).each(["chicago-notes-bibliography", "ieee"])("Pandoc
     if (!paper) throw new Error("fixture");
     const withStyle = new Map([["paper.md", { ...paper, frontmatter: { ...paper.frontmatter, csl: style } }]]);
     const a = new ManuscriptAssembler().assemble({
-      main: "paper.md", records: withStyle, recordPaths: new Set(["paper.md"]), filePaths: files, library: loadLibrary(), styles: loadStyles(), locale,
+      main: "paper.md", records: withStyle, recordPaths: new Set(["paper.md"]), filePaths: files, library: loadLibrary(), styles: loadStyles(), locales,
     });
     const pandoc = pandocCitations(paper.body, style, a.labels);
     expect(a.debug.citations.map((s) => normalize(typstToPlain(s)))).toEqual(pandoc.cites);

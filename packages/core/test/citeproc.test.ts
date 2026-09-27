@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Citeproc, parseCiteItem, type CitationRequest, type CiteItem } from "../src/index.js";
-import { loadLibrary, loadStyles, locale } from "./helpers.js";
+import { loadLibrary, loadStyles, locales } from "./helpers.js";
 
 const styles = loadStyles();
 const library = loadLibrary();
@@ -28,10 +28,10 @@ describe.each(["chicago-notes-bibliography", "apa", "ieee"])("incremental citepr
     const pick = () => KEYS[Math.floor(random() * KEYS.length)] ?? "badiouBeing07";
     const note = style.includes("notes");
     let clusters: CiteItem[][] = Array.from({ length: 12 }, () => [item(pick(), random() < 0.5 ? String(1 + Math.floor(random() * 300)) : undefined)]);
-    const incremental = new Citeproc(styles.get(style) ?? "", locale, library);
+    const incremental = new Citeproc(styles.get(style) ?? "", locales, library);
     // rebuildProcessorState resets all processor state, so a second engine
     // forced to rebuild every time is an exact reference.
-    const reference = new Citeproc(styles.get(style) ?? "", locale, library);
+    const reference = new Citeproc(styles.get(style) ?? "", locales, library);
     incremental.process(renumber(clusters, note));
     const modes = new Set<string>();
     for (let step = 0; step < 40; step++) {
@@ -55,7 +55,7 @@ describe.each(["chicago-notes-bibliography", "apa", "ieee"])("incremental citepr
 
 describe("citeproc performance", () => {
   it("updates one cluster in a 1,000-cluster note-style document quickly", () => {
-    const cp = new Citeproc(styles.get("chicago-notes-bibliography") ?? "", locale, library);
+    const cp = new Citeproc(styles.get("chicago-notes-bibliography") ?? "", locales, library);
     const clusters = Array.from({ length: 1000 }, (_, i) => [item(KEYS[i % KEYS.length] ?? "badiouBeing07", String((i % 90) + 1))]);
     const full = cp.process(renumber(clusters, true));
     expect(full.mode).toBe("rebuild");

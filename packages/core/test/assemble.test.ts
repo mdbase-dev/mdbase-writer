@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { ManuscriptAssembler, MAIN, mapToRecord, splitFrontmatter, typstPathFor, type AssemblyInput, type WriterRecord } from "../src/index.js";
-import { loadFixture, loadLibrary, loadStyles, locale } from "./helpers.js";
+import { loadFixture, loadLibrary, loadStyles, locales } from "./helpers.js";
 
 const styles = loadStyles();
 const library = loadLibrary();
 
 function input(records: Map<string, WriterRecord>, main: string, files = new Set<string>()): AssemblyInput {
-  return { main, records, recordPaths: new Set(records.keys()), filePaths: files, library, styles, locale };
+  return { main, records, recordPaths: new Set(records.keys()), filePaths: files, library, styles, locales };
 }
 
 function record(path: string, text: string): WriterRecord {
@@ -95,6 +95,55 @@ describe("ManuscriptAssembler", () => {
     expect(a.meta.style).toBe("chicago-notes-bibliography");
     expect(a.meta.template).toBe("article");
     expect(a.diagnostics.map((d) => d.severity)).toEqual(["warning", "warning"]);
+    expect(a.diagnostics.map((d) => d.field)).toEqual(["csl", "template"]);
+  });
+
+  it("formats citations in the manuscript's language, and sets it for Typst", () => {
+    const body = "A [@agambenBartleby99].\n";
+    const us = new ManuscriptAssembler().assemble(input(new Map([["m.md", record("m.md", `---\ncsl: chicago-notes-bibliography\n---\n${body}`)]]), "m.md"));
+    const gb = new ManuscriptAssembler().assemble(input(new Map([["m.md", record("m.md", `---\ncsl: chicago-notes-bibliography\nlang: en-GB\n---\n${body}`)]]), "m.md"));
+    expect(us.meta.locale).toBe("en-US");
+    expect(gb.meta.locale).toBe("en-GB");
+    expect(us.debug.citations[0]).toContain("“");
+    expect(gb.debug.citations[0]).toContain("‘");
+    expect(gb.sources.get(MAIN)).toContain('#set text(lang: "en", region: "gb")');
+    const unknown = new ManuscriptAssembler().assemble(input(new Map([["m.md", record("m.md", "---\nlang: tlh\n---\nText.\n")]]), "m.md"));
+    expect(unknown.meta.locale).toBe("en-US");
+    expect(unknown.diagnostics.map((d) => d.field)).toEqual(["lang"]);
+  });
+
+  it("uses a style and a template from the collection once they are loaded", () => {
+    const records = new Map([["papers/m.md", record("papers/m.md", "---\ncsl: ../styles/house.csl\ntemplate: house.typ\n---\nA [@agambenBartleby99].\n")]]);
+    const files = new Set(["styles/house.csl", "templates/house.typ"]);
+    const assembler = new ManuscriptAssembler();
+    const loading = assembler.assemble(input(records, "papers/m.md", files));
+    expect(loading.diagnostics).toEqual([]);
+    expect(loading.assets).toEqual(["styles/house.csl", "templates/house.typ"]);
+    expect(loading.meta.style).toBe("chicago-notes-bibliography");
+    const texts = new Map([
+      ["styles/house.csl", styles.get("apa") ?? ""],
+      ["templates/house.typ", "#let template(title: none, subtitle: none, authors: (), abstract: none, date: none, body) = body\n"],
+    ]);
+    const loaded = assembler.assemble({ ...input(records, "papers/m.md", files), texts });
+    expect(loaded.meta.style).toBe("styles/house.csl");
+    expect(loaded.meta.template).toBe("templates/house.typ");
+    expect(loaded.debug.citations[0]).toMatch(/\(Agamben, 1999\)/);
+    const main = loaded.sources.get(MAIN) ?? "";
+    expect(main).toContain('#import "/templates/house.typ": template as writer-template');
+    expect(main).toContain("#show: writer-template.with(");
+    expect(loaded.assets).toContain("templates/house.typ");
+    const missing = assembler.assemble(input(new Map([["m.md", record("m.md", "---\ncsl: nowhere.csl\n---\nText.\n")]]), "m.md"));
+    expect(missing.diagnostics.map((d) => [d.field, d.message])).toEqual([["csl", "No file in the collection matches the citation style nowhere.csl."]]);
+  });
+
+  it("says which setting each line of the main file holds", () => {
+    const records = new Map([["m.md", record("m.md", "---\ntitle: T\ndate: 2026\n---\nText.\n")]]);
+    const a = new ManuscriptAssembler().assemble(input(records, "m.md"));
+    const lines = (a.sources.get(MAIN) ?? "").split("\n");
+    const fieldOf = (needle: string) => a.mainFields.get(lines.findIndex((l) => l.includes(needle)));
+    expect(fieldOf("title: [T]")).toBe("title");
+    expect(fieldOf('date: "2026"')).toBe("date");
+    expect(fieldOf("#show:")).toBe("template");
   });
 
   it("keeps raw Typst block spans correct after substitution", () => {

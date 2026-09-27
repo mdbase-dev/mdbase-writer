@@ -10,7 +10,12 @@ const cslDir = join(here, "..", "assets", "csl");
 export function loadStyles(): Map<string, string> {
   return new Map(readdirSync(cslDir).filter((f) => f.endsWith(".csl")).map((f) => [f.replace(/\.csl$/, ""), readFileSync(join(cslDir, f), "utf8")]));
 }
-export const locale = readFileSync(join(cslDir, "locales-en-US.xml"), "utf8");
+export const locales = new Map(
+  readdirSync(cslDir)
+    .filter((f) => /^locales-.*\.xml$/.test(f))
+    .map((f) => [f.replace(/^locales-|\.xml$/g, ""), readFileSync(join(cslDir, f), "utf8")] as const)
+    .sort(([a], [b]) => (a === "en-US" ? -1 : b === "en-US" ? 1 : a.localeCompare(b))),
+);
 
 let library: Map<string, CslItem> | undefined;
 export function loadLibrary(): Map<string, CslItem> {

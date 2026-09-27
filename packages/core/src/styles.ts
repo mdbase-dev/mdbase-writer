@@ -8,3 +8,6 @@ export const STYLES = [
   { id: "ieee", title: "IEEE" },
 ] as const;
 export type StyleId = (typeof STYLES)[number]["id"];
+
+/** CSL locales bundled with the writer (assets/csl/locales-<tag>.xml); en-US first, the fallback. */
+export const LOCALES = ["en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "it-IT", "nl-NL", "pt-BR"] as const;

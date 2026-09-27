@@ -13,7 +13,7 @@ import { typstLabel, typstString } from "./escape.js";
 import { IMAGE_EXTENSION, resolveLinkTarget, type WriterRecord } from "./records.js";
 import { HEADER, PLACEHOLDER, translateInline, translateRecord, type Diagnostic, type TranslatedRecord } from "./translate.js";
 
-import { manuscriptMeta, type ManuscriptMeta } from "./meta.js";
+import { manuscriptMeta, typstLanguage, type ManuscriptMeta, type MetaField } from "./meta.js";
 
 export const MAIN = "/__main__.typ";
 
@@ -28,6 +28,8 @@ export interface SourceMap {
 
 export interface AssemblyDiagnostic extends Diagnostic {
   readonly record: string;
+  /** Set when the problem is in a manuscript setting (frontmatter) rather than the body. */
+  readonly field?: MetaField;
 }
 
 
@@ -40,8 +42,12 @@ export interface AssemblyInput {
   /** Every non-record file path in the collection (for resolving images). */
   readonly filePaths: ReadonlySet<string>;
   readonly library: ReadonlyMap<string, CslItem>;
+  /** Bundled citation styles by id. */
   readonly styles: ReadonlyMap<string, string>;
-  readonly locale: string;
+  /** CSL locales by tag (en-US, en-GB, …). */
+  readonly locales: ReadonlyMap<string, string>;
+  /** Collection text files loaded so far (a .csl style or .typ template the settings name), by path. */
+  readonly texts?: ReadonlyMap<string, string>;
 }
 
 export interface Assembly {
@@ -53,8 +59,10 @@ export interface Assembly {
   readonly order: readonly string[];
   /** Embedded records that exist in the collection but are not loaded yet. */
   readonly unloaded: readonly string[];
-  /** Collection files the document uses (images). */
+  /** Collection files the document uses: images, and a style or template the settings name. */
   readonly assets: readonly string[];
+  /** Line (0-based) of the main Typst file → the setting written on it. */
+  readonly mainFields: ReadonlyMap<number, MetaField>;
   /** Raw Typst blocks per Typst path, as [from, to, record, bodyFrom] after substitution. */
   readonly rawBlocks: ReadonlyMap<string, readonly (readonly [number, number, number])[]>;
   readonly diagnostics: readonly AssemblyDiagnostic[];
@@ -95,15 +103,17 @@ export class ManuscriptAssembler {
     return tr;
   }
 
-  private engine(input: AssemblyInput, style: string): Citeproc {
+  private engine(input: AssemblyInput, meta: ManuscriptMeta): Citeproc {
     if (this.engineLibrary !== input.library) {
       this.engines.clear();
       this.engineLibrary = input.library;
     }
-    let engine = this.engines.get(style);
+    const styleXml = input.styles.get(meta.style) ?? input.texts?.get(meta.style) ?? "";
+    const key = `${meta.style}\u0000${meta.locale}\u0000${meta.forceLocale}\u0000${styleXml.length}`;
+    let engine = this.engines.get(key);
     if (!engine) {
-      engine = new Citeproc(input.styles.get(style) ?? "", input.locale, input.library);
-      this.engines.set(style, engine);
+      engine = new Citeproc(styleXml, input.locales, input.library, meta.locale, meta.forceLocale);
+      this.engines.set(key, engine);
     }
     return engine;
   }
@@ -111,8 +121,14 @@ export class ManuscriptAssembler {
   assemble(input: AssemblyInput): Assembly {
     const diagnostics: AssemblyDiagnostic[] = [];
     const mainRecord = input.records.get(input.main);
-    const { meta, problems } = manuscriptMeta(mainRecord?.frontmatter ?? {}, input.styles);
-    for (const message of problems) diagnostics.push({ record: input.main, from: 0, to: 0, severity: "warning", message });
+    const { meta, problems, needs } = manuscriptMeta(mainRecord?.frontmatter ?? {}, {
+      styles: input.styles,
+      locales: new Set(input.locales.keys()),
+      main: input.main,
+      filePaths: input.filePaths,
+      ...(input.texts ? { texts: input.texts } : {}),
+    });
+    for (const p of problems) diagnostics.push({ record: input.main, from: 0, to: 0, severity: "warning", message: p.message, field: p.field });
 
     // Include order, depth-first as Typst evaluates it.
     const order: string[] = [];
@@ -155,7 +171,7 @@ export class ManuscriptAssembler {
     }
 
     // Citations: walk every record's events in document order.
-    const cp = this.engine(input, meta.style);
+    const cp = this.engine(input, meta);
     const plans = new Map<string, Plan[]>();
     const requests: CitationRequest[] = [];
     let note = 0;
@@ -248,7 +264,8 @@ export class ManuscriptAssembler {
     };
 
     // Images: resolve against the collection's files.
-    const assets = new Set<string>();
+    const assets = new Set<string>(needs);
+    if (meta.customTemplate) assets.add(meta.template);
     const imageExpression = (path: string, index: number): string => {
       const ref = (translated.get(path) as TranslatedRecord).images[index];
       if (!ref) return "none";
@@ -294,7 +311,8 @@ export class ManuscriptAssembler {
         tr.rawBlocks.map((b) => [bound.shift(b.typstFrom), bound.shift(b.typstTo), b.from] as const),
       );
     }
-    sources.set(MAIN, mainSource(input.main, meta, result.bibliography));
+    const main = mainSource(input.main, meta, result.bibliography);
+    sources.set(MAIN, main.text);
 
     return {
       meta,
@@ -303,6 +321,7 @@ export class ManuscriptAssembler {
       order,
       unloaded,
       assets: [...assets],
+      mainFields: main.fields,
       rawBlocks,
       diagnostics,
       labels,
@@ -319,32 +338,46 @@ function looseEscape(s: string): string {
   return s.replace(/[\\#*_`$@<>[\]~]/g, "\\$&");
 }
 
-function mainSource(mainPath: string, meta: ManuscriptMeta, bib: Bibliography): string {
+function mainSource(mainPath: string, meta: ManuscriptMeta, bib: Bibliography): { text: string; fields: Map<number, MetaField> } {
   const authors = meta.authors
     .map((a) => `(name: [${translateInline(a.name)}]${a.affiliation ? `, affiliation: [${translateInline(a.affiliation)}]` : ""})`)
     .join(", ");
-  const lines = [
-    HEADER.trimEnd(),
-    `#import "/templates/${meta.template}.typ": *`,
-    `#show: ${meta.template}.with(`,
-    meta.title ? `  title: [${translateInline(meta.title)}],` : "",
-    meta.subtitle ? `  subtitle: [${translateInline(meta.subtitle)}],` : "",
-    `  authors: (${authors}${meta.authors.length === 1 ? "," : ""}),`,
-    meta.abstract ? `  abstract: [${translateInline(meta.abstract)}],` : "",
-    meta.date ? `  date: ${typstString(meta.date)},` : "",
-    `)`,
-    `#include ${typstString(typstPathFor(mainPath))}`,
+  const language = typstLanguage(meta.lang);
+  // A collection template is a .typ file defining `template`, with the same
+  // parameters as the bundled ones.
+  const template = meta.customTemplate ? "writer-template" : meta.template;
+  const lines: [string, MetaField?][] = [
+    [HEADER.trimEnd()],
+    meta.customTemplate ? [`#import ${typstString(`/${meta.template}`)}: template as writer-template`, "template"] : [`#import "/templates/${meta.template}.typ": *`, "template"],
+    [`#set text(lang: ${typstString(language.lang)}${language.region ? `, region: ${typstString(language.region)}` : ""})`, "lang"],
+    [`#show: ${template}.with(`, "template"],
+    meta.title ? [`  title: [${translateInline(meta.title)}],`, "title"] : [""],
+    meta.subtitle ? [`  subtitle: [${translateInline(meta.subtitle)}],`, "subtitle"] : [""],
+    [`  authors: (${authors}${meta.authors.length === 1 ? "," : ""}),`, "authors"],
+    meta.abstract ? [`  abstract: [${translateInline(meta.abstract)}],`, "abstract"] : [""],
+    meta.date ? [`  date: ${typstString(meta.date)},`, "date"] : [""],
+    [`)`, "template"],
+    [`#include ${typstString(typstPathFor(mainPath))}`],
   ];
   if (bib.entries.length) {
     const entries = bib.entries.map((e) => {
       const anchor = `#metadata(none)<ref-${typstLabel(e.key)}>`;
       return bib.secondFieldAlign && e.label !== undefined ? `([${anchor}${e.label}], [${e.body}])` : `[${anchor}${e.body}]`;
     });
-    lines.push(`#bibliography-list(hanging: ${bib.hangingIndent}, (\n${entries.join(",\n")},\n))`);
+    lines.push([`#bibliography-list(hanging: ${bib.hangingIndent}, (\n${entries.join(",\n")},\n))`, "csl"]);
   }
   // One query target listing every block marker's page position (preview click → source).
-  lines.push(`#context [#metadata(query(<md-src>).map(m => (m.value, m.location().position()))) <md-pos>]`);
-  return `${lines.filter(Boolean).join("\n")}\n`;
+  lines.push([`#context [#metadata(query(<md-src>).map(m => (m.value, m.location().position()))) <md-pos>]`]);
+  const fields = new Map<number, MetaField>();
+  const out: string[] = [];
+  let line = 0;
+  for (const [text, field] of lines) {
+    if (!text) continue;
+    if (field) for (let i = 0; i <= (text.match(/\n/g)?.length ?? 0); i++) fields.set(line + i, field);
+    line += (text.match(/\n/g)?.length ?? 0) + 1;
+    out.push(text);
+  }
+  return { text: `${out.join("\n")}\n`, fields };
 }
 
 interface Substitutions {

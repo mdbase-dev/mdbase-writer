@@ -43,7 +43,9 @@ let compiler: TypstCompiler | undefined;
 const assembler = new ManuscriptAssembler();
 let library = new Map<string, CslItem>();
 let styles = new Map<string, string>();
-let locale = "";
+let locales = new Map<string, string>();
+/** Collection text files the settings name (a .csl style, a .typ template), decoded. */
+const texts = new Map<string, string>();
 const records = new Map<string, WriterRecord>();
 let recordPaths = new Set<string>();
 let filePaths = new Set<string>();
@@ -63,7 +65,7 @@ async function init(message: Extract<ToWorker, { type: "init" }>) {
   const started = performance.now();
   library = new Map(message.library.map((i) => [i.id, i]));
   styles = new Map(message.styles);
-  locale = message.locale;
+  locales = new Map(message.locales);
   const [fonts, mitex] = await Promise.all([
     Promise.all(FONTS.map((f) => bytes(`${message.baseUrl}fonts/${f}`))),
     Promise.all(MITEX.map((f) => bytes(`${message.baseUrl}typst/mitex/${f}`))),
@@ -120,7 +122,7 @@ interface TypstDiagnostic {
 
 async function compile(c: TypstCompiler): Promise<CompileResult> {
   const started = performance.now();
-  const assembly = assembler.assemble({ main, records, recordPaths, filePaths, library, styles, locale });
+  const assembly = assembler.assemble({ main, records, recordPaths, filePaths, library, styles, locales, texts });
   const assembled = performance.now();
 
   const neededAssets = assembly.assets.filter((a) => !loadedAssets.has(a));
@@ -226,8 +228,11 @@ function mapTypstDiagnostic(d: TypstDiagnostic, assembly: Assembly): WriterDiagn
   const m = /^(\d+):(\d+)/.exec(d.range);
   const severity = d.severity === "warning" ? "warning" : "error";
   if (!map || src === undefined || !m) {
-    // Problems in templates or generated wrappers belong to the manuscript.
-    return [{ record: main, from: 0, to: 0, severity, message: `Typst: ${d.message}`, origin: "typst" }];
+    // Problems in the generated main file or a template belong to the
+    // manuscript's settings: the line of the main file says which one.
+    const line = m ? Number(m[1]) - 1 : -1;
+    const field = d.path === MAIN ? assembly.mainFields.get(line) : d.path.startsWith("/templates/") || d.path === `/${assembly.meta.template}` ? "template" : undefined;
+    return [{ record: main, from: 0, to: 0, severity, message: `Typst: ${d.message}`, origin: "typst", ...(field ? { field } : {}) }];
   }
   const from = mapToRecord(map, typstPositionToOffset(src, Number(m[1]), Number(m[2])));
   return [{ record: map.record, from, to: from, severity, message: `Typst: ${d.message}`, origin: "typst" }];
@@ -279,6 +284,7 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
       break;
     case "assets":
       for (const [path, data] of message.files) {
+        if (/\.(csl|typ)$/i.test(path)) texts.set(path, new TextDecoder().decode(data));
         compiler?.mapShadow(`/${path}`, data);
         loadedAssets.add(path);
       }

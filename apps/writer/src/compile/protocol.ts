@@ -1,5 +1,5 @@
 // Messages between the app and the compile worker.
-import type { CslItem, ManuscriptMeta, WriterRecord } from "@mdbase-writer/core";
+import type { CslItem, ManuscriptMeta, MetaField, WriterRecord } from "@mdbase-writer/core";
 
 export interface WriterDiagnostic {
   readonly record: string;
@@ -9,6 +9,8 @@ export interface WriterDiagnostic {
   readonly message: string;
   /** Where the problem was found: the writer's own checks, or Typst. */
   readonly origin: "writer" | "typst";
+  /** Set when the problem is in a manuscript setting (frontmatter) rather than the body. */
+  readonly field?: MetaField;
 }
 
 export interface BlockPosition {
@@ -21,7 +23,7 @@ export interface BlockPosition {
 }
 
 export type ToWorker =
-  | { readonly type: "init"; readonly library: readonly CslItem[]; readonly styles: readonly [string, string][]; readonly locale: string; readonly baseUrl: string }
+  | { readonly type: "init"; readonly library: readonly CslItem[]; readonly styles: readonly [string, string][]; readonly locales: readonly [string, string][]; readonly baseUrl: string }
   | { readonly type: "library"; readonly library: readonly CslItem[] }
   | { readonly type: "collection"; readonly recordPaths: readonly string[]; readonly filePaths: readonly string[] }
   | { readonly type: "records"; readonly upsert: readonly WriterRecord[]; readonly remove?: readonly string[] }

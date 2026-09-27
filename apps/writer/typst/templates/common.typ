@@ -1,6 +1,7 @@
 // Shared typographic defaults for the bundled templates.
 #let base(body) = {
-  set text(font: "Libertinus Serif", size: 11pt, lang: "en", hyphenate: true)
+  // The language is set by the generated main file, from the manuscript's `lang`.
+  set text(font: "Libertinus Serif", size: 11pt, hyphenate: true)
   set par(justify: true, leading: 0.62em, spacing: 0.62em, first-line-indent: 1.2em)
   show heading: set block(above: 1.5em, below: 0.9em)
   set footnote.entry(gap: 0.45em, clearance: 1.2em)

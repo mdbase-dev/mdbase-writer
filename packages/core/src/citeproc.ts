@@ -146,18 +146,26 @@ export class Citeproc {
   };
   private nextId = 0;
 
+  /**
+   * `locales` maps tags (en-US, en-GB, …) to CSL locale XML. `lang` is the
+   * locale to use; with `forceLang` it overrides the style's default-locale
+   * (Pandoc's `lang`), otherwise the style's default-locale wins.
+   */
   constructor(
     styleXml: string,
-    localeXml: string,
+    locales: ReadonlyMap<string, string>,
     private readonly library: ReadonlyMap<string, CslItem>,
+    lang = "en-US",
+    forceLang = false,
   ) {
     const sys = {
-      retrieveLocale: () => localeXml,
+      // citeproc-js asks for the style's locale, its fallbacks and en-US; unknown ones fall back to en-US.
+      retrieveLocale: (tag: string) => locales.get(tag) ?? locales.get("en-US") ?? "",
       retrieveItem: (id: string) => library.get(id),
       wrapCitationEntry: (str: string, id: string) => `#link(<ref-${typstLabel(id)}>)[${str}];`,
     };
-    const Engine = CSL.Engine as unknown as new (sys: unknown, style: string, lang: string) => CiteprocEngine;
-    this.engine = new Engine(sys, styleXml, "en-US");
+    const Engine = CSL.Engine as unknown as new (sys: unknown, style: string, lang: string, forceLang: boolean) => CiteprocEngine;
+    this.engine = new Engine(sys, styleXml, lang, forceLang);
     this.engine.setOutputFormat("typst");
     this.isNoteStyle = this.engine.opt.xclass === "note";
   }
