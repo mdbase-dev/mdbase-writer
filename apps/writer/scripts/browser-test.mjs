@@ -84,6 +84,20 @@ await step("home lists the demo manuscripts", async () => {
   assert.deepEqual(titles, ["Potentiality and the Event: Agamben and Badiou on the Limits of the Possible", "Refusing the Possible"]);
 });
 
+await step("an existing note becomes a manuscript, keeping its type and fields", async () => {
+  await page.locator(".adopt-note input").fill("drafts/on-inoperativity.md");
+  await page.getByRole("button", { name: "Use as manuscript" }).click();
+  await page.locator(".subbar-title", { hasText: "On inoperativity" }).waitFor();
+  await waitFor(() => document.querySelectorAll(".preview-pages canvas.page").length > 0, null);
+  const fm = await page.evaluate(() => window.writer.workspace.getSnapshot().records.get("drafts/on-inoperativity.md").snapshot.frontmatter);
+  assert.deepEqual(fm.type, ["note", "writer-manuscript"]);
+  assert.deepEqual(fm.tags, ["draft"]);
+  assert.equal(fm.title, "On inoperativity");
+  await page.getByRole("button", { name: "← Manuscripts" }).click();
+  const titles = await page.locator(".manuscript-title").allTextContents();
+  assert.ok(titles.includes("On inoperativity"), titles.join(", "));
+});
+
 await step("opening a paper typesets it with no problems", async () => {
   await page.locator(".manuscript-row", { hasText: "Potentiality and the Event" }).click();
   await waitFor(() => document.querySelectorAll(".preview-pages canvas.page").length > 0, null);

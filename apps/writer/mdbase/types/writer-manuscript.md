@@ -9,9 +9,10 @@ schema:
     $schema: https://json-schema.org/draft/2020-12/schema
     type: object
     additionalProperties: true
-    required: [type, title]
+    # `type` is not constrained here: type selection has already decided that
+    # this record is a manuscript, and it may carry other types too.
+    required: [title]
     properties:
-      type: { const: writer-manuscript }
       title: { type: string, minLength: 1 }
       subtitle: { type: string }
       authors:
@@ -30,9 +31,13 @@ schema:
       date: { type: string }
       csl: { type: string, minLength: 1 }
       template: { type: string, enum: [article, thesis] }
+# A record is a manuscript because it says so (`type: writer-manuscript`),
+# wherever it lives. The explicit type field decides this on its own; the rule
+# below keeps it working in collections that turn explicit type keys off.
 match:
-  path_glob: manuscripts/**/*.md
-  fields_present: [title]
+  where:
+    type:
+      contains: writer-manuscript
 implements:
   - contract: dev.mdbase.writer.manuscript
     version: 1.0.0-beta.1

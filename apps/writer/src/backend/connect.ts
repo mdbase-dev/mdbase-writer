@@ -1,7 +1,7 @@
 // The writer on a real collection through mdbase connect.
 import type { CollectionFileDescriptor, JsonObject, MdbaseConnection } from "@mdbase-dev/connect";
 
-import { fail, libraryEntry, manuscriptSlug, ok, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import { fail, libraryEntry, manuscriptSlug, ok, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.1" } as const;
 export const sourceContract = { id: "dev.mdbase.reader.source", version: "1.0.0-beta.1" } as const;
@@ -58,14 +58,58 @@ export class ConnectBackend implements WriterBackend {
     return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
   }
 
+  /**
+   * The collection's manuscript type: the type implementing the manuscript
+   * contract (usually the starter `writer-manuscript`), its field names for
+   * the contract's fields, and the frontmatter key that declares types.
+   */
+  private async manuscriptType(): Promise<Result<{ name: string; fields: Record<string, string>; typeKey: string }>> {
+    const described = await this.connection.describe();
+    if (!described.ok) return fail(problemMessage(described));
+    const implementation = described.value.contracts.find((c) => c.id === manuscriptContract.id)?.implementations[0];
+    if (!implementation) return fail("This collection has no type for manuscripts. Set it up again from mdbase connect.");
+    const settings = described.value.configuration?.["settings"] as { explicit_type_keys?: unknown } | undefined;
+    const keys = settings?.explicit_type_keys;
+    // With explicit type keys turned off, the starter type still matches on `type`.
+    const typeKey = Array.isArray(keys) && typeof keys[0] === "string" ? keys[0] : "type";
+    return ok({ name: implementation.typeName, fields: implementation.fields, typeKey });
+  }
+
   async createManuscript(input: NewManuscript): Promise<Result<string>> {
-    const created = await this.connection.create({
-      contract: manuscriptContract,
-      path: `manuscripts/${manuscriptSlug(input.title)}.md`,
-      frontmatter: { title: input.title, template: input.template, csl: input.style },
-      body: `# Introduction {#sec-intro}\n\n`,
-    });
-    return created.ok ? ok(created.value.path) : fail(problemMessage(created));
+    const type = await this.manuscriptType();
+    if (!type.ok) return type;
+    const { name, fields, typeKey } = type.value;
+    const frontmatter: JsonObject = { [typeKey]: name, [fields["title"] ?? "title"]: input.title };
+    if (fields["template"]) frontmatter[fields["template"]] = input.template;
+    if (fields["csl"]) frontmatter[fields["csl"]] = input.style;
+    const slug = manuscriptSlug(input.title);
+    let last = "";
+    for (let n = 1; n <= 20; n++) {
+      const created = await this.connection.create({
+        type: name,
+        path: `manuscripts/${slug}${n > 1 ? `-${n}` : ""}.md`,
+        frontmatter,
+        body: `# Introduction {#sec-intro}\n\n`,
+      });
+      if (created.ok) return ok(created.value.path);
+      last = problemMessage(created);
+      if (!/exist/i.test(`${created.problem.code} ${last}`)) break;
+    }
+    return fail(last);
+  }
+
+  async adoptManuscript(path: string): Promise<Result<string>> {
+    const type = await this.manuscriptType();
+    if (!type.ok) return type;
+    const { name, fields, typeKey } = type.value;
+    const current = await this.connection.read({ path, includeDocument: true });
+    if (!current.ok) return fail(problemMessage(current));
+    const fm = current.value.frontmatter;
+    const titleField = fields["title"] ?? "title";
+    const patch: JsonObject = { [typeKey]: withType(fm[typeKey], name) };
+    if (typeof fm[titleField] !== "string" || !fm[titleField]) patch[titleField] = titleFromNote(path, current.value.body ?? "");
+    const updated = await this.connection.update({ path, patch, ifRevision: current.value.revision });
+    return updated.ok ? ok(updated.value.path) : fail(problemMessage(updated));
   }
 
   async index(): Promise<Result<CollectionIndex>> {

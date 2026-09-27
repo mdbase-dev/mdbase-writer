@@ -12,6 +12,9 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
   const [template, setTemplate] = useState<TemplateName>("article");
   const [style, setStyle] = useState<StyleId>("chicago-notes-bibliography");
   const [creating, setCreating] = useState(false);
+  const [notes, setNotes] = useState<string[]>([]);
+  const [notePath, setNotePath] = useState("");
+  const [adopting, setAdopting] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -19,6 +22,9 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
       else setProblem(r.message);
+    });
+    void backend.index().then((r) => {
+      if (live && r.ok) setNotes(r.value.recordPaths.filter((p) => p.toLowerCase().endsWith(".md")).sort());
     });
     return () => {
       live = false;
@@ -35,6 +41,20 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
     if (created.ok) onOpen(created.value);
     else setProblem(created.message);
   };
+
+  const adopt = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const path = notePath.trim();
+    if (!path) return;
+    setAdopting(true);
+    setProblem(null);
+    const adopted = await backend.adoptManuscript(path);
+    setAdopting(false);
+    if (adopted.ok) onOpen(adopted.value);
+    else setProblem(adopted.message);
+  };
+  const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
+  const candidates = notes.filter((p) => !manuscriptPaths.has(p));
 
   return (
     <main className="home">
@@ -90,6 +110,26 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
           </label>
           <button className="button primary" type="submit" disabled={creating || !title.trim()}>
             {creating ? "Creating…" : "Create manuscript"}
+          </button>
+        </form>
+      </section>
+      <section>
+        <h2>Use an existing note</h2>
+        <p className="muted">
+          Adds the manuscript type to a note you already have, wherever it lives. Its other types, text and location stay as they are.
+        </p>
+        <form className="adopt-note" onSubmit={(e) => void adopt(e)}>
+          <label>
+            Note
+            <input list="note-paths" value={notePath} onChange={(e) => setNotePath(e.target.value)} placeholder="drafts/on-potentiality.md" required />
+            <datalist id="note-paths">
+              {candidates.map((p) => (
+                <option key={p} value={p} />
+              ))}
+            </datalist>
+          </label>
+          <button className="button" type="submit" disabled={adopting || !candidates.includes(notePath.trim())}>
+            {adopting ? "Updating…" : "Use as manuscript"}
           </button>
         </form>
       </section>

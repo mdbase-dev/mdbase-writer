@@ -4,6 +4,15 @@
 
 - **Manuscripts** implement `dev.mdbase.writer.manuscript` (title, subtitle,
   authors, abstract, date, `csl` style id, `template`). The body is Markdown.
+  A record is a manuscript because it declares the type
+  (`type: writer-manuscript`, or in a list with its other types), not because
+  of where it lives: the starter type has no path rule, only
+  `match.where.type.contains: writer-manuscript` for collections that turn
+  explicit type keys off. New manuscripts are created by the collection's
+  implementing type (found through `describe()`), using that type's field
+  names and the collection's explicit type key; "Use as manuscript" adds the
+  type to an existing note. How manuscripts are recognised is configured in
+  the collection's type file, not in the app.
 - **Chapters** are any Markdown records, embedded by a line holding only
   `![[path]]`. They need no type.
 - **Sources** are records implementing `dev.mdbase.reader.source`; the citekey

@@ -42,6 +42,8 @@ export interface WriterBackend {
   readonly records: Pick<MdbaseRecords<JsonObject>, "open">;
   listManuscripts(): Promise<Result<ManuscriptSummary[]>>;
   createManuscript(input: NewManuscript): Promise<Result<string>>;
+  /** Marks an existing note as a manuscript (adds the manuscript type; keeps its other types). */
+  adoptManuscript(path: string): Promise<Result<string>>;
   index(): Promise<Result<CollectionIndex>>;
   library(): Promise<Result<LibraryEntry[]>>;
   readFile(path: string): Promise<Result<Uint8Array>>;
@@ -70,4 +72,20 @@ export function manuscriptSlug(title: string): string {
     .replace(/^-|-$/g, "")
     .slice(0, 60);
   return slug || "untitled";
+}
+
+/**
+ * The explicit type value after adding `typeName`: a note that already has a
+ * type keeps it (mdbase allows a list of types).
+ */
+export function withType(existing: unknown, typeName: string): string | string[] {
+  const list = Array.isArray(existing) ? existing.filter((t): t is string => typeof t === "string") : typeof existing === "string" && existing ? [existing] : [];
+  if (list.some((t) => t.toLowerCase() === typeName.toLowerCase())) return list.length === 1 ? (list[0] as string) : list;
+  return list.length ? [...list, typeName] : typeName;
+}
+
+/** A title for a note that has none: its first heading, else its file name. */
+export function titleFromNote(path: string, body: string): string {
+  const heading = /^#{1,6}\s+(.+?)(?:\s*\{[^}]*\})?\s*$/m.exec(body)?.[1];
+  return (heading ?? path.split("/").pop()?.replace(/\.md$/i, "") ?? path).trim();
 }

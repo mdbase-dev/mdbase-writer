@@ -2,10 +2,10 @@
   "manifest_version": 1,
   "id": "dev.mdbase.writer",
   "name": "mdbase writer",
-  "homepage": "https://lab.mdbase-writer.pages.dev/",
-  "icon": "https://lab.mdbase-writer.pages.dev/favicon.svg",
+  "homepage": "https://writer.mdbase.dev/",
+  "icon": "https://writer.mdbase.dev/favicon.svg",
   "redirect_uris": [
-    "https://lab.mdbase-writer.pages.dev/"
+    "https://writer.mdbase.dev/"
   ],
   "requirements": {
     "access": "full_collection",
@@ -57,7 +57,7 @@
         "manifest": {
           "kind": "mdbase.type-pack",
           "id": "dev.mdbase.writer",
-          "version": "1.0.0-beta.1",
+          "version": "1.0.0-beta.2",
           "name": "mdbase writer",
           "description": "Writer manuscripts, and the Reader source contract citations resolve against.",
           "resources": [
@@ -80,7 +80,7 @@
               "mode": "seed",
               "source": "types/writer-manuscript.md",
               "target": "_types/writer-manuscript.md",
-              "digest": "sha256:8d221b90537cca7623cfa54322ff061d361886395389c25dc0d75a2ff3c6a318"
+              "digest": "sha256:0cd31cfeb575c0713ebc48b4c103bc2fc287f81abaa010bef42ba4d8ec8dd206"
             },
             {
               "kind": "type",
@@ -102,7 +102,7 @@
           },
           {
             "source": "types/writer-manuscript.md",
-            "document": "---\nkind: mdbase.type\nname: writer-manuscript\nversion: 1\ndescription: A manuscript for mdbase writer.\nschema:\n  dialect: json-schema-2020-12\n  value:\n    $schema: https://json-schema.org/draft/2020-12/schema\n    type: object\n    additionalProperties: true\n    required: [type, title]\n    properties:\n      type: { const: writer-manuscript }\n      title: { type: string, minLength: 1 }\n      subtitle: { type: string }\n      authors:\n        type: array\n        items:\n          oneOf:\n            - type: string\n              minLength: 1\n            - type: object\n              additionalProperties: true\n              required: [name]\n              properties:\n                name: { type: string, minLength: 1 }\n                affiliation: { type: string }\n      abstract: { type: string }\n      date: { type: string }\n      csl: { type: string, minLength: 1 }\n      template: { type: string, enum: [article, thesis] }\nmatch:\n  path_glob: manuscripts/**/*.md\n  fields_present: [title]\nimplements:\n  - contract: dev.mdbase.writer.manuscript\n    version: 1.0.0-beta.1\n    fields:\n      title: title\n      subtitle: subtitle\n      authors: authors\n      abstract: abstract\n      date: date\n      csl: csl\n      template: template\n---\n\n# Writer manuscript\n\nThe starter type for mdbase writer manuscripts. The body is the manuscript's\nMarkdown.\n"
+            "document": "---\nkind: mdbase.type\nname: writer-manuscript\nversion: 1\ndescription: A manuscript for mdbase writer.\nschema:\n  dialect: json-schema-2020-12\n  value:\n    $schema: https://json-schema.org/draft/2020-12/schema\n    type: object\n    additionalProperties: true\n    # `type` is not constrained here: type selection has already decided that\n    # this record is a manuscript, and it may carry other types too.\n    required: [title]\n    properties:\n      title: { type: string, minLength: 1 }\n      subtitle: { type: string }\n      authors:\n        type: array\n        items:\n          oneOf:\n            - type: string\n              minLength: 1\n            - type: object\n              additionalProperties: true\n              required: [name]\n              properties:\n                name: { type: string, minLength: 1 }\n                affiliation: { type: string }\n      abstract: { type: string }\n      date: { type: string }\n      csl: { type: string, minLength: 1 }\n      template: { type: string, enum: [article, thesis] }\n# A record is a manuscript because it says so (`type: writer-manuscript`),\n# wherever it lives. The explicit type field decides this on its own; the rule\n# below keeps it working in collections that turn explicit type keys off.\nmatch:\n  where:\n    type:\n      contains: writer-manuscript\nimplements:\n  - contract: dev.mdbase.writer.manuscript\n    version: 1.0.0-beta.1\n    fields:\n      title: title\n      subtitle: subtitle\n      authors: authors\n      abstract: abstract\n      date: date\n      csl: csl\n      template: template\n---\n\n# Writer manuscript\n\nThe starter type for mdbase writer manuscripts. The body is the manuscript's\nMarkdown.\n"
           },
           {
             "source": "types/reader-source.md",

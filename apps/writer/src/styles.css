@@ -140,6 +140,7 @@ label { display: grid; gap: 0.2rem; font-size: 13px; color: var(--ink-soft); }
 .manuscript-meta { display: flex; gap: 1rem; color: var(--muted); font-size: 12px; }
 .new-manuscript { display: grid; gap: 0.8rem; grid-template-columns: 2fr 1fr 1.4fr; align-items: end; }
 .new-manuscript button { grid-column: 1 / -1; justify-self: start; }
+.adopt-note { display: grid; grid-template-columns: 1fr auto; gap: 0.8rem; align-items: end; }
 
 /* Workspace: outline | editor | preview */
 .workspace {
@@ -222,7 +223,7 @@ label { display: grid; gap: 0.2rem; font-size: 13px; color: var(--ink-soft); }
   .pane-preview .outline, .pane-preview .write,
   .pane-outline .write, .pane-outline .preview-pane { display: none; }
   .subbar { flex-wrap: wrap; padding: 0.4rem 16px; }
-  .new-manuscript { grid-template-columns: 1fr; }
+  .new-manuscript, .adopt-note { grid-template-columns: 1fr; }
   .editor .cm-content { padding: 1rem 16px 40vh; }
 }
 
