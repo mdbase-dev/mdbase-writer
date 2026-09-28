@@ -199,7 +199,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .source-meta { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .source-meta code { font-size: 11px; }
 .cited-mark { margin-left: 0.4rem; padding: 0 0.3rem; border-radius: 3px; background: color-mix(in oklch, var(--connected) 14%, transparent); color: var(--connected); font-size: 10.5px; }
-.cite-button { flex: none; height: 26px; padding: 0 0.55rem; font-size: 12px; margin-right: 0.3rem; opacity: 0; }
+.cite-button { flex: none; height: 26px; padding: 0 0.55rem; font-size: 12px; margin-right: 0.3rem; opacity: 0; transition: opacity var(--motion-quick) var(--ease-out); }
 .source-line:hover .cite-button, .source-line:focus-within .cite-button, .is-open .cite-button { opacity: 1; }
 @media (hover: none) { .cite-button { opacity: 1; } }
 .source-detail { display: grid; gap: 0.5rem; justify-items: start; padding: 0.4rem 0.45rem 0.7rem; }
@@ -255,7 +255,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .cm-ref-hint { font-size: 11px; color: var(--faint); }
 
 .preview { position: relative; overflow: auto; min-height: 0; padding: 1rem; }
-.preview.is-stale .preview-pages { opacity: 0.55; transition: opacity 200ms var(--ease); }
+.preview.is-stale .preview-pages { opacity: 0.55; transition: opacity var(--motion-base) var(--ease-out); }
 .preview-empty { color: var(--muted); text-align: center; margin-top: 4rem; max-width: none; }
 .preview-pages { display: grid; gap: 1rem; justify-items: safe center; }
 .preview-pages canvas.page { display: block; height: auto; max-width: none; background: #fff; box-shadow: var(--page-shadow); cursor: text; }
