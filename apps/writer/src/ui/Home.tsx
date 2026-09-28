@@ -1,6 +1,7 @@
 // The collection's manuscripts, and creating a new one.
 import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
 import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
+import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useState } from "react";
 
 import type { ManuscriptSummary, WriterBackend } from "../backend/types.js";
@@ -136,27 +137,15 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
         <form className="new-manuscript" onSubmit={(e) => void create(e)}>
           <label className="span-2">
             Title
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="On the limits of the possible" required autoFocus />
+            <input className="mdbase-field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="On the limits of the possible" required autoFocus />
           </label>
           <label>
             Layout
-            <select value={template} onChange={(e) => setTemplate(e.target.value as TemplateName)}>
-              {TEMPLATES.map((t) => (
-                <option key={t} value={t}>
-                  {templateName(t)}
-                </option>
-              ))}
-            </select>
+            <Select aria-label="Layout" value={template} options={TEMPLATES.map((t) => ({ value: t, label: templateName(t) }))} onChange={setTemplate} />
           </label>
           <label>
             Citation style
-            <select value={style} onChange={(e) => setStyle(e.target.value as StyleId)}>
-              {STYLES.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.title}
-                </option>
-              ))}
-            </select>
+            <Select aria-label="Citation style" value={style} options={STYLES.map((s) => ({ value: s.id, label: s.title }))} onChange={setStyle} />
           </label>
           <button className="button primary" type="submit" disabled={creating || !title.trim()}>
             {creating ? "Creating…" : "Create manuscript"}
@@ -166,7 +155,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
         <form className="adopt-note" onSubmit={(e) => void adopt(e)}>
           <label>
             Note
-            <input list="note-paths" value={notePath} onChange={(e) => setNotePath(e.target.value)} placeholder="drafts/on-potentiality.md" required />
+            <input className="mdbase-field" list="note-paths" value={notePath} onChange={(e) => setNotePath(e.target.value)} placeholder="drafts/on-potentiality.md" required />
             <datalist id="note-paths">
               {candidates.map((p) => (
                 <option key={p} value={p} />

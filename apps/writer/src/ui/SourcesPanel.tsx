@@ -100,7 +100,7 @@ export function SourcesPanel({
 
   return (
     <section className="sources" aria-label="Sources">
-      <input ref={search} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Author, title, year or key" aria-label="Find a source" />
+      <input ref={search} className="mdbase-field" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Author, title, year or key" aria-label="Find a source" />
       <div className="segmented small" role="group" aria-label="Show">
         <button type="button" aria-pressed={!onlyCited} onClick={() => setOnlyCited(false)}>
           All <span className="count">{library.length}</span>

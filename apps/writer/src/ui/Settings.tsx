@@ -4,6 +4,7 @@
 // elsewhere (another app, "Use theirs") shows up in every field not being
 // edited. Problems with a setting appear under its field.
 import type { JsonObject } from "@mdbase-dev/connect";
+import { Select, type SelectItems } from "@mdbase-dev/ui/select";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 import { TEMPLATES, type MetaField } from "@mdbase-writer/core/meta";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -84,14 +85,26 @@ export function Settings({
         <div className="span-2">
           <TextField label="Abstract" multiline={7} value={str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
         </div>
-        <SelectField label="Citation style" value={style} onCommit={(v) => patch({ csl: v })} {...props("csl")}>
-          {STYLES.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-          <FileOptions label="From the collection" files={cslFiles} current={style} bundled={STYLES.map((s) => s.id)} />
-        </SelectField>
-        <SelectField label="Layout" value={template} onCommit={(v) => patch({ template: v })} {...props("template")}>
-          {TEMPLATES.map((t) => <option key={t} value={t}>{templateName(t)}</option>)}
-          <FileOptions label="Typst templates in the collection" files={typFiles} current={template} bundled={TEMPLATES} />
-        </SelectField>
+        <SelectField
+          label="Citation style"
+          value={style}
+          onCommit={(v) => patch({ csl: v })}
+          options={[
+            ...STYLES.map((s) => ({ value: s.id as string, label: s.title })),
+            ...fileOptions("From the collection", cslFiles, style, STYLES.map((s) => s.id)),
+          ]}
+          {...props("csl")}
+        />
+        <SelectField
+          label="Layout"
+          value={template}
+          onCommit={(v) => patch({ template: v })}
+          options={[
+            ...TEMPLATES.map((t) => ({ value: t as string, label: templateName(t) })),
+            ...fileOptions("Typst templates in the collection", typFiles, template, TEMPLATES),
+          ]}
+          {...props("template")}
+        />
         <TextField
           label="Language"
           hint="for citation terms and hyphenation"
@@ -107,15 +120,10 @@ export function Settings({
   );
 }
 
-function FileOptions({ label, files, current, bundled }: { label: string; files: readonly string[]; current: string; bundled: readonly string[] }) {
+function fileOptions(label: string, files: readonly string[], current: string, bundled: readonly string[]): SelectItems {
   // A value naming a file the index does not list (yet) still shows as chosen.
   const all = !bundled.includes(current) && !files.includes(current) ? [current, ...files] : files;
-  if (!all.length) return null;
-  return (
-    <optgroup label={label}>
-      {all.map((f) => <option key={f} value={f}>{f}</option>)}
-    </optgroup>
-  );
+  return all.length ? [{ label, options: all.map((f) => ({ value: f, label: f })) }] : [];
 }
 
 interface FieldProps {
@@ -193,7 +201,7 @@ function TextField(props: FieldProps & { value: string; onCommit(value: string):
   };
   return (
     <FieldFrame {...props} id={problemId}>
-      {multiline ? <textarea rows={multiline} {...common} /> : <input {...common} list={list ? listId : undefined} />}
+      {multiline ? <textarea className="mdbase-field" rows={multiline} {...common} /> : <input className="mdbase-field" {...common} list={list ? listId : undefined} />}
       {list && (
         <datalist id={listId}>
           {list.map(([v, name]) => <option key={v} value={v}>{name}</option>)}
@@ -203,16 +211,14 @@ function TextField(props: FieldProps & { value: string; onCommit(value: string):
   );
 }
 
-function SelectField(props: FieldProps & { value: string; onCommit(value: string): void; children: ReactNode }) {
-  const { value, onCommit, field, problems, focus, children } = props;
-  const element = useRef<HTMLSelectElement>(null);
+function SelectField(props: FieldProps & { value: string; onCommit(value: string): void; options: SelectItems }) {
+  const { value, onCommit, field, problems, focus, options, label } = props;
+  const element = useRef<HTMLButtonElement>(null);
   const problemId = useId();
   useFocusRequest(field, focus, element);
   return (
     <FieldFrame {...props} id={problemId}>
-      <select ref={element} value={value} aria-invalid={problems.length > 0 || undefined} aria-describedby={problems.length ? problemId : undefined} onChange={(e) => onCommit(e.target.value)}>
-        {children}
-      </select>
+      <Select ref={element} aria-label={label} value={value} options={options} aria-invalid={problems.length > 0 || undefined} aria-describedby={problems.length ? problemId : undefined} onChange={onCommit} />
     </FieldFrame>
   );
 }

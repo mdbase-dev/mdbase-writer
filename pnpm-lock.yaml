@@ -54,8 +54,8 @@ importers:
         specifier: 0.1.0-beta.112
         version: 0.1.0-beta.112
       '@mdbase-dev/ui':
-        specifier: file:../../vendor/mdbase-dev-ui-0.1.0-beta.115-76c47c7381ae.tgz
-        version: file:vendor/mdbase-dev-ui-0.1.0-beta.115-76c47c7381ae.tgz(react@19.3.0)
+        specifier: file:../../vendor/mdbase-dev-ui-0.1.0-beta.115-6897e7931063.tgz
+        version: file:vendor/mdbase-dev-ui-0.1.0-beta.115-6897e7931063.tgz(react@19.3.0)
       '@mdbase-writer/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -321,8 +321,8 @@ packages:
   '@mdbase-dev/connect@0.1.0-beta.112':
     resolution: {integrity: sha512-oLk/VEz/GCZIX9eTDpIf9mcI0dKXokKvWgf9xRzyComgNqXDrKX2ADFL1pYvAPOC2+O6pKveGIpJiEPWEVV3Lw==}
 
-  '@mdbase-dev/ui@file:vendor/mdbase-dev-ui-0.1.0-beta.115-76c47c7381ae.tgz':
-    resolution: {integrity: sha512-XMRjnfFfezPrLC2PsaMzSAPolX6FiK/FmDeWizK2CXWIf/PopwKV+ghOI7TQXhWC0aOjzJwKTP9ryKTtA8dlmQ==, tarball: file:vendor/mdbase-dev-ui-0.1.0-beta.115-76c47c7381ae.tgz}
+  '@mdbase-dev/ui@file:vendor/mdbase-dev-ui-0.1.0-beta.115-6897e7931063.tgz':
+    resolution: {integrity: sha512-4WqCGh972v4t8IlKk2E2xi/L7yFuqS1S4J9LbLhE+y8fKr7opNW8UVW8O1Ogl0po4m64aAzuneOCiz7MwnJnWg==, tarball: file:vendor/mdbase-dev-ui-0.1.0-beta.115-6897e7931063.tgz}
     version: 0.1.0-beta.115
     peerDependencies:
       react: ^19.2.0
@@ -1305,7 +1305,7 @@ snapshots:
     dependencies:
       '@mdbase-dev/connect-protocol': 0.1.0-beta.112
 
-  '@mdbase-dev/ui@file:vendor/mdbase-dev-ui-0.1.0-beta.115-76c47c7381ae.tgz(react@19.3.0)':
+  '@mdbase-dev/ui@file:vendor/mdbase-dev-ui-0.1.0-beta.115-6897e7931063.tgz(react@19.3.0)':
     dependencies:
       '@fontsource/atkinson-hyperlegible': 5.3.0
       '@fontsource/azeret-mono': 5.3.0

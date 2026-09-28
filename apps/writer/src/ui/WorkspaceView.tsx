@@ -31,7 +31,7 @@ import {
 import { clampSplit, gridFor, loadLayout, nextZoom, saveLayout, type Layout, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
 import { headingAt, headings, sectionWords } from "./outline.js";
-import { moveMenuFocus, usePopover } from "./popover.js";
+import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar } from "./topbar.js";
@@ -636,9 +636,9 @@ function ProblemsButton({ diagnostics, open, setOpen, onPick }: { diagnostics: r
 
 function Popover({ id, trigger, width, label, align = "start", onClose, children }: { id: string; trigger: React.RefObject<HTMLElement | null>; width: number; label: string; align?: "start" | "end"; onClose(refocus: boolean): void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  usePopover(ref, trigger, onClose, { width, align });
+  useMenuPopover(ref, trigger, onClose, { width, align });
   return (
-    <div ref={ref} id={id} className="app-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, ref.current)}>
+    <div ref={ref} id={id} className="mdbase-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, ref.current)}>
       {children}
     </div>
   );
