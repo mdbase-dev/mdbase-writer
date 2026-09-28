@@ -1,83 +1,41 @@
-/* mdbase visual language (see mdbase-connect DESIGN.md): paper and ink, one
-   canvas, fine neutral lines, restrained semantic colour. */
+/* mdbase visual language (see mdbase-connect DESIGN.md). Role values come from
+   @mdbase-dev/ui/tokens.css; these short names are Writer's aliases for them. */
 :root {
-  color-scheme: light;
-  --canvas: oklch(99.5% 0.002 255);
-  --surface: oklch(99.5% 0.002 255);
-  --subtle: oklch(97.5% 0.004 255);
-  --selected: oklch(96.4% 0.016 238);
-  --ink: oklch(21% 0.018 255);
-  --ink-soft: oklch(39% 0.016 255);
-  --muted: oklch(54% 0.014 255);
-  --faint: oklch(70% 0.009 255);
-  --line: oklch(92% 0.006 255);
-  --line-strong: oklch(82% 0.008 255);
-  --accent: oklch(45% 0.105 238);
-  --action: oklch(35% 0.09 238);
-  --connected: oklch(43% 0.09 153);
-  --warning: oklch(60% 0.09 75);
-  --danger: oklch(50% 0.11 28);
+  --canvas: var(--color-canvas);
+  --surface: var(--color-surface);
+  --subtle: var(--color-surface-subtle);
+  --selected: var(--color-selected);
+  --ink: var(--color-text);
+  --ink-soft: var(--color-text-soft);
+  --muted: var(--color-text-muted);
+  --faint: var(--color-text-faint);
+  --line: var(--color-border);
+  --line-strong: var(--color-border-strong);
+  --accent: var(--color-accent);
+  --action: var(--color-accent-strong);
+  --connected: var(--color-success);
+  --warning: var(--color-warning);
+  --danger: var(--color-danger);
   --page-shadow: 0 1px 3px oklch(20% 0.01 255 / 0.14);
   --preview-bg: oklch(96.5% 0.004 255);
-  --app-editor: #005c88;
-  --app-reader: #a4467f;
-  --app-writer: #d55e00;
-  --mono: "Azeret Mono", "SFMono-Regular", "Cascadia Code", monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: "Atkinson Hyperlegible", "Segoe UI", sans-serif;
+  font-family: var(--sans);
   font-size: 14px;
   line-height: 1.5;
   color: var(--ink);
   background: var(--canvas);
 }
 
+/* The typeset preview keeps its own darker backdrop. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --canvas: oklch(17.5% 0.012 255);
-    --surface: oklch(19.5% 0.012 255);
-    --subtle: oklch(23.5% 0.014 255);
-    --selected: oklch(27% 0.035 238);
-    --ink: oklch(92% 0.008 255);
-    --ink-soft: oklch(80% 0.01 255);
-    --muted: oklch(68% 0.012 255);
-    --faint: oklch(56% 0.011 255);
-    --line: oklch(29% 0.012 255);
-    --line-strong: oklch(40% 0.014 255);
-    --accent: oklch(73% 0.105 238);
-    --action: oklch(79% 0.085 238);
-    --connected: oklch(72% 0.1 153);
-    --warning: oklch(78% 0.1 75);
-    --danger: oklch(70% 0.12 28);
+  :root:not([data-theme]) {
     --page-shadow: 0 1px 4px oklch(0% 0 0 / 0.5);
     --preview-bg: oklch(14.5% 0.01 255);
-    --app-editor: #63b1e2;
-    --app-reader: #e08cc0;
-    --app-writer: #f58d4a;
   }
 }
 :root[data-theme="dark"] {
-  color-scheme: dark;
-  --canvas: oklch(17.5% 0.012 255);
-  --surface: oklch(19.5% 0.012 255);
-  --subtle: oklch(23.5% 0.014 255);
-  --selected: oklch(27% 0.035 238);
-  --ink: oklch(92% 0.008 255);
-  --ink-soft: oklch(80% 0.01 255);
-  --muted: oklch(68% 0.012 255);
-  --faint: oklch(56% 0.011 255);
-  --line: oklch(29% 0.012 255);
-  --line-strong: oklch(40% 0.014 255);
-  --accent: oklch(73% 0.105 238);
-  --action: oklch(79% 0.085 238);
-  --connected: oklch(72% 0.1 153);
-  --warning: oklch(78% 0.1 75);
-  --danger: oklch(70% 0.12 28);
   --page-shadow: 0 1px 4px oklch(0% 0 0 / 0.5);
   --preview-bg: oklch(14.5% 0.01 255);
-  --app-editor: #63b1e2;
-  --app-reader: #e08cc0;
-  --app-writer: #f58d4a;
 }
 
 * { box-sizing: border-box; }
@@ -127,10 +85,6 @@ label { display: grid; gap: 0.2rem; font-size: 13px; color: var(--ink-soft); }
 .app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
 .topbar { display: flex; align-items: center; gap: 0.75rem; height: 48px; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid var(--line); min-width: 0; }
 .topbar-slot { flex: 1; min-width: 0; display: flex; align-items: center; }
-.wordmark { display: inline-flex; align-items: center; gap: 0.35rem; font-family: var(--mono); font-size: 14px; }
-.wordmark strong { font-weight: 600; }
-.wordmark span { color: var(--muted); }
-.mark { width: 20px; height: 20px; }
 
 .icon { width: 18px; height: 18px; flex: none; }
 .icon-button { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--ink-soft); cursor: pointer; transition: background 150ms var(--ease), color 150ms var(--ease); }
@@ -169,15 +123,9 @@ button.bar-problems { cursor: pointer; }
 .bar-problems.is-clear .icon { color: var(--connected); }
 
 /* Each app's mark: bars in the app's colour, the highlighted line in ink. */
-.app-mark { color: var(--ink); }
-.app-mark.is-editor { --app: var(--app-editor); }
-.app-mark.is-reader { --app: var(--app-reader); }
-.app-mark.is-writer { --app: var(--app-writer); }
-.app-mark-bars { fill: var(--app); }
-.app-mark-line { fill: currentColor; }
 
 /* The wordmark doubles as the app switcher. */
-.app-switcher { margin-left: -0.45rem; padding: 4px 6px; border: 1px solid transparent; border-radius: 6px; background: transparent; cursor: pointer; transition: background 150ms var(--ease), border-color 150ms var(--ease); }
+.app-switcher { display: inline-flex; align-items: center; gap: 0.35rem; margin-left: -0.45rem; padding: 4px 6px; border: 1px solid transparent; border-radius: 6px; background: transparent; cursor: pointer; transition: background 150ms var(--ease), border-color 150ms var(--ease); }
 .app-switcher:hover, .app-switcher[aria-expanded="true"] { border-color: var(--line); background: var(--surface); }
 .app-switcher-chevron { width: 13px; height: 13px; color: var(--muted); transition: transform 150ms var(--ease); }
 .app-switcher[aria-expanded="true"] .app-switcher-chevron { transform: rotate(180deg); }
@@ -389,7 +337,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 /* Phones and narrow windows: one part at a time, chosen with tabs at the bottom. */
 @media (max-width: 900px) {
   .topbar { gap: 0.4rem; padding: 0 0.5rem 0 16px; }
-  .wordmark strong, .wordmark span, .app-switcher-chevron { display: none; }
+  .wordmark-label, .app-switcher-chevron { display: none; }
   .bar { gap: 0.4rem; }
   .bar-back span, .bar-divider, .bar-layout, .status-text { display: none; }
   .bar .button.with-icon { padding: 0 0.55rem; height: 32px; }

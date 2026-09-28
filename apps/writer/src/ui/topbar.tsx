@@ -4,7 +4,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { MoonIcon, SunIcon, SystemIcon } from "./icons.js";
-import type { ThemePreference } from "./theme.js";
+import type { ThemePreference } from "@mdbase-dev/ui/theme";
 
 export const TopbarSlot = createContext<HTMLElement | null>(null);
 

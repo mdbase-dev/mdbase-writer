@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/mdbase-dev/mdbase-connect",
+  "revision": "76c47c7381ae6e883f8f780a0380c16710fa0a91",
+  "artifacts": [
+    {
+      "package": "ui",
+      "file": "mdbase-dev-ui-0.1.0-beta.115-76c47c7381ae.tgz",
+      "bytes": 8281,
+      "sha512": "XMRjnfFfezPrLC2PsaMzSAPolX6FiK/FmDeWizK2CXWIf/PopwKV+ghOI7TQXhWC0aOjzJwKTP9ryKTtA8dlmQ=="
+    }
+  ]
+}

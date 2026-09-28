@@ -1,6 +1,6 @@
-import "@fontsource/atkinson-hyperlegible/400.css";
-import "@fontsource/atkinson-hyperlegible/700.css";
-import "@fontsource/azeret-mono/500.css";
+import "@mdbase-dev/ui/fonts.css";
+import "@mdbase-dev/ui/tokens.css";
+import "@mdbase-dev/ui/brand.css";
 import "./styles.css";
 
 import { StrictMode } from "react";

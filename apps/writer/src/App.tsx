@@ -7,10 +7,10 @@ import { Component, useEffect, useMemo, useState, useSyncExternalStore, type Rea
 import { ConnectBackend } from "./backend/connect.js";
 import type { WriterBackend } from "./backend/types.js";
 import { createWriterSession, type WriterSession } from "./connect/session.js";
-import { Wordmark } from "./ui/Brand.js";
+import { AppSwitcher } from "./ui/Brand.js";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { Home } from "./ui/Home.js";
-import { applyTheme, loadTheme, type ThemePreference } from "./ui/theme.js";
+import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { ThemeButton, TopbarSlot } from "./ui/topbar.js";
 import { WorkspaceView } from "./ui/WorkspaceView.js";
 import { ManuscriptWorkspace } from "./workspace/workspace.js";
@@ -36,14 +36,14 @@ function useManuscriptParam(): [string | null, (path: string | null) => void] {
 }
 
 export function App() {
-  const [theme, setTheme] = useState<ThemePreference>(loadTheme);
+  const [theme, setTheme] = useState<ThemePreference>(() => loadThemePreference());
   const [slot, setSlot] = useState<HTMLElement | null>(null);
-  useEffect(() => applyTheme(theme), [theme]);
+  useEffect(() => saveThemePreference(theme), [theme]);
   return (
     <TopbarSlot.Provider value={slot}>
       <div className="app">
         <header className="topbar">
-          <Wordmark />
+          <AppSwitcher />
           <div className="topbar-slot" ref={setSlot} />
           <ThemeButton theme={theme} onChange={setTheme} />
         </header>
