@@ -5,7 +5,7 @@ import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useState } from "react";
 
 import type { ManuscriptSummary, WriterBackend } from "../backend/types.js";
-import { Dialog } from "./Dialog.js";
+import { Dialog } from "@mdbase-dev/ui/dialog";
 import { PlusIcon } from "./icons.js";
 import { relativeTime, styleName, templateName } from "./names.js";
 
@@ -65,7 +65,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
   const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
   const candidates = notes.filter((p) => !manuscriptPaths.has(p));
   const newButton = (
-    <button type="button" className="button primary with-icon" onClick={() => setDialog(true)}>
+    <button type="button" className="mdbase-button is-primary" onClick={() => setDialog(true)}>
       <PlusIcon />
       New manuscript
     </button>
@@ -147,7 +147,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
             Citation style
             <Select aria-label="Citation style" value={style} options={STYLES.map((s) => ({ value: s.id, label: s.title }))} onChange={setStyle} />
           </label>
-          <button className="button primary" type="submit" disabled={creating || !title.trim()}>
+          <button className="mdbase-button is-primary" type="submit" disabled={creating || !title.trim()}>
             {creating ? "Creating…" : "Create manuscript"}
           </button>
         </form>
@@ -162,7 +162,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
               ))}
             </datalist>
           </label>
-          <button className="button" type="submit" disabled={adopting || !candidates.includes(notePath.trim())}>
+          <button className="mdbase-button" type="submit" disabled={adopting || !candidates.includes(notePath.trim())}>
             {adopting ? "Updating…" : "Use as manuscript"}
           </button>
         </form>

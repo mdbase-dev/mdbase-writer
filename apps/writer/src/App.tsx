@@ -11,7 +11,9 @@ import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { Home } from "./ui/Home.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
-import { ThemeButton, TopbarSlot } from "./ui/topbar.js";
+import { TopbarSlot } from "./ui/topbar.js";
+import { ThemeSelect } from "@mdbase-dev/ui/theme-select";
+import { OpeningScreen } from "@mdbase-dev/ui/screens";
 import { WorkspaceView } from "./ui/WorkspaceView.js";
 import { ManuscriptWorkspace } from "./workspace/workspace.js";
 
@@ -52,7 +54,7 @@ export function App() {
         <header className="topbar">
           <AppSwitcher current="writer" urls={appUrls} />
           <div className="topbar-slot" ref={setSlot} />
-          <ThemeButton theme={theme} onChange={setTheme} />
+          <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />
         </header>
         <ErrorBoundary>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
       </div>
@@ -72,7 +74,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
         <h1>Something went wrong</h1>
         <p>{this.state.error.message}</p>
         <p className="muted">Your saved text is in your collection. Reload to continue.</p>
-        <button className="button" type="button" onClick={() => location.reload()}>Reload</button>
+        <button className="mdbase-button" type="button" onClick={() => location.reload()}>Reload</button>
       </main>
     );
   }
@@ -126,7 +128,7 @@ function DemoRoot() {
       live = false;
     };
   }, []);
-  if (!backend) return <main className="gate"><p className="muted" role="status">Loading the demo collection…</p></main>;
+  if (!backend) return <OpeningScreen app="writer" title="Opening the demo collection" />;
   return <Manuscripts backend={backend} />;
 }
 

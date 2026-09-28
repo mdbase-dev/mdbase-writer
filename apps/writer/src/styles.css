@@ -56,20 +56,6 @@ button, select, input, textarea {
   font: inherit;
   color: var(--ink);
 }
-.button {
-  height: 34px;
-  padding: 0 0.85rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 5px;
-  background: var(--surface);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 150ms var(--ease), border-color 150ms var(--ease);
-}
-.button:hover:not(:disabled) { background: var(--subtle); }
-.button:disabled { opacity: 0.55; cursor: default; }
-.button.primary { background: var(--action); border-color: var(--action); color: var(--canvas); }
-.button.primary:hover:not(:disabled) { background: var(--accent); }
 button.link { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 label { display: grid; gap: 0.2rem; font-size: 13px; color: var(--ink-soft); }
 /* A choice in a form fills its field's column, as text fields do. */
@@ -78,16 +64,17 @@ label > .mdbase-select { width: 100%; }
 .app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
 .topbar { display: flex; align-items: center; gap: 0.75rem; height: 48px; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid var(--line); min-width: 0; }
 .topbar-slot { flex: 1; min-width: 0; display: flex; align-items: center; }
+/* The theme choice sits quietly in the bar but keeps its chevron, so it reads as a control. */
+.topbar-theme.mdbase-select:not(:hover, [aria-expanded="true"]) { border-color: transparent; }
+/* Writer's top bar already carries the wordmark on the screens before a collection opens. */
+.app .mdbase-connect-screen section > .wordmark { display: none; }
 
 .icon { width: 18px; height: 18px; flex: none; }
-.icon-button { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--ink-soft); cursor: pointer; transition: background 150ms var(--ease), color 150ms var(--ease); }
-.icon-button:hover { background: var(--subtle); color: var(--ink); }
-.icon-button[aria-pressed="true"] { color: var(--ink); background: var(--selected); }
-.icon-button.small { width: 26px; height: 26px; }
-.icon-button.small .icon { width: 15px; height: 15px; }
-.button.with-icon { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0 0.7rem; }
-.button.with-icon .icon { width: 16px; height: 16px; }
-.button .chevron { width: 14px; height: 14px; margin-left: -0.1rem; opacity: 0.8; }
+/* Writer's compact icon buttons, and the chevron in a menu button. */
+.mdbase-icon-button.is-small { width: 26px; height: 26px; }
+.mdbase-icon-button.is-small .icon { width: 15px; height: 15px; }
+.mdbase-button .icon { width: 16px; height: 16px; }
+.mdbase-button .chevron { width: 14px; height: 14px; margin-left: -0.1rem; opacity: 0.8; }
 
 .segmented { display: inline-flex; padding: 2px; gap: 2px; border: 1px solid var(--line); border-radius: 7px; background: var(--subtle); }
 .segmented button { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; height: 28px; padding: 0 0.6rem; border: 0; border-radius: 5px; background: none; color: var(--muted); cursor: pointer; font-size: 13px; }
@@ -115,18 +102,12 @@ button.bar-problems { cursor: pointer; }
 .bar-problems.is-clear { color: var(--faint); }
 .bar-problems.is-clear .icon { color: var(--connected); }
 
-.gate { max-width: 34rem; margin: 12vh auto 0; padding: 0 16px; }
-.gate .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.gate-list { margin-top: 2rem; }
+.mdbase-connect-screen .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.mdbase-connect-screen .gate-list { margin-top: 2rem; }
 .gate-list ul, .setup-list { padding-left: 1.2rem; }
 .problem { color: var(--danger); }
 
 /* Dialogs */
-.dialog { width: min(40rem, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px -20px color-mix(in oklch, var(--ink) 40%, transparent); }
-.dialog::backdrop { background: oklch(20% 0.01 255 / 0.28); }
-.dialog-body { display: grid; gap: 1rem; padding: 1rem 1.25rem 1.25rem; }
-.dialog-header { display: flex; align-items: center; justify-content: space-between; margin: -0.25rem -0.5rem 0 0; }
-.dialog-header h2 { margin: 0; font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--ink); }
 .dialog-note { margin: 0; }
 .span-2 { grid-column: 1 / -1; }
 .shortcuts-dialog { width: min(32rem, calc(100vw - 32px)); }
@@ -161,7 +142,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .new-manuscript { display: grid; gap: 0.8rem; grid-template-columns: 1fr 1.3fr; align-items: end; }
 .new-manuscript button { grid-column: 1 / -1; justify-self: start; }
 .adopt-note { display: grid; grid-template-columns: 1fr auto; gap: 0.8rem; align-items: end; }
-.new-dialog .dialog-body > p { margin: -0.5rem 0 0; }
+.new-dialog .mdbase-dialog-body > p { margin: -0.5rem 0 0; }
 .or-divider { display: flex; align-items: center; gap: 0.75rem; color: var(--muted); font-size: 12px; }
 .or-divider::before, .or-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
@@ -176,9 +157,6 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 }
 .no-sidebar .outline, .view-write .preview-pane, .view-preview .write, .view-write .divider, .view-preview .divider { display: none; }
 .pane-tabs { display: none; }
-.status { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
-.status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
-.tone-ok .dot { background: var(--connected); }
 .tone-pending .dot { background: var(--warning); }
 .tone-danger .dot { background: var(--danger); }
 .count { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.2rem; padding: 0 0.3rem; border-radius: 0.6rem; background: var(--subtle); border: 1px solid var(--line); font-size: 11px; font-weight: 400; color: var(--ink-soft); }
@@ -283,7 +261,8 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .preview-pages canvas.page { display: block; height: auto; max-width: none; background: #fff; box-shadow: var(--page-shadow); cursor: text; }
 .preview.is-fit .preview-pages canvas.page { width: 100%; max-width: 1100px; }
 
-.toast { position: fixed; right: 16px; bottom: 16px; z-index: 90; display: flex; align-items: center; gap: 0.6rem; max-width: min(28rem, calc(100vw - 32px)); padding: 0.6rem 0.6rem 0.6rem 0.8rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 16px 40px -16px color-mix(in oklch, var(--ink) 34%, transparent); font-size: 13px; }
+.toast { position: fixed; right: 16px; bottom: 16px; z-index: 90; display: flex; align-items: center; gap: 0.6rem; max-width: min(28rem, calc(100vw - 32px)); padding: 0.6rem 0.6rem 0.6rem 0.8rem; border: 1px solid var(--line-strong); border-radius: var(--control-radius); background: var(--surface); font-size: 13px; animation: mdbase-popover-in var(--motion-base) var(--ease-out); }
+.toast.mdbase-settle { animation: mdbase-settle var(--motion-settle) ease forwards; }
 .toast > span:not(.spinner) { flex: 1; }
 .toast.tone-ok .icon { color: var(--connected); }
 .toast.tone-problem { border-color: color-mix(in oklch, var(--danger) 40%, var(--line)); }
@@ -303,8 +282,8 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
   .topbar { gap: 0.4rem; padding: 0 0.5rem 0 16px; }
   .mdbase-app-switcher .wordmark-label, .mdbase-app-switcher-chevron { display: none; }
   .bar { gap: 0.4rem; }
-  .bar-back span, .bar-divider, .bar-layout, .status-text { display: none; }
-  .bar .button.with-icon { padding: 0 0.55rem; height: 32px; }
+  .bar-back span, .bar-divider, .bar-layout, .bar .mdbase-save-notice.is-saved { display: none; }
+  .bar .mdbase-button { padding: 0 0.55rem; min-height: 32px; }
   .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "main" "tabs"; }
   .pane-tabs { grid-area: tabs; display: flex; border-top: 1px solid var(--line); background: var(--canvas); padding-bottom: env(safe-area-inset-bottom); }
   .pane-tabs button { flex: 1; display: grid; justify-items: center; gap: 2px; height: 54px; padding: 6px 0 4px; border: 0; background: none; font: inherit; font-size: 11.5px; color: var(--muted); }

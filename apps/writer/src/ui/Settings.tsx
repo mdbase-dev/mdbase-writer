@@ -11,7 +11,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
-import { Dialog } from "./Dialog.js";
+import { Dialog } from "@mdbase-dev/ui/dialog";
 import { templateName } from "./names.js";
 
 type JsonValue = JsonObject[string];

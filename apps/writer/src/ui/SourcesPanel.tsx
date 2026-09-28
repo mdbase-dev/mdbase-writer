@@ -125,7 +125,7 @@ export function SourcesPanel({
                     {uses > 0 && <span className="cited-mark" title={`Cited ${uses} ${uses === 1 ? "time" : "times"} in this manuscript`}>cited{uses > 1 ? ` ×${uses}` : ""}</span>}
                   </span>
                 </button>
-                <button type="button" className="button cite-button" disabled={!canInsert} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor`}>
+                <button type="button" className="mdbase-button cite-button" disabled={!canInsert} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor`}>
                   Cite
                 </button>
               </div>

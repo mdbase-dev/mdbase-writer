@@ -1,6 +1,7 @@
 // Everything before a collection is ready: starting, choosing and
 // authorizing a collection, and reviewing the setup the writer needs.
 import type { MdbaseApplicationSessionSnapshot } from "@mdbase-dev/connect";
+import { ConnectLayout, OpeningScreen } from "@mdbase-dev/ui/screens";
 import { useState, type ReactNode } from "react";
 
 import type { WriterSession } from "../connect/session.js";
@@ -18,12 +19,7 @@ const RESOURCE_ACTION: Record<string, string> = {
 };
 
 function Centered({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <main className="gate">
-      <h1>{title}</h1>
-      {children}
-    </main>
-  );
+  return <ConnectLayout app="writer" title={title}>{children}</ConnectLayout>;
 }
 
 export function ConnectGate({ session, snapshot }: { session: WriterSession; snapshot: MdbaseApplicationSessionSnapshot }) {
@@ -45,11 +41,7 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
     case "starting":
     case "checking_setup":
       return (
-        <Centered title="Opening mdbase writer">
-          <p className="muted" role="status">
-            {snapshot.status === "checking_setup" ? "Checking the collection…" : "Connecting…"}
-          </p>
-        </Centered>
+        <OpeningScreen app="writer" title="Opening mdbase writer" detail={snapshot.status === "checking_setup" ? "Checking the collection" : "Connecting to mdbase connect"} />
       );
     case "start_failed":
       return (
@@ -61,7 +53,7 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
               Connect's local environment (<code>pnpm dev:environment:up</code> in mdbase-connect) or open the <a href="?demo">demo collection</a>.
             </p>
           )}
-          <button className="button" type="button" onClick={() => void run(() => session.start() as Promise<{ ok: boolean }>)} disabled={busy}>
+          <button className="mdbase-button" type="button" onClick={() => void run(() => session.start() as Promise<{ ok: boolean }>)} disabled={busy}>
             Try again
           </button>
         </Centered>
@@ -74,7 +66,7 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
             mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library.
             Connect a collection to choose what it can access.
           </p>
-          <button className="button primary" type="button" onClick={() => void authorize(snapshot.status === "authorization_required" ? "selected" : "choose")} disabled={busy}>
+          <button className="mdbase-connect-action" type="button" onClick={() => void authorize(snapshot.status === "authorization_required" ? "selected" : "choose")} disabled={busy}>
             {busy ? "Waiting for mdbase connect…" : "Connect a collection"}
           </button>
           {snapshot.connections.length > 0 && snapshot.status === "unselected" && (
@@ -111,7 +103,7 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
             )}
           </ul>
           {!snapshot.update.canApply && <p className="problem">{snapshot.update.reason}</p>}
-          <button className="button primary" type="button" disabled={busy || !snapshot.update.canApply} onClick={() => void run(() => session.applyCollectionSetup({ timeoutMs: 60_000 }) as Promise<{ ok: boolean }>)}>
+          <button className="mdbase-button is-primary" type="button" disabled={busy || !snapshot.update.canApply} onClick={() => void run(() => session.applyCollectionSetup({ timeoutMs: 60_000 }) as Promise<{ ok: boolean }>)}>
             {busy ? "Setting up…" : "Set up collection"}
           </button>
           {error}
@@ -122,10 +114,10 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
         <Centered title="This collection is unavailable">
           <p className="muted">{String(snapshot.reason)}</p>
           <div className="actions">
-            <button className="button" type="button" onClick={() => void authorize("selected")} disabled={busy}>
+            <button className="mdbase-button" type="button" onClick={() => void authorize("selected")} disabled={busy}>
               Reconnect
             </button>
-            <button className="button" type="button" onClick={() => session.clearSelection()}>
+            <button className="mdbase-button" type="button" onClick={() => session.clearSelection()}>
               Choose another collection
             </button>
           </div>
@@ -137,7 +129,7 @@ export function ConnectGate({ session, snapshot }: { session: WriterSession; sna
         <Centered title="mdbase writer can't use this collection">
           <p>{snapshot.problem.message}</p>
           {snapshot.problem.recovery && <p className="muted">{snapshot.problem.recovery}</p>}
-          <button className="button" type="button" onClick={() => session.clearSelection()}>
+          <button className="mdbase-button" type="button" onClick={() => session.clearSelection()}>
             Choose another collection
           </button>
         </Centered>

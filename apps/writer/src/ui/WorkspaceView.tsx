@@ -9,7 +9,7 @@ import { labelTargets, MOD_LABEL, referenceKeys, type EditorInsight, type Follow
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import type { ManuscriptWorkspace, RecordView, SessionSnapshot } from "../workspace/workspace.js";
-import { Dialog } from "./Dialog.js";
+import { Dialog } from "@mdbase-dev/ui/dialog";
 import {
   AlertIcon,
   CheckIcon,
@@ -31,7 +31,10 @@ import {
 import { clampSplit, gridFor, loadLayout, nextZoom, saveLayout, type Layout, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
 import { headingAt, headings, sectionWords } from "./outline.js";
+import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
+import { ConnectLayout } from "@mdbase-dev/ui/screens";
+import { SaveNotice, type SaveTone } from "@mdbase-dev/ui/save-notice";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar } from "./topbar.js";
@@ -45,8 +48,8 @@ const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
   error: "Not saved",
   deleted: "Deleted elsewhere",
 };
-const STATE_TONE: Record<SessionSnapshot["state"], string> = {
-  saved: "ok", unsaved: "pending", saving: "pending", conflict: "danger", recovery: "pending", error: "danger", deleted: "danger",
+const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
+  saved: "saved", unsaved: "pending", saving: "saving", conflict: "attention", recovery: "saving", error: "attention", deleted: "attention",
 };
 
 /** Which part a phone shows. */
@@ -69,6 +72,9 @@ function recordTitle(view: RecordView | undefined, path: string): string {
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const isMod = (e: KeyboardEvent) => (isMac ? e.metaKey : e.ctrlKey);
+/** Typing a "?" into a field or the editor is text, not a request for help. */
+const isTextEntry = (target: EventTarget | null) =>
+  target instanceof Element && Boolean(target.closest("input, textarea, [contenteditable='true']"));
 const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWorkspace; onClose(): void }) {
@@ -83,6 +89,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [sourcesRequest, setSourcesRequest] = useState<SourcesRequest | null>(null);
   const [previewView, setPreviewView] = useState<PreviewView | null>(null);
   const [cursor, setCursor] = useState<{ record: string; offset: number } | null>(null);
@@ -141,7 +148,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
 
   const manuscriptTitle = recordTitle(snap.records.get(workspace.main), workspace.main);
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
-  const overall = states.find((s) => STATE_TONE[s] === "danger") ?? states.find((s) => STATE_TONE[s] === "pending") ?? "saved";
+  const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -255,7 +262,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   // A finished export's note goes after a few seconds; a problem stays until dismissed.
   useEffect(() => {
     if (exportStatus?.tone !== "ok") return;
-    const t = setTimeout(() => setExportStatus(null), 4000);
+    // A finished export settles away (.mdbase-settle), then leaves.
+    const t = setTimeout(() => setExportStatus(null), 2400);
     return () => clearTimeout(t);
   }, [exportStatus]);
 
@@ -270,7 +278,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     else if (mod && e.shiftKey && e.code === "KeyF") showSources();
     else if (mod && !e.shiftKey && e.key === ",") setSettingsOpen(true);
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
+    else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
     else if (mod && (e.key === "?" || (e.shiftKey && e.code === "Slash"))) setShortcutsOpen(true);
+    else if (!mod && e.key === "?" && !isTextEntry(e.target)) setShortcutsOpen(true);
     else if (e.key === "F8" && !mod) stepProblem(e.shiftKey ? -1 : 1);
     else handled = false;
     if (handled) {
@@ -286,13 +296,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
 
   if (snap.phase === "failed") {
     return (
-      <main className="gate">
-        <h1>This manuscript could not be opened</h1>
-        <p>{snap.problem}</p>
-        <button className="button" type="button" onClick={onClose}>
+      <ConnectLayout app="writer" title="This manuscript could not be opened" error={snap.problem}>
+        <button className="mdbase-connect-action" type="button" onClick={onClose}>
           Back to manuscripts
         </button>
-      </main>
+      </ConnectLayout>
     );
   }
 
@@ -308,17 +316,14 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       style={{ "--grid-columns": columns, "--grid-areas": areas } as React.CSSProperties}
     >
       <InTopbar>
-        <div className="bar">
+        <div className="bar mdbase-settle-host">
           <button type="button" className="bar-back" onClick={onClose} aria-label="Manuscripts" title="All manuscripts">
             <ChevronLeft />
             <span>Manuscripts</span>
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
-          <span className={`status tone-${STATE_TONE[overall]}`} role="status">
-            <span className="dot" aria-hidden="true" />
-            <span className="status-text">{STATE_LABEL[overall]}</span>
-          </span>
+          <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} />
           <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
             {plural(stats.words, "word")}
           </span>
@@ -332,7 +337,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           <div className="bar-layout" role="group" aria-label="Layout">
             <button
               type="button"
-              className="icon-button"
+              className="mdbase-icon-button"
               aria-pressed={layout.sidebar}
               onClick={() => setLayout((l) => ({ ...l, sidebar: !l.sidebar }))}
               title={`${layout.sidebar ? "Hide" : "Show"} the sidebar (${MOD_LABEL}-\\)`}
@@ -351,10 +356,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               })}
             </div>
           </div>
-          <button type="button" className="icon-button bar-shortcuts" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts" title={`Keyboard shortcuts (${MOD_LABEL}-?)`}>
+          <button type="button" className="mdbase-icon-button bar-shortcuts" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts" title={`Keyboard shortcuts (${MOD_LABEL}-?)`}>
             <KeyboardIcon />
           </button>
-          <button type="button" className="button with-icon" aria-label="Settings" onClick={() => setSettingsOpen(true)} title={`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
+          <button type="button" className="mdbase-button" aria-label="Settings" onClick={() => setSettingsOpen(true)} title={`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
             <GearIcon />
             <span className="button-label">Settings</span>
             {diagnostics.some((d) => d.field) && <span className="count tone-warning">{diagnostics.filter((d) => d.field).length}</span>}
@@ -434,8 +439,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         {activeView?.snapshot.state === "conflict" && (
           <div className="banner" role="alert">
             <span>This record changed elsewhere while you were editing it.</span>
-            <button type="button" className="button" onClick={() => workspace.resolveConflict(active, "mine")}>Keep mine</button>
-            <button type="button" className="button" onClick={() => workspace.resolveConflict(active, "theirs")}>Use theirs</button>
+            <button type="button" className="mdbase-button" onClick={() => workspace.resolveConflict(active, "mine")}>Keep mine</button>
+            <button type="button" className="mdbase-button" onClick={() => workspace.resolveConflict(active, "theirs")}>Use theirs</button>
           </div>
         )}
         {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
@@ -479,7 +484,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           <span className="bar-spacer" />
           {previewView && <span className="muted small page-indicator">Page {previewView.page} of {previewView.pages}</span>}
           <div className="zoom" role="group" aria-label="Zoom">
-            <button type="button" className="icon-button small" aria-label="Zoom out" onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, -1) }))}>
+            <button type="button" className="mdbase-icon-button is-small" aria-label="Zoom out" onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, -1) }))}>
               <MinusIcon />
             </button>
             <button
@@ -490,7 +495,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             >
               {layout.zoom === "fit" ? `Fit · ${Math.round((previewView?.scale ?? 1) * 100)}%` : `${Math.round(layout.zoom * 100)}%`}
             </button>
-            <button type="button" className="icon-button small" aria-label="Zoom in" onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, 1) }))}>
+            <button type="button" className="mdbase-icon-button is-small" aria-label="Zoom in" onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, 1) }))}>
               <PlusIcon />
             </button>
           </div>
@@ -530,12 +535,29 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         focus={settingsFocus}
       />
       <Shortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        label="Writer commands"
+        commands={[
+          { id: "settings", group: "Manuscript", label: "Manuscript settings", shortcut: "mod+,", run: () => setSettingsOpen(true) },
+          { id: "sources", group: "Manuscript", label: "Find a source", shortcut: "mod+shift+f", run: () => showSources() },
+          { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
+          { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: onClose },
+          { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
+          ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
+          ...(snap.artifact ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => void exportPdf() }] : []),
+          { id: "export-docx", group: "Export", label: "Export Word (DOCX)", run: () => void exportDocx() },
+          { id: "export-bundle", group: "Export", label: "Export Pandoc bundle (zip)", run: () => void exportBundle() },
+          { id: "shortcuts", group: "Help", label: "Keyboard shortcuts", shortcut: "?", run: () => setShortcutsOpen(true) },
+        ]}
+      />
       {exportStatus && (
-        <div className={`toast tone-${exportStatus.tone}`} role={exportStatus.tone === "problem" ? "alert" : "status"}>
+        <div className={`toast tone-${exportStatus.tone}${exportStatus.tone === "ok" ? " mdbase-settle" : ""}`} role={exportStatus.tone === "problem" ? "alert" : "status"}>
           {exportStatus.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : exportStatus.tone === "ok" ? <CheckIcon /> : <AlertIcon />}
           <span>{exportStatus.text}</span>
           {exportStatus.tone !== "busy" && (
-            <button type="button" className="icon-button small" aria-label="Dismiss" onClick={() => setExportStatus(null)}>
+            <button type="button" className="mdbase-icon-button is-small" aria-label="Dismiss" onClick={() => setExportStatus(null)}>
               <CloseIcon />
             </button>
           )}
@@ -669,7 +691,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
       <button
         ref={trigger}
         type="button"
-        className="button primary with-icon"
+        className="mdbase-button is-primary"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
@@ -756,7 +778,8 @@ const SHORTCUTS: readonly [string, string][] = [
   ["@ or [@", "Cite a source or refer to a label (by key, author, title or year)"],
   ["![[", "Embed a record"],
   [`${MOD_LABEL} F`, "Find and replace in this record"],
-  [`${MOD_LABEL} ?`, "This list"],
+  [`${MOD_LABEL} K`, "Find or run a command"],
+  ["?", "This list"],
 ];
 
 function Shortcuts({ open, onClose }: { open: boolean; onClose(): void }) {
