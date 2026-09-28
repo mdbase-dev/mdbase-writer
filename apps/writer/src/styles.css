@@ -271,12 +271,6 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .editor .cm-cursor { border-left-color: var(--ink); }
 .editor .cm-attr { color: var(--faint); font-family: var(--mono); font-size: 0.72em; font-weight: 400; letter-spacing: -0.01em; }
 .editor .cm-fnmark { color: var(--muted); font-family: var(--mono); font-size: 0.78em; }
-.cm-tooltip { background: var(--surface) !important; border: 1px solid var(--line-strong) !important; border-radius: 5px; color: var(--ink); }
-.cm-tooltip-autocomplete ul li[aria-selected] { background: var(--selected) !important; color: var(--ink) !important; }
-.cm-completionDetail { color: var(--muted); margin-left: 0.6em; font-style: normal !important; }
-.cm-completionInfo { max-width: 22rem; padding: 0.4rem 0.6rem !important; }
-.cm-diagnostic { font-family: "Atkinson Hyperlegible", sans-serif; }
-.cm-tooltip-hover { border-radius: 8px !important; box-shadow: 0 12px 30px -14px color-mix(in oklch, var(--ink) 40%, transparent); }
 .cm-ref-tip { max-width: 26rem; padding: 0.5rem 0.7rem; display: grid; gap: 0.25rem; font-family: "Atkinson Hyperlegible", sans-serif; font-size: 13px; line-height: 1.45; }
 .cm-ref-kind { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .cm-ref-body { color: var(--ink); }

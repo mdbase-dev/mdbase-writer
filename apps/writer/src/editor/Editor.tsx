@@ -1,5 +1,6 @@
 // The Markdown editor for one record. The record session owns the text; the
 // editor reports edits and adopts external changes as remote transactions.
+import { mdbasePopupTheme } from "@mdbase-dev/ui/codemirror";
 import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { bracketMatching, indentOnInput } from "@codemirror/language";
@@ -67,7 +68,8 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
           highlightSelectionMatches(),
           search({ top: true }),
           lintGutter(),
-          autocompletion({ override: [writerCompletions(() => latest.current.completion)], icons: false }),
+          autocompletion({ override: [writerCompletions(() => latest.current.completion)] }),
+          mdbasePopupTheme,
           keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap, indentWithTab]),
           writerLanguage(),
           writerInsight(() => latest.current.insight, (target) => latest.current.onFollow?.(target)),

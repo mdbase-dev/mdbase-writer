@@ -18,7 +18,7 @@ export function writerCompletions(data: () => CompletionData): CompletionSource 
     label: entry.key,
     detail: authorYear(entry),
     info: entry.title,
-    type: "text",
+    type: "citation",
   });
 
   return (context: CompletionContext): CompletionResult | null => {
