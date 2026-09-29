@@ -5,7 +5,7 @@ import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useSt
 
 import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
-import { labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
+import { ALT_LABEL, labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import type { ManuscriptWorkspace } from "../workspace/workspace.js";
@@ -31,6 +31,8 @@ import {
 import { readerSourceHref } from "../apps.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
+import { anchorsFor, placeThreads, type PlacedThread } from "./comments.js";
+import { CommentsPanel, openCount, type PendingComment } from "./CommentsPanel.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
@@ -88,6 +90,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [sourcesRequest, setSourcesRequest] = useState<SourcesRequest | null>(null);
   const [previewView, setPreviewView] = useState<PreviewView | null>(null);
   const [cursor, setCursor] = useState<{ record: string; offset: number } | null>(null);
+  const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
+  const [activeComment, setActiveComment] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
   const pendingReveal = useRef<number | null>(null);
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -141,6 +145,36 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     }),
     [snap.library, snap.result?.references, stats.labels],
   );
+
+  // Threads on the manuscript's records, placed in their (slightly deferred) text.
+  const placed = useMemo(
+    () => placeThreads(snap.comments, order, (path) => records.get(path)?.snapshot.body, snap.recordPaths),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
+    [snap.comments, records, snap.recordPaths, snap.result?.order],
+  );
+  const anchors = useMemo(() => anchorsFor(placed, active), [placed, active]);
+
+  const showComments = useCallback(() => {
+    setLayout((l) => (l.sidebar && l.tab === "comments" ? l : { ...l, sidebar: true, tab: "comments" }));
+    setPane("outline");
+  }, [setLayout]);
+
+  /** Starts a comment (or a suggestion) on the editor's selection; with nothing to anchor to, on the whole record. */
+  const startComment = useCallback((kind: PendingComment["kind"]) => {
+    const view = snap.records.get(active);
+    if (!view || view.snapshot.state === "deleted") return;
+    const selection = editor.current?.selection();
+    setPendingComment(selection && selection.text ? { kind, record: active, draft: { record: active, body: selection.text, from: selection.from, to: selection.to } } : { kind: "comment", record: active });
+    setActiveComment(null);
+    showComments();
+  }, [snap.records, active, showComments]);
+
+  const selectThread = useCallback((p: PlacedThread) => {
+    setActiveComment(p.thread.root.path);
+    if (p.at && p.at !== "whole") jump(p.record, p.at.from);
+    else if (p.record !== active) jump(p.record, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- jump is declared below
+  }, [active]);
 
   const manuscriptTitle = recordTitle(snap.records.get(workspace.main), workspace.main);
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
@@ -299,6 +333,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     else if (mod && e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, view: VIEW_ORDER[(VIEW_ORDER.indexOf(l.view) + 1) % VIEW_ORDER.length] as View }));
     else if (mod && e.shiftKey && e.code === "KeyF") showSources();
     else if (mod && !e.shiftKey && e.key === ",") setSettingsOpen(true);
+    else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
+    else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
     else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
     else if (mod && (e.key === "?" || (e.shiftKey && e.code === "Slash"))) setShortcutsOpen(true);
@@ -403,6 +439,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           tab={layout.tab}
           onTab={setSidebarTab}
           sources={snap.library.length}
+          comments={placed.filter((p) => p.thread.root.status === "open").length}
+          commentsTitle={openCount(placed)}
         />
         <div className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
           {layout.tab === "outline" ? (
@@ -422,6 +460,33 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               onJump={jump}
               onMove={(from, to) => workspace.moveChapter(from, to)}
               onAdd={(title) => workspace.addChapter(title)}
+            />
+          ) : layout.tab === "comments" ? (
+            <CommentsPanel
+              placed={placed}
+              people={snap.people}
+              problem={snap.commentsProblem}
+              active={activeComment}
+              pending={pendingComment}
+              recordTitle={(path) => recordTitle(snap.records.get(path), path)}
+              onSelect={selectThread}
+              onSubmit={async (text, replacement) => {
+                if (!pendingComment) return { ok: true, value: null };
+                const created = await workspace.addComment(pendingComment.draft ?? { record: pendingComment.record }, text, replacement);
+                if (created.ok) {
+                  setPendingComment(null);
+                  setActiveComment(created.value.path);
+                }
+                return created;
+              }}
+              onCancel={() => setPendingComment(null)}
+              onReply={(thread, text) => workspace.reply(thread, text)}
+              onChange={(comment, change) => workspace.changeComment(comment, change)}
+              onAccept={(p) => workspace.acceptSuggestion(p.record, p.thread.root)}
+              onWholeRecord={() => {
+                setPendingComment({ kind: "comment", record: active });
+                setActiveComment(null);
+              }}
             />
           ) : (
             <SourcesPanel
@@ -478,6 +543,12 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             onReady={onEditorReady}
             onCursor={onCursor}
             onFollow={onFollow}
+            anchors={anchors}
+            activeComment={activeComment}
+            onAnchor={(id) => {
+              setActiveComment(id);
+              showComments();
+            }}
           />
         ) : (
           <p className="muted pad">Opening…</p>
@@ -559,6 +630,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         commands={[
           { id: "settings", group: "Manuscript", label: "Manuscript settings", shortcut: "mod+,", run: () => setSettingsOpen(true) },
           { id: "sources", group: "Manuscript", label: "Find a source", shortcut: "mod+shift+f", run: () => showSources() },
+          { id: "comment", group: "Comments", label: "Comment on the selection", shortcut: "mod+alt+m", run: () => startComment("comment") },
+          { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
+          { id: "comments", group: "Comments", label: "Show comments", run: showComments },
           { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: onClose },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
@@ -584,9 +658,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   );
 }
 
-/** Outline and Sources, as tabs: ←/→ move between them. */
-function SidebarTabs({ tab, onTab, sources }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number }) {
-  const tabs: readonly SidebarTab[] = ["outline", "sources"];
+/** Outline, Sources and Comments, as tabs: ←/→ move between them. */
+function SidebarTabs({ tab, onTab, sources, comments, commentsTitle }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number; comments: number; commentsTitle: string }) {
+  const tabs: readonly SidebarTab[] = ["outline", "sources", "comments"];
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
     e.preventDefault();
@@ -607,10 +681,11 @@ function SidebarTabs({ tab, onTab, sources }: { tab: SidebarTab; onTab(tab: Side
           aria-controls={`sidebar-${t}`}
           tabIndex={tab === t ? 0 : -1}
           onClick={() => onTab(t)}
-          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-F)` : undefined}
+          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-F)` : t === "comments" ? commentsTitle : undefined}
         >
-          {t === "outline" ? "Outline" : "Sources"}
+          {t === "outline" ? "Outline" : t === "sources" ? "Sources" : "Comments"}
           {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
+          {t === "comments" && comments > 0 && <span className="tab-count">{comments}</span>}
         </button>
       ))}
     </div>
@@ -826,6 +901,8 @@ const SHORTCUTS: readonly [string, string][] = [
   [`${MOD_LABEL} Shift \\`, "Editor and preview → editor only → preview only"],
   [`${MOD_LABEL} Shift F`, "Find a source"],
   [`${MOD_LABEL} ,`, "Manuscript settings"],
+  [`${MOD_LABEL} ${ALT_LABEL} M`, "Comment on the selection"],
+  [`${MOD_LABEL} ${ALT_LABEL} S`, "Suggest an edit to the selection"],
   [`${MOD_LABEL} Shift S`, "Export"],
   ["F8 / Shift F8", "Next / previous problem"],
   [`${MOD_LABEL}-click`, "On a citation: show the source. On a cross-reference: go to what it labels"],

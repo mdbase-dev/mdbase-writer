@@ -1,7 +1,7 @@
 // How the workspace is laid out, remembered in this browser (all mdbase
 // writer manuscripts share it).
 export type View = "write" | "both" | "preview";
-export type SidebarTab = "outline" | "sources";
+export type SidebarTab = "outline" | "sources" | "comments";
 
 export interface Layout {
   readonly sidebar: boolean;
@@ -28,7 +28,7 @@ export function loadLayout(): Layout {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Partial<Layout>;
     return {
       sidebar: typeof raw.sidebar === "boolean" ? raw.sidebar : DEFAULT_LAYOUT.sidebar,
-      tab: raw.tab === "sources" ? "sources" : "outline",
+      tab: raw.tab === "sources" || raw.tab === "comments" ? raw.tab : "outline",
       sidebarWidth: typeof raw.sidebarWidth === "number" ? clampSidebar(raw.sidebarWidth) : DEFAULT_LAYOUT.sidebarWidth,
       view: raw.view === "write" || raw.view === "preview" || raw.view === "both" ? raw.view : DEFAULT_LAYOUT.view,
       split: typeof raw.split === "number" ? clampSplit(raw.split) : DEFAULT_LAYOUT.split,
