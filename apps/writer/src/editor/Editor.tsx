@@ -12,6 +12,7 @@ import { useEffect, useRef } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
+import { commentAnchors, showAnchors, type CommentAnchor } from "./comments.js";
 import { writerCompletions, type CompletionData } from "./completions.js";
 import { fixesFor } from "./fixes.js";
 import { writerInsight, type EditorInsight, type FollowTarget } from "./insight.js";
@@ -23,6 +24,8 @@ export interface EditorHandle {
   reveal(offset: number): void;
   /** Replaces the selection with text (a citation, a quotation) and leaves the cursor after it. */
   insert(text: string): void;
+  /** The main selection (UTF-16 offsets) and the text it is in. */
+  selection(): { from: number; to: number; text: string };
 }
 
 export interface EditorProps {
@@ -42,9 +45,14 @@ export interface EditorProps {
   chapters?: ChapterCards;
   /** Looks for a source in the Sources panel (a quick fix for an unknown citekey). */
   onFindSource?(query: string): void;
+  /** Commented passages and suggestions to show, and the thread selected in the sidebar. */
+  anchors?: readonly CommentAnchor[];
+  activeComment?: string | null;
+  /** A click on a commented passage or suggestion. */
+  onAnchor?(id: string): void;
 }
 
-export function Editor({ path, text, readOnly, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource }: EditorProps) {
+export function Editor({ path, text, readOnly, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -54,8 +62,8 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
   // Only a real change to the problems is dispatched: redrawing lint marks
   // replaces the line's DOM, which would cancel a hover in progress.
   const shownDiagnostics = useRef("");
-  const latest = useRef({ onChange, completion, insight, onCursor, onFollow, chapters, onFindSource });
-  latest.current = { onChange, completion, insight, onCursor, onFollow, chapters, onFindSource };
+  const latest = useRef({ onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor });
+  latest.current = { onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor };
 
   // One view per record path.
   useEffect(() => {
@@ -80,6 +88,7 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
           writerLanguage(),
           writerInsight(() => latest.current.insight, (target) => latest.current.onFollow?.(target)),
           chapterCards(() => latest.current.chapters),
+          commentAnchors((id) => latest.current.onAnchor?.(id)),
           EditorView.lineWrapping,
           EditorState.readOnly.of(readOnly),
           placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
@@ -102,6 +111,10 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
         const at = Math.min(offset, v.state.doc.length);
         v.dispatch({ selection: { anchor: at }, effects: EditorView.scrollIntoView(at, { y: "center" }) });
         v.focus();
+      },
+      selection() {
+        const { from, to } = v.state.selection.main;
+        return { from, to, text: v.state.doc.toString() };
       },
       insert(insertion) {
         if (v.state.readOnly) return;
@@ -163,6 +176,13 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
     });
     v.dispatch(setDiagnostics(v.state, cm));
   }, [diagnostics]);
+
+  // Anchors are placed against the text they were located in; one render late
+  // they are mapped through the edits since, so they never lag a keystroke.
+  useEffect(() => {
+    const v = view.current;
+    if (v) showAnchors(v, anchors ?? [], activeComment);
+  }, [anchors, activeComment, path, readOnly]);
 
   return <div className="editor" ref={host} />;
 }

@@ -2,8 +2,10 @@
 // collections) and a demo on the SDK's in-memory record authority.
 import type { JsonObject, MdbaseRecords } from "@mdbase-dev/connect";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
+import type { CommentRecord } from "@mdbase-writer/core/comments";
 
 import { embedCount, wordCount } from "../words.js";
+import type { CommentChange, NewComment, People } from "./comments.js";
 
 export type Result<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly message: string };
 
@@ -75,6 +77,13 @@ export interface WriterBackend {
   /** Reader annotations in the collection (records implementing dev.mdbase.reader.annotation). */
   annotations(): Promise<Result<SourceAnnotation[]>>;
   readFile(path: string): Promise<Result<Uint8Array>>;
+  /** Every comment in the collection (records implementing mdbase.comment), withdrawn ones included. */
+  comments(): Promise<Result<CommentRecord[]>>;
+  /** Writes a new comment, reply or suggestion, signed by the signed-in account's person record when it has one. */
+  createComment(input: NewComment): Promise<Result<CommentRecord>>;
+  changeComment(comment: CommentRecord, change: CommentChange): Promise<Result<CommentRecord>>;
+  /** Person records' names, and the signed-in account's own record (loaded once). */
+  people(): Promise<People>;
   /** Paths changed by other applications or views (for refreshing the index and library). */
   onExternalChange(listener: (paths: readonly string[]) => void): () => void;
   dispose(): void;

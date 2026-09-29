@@ -7,10 +7,12 @@
 // the whole manuscript and reports which embedded records it still needs.
 import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
 import type { CslItem, WriterRecord } from "@mdbase-writer/core";
+import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
+import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
 import { fail, manuscriptSlug, ok, type LibraryEntry, type Result, type WriterBackend } from "../backend/types.js";
 import { CompileClient } from "../compile/client.js";
 import type { CompileResult } from "../compile/protocol.js";
@@ -57,6 +59,19 @@ export interface WorkspaceSnapshot {
   readonly recordPaths: readonly string[];
   readonly filePaths: readonly string[];
   readonly compiling: boolean;
+  /** Every comment in the collection; the UI keeps those on this manuscript's records. */
+  readonly comments: readonly CommentRecord[];
+  /** Why comments could not be loaded (a collection not set up for them, say). */
+  readonly commentsProblem?: string | undefined;
+  readonly people: People;
+}
+
+/** A passage chosen to comment on: the body it was chosen in and its UTF-16 range. */
+export interface CommentDraft {
+  readonly record: string;
+  readonly body: string;
+  readonly from: number;
+  readonly to: number;
 }
 
 export class ManuscriptWorkspace {
@@ -70,6 +85,7 @@ export class ManuscriptWorkspace {
   private readonly listeners = new Set<() => void>();
   private readonly cleanups: (() => void)[] = [];
   private refreshTimer: ReturnType<typeof setTimeout> | undefined;
+  private commentsTimer: ReturnType<typeof setTimeout> | undefined;
   private current: WorkspaceSnapshot;
   private disposed = false;
 
@@ -77,7 +93,7 @@ export class ManuscriptWorkspace {
     private readonly backend: WriterBackend,
     readonly main: string,
   ) {
-    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], compiling: true };
+    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], compiling: true, comments: [], people: NO_PEOPLE };
     this.cleanups.push(this.compile.onResult((r) => this.onResult(r)));
     this.cleanups.push(this.compile.onFailure((message) => this.update({ problem: message })));
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
@@ -121,6 +137,12 @@ export class ManuscriptWorkspace {
     this.update({ library: library.value, recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
     const opened = await this.open(this.main);
     this.update({ phase: opened ? "ready" : "failed" });
+    if (opened) void this.loadComments();
+  }
+
+  private async loadComments(): Promise<void> {
+    const [comments, people] = await Promise.all([this.backend.comments(), this.backend.people()]);
+    this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, people } : { commentsProblem: comments.message, people });
   }
 
   /** Opens (once) and follows the session for a record. */
@@ -179,8 +201,14 @@ export class ManuscriptWorkspace {
     // An image, style or template the document uses changed: send its new bytes.
     const assets = paths.filter((p) => this.requestedAssets.has(p));
     if (assets.length) void this.loadAssets(assets);
+    // A comment changed elsewhere (or our own write, echoed): only comments need reloading.
+    const comments = new Set(this.current.comments.map((c) => c.path));
+    if (paths.some((p) => comments.has(p))) {
+      clearTimeout(this.commentsTimer);
+      this.commentsTimer = setTimeout(() => void this.loadComments(), 300);
+    }
     // Record sessions follow their own records (including ones still opening).
-    if (paths.every((p) => this.leases.has(p) || this.opening.has(p) || this.requestedAssets.has(p))) return;
+    if (paths.every((p) => this.leases.has(p) || this.opening.has(p) || this.requestedAssets.has(p) || comments.has(p))) return;
     clearTimeout(this.refreshTimer);
     this.refreshTimer = setTimeout(() => void this.refreshCollection(), 2_000);
   }
@@ -195,6 +223,8 @@ export class ManuscriptWorkspace {
       this.compile.send({ type: "library", library: library.value.map((e) => e.item) as CslItem[] });
       this.update({ library: library.value });
     }
+    // A path we did not know may be someone's new comment.
+    await this.loadComments();
   }
 
   setBody(path: string, body: string): void {
@@ -240,6 +270,41 @@ export class ManuscriptWorkspace {
 
   patchFrontmatter(path: string, patch: JsonObject): void {
     this.leases.get(path)?.lease.session.patchFrontmatter(patch);
+  }
+
+  /** A new thread on a passage (a suggestion when `replacement` is given), or on the whole record. */
+  async addComment(draft: CommentDraft | { record: string }, text: string, replacement?: string): Promise<Result<CommentRecord>> {
+    const target = "body" in draft ? targetFor(draft.body, draft.from, draft.to, await bodyHash(draft.body)) : undefined;
+    const created = await this.backend.createComment({ document: draft.record, text, ...(target ? { target } : {}), ...(replacement !== undefined ? { replacement } : {}) });
+    if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
+    return created;
+  }
+
+  async reply(thread: CommentThread, text: string): Promise<Result<CommentRecord>> {
+    // A reply repeats its thread's document.
+    const document = resolveLinkTarget(linkPath(thread.root.document), thread.root.path, new Set(this.current.recordPaths)) ?? linkPath(thread.root.document);
+    const created = await this.backend.createComment({ document, text, thread: thread.root });
+    if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
+    return created;
+  }
+
+  async changeComment(comment: CommentRecord, change: CommentChange): Promise<Result<CommentRecord>> {
+    const changed = await this.backend.changeComment(comment, change);
+    if (changed.ok) this.update({ comments: this.current.comments.map((c) => (c.path === comment.path ? changed.value : c)) });
+    return changed;
+  }
+
+  /**
+   * Makes a suggestion's edit in the record it is on, then resolves it as
+   * accepted. Refuses, leaving it open, when its text is no longer there.
+   */
+  async acceptSuggestion(record: string, suggestion: CommentRecord): Promise<Result<CommentRecord>> {
+    const body = this.current.records.get(record)?.snapshot.body;
+    if (body === undefined || !suggestion.target || !suggestion.suggestion) return fail("That record is not open.");
+    const next = applySuggestion(body, suggestion.target, suggestion.suggestion.replacement);
+    if (next === null) return fail("The suggested text is no longer in the record; edit it by hand, then resolve the suggestion.");
+    this.setBody(record, next);
+    return this.changeComment(suggestion, { kind: "resolve", outcome: "accepted" });
   }
 
   resolveConflict(path: string, keep: "mine" | "theirs"): void {
@@ -326,6 +391,7 @@ export class ManuscriptWorkspace {
     if (this.disposed) return;
     this.disposed = true;
     clearTimeout(this.refreshTimer);
+    clearTimeout(this.commentsTimer);
     for (const c of this.cleanups) c();
     await Promise.all([...this.leases.values()].map(async ({ lease, unsubscribe }) => {
       unsubscribe();

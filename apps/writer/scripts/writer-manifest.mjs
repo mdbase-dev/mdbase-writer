@@ -4,6 +4,10 @@
 // source contract (byte-identical copies of Reader's resources): the writer
 // resolves citations against Reader sources, and shipping the same bytes
 // makes provisioning a no-op in collections that already use Reader.
+//
+// It also provisions the published mdbase.comment pack, embedded exactly as
+// mdbase contracts publishes it (dist/packs), so every app that comments
+// installs the same bytes.
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -20,6 +24,9 @@ export const packResources = [
   { kind: "type", mode: "seed", source: "types/writer-manuscript.md", target: "_types/writer-manuscript.md" },
   { kind: "type", mode: "seed", source: "types/reader-source.md", target: "_types/reader-source.md" },
 ];
+
+/** The published comment pack: `{ manifest, resources, provides }`, as mdbase contracts builds it. */
+export const COMMENT_PACK = "packs/mdbase.comment-1.0.0.json";
 
 export async function buildWriterManifest({ origin = "https://writer.mdbase.dev", basePath = "/" } = {}) {
   const appUrl = new URL(normalizeBasePath(basePath), `${origin.replace(/\/$/u, "")}/`).href;
@@ -40,6 +47,7 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
       const contract = parseFrontmatter(r.document);
       return { id: contract.id, version: contract.version, digest: r.contractDigest };
     });
+  const commentPack = JSON.parse(await readFile(resolve(projectRoot, "mdbase", COMMENT_PACK), "utf8"));
   return {
     manifest_version: 1,
     id: "dev.mdbase.writer",
@@ -49,14 +57,18 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
     redirect_uris: [appUrl],
     requirements: {
       access: "full_collection",
-      contracts,
+      contracts: [...contracts, ...commentPack.provides],
       // Capability groups (v2). The writer reads the collection, creates
-      // manuscripts and edits records; it never deletes or renames them.
+      // manuscripts and comments and edits records; it never deletes or
+      // renames them (a withdrawn comment is kept, emptied).
       capabilities: {
         contract_version: 2,
         required: ["collection.read", "records.create", "records.edit"],
       },
       files: { required: ["list", "read"], scope: { kind: "collection" } },
+      // The signed-in account, to sign comments with its person record. Optional:
+      // without it, comments are unsigned.
+      people: { version: 1, optional: ["identity"] },
     },
     provisions: {
       type_packs: [
@@ -72,6 +84,7 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
           },
           resources: resources.map(({ source, document }) => ({ source, document })),
         },
+        commentPack,
       ],
     },
   };

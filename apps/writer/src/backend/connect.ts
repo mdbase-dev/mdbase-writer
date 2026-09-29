@@ -1,6 +1,20 @@
 // The writer on a real collection through mdbase connect.
-import type { CollectionFileDescriptor, JsonObject, MdbaseConnection } from "@mdbase-dev/connect";
+import { PERSON_CONTRACT, type CollectionFileDescriptor, type JsonObject, type MdbaseConnection } from "@mdbase-dev/connect";
+import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 
+import {
+  changeFields,
+  commentPath,
+  newCommentFields,
+  NO_PEOPLE,
+  personKey,
+  personLink,
+  toContract,
+  toLocal,
+  type CommentChange,
+  type NewComment,
+  type People,
+} from "./comments.js";
 import {
   bodySummary,
   fail,
@@ -23,6 +37,14 @@ import {
 export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2" } as const;
 export const sourceContract = { id: "dev.mdbase.reader.source", version: "1.0.0-beta.1" } as const;
 export const annotationContract = { id: "dev.mdbase.reader.annotation", version: "1.0.0-beta.1" } as const;
+export const commentContract = { id: "mdbase.comment", version: "1.0.0" } as const;
+
+/** A collection type implementing a contract: its name, its field for each contract field, and the key that declares types. */
+interface ImplementingType {
+  readonly name: string;
+  readonly fields: Record<string, string>;
+  readonly typeKey: string;
+}
 
 const problemMessage = (outcome: { ok: false; problem: { message?: string; code: string } }) => outcome.problem.message ?? outcome.problem.code;
 
@@ -90,16 +112,97 @@ export class ConnectBackend implements WriterBackend {
    * contract (usually the starter `writer-manuscript`), its field names for
    * the contract's fields, and the frontmatter key that declares types.
    */
-  private async manuscriptType(): Promise<Result<{ name: string; fields: Record<string, string>; typeKey: string }>> {
+  private manuscriptType(): Promise<Result<ImplementingType>> {
+    return this.implementingTypes(manuscriptContract.id, "manuscripts").then((r) => (r.ok ? ok(r.value[0] as ImplementingType) : r));
+  }
+
+  /** The collection's types implementing a contract (the first is the one to create with). */
+  private async implementingTypes(contractId: string, what: string): Promise<Result<ImplementingType[]>> {
     const described = await this.connection.describe();
     if (!described.ok) return fail(problemMessage(described));
-    const implementation = described.value.contracts.find((c) => c.id === manuscriptContract.id)?.implementations[0];
-    if (!implementation) return fail("This collection has no type for manuscripts. Set it up again from mdbase connect.");
+    const implementations = described.value.contracts.find((c) => c.id === contractId)?.implementations ?? [];
+    if (!implementations.length) return fail(`This collection has no type for ${what}. Set it up again from mdbase connect.`);
     const settings = described.value.configuration?.["settings"] as { explicit_type_keys?: unknown } | undefined;
     const keys = settings?.explicit_type_keys;
     // With explicit type keys turned off, the starter type still matches on `type`.
     const typeKey = Array.isArray(keys) && typeof keys[0] === "string" ? keys[0] : "type";
-    return ok({ name: implementation.typeName, fields: implementation.fields, typeKey });
+    return ok(implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey })));
+  }
+
+  async comments(): Promise<Result<CommentRecord[]>> {
+    const types = await this.implementingTypes(commentContract.id, "comments");
+    if (!types.ok) return types;
+    // A contract view cannot include bodies: query the implementing types and map their fields here.
+    const out: CommentRecord[] = [];
+    const byName = new Map(types.value.map((t) => [t.name, t]));
+    for await (const page of this.connection.queryPages({ types: [...byName.keys()], frontmatterMode: "persisted", includeBody: true }, { pageSize: 500 })) {
+      if (!page.ok) return fail(problemMessage(page));
+      for (const r of page.value.results) {
+        const type = r.types.map((t) => byName.get(t)).find(Boolean);
+        if (!type) continue;
+        const comment = commentFromRecord(r.path, toContract(r.frontmatter ?? {}, type.fields), r.body ?? "");
+        if (comment) out.push(comment);
+      }
+    }
+    return ok(out);
+  }
+
+  async createComment(input: NewComment): Promise<Result<CommentRecord>> {
+    const types = await this.implementingTypes(commentContract.id, "comments");
+    if (!types.ok) return types;
+    const type = types.value[0] as ImplementingType;
+    const now = new Date();
+    const fields = newCommentFields(input, now, (await this.people()).me?.link);
+    const created = await this.connection.create({
+      type: type.name,
+      path: commentPath(now),
+      frontmatter: { [type.typeKey]: type.name, ...toLocal(fields, type.fields) },
+      body: input.text.trim() ? `${input.text.trim()}\n` : "",
+    });
+    if (!created.ok) return fail(problemMessage(created));
+    const comment = commentFromRecord(created.value.path, fields, input.text);
+    return comment ? ok(comment) : fail("The comment was written but could not be read back.");
+  }
+
+  async changeComment(comment: CommentRecord, change: CommentChange): Promise<Result<CommentRecord>> {
+    const types = await this.implementingTypes(commentContract.id, "comments");
+    if (!types.ok) return types;
+    const current = await this.connection.read({ path: comment.path });
+    if (!current.ok) return fail(problemMessage(current));
+    const type = types.value.find((t) => current.value.types.includes(t.name)) ?? (types.value[0] as ImplementingType);
+    const { fields, body } = changeFields(comment, change, new Date(), (await this.people()).me?.link);
+    const updated = await this.connection.update({
+      path: comment.path,
+      patch: toLocal(fields, type.fields),
+      ...(body !== undefined ? { body } : {}),
+      ifRevision: current.value.revision,
+    });
+    if (!updated.ok) return fail(problemMessage(updated));
+    const next = commentFromRecord(comment.path, toContract(updated.value.frontmatter, type.fields), body ?? updated.value.body ?? comment.text);
+    return next ? ok(next) : fail("The comment was changed but could not be read back.");
+  }
+
+  private peoplePromise: Promise<People> | undefined;
+  people(): Promise<People> {
+    this.peoplePromise ??= (async () => {
+      const directory = await this.connection.people.directory({ members: "omit" });
+      if (directory.ok) {
+        const { me, people } = directory.value;
+        const names = new Map(people.map((p) => [personKey(p.path), p.name]));
+        return me.status === "linked" ? { names, me: { link: personLink(me.person.path), name: me.person.name } } : { names };
+      }
+      // Identity not approved (or unavailable): names only, and comments go unsigned.
+      const names = new Map<string, string>();
+      for await (const page of this.connection.queryPages({ contract: PERSON_CONTRACT, frontmatterMode: "effective" }, { pageSize: 500 })) {
+        if (!page.ok) return NO_PEOPLE;
+        for (const r of page.value.results) {
+          const name = (r.effectiveFrontmatter ?? r.frontmatter)?.["name"];
+          if (typeof name === "string") names.set(personKey(r.path), name);
+        }
+      }
+      return { names };
+    })();
+    return this.peoplePromise;
   }
 
   async createManuscript(input: NewManuscript): Promise<Result<string>> {

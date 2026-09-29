@@ -4,8 +4,10 @@
 import type { JsonObject } from "@mdbase-dev/connect";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import type { CslItem } from "@mdbase-writer/core";
+import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
 
+import { changeFields, commentPath, newCommentFields, personKey, personLink, type People } from "./comments.js";
 import { bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
@@ -43,6 +45,25 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       });
     }
   }
+
+  // The demo's comments and people are records of the starter types, whose
+  // fields are the contracts' own names.
+  const commentPaths = new Set([...paths].filter((p) => splitFrontmatter(markdown[`../../demo/${p}`] ?? "").frontmatter["type"] === "comment"));
+  const names = new Map<string, string>();
+  for (const path of paths) {
+    const { frontmatter } = splitFrontmatter(markdown[`../../demo/${path}`] ?? "");
+    if (frontmatter["type"] === "person" && typeof frontmatter["name"] === "string") names.set(personKey(path), frontmatter["name"]);
+  }
+  // The demo is written by the manuscript's author.
+  const me = [...paths].find((p) => names.get(personKey(p)) === "Callum Alpass");
+  const people: People = { names, ...(me ? { me: { link: personLink(me), name: "Callum Alpass" } } : {}) };
+  const readComment = async (path: string): Promise<CommentRecord | null> => {
+    const opened = await authority.records.open(path, { autosave: false });
+    if (!opened.ok) return null;
+    const { frontmatter, body } = opened.value.session.getSnapshot();
+    opened.value.release();
+    return commentFromRecord(path, frontmatter, body);
+  };
 
   const backend: WriterBackend & { authority: typeof authority } = {
     /** Exposed so browser tests can simulate other applications' edits. */
@@ -115,6 +136,40 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       const url = files.get(path);
       if (!url) return fail(`No file at ${path}.`);
       return ok(new Uint8Array(await (await fetch(url)).arrayBuffer()));
+    },
+    async comments() {
+      const out: CommentRecord[] = [];
+      for (const path of commentPaths) {
+        const c = await readComment(path);
+        if (c) out.push(c);
+      }
+      return ok(out);
+    },
+    async createComment(input) {
+      const now = new Date();
+      const path = commentPath(now);
+      const fields = newCommentFields(input, now, people.me?.link);
+      authority.seed(path, { frontmatter: { type: "comment", ...fields }, body: input.text.trim() ? `${input.text.trim()}\n` : "" });
+      paths.add(path);
+      commentPaths.add(path);
+      const comment = commentFromRecord(path, fields, input.text);
+      return comment ? ok(comment) : fail("The comment could not be read back.");
+    },
+    async changeComment(comment, change) {
+      const opened = await authority.records.open(comment.path, { autosave: false });
+      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
+      const { session, release } = opened.value;
+      const { fields, body } = changeFields(comment, change, new Date(), people.me?.link);
+      session.patchFrontmatter(fields);
+      if (body !== undefined) session.setBody(body);
+      const flushed = await session.flush();
+      release();
+      if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
+      const next = await readComment(comment.path);
+      return next ? ok(next) : fail("The comment could not be read back.");
+    },
+    async people() {
+      return people;
     },
     onExternalChange(listener) {
       listeners.add(listener);

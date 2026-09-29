@@ -130,6 +130,7 @@ function renderMarkup(node: MarkupNode, into: HTMLElement) {
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 export const MOD_LABEL = isMac ? "⌘" : "Ctrl";
+export const ALT_LABEL = isMac ? "⌥" : "Alt";
 
 function tip(kind: string, body: (el: HTMLElement) => void, hint?: string): HTMLElement {
   const dom = document.createElement("div");

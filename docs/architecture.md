@@ -27,6 +27,15 @@
   through the contract where the collection has it, else by Reader's type
   name). The first blockquote of the body is the quotation; `locator.label`
   ("p. 12") becomes the citation's locator.
+- **Comments** are records implementing `mdbase.comment` (from mdbase
+  contracts, whose published pack the writer's manifest embeds unchanged).
+  A thread's first comment carries its anchor, a quote of the record's body
+  (`core/comments.ts` finds it again after edits, or reports it detached);
+  replies link to it. A suggested edit is a comment with a replacement; the
+  editor shows it as a tracked change, and accepting it edits the record
+  through its session. Authors are links to the signed-in account's
+  `mdbase.person` record, found through Connect's optional identity
+  permission; without it, comments are unsigned.
 - **Images** are collection files, referenced relative to the record
   (`![Caption](figures/plot.png){#fig-plot}`) or by wikilink (`![[plot.png]]`).
 

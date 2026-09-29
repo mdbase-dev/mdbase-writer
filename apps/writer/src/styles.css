@@ -287,6 +287,38 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .annotations p { margin: 0; color: var(--ink-soft); }
 .annotation-actions { display: flex; gap: 0.6rem; align-items: baseline; }
 
+/* Comments: threads in the sidebar, anchors and tracked changes in the editor. */
+.comments { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.7rem; }
+.comments > p { margin: 0; padding: 0 0.45rem; }
+.comments-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.threads { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.threads-record { margin-top: 0.3rem; }
+.thread { display: grid; gap: 0.4rem; padding: 0.55rem 0.6rem; border: 1px solid var(--line); border-left: 3px solid var(--warning); border-radius: 6px; background: var(--surface); }
+.thread.is-active { border-color: var(--line-strong); border-left-color: var(--warning); box-shadow: 0 1px 3px oklch(20% 0.01 255 / 0.12); }
+.thread.is-detached { border-left-color: var(--line-strong); }
+.thread.composer { margin: 0; }
+.thread-anchor { display: grid; gap: 0.2rem; padding: 0; border: 0; background: none; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+.thread-quote { margin: 0; padding-left: 0.5rem; border-left: 2px solid var(--line-strong); font-size: 13px; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
+.thread-suggestion { font-size: 13px; color: var(--ink); }
+.thread-detached { color: var(--muted); font-style: italic; }
+.thread-record, .thread-resolved { margin: 0; }
+.thread-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; }
+.thread-reply, .composer-field { display: grid; gap: 0.3rem; }
+.thread textarea { width: 100%; resize: vertical; font: inherit; font-size: 13px; }
+.comment { display: grid; gap: 0.15rem; }
+.comment.is-reply { padding-left: 0.6rem; border-left: 1px solid var(--line); }
+.comment-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.45rem; margin: 0; color: var(--muted); }
+.comment-meta strong { color: var(--ink); }
+.comment-text { margin: 0; font-size: 13px; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.tone-danger[role="alert"] { margin: 0; color: var(--danger); }
+
+.cm-comment { background: color-mix(in oklch, var(--warning) 22%, transparent); border-bottom: 2px solid color-mix(in oklch, var(--warning) 70%, transparent); cursor: pointer; }
+.cm-comment.is-active { background: color-mix(in oklch, var(--warning) 42%, transparent); }
+.cm-comment-point { display: inline-block; width: 0; height: 1.1em; margin: 0 1px; border-left: 2px solid var(--warning); vertical-align: text-bottom; cursor: pointer; }
+.cm-suggest-delete { color: var(--danger); text-decoration: line-through; text-decoration-thickness: 1.5px; background: color-mix(in oklch, var(--danger) 10%, transparent); cursor: pointer; }
+.cm-suggest-insert { color: var(--connected); text-decoration: underline; text-decoration-thickness: 1.5px; background: color-mix(in oklch, var(--connected) 12%, transparent); cursor: pointer; }
+:is(.cm-suggest-delete, .cm-suggest-insert).is-active { outline: 1px solid var(--line-strong); border-radius: 2px; }
+
 .problems { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
 .problem-row { display: grid; gap: 0.1rem; width: 100%; text-align: left; border: 0; background: none; padding: 0.4rem 0.55rem; border-radius: 5px; cursor: pointer; font-size: 13px; color: var(--ink); border-left: 2px solid var(--line-strong); }
 .problem-row:hover, .problem-row:focus-visible { background: var(--subtle); outline: 0; }
