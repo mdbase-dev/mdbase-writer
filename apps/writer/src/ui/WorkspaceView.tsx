@@ -77,8 +77,24 @@ const isTextEntry = (target: EventTarget | null) =>
   target instanceof Element && Boolean(target.closest("input, textarea, [contenteditable='true']"));
 const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
+/** True once `flag` has held for `delay` ms, so a quick flicker of work never shows. */
+function useSustained(flag: boolean, delay: number): boolean {
+  const [held, setHeld] = useState(false);
+  useEffect(() => {
+    if (!flag) {
+      setHeld(false);
+      return;
+    }
+    const t = setTimeout(() => setHeld(true), delay);
+    return () => clearTimeout(t);
+  }, [flag, delay]);
+  return flag && held;
+}
+
 export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWorkspace; onClose(): void }) {
   const snap = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot);
+  // Most typesets finish between keystrokes; saying so each time only flickers.
+  const slowCompile = useSustained(snap.compiling, 600);
   const [active, setActive] = useState(workspace.main);
   const [pane, setPane] = useState<Pane>("write");
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("outline");
@@ -479,7 +495,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             className="muted small preview-meta"
             title={timings && !snap.compiling ? `Typeset in ${Math.round(timings.assembleMs + timings.compileMs)} ms` : undefined}
           >
-            {snap.compiling ? "Typesetting…" : errors ? plural(errors, "error") : snap.result ? `${styleName(snap.result.meta.style)} · ${templateName(snap.result.meta.template)}` : ""}
+            {slowCompile ? "Typesetting…" : errors ? plural(errors, "error") : snap.result ? `${styleName(snap.result.meta.style)} · ${templateName(snap.result.meta.template)}` : ""}
           </span>
           <span className="bar-spacer" />
           {previewView && <span className="muted small page-indicator">Page {previewView.page} of {previewView.pages}</span>}
