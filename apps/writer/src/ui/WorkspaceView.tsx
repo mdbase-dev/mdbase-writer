@@ -1,9 +1,12 @@
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
-import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { resolveLinkTarget } from "@mdbase-writer/core/records";
+import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
+import { useCallback, useContext, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";
+import type { ChapterCards } from "../editor/chapter-cards.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
 import { labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
@@ -19,8 +22,8 @@ import {
   DownloadIcon,
   EditorOnly,
   GearIcon,
-  KeyboardIcon,
   MinusIcon,
+  MoreIcon,
   OutlineIcon,
   PageIcon,
   PenIcon,
@@ -39,7 +42,7 @@ import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
-import { InTopbar } from "./topbar.js";
+import { InTopbar, ThemeChoice } from "./topbar.js";
 
 /** Which part a phone shows. */
 type Pane = "outline" | "write" | "preview";
@@ -47,6 +50,28 @@ interface ExportStatus {
   readonly text: string;
   readonly tone: "busy" | "ok" | "problem";
 }
+
+type ExportFormat = "pdf" | "docx" | "bundle";
+const EXPORT_NAME: Record<ExportFormat, string> = { pdf: "PDF", docx: "Word", bundle: "Pandoc bundle" };
+const EXPORT_KEY = "mdbase-writer:export";
+/** The format the Export button makes: the one used last (in this browser). */
+function loadExportFormat(): ExportFormat {
+  try {
+    const saved = localStorage.getItem(EXPORT_KEY);
+    return saved === "docx" || saved === "bundle" ? saved : "pdf";
+  } catch {
+    return "pdf";
+  }
+}
+function saveExportFormat(format: ExportFormat): void {
+  try {
+    localStorage.setItem(EXPORT_KEY, format);
+  } catch {
+    // Storage may be blocked; the button then starts from PDF next time.
+  }
+}
+
+const THEME_NAME: Record<ThemePreference, string> = { system: "System", light: "Light", dark: "Dark" };
 
 const VIEW_ORDER: readonly View[] = ["both", "write", "preview"];
 const VIEW_NAME: Record<View, string> = { both: "Editor and preview", write: "Editor only", preview: "Preview only" };
@@ -84,6 +109,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>(loadExportFormat);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const themeChoice = useContext(ThemeChoice);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sourcesRequest, setSourcesRequest] = useState<SourcesRequest | null>(null);
   const [previewView, setPreviewView] = useState<PreviewView | null>(null);
@@ -225,6 +253,22 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const mainBody = snap.records.get(workspace.main)?.snapshot.body;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- recomputed when the manuscript's body or the index changes
   const chapters = useMemo(() => workspace.chapterPaths(), [workspace, mainBody, snap.recordPaths]);
+  const recordSet = useMemo(() => new Set(snap.recordPaths), [snap.recordPaths]);
+  const cards = useMemo<ChapterCards>(
+    () => ({
+      card(target) {
+        const path = resolveLinkTarget(target, active, recordSet);
+        if (!path) return { path: null, title: target };
+        const view = records.get(path);
+        return { path, title: recordTitle(view, path), ...(view ? { words: wordCount(view.snapshot.body) } : {}), problems: byRecord.get(path)?.length ?? 0 };
+      },
+      open(path) {
+        setActive(path);
+        setPane("write");
+      },
+    }),
+    [active, recordSet, records, byRecord],
+  );
   const sourceHref = useMemo(() => (workspace.kind === "connect" ? (e: { path: string }) => readerSourceHref(e.path) : undefined), [workspace]);
 
   // Problems in reading order, for F8 / Shift-F8.
@@ -281,6 +325,17 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     download(out.bytes, "application/zip", `${fileStem} (Pandoc).zip`);
     exported("the Pandoc bundle", out.problems);
   };
+  /** Exports, and makes this format the Export button's. */
+  const runExport = (format: ExportFormat) => {
+    setExportFormat(format);
+    saveExportFormat(format);
+    void (format === "pdf" ? exportPdf() : format === "docx" ? exportDocx() : exportBundle());
+  };
+  const canExport: Record<ExportFormat, boolean> = { pdf: Boolean(snap.artifact), docx: snap.phase === "ready", bundle: snap.phase === "ready" };
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
+    setSettingsFocus(null);
+  }, []);
   // A finished export's note goes after a few seconds; a problem stays until dismissed.
   useEffect(() => {
     if (exportStatus?.tone !== "ok") return;
@@ -298,7 +353,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     if (mod && !e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, sidebar: !l.sidebar }));
     else if (mod && e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, view: VIEW_ORDER[(VIEW_ORDER.indexOf(l.view) + 1) % VIEW_ORDER.length] as View }));
     else if (mod && e.shiftKey && e.code === "KeyF") showSources();
-    else if (mod && !e.shiftKey && e.key === ",") setSettingsOpen(true);
+    else if (mod && !e.shiftKey && e.key === ",") (settingsOpen ? closeSettings() : setSettingsOpen(true));
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
     else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
     else if (mod && (e.key === "?" || (e.shiftKey && e.code === "Slash"))) setShortcutsOpen(true);
@@ -377,10 +432,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               })}
             </div>
           </div>
-          <button type="button" className="mdbase-icon-button bar-shortcuts" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts" title={`Keyboard shortcuts (${MOD_LABEL}-?)`}>
-            <KeyboardIcon />
-          </button>
-          <button type="button" className="mdbase-button" aria-label="Settings" onClick={() => setSettingsOpen(true)} title={`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
+          <button type="button" className="mdbase-button" aria-label="Settings" aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
             <GearIcon />
             <span className="button-label">Settings</span>
             {diagnostics.some((d) => d.field) && <span className="count tone-warning">{diagnostics.filter((d) => d.field).length}</span>}
@@ -389,11 +441,16 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             open={exportOpen}
             setOpen={setExportOpen}
             busy={exportStatus?.tone === "busy"}
-            canPdf={Boolean(snap.artifact)}
-            ready={snap.phase === "ready"}
-            onPdf={() => void exportPdf()}
-            onDocx={() => void exportDocx()}
-            onBundle={() => void exportBundle()}
+            format={exportFormat}
+            can={canExport}
+            onExport={runExport}
+          />
+          <MoreMenu
+            open={moreOpen}
+            setOpen={setMoreOpen}
+            onCommands={() => setPaletteOpen(true)}
+            onShortcuts={() => setShortcutsOpen(true)}
+            {...(themeChoice ? { theme: themeChoice.theme, onTheme: themeChoice.setTheme } : {})}
           />
         </div>
       </InTopbar>
@@ -478,6 +535,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             onReady={onEditorReady}
             onCursor={onCursor}
             onFollow={onFollow}
+            chapters={cards}
+            onFindSource={showSources}
           />
         ) : (
           <p className="muted pad">Opening…</p>
@@ -496,7 +555,20 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             className="muted small preview-meta"
             title={timings && !snap.compiling ? `Typeset in ${Math.round(timings.assembleMs + timings.compileMs)} ms` : undefined}
           >
-            {slowCompile ? "Typesetting…" : errors ? plural(errors, "error") : snap.result ? `${styleName(snap.result.meta.style)} · ${templateName(snap.result.meta.template)}` : ""}
+            {slowCompile ? (
+              "Typesetting…"
+            ) : snap.result ? (
+              <>
+                {errors > 0 && <span className="preview-errors">{plural(errors, "error")} · </span>}
+                <button type="button" className="preview-setting" onClick={() => showSetting("csl")} title="Change the citation style">
+                  {styleName(snap.result.meta.style)}
+                </button>
+                <span aria-hidden="true"> · </span>
+                <button type="button" className="preview-setting" onClick={() => showSetting("template")} title="Change the layout">
+                  {templateName(snap.result.meta.template)}
+                </button>
+              </>
+            ) : null}
           </span>
           <span className="bar-spacer" />
           {previewView && <span className="muted small page-indicator">Page {previewView.page} of {previewView.pages}</span>}
@@ -535,7 +607,12 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           const Icon = p === "outline" ? OutlineIcon : p === "write" ? PenIcon : PageIcon;
           return (
             <button key={p} type="button" aria-pressed={pane === p} onClick={() => setPane(p)}>
-              <Icon />
+              <span className="pane-tab-icon">
+                <Icon />
+                {p === "write" && diagnostics.length > 0 && (
+                  <span className={`tab-badge tone-${errors ? "danger" : "warning"}`} aria-label={plural(diagnostics.length, "problem")}>{diagnostics.length}</span>
+                )}
+              </span>
               {p === "outline" ? "Outline" : p === "write" ? "Write" : "Preview"}
             </button>
           );
@@ -548,7 +625,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         filePaths={snap.filePaths}
         problems={diagnostics}
         open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        onClose={closeSettings}
         focus={settingsFocus}
       />
       <Shortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
@@ -563,9 +640,12 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: onClose },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
           ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
-          ...(snap.artifact ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => void exportPdf() }] : []),
-          { id: "export-docx", group: "Export", label: "Export Word (DOCX)", run: () => void exportDocx() },
-          { id: "export-bundle", group: "Export", label: "Export Pandoc bundle (zip)", run: () => void exportBundle() },
+          ...(snap.artifact ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => runExport("pdf") }] : []),
+          { id: "export-docx", group: "Export", label: "Export Word (DOCX)", run: () => runExport("docx") },
+          { id: "export-bundle", group: "Export", label: "Export Pandoc bundle (zip)", run: () => runExport("bundle") },
+          ...(themeChoice
+            ? themePreferences.filter((t) => t !== themeChoice.theme).map((t) => ({ id: `theme-${t}`, group: "View", label: `${THEME_NAME[t]} theme`, keywords: "appearance dark light", run: () => themeChoice.setTheme(t) }))
+            : []),
           { id: "shortcuts", group: "Help", label: "Keyboard shortcuts", shortcut: "?", run: () => setShortcutsOpen(true) },
         ]}
       />
@@ -676,9 +756,9 @@ function ProblemsButton({ diagnostics, open, setOpen, onPick }: { diagnostics: r
   );
 }
 
-function Popover({ id, trigger, width, label, align = "start", onClose, children }: { id: string; trigger: React.RefObject<HTMLElement | null>; width: number; label: string; align?: "start" | "end"; onClose(refocus: boolean): void; children: ReactNode }) {
+function Popover({ id, trigger, width, label, align = "start", focus, onClose, children }: { id: string; trigger: React.RefObject<HTMLElement | null>; width: number; label: string; align?: "start" | "end"; focus?: string; onClose(refocus: boolean): void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  useMenuPopover(ref, trigger, onClose, { width, align });
+  useMenuPopover(ref, trigger, onClose, { width, align, focus });
   return (
     <div ref={ref} id={id} className="mdbase-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, ref.current)}>
       {children}
@@ -686,20 +766,22 @@ function Popover({ id, trigger, width, label, align = "start", onClose, children
   );
 }
 
-function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: boolean; canPdf: boolean; ready: boolean; onPdf(): void; onDocx(): void; onBundle(): void }) {
-  const { open, setOpen, busy } = props;
+/** Export as a split button: the main part makes the format used last; the chevron offers them all. */
+function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: boolean; format: ExportFormat; can: Record<ExportFormat, boolean>; onExport(format: ExportFormat): void }) {
+  const { open, setOpen, busy, format, can, onExport } = props;
   const trigger = useRef<HTMLButtonElement>(null);
+  const group = useRef<HTMLDivElement>(null);
   const id = useId();
-  const item = (label: string, description: string, enabled: boolean, run: () => void) => (
+  const item = (value: ExportFormat, label: string, description: string) => (
     <button
       type="button"
       role="menuitem"
       className="menu-item"
       aria-label={label}
-      disabled={!enabled || busy}
+      disabled={!can[value] || busy}
       onClick={() => {
         setOpen(false);
-        run();
+        onExport(value);
       }}
     >
       <strong>{label}</strong>
@@ -708,29 +790,93 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
   );
   return (
     <>
-      <button
-        ref={trigger}
-        type="button"
-        className="mdbase-button is-primary"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={open ? id : undefined}
-        aria-label="Export"
-        onClick={() => setOpen(!open)}
-        title={`Export (${MOD_LABEL}-Shift-S)`}
-      >
-        <DownloadIcon />
-        <span className="button-label">Export</span>
-        <ChevronDown className="chevron" />
-      </button>
+      <div ref={group} className="split-button" role="group" aria-label="Export">
+        <button
+          type="button"
+          className="mdbase-button is-primary"
+          disabled={!can[format] || busy}
+          onClick={() => onExport(format)}
+          aria-label={`Export ${EXPORT_NAME[format]}`}
+          title={can[format] ? `Export ${EXPORT_NAME[format]}` : format === "pdf" ? "The PDF can be exported once the manuscript typesets" : "Opening the manuscript…"}
+        >
+          <DownloadIcon />
+          <span className="button-label">Export {EXPORT_NAME[format]}</span>
+        </button>
+        <button
+          ref={trigger}
+          type="button"
+          className="mdbase-button is-primary split-toggle"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-controls={open ? id : undefined}
+          aria-label="Export formats"
+          onClick={() => setOpen(!open)}
+          title={`Export formats (${MOD_LABEL}-Shift-S)`}
+        >
+          <ChevronDown className="chevron" />
+        </button>
+      </div>
       {open && (
-        <Popover id={id} trigger={trigger} width={320} label="Export" align="end" onClose={(refocus) => {
+        <Popover id={id} trigger={group} width={320} label="Export" align="end" focus={`[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
-          {item("PDF", "Exactly as typeset in the preview", props.canPdf, props.onPdf)}
-          {item("Word (DOCX)", "Made in your browser by Pandoc, with the layout’s Word styles. The first export downloads about 16 MB.", props.ready, props.onDocx)}
-          {item("Pandoc bundle (zip)", "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself", props.ready, props.onBundle)}
+          {item("pdf", "PDF", "Exactly as typeset in the preview")}
+          {item("docx", "Word (DOCX)", "Made in your browser by Pandoc, with the layout’s Word styles. The first export downloads about 16 MB.")}
+          {item("bundle", "Pandoc bundle (zip)", "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself")}
+        </Popover>
+      )}
+    </>
+  );
+}
+
+/** Commands, keyboard shortcuts and the theme, out of the bar's way. */
+function MoreMenu({ open, setOpen, onCommands, onShortcuts, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  const run = (action: () => void) => () => {
+    setOpen(false);
+    action();
+  };
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className="mdbase-icon-button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        aria-label="More"
+        onClick={() => setOpen(!open)}
+        title="Commands, shortcuts and theme"
+      >
+        <MoreIcon />
+      </button>
+      {open && (
+        <Popover id={id} trigger={trigger} width={240} label="More" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+          setOpen(false);
+          if (refocus) trigger.current?.focus();
+        }}>
+          <button type="button" role="menuitem" className="menu-item is-row" onClick={run(onCommands)}>
+            <span>Commands</span>
+            <kbd>{MOD_LABEL} K</kbd>
+          </button>
+          <button type="button" role="menuitem" className="menu-item is-row" onClick={run(onShortcuts)}>
+            <span>Keyboard shortcuts</span>
+            <kbd>?</kbd>
+          </button>
+          {theme && onTheme && (
+            <div role="group" aria-label="Theme" className="menu-group">
+              <span className="menu-label" aria-hidden="true">Theme</span>
+              {themePreferences.map((t) => (
+                <button key={t} type="button" role="menuitemradio" aria-checked={theme === t} className="menu-item is-row" onClick={() => onTheme(t)}>
+                  <span>{THEME_NAME[t]}</span>
+                  {theme === t && <CheckIcon />}
+                </button>
+              ))}
+            </div>
+          )}
         </Popover>
       )}
     </>

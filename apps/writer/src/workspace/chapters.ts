@@ -8,7 +8,8 @@ export interface ChapterEmbed {
   readonly line: number;
 }
 
-const EMBED_LINE = /^ {0,3}!\[\[([^\]\n]+)\]\]\s*$/;
+/** A line holding only an embed; group 1 is the target as written. */
+export const EMBED_LINE = /^ {0,3}!\[\[([^\]\n]+)\]\]\s*$/;
 
 /** The body's chapter embeds, in order; the target leaves out any `#section` or `|alias`. */
 export function chapterEmbeds(body: string): ChapterEmbed[] {

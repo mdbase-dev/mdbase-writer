@@ -1,4 +1,5 @@
-// The manuscript's settings: its frontmatter, edited as fields in a dialog. Each field
+// The manuscript's settings: its frontmatter, edited as fields in a sheet beside
+// the preview, so a new style or layout shows as it is chosen. Each field
 // keeps its own draft while focused and commits after a pause or on blur, so
 // typing never writes a half-parsed value per keystroke, and a change made
 // elsewhere (another app, "Use theirs") shows up in every field not being
@@ -11,7 +12,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { CloseIcon } from "./icons.js";
 import { templateName } from "./names.js";
 
 type JsonValue = JsonObject[string];
@@ -51,7 +52,35 @@ export function Settings({
   onClose(): void;
   focus: SettingsFocus | null;
 }) {
-  if (!view) return null;
+  const titleId = useId();
+  const sheet = useRef<HTMLElement>(null);
+  // Opening moves focus into the sheet (unless a field was asked for); closing returns it.
+  useEffect(() => {
+    if (!open) return;
+    const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (!focus) sheet.current?.querySelector<HTMLElement>("input, textarea, button.mdbase-select")?.focus();
+    return () => {
+      // Only when focus was in the sheet, which has gone (it is on the body), or is still in it.
+      const now = document.activeElement;
+      if (before?.isConnected && (!now || now === document.body || sheet.current?.contains(now))) before.focus();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only opening moves focus
+  }, [open]);
+  // Escape closes the sheet wherever focus is, unless something else (a choice list,
+  // a menu, the editor's completions, a dialog) took it first.
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented || document.querySelector("dialog[open]")) return;
+      e.preventDefault();
+      close.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  if (!view || !open) return null;
   const fm = view.snapshot.frontmatter;
   const patch = (p: JsonObject) => workspace.patchFrontmatter(workspace.main, p);
   const str = (k: string) => (typeof fm[k] === "string" ? (fm[k] as string) : typeof fm[k] === "number" ? String(fm[k]) : "");
@@ -65,7 +94,19 @@ export function Settings({
   const authorsKey = !("authors" in fm) && "author" in fm ? "author" : "authors";
 
   return (
-    <Dialog open={open} onClose={onClose} title="Manuscript settings" className="settings-dialog">
+    <aside
+      ref={sheet}
+      className="settings-sheet"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={titleId}
+    >
+      <header className="settings-sheet-header">
+        <h2 id={titleId}>Manuscript settings</h2>
+        <button type="button" className="mdbase-icon-button" onClick={onClose} aria-label="Close settings" title="Close (Escape)">
+          <CloseIcon />
+        </button>
+      </header>
       <div className="settings">
         <div className="span-2">
           <TextField label="Title" value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
@@ -115,8 +156,8 @@ export function Settings({
           {...props("lang")}
         />
       </div>
-      <p className="muted small dialog-note">Changes are saved to the manuscript’s frontmatter as you type.</p>
-    </Dialog>
+      <p className="muted small dialog-note">Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them.</p>
+    </aside>
   );
 }
 
@@ -175,10 +216,22 @@ function TextField(props: FieldProps & { value: string; onCommit(value: string):
   useEffect(() => {
     if (!editing.current) setDraft(value);
   }, [value]);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  // A draft still waiting to commit (the sheet closed mid-pause) is saved, not dropped.
+  const pending = useRef<{ draft: string; value: string; onCommit(value: string): void }>({ draft, value, onCommit });
+  pending.current = { draft, value, onCommit };
+  useEffect(
+    () => () => {
+      if (timer.current === undefined) return;
+      clearTimeout(timer.current);
+      const { draft: last, value: saved, onCommit: save } = pending.current;
+      if (last !== saved) save(last);
+    },
+    [],
+  );
 
   const commit = (next: string) => {
     clearTimeout(timer.current);
+    timer.current = undefined;
     if (next !== value) onCommit(next);
   };
   const common = {

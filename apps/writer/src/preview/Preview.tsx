@@ -79,8 +79,30 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
   const drawn = useRef(new Map<number, number>());
   const drawnWidth = useRef(new Map<number, number>());
   const drawing = useRef<Promise<void>>(Promise.resolve());
-  const latest = useRef({ positions, onJump, revision, onView, onTitleClick });
-  latest.current = { positions, onJump, revision, onView, onTitleClick };
+  const marker = useRef<HTMLDivElement>(null);
+  const latest = useRef({ positions, onJump, revision, onView, onTitleClick, follow });
+  latest.current = { positions, onJump, revision, onView, onTitleClick, follow };
+
+  /** Marks the cursor's block in the margin of its page, from its top to the next block's. */
+  const placeMarker = () => {
+    const el = marker.current;
+    const at = latest.current.follow;
+    const box = at ? pagesRef.current[at.page - 1] : undefined;
+    const canvas = at ? pagesHost.current?.querySelector<HTMLCanvasElement>(`canvas[data-page="${at.page - 1}"]`) : null;
+    if (!el) return;
+    if (!at || !box || !canvas) {
+      el.hidden = true;
+      return;
+    }
+    const next = latest.current.positions.find((p) => p.page === at.page && p.y > at.y + 1);
+    const scale = canvas.clientHeight / box.height;
+    // The last block on a page runs to its bottom margin; a guess keeps the mark short.
+    const height = Math.min(next ? next.y - at.y : 36, box.height * 0.4);
+    el.hidden = false;
+    el.style.top = `${canvas.offsetTop + at.y * scale}px`;
+    el.style.height = `${Math.max(10, height * scale)}px`;
+    el.style.left = `${canvas.offsetLeft + Math.max(8, 24 * scale)}px`;
+  };
 
   useEffect(() => {
     let live = true;
@@ -199,6 +221,7 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
     let timer: ReturnType<typeof setTimeout> | undefined;
     const observer = new ResizeObserver(() => {
       reportView();
+      placeMarker();
       clearTimeout(timer);
       timer = setTimeout(drawVisible, 120);
     });
@@ -212,6 +235,7 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
   useEffect(() => {
     reportView();
     drawVisible();
+    placeMarker();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- as above
   }, [zoom, pages]);
 
@@ -227,6 +251,8 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
     if (top >= root.scrollTop + margin && top <= root.scrollTop + root.clientHeight - margin) return;
     root.scrollTo({ top: Math.max(0, top - root.clientHeight / 3), behavior: "smooth" });
   }, [follow, pages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- placeMarker reads refs only
+  useEffect(placeMarker, [follow, pages, positions]);
 
   const onClick = (event: React.MouseEvent) => {
     const target = (event.target as HTMLElement).closest<HTMLCanvasElement>("canvas[data-page]");
@@ -257,6 +283,7 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
             aria-label={`Page ${i + 1}`}
           />
         ))}
+        <div ref={marker} className="preview-cursor" aria-hidden="true" hidden />
       </div>
     </div>
   );

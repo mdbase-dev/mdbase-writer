@@ -12,7 +12,7 @@ import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { Home } from "./ui/Home.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
-import { TopbarSlot } from "./ui/topbar.js";
+import { ThemeChoice, TopbarSlot } from "./ui/topbar.js";
 import { ThemeSelect } from "@mdbase-dev/ui/theme-select";
 import { OpeningScreen } from "@mdbase-dev/ui/screens";
 import { WorkspaceView } from "./ui/WorkspaceView.js";
@@ -43,17 +43,20 @@ export function App() {
   const [theme, setTheme] = useState<ThemePreference>(() => loadThemePreference());
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => saveThemePreference(theme), [theme]);
+  const themeChoice = useMemo(() => ({ theme, setTheme }), [theme]);
   return (
-    <TopbarSlot.Provider value={slot}>
-      <div className="app">
-        <header className="topbar">
-          <AppSwitcher current="writer" urls={appUrls} />
-          <div className="topbar-slot" ref={setSlot} />
-          <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />
-        </header>
-        <ErrorBoundary>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
-      </div>
-    </TopbarSlot.Provider>
+    <ThemeChoice.Provider value={themeChoice}>
+      <TopbarSlot.Provider value={slot}>
+        <div className="app">
+          <header className="topbar">
+            <AppSwitcher current="writer" urls={appUrls} />
+            <div className="topbar-slot" ref={setSlot} />
+            <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />
+          </header>
+          <ErrorBoundary>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
+        </div>
+      </TopbarSlot.Provider>
+    </ThemeChoice.Provider>
   );
 }
 

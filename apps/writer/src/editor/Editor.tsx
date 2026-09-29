@@ -11,7 +11,9 @@ import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } f
 import { useEffect, useRef } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
+import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
 import { writerCompletions, type CompletionData } from "./completions.js";
+import { fixesFor } from "./fixes.js";
 import { writerInsight, type EditorInsight, type FollowTarget } from "./insight.js";
 import { writerLanguage } from "./language.js";
 
@@ -36,9 +38,13 @@ export interface EditorProps {
   onReady?(handle: EditorHandle): void;
   /** The cursor moved (by typing, clicking or keys), to its body offset. */
   onCursor?(offset: number): void;
+  /** Cards for records embedded on lines of their own. */
+  chapters?: ChapterCards;
+  /** Looks for a source in the Sources panel (a quick fix for an unknown citekey). */
+  onFindSource?(query: string): void;
 }
 
-export function Editor({ path, text, readOnly, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow }: EditorProps) {
+export function Editor({ path, text, readOnly, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -48,8 +54,8 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
   // Only a real change to the problems is dispatched: redrawing lint marks
   // replaces the line's DOM, which would cancel a hover in progress.
   const shownDiagnostics = useRef("");
-  const latest = useRef({ onChange, completion, insight, onCursor, onFollow });
-  latest.current = { onChange, completion, insight, onCursor, onFollow };
+  const latest = useRef({ onChange, completion, insight, onCursor, onFollow, chapters, onFindSource });
+  latest.current = { onChange, completion, insight, onCursor, onFollow, chapters, onFindSource };
 
   // One view per record path.
   useEffect(() => {
@@ -73,6 +79,7 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
           keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap, indentWithTab]),
           writerLanguage(),
           writerInsight(() => latest.current.insight, (target) => latest.current.onFollow?.(target)),
+          chapterCards(() => latest.current.chapters),
           EditorView.lineWrapping,
           EditorState.readOnly.of(readOnly),
           placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
@@ -135,6 +142,11 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
     v.dispatch({ changes: { from, to: endA, insert: text.slice(from, endB) }, annotations: [remote.of(true)] });
   }, [text]);
 
+  // Chapter cards follow their records' titles, words and problems.
+  useEffect(() => {
+    view.current?.dispatch({ effects: refreshChapterCards.of(null) });
+  }, [chapters]);
+
   useEffect(() => {
     const v = view.current;
     if (!v) return;
@@ -146,7 +158,8 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
       const from = Math.min(d.from, length);
       const line = v.state.doc.lineAt(from);
       const to = d.to > d.from ? Math.min(d.to, length) : Math.min(line.to, from + 1);
-      return { from, to: Math.max(to, from), severity: d.severity, message: d.message, source: d.origin === "typst" ? "Typst" : "writer" };
+      const actions = fixesFor(d, latest.current.insight, (query) => latest.current.onFindSource?.(query));
+      return { from, to: Math.max(to, from), severity: d.severity, message: d.message, source: d.origin === "typst" ? "Typst" : "writer", ...(actions.length ? { actions } : {}) };
     });
     v.dispatch(setDiagnostics(v.state, cm));
   }, [diagnostics]);

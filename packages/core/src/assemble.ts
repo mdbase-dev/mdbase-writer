@@ -30,6 +30,8 @@ export interface AssemblyDiagnostic extends Diagnostic {
   readonly record: string;
   /** Set when the problem is in a manuscript setting (frontmatter) rather than the body. */
   readonly field?: MetaField;
+  /** Set when a citation names a citekey or label that does not exist, for suggesting others. */
+  readonly unknown?: { readonly kind: "citekey" | "label"; readonly key: string };
 }
 
 
@@ -211,6 +213,7 @@ export class ManuscriptAssembler {
             to: cl.to,
             severity: "error",
             message: looksLikeXref ? `Nothing is labelled ${m.key}.` : `No source in the library has the citekey ${m.key}.`,
+            unknown: { kind: looksLikeXref ? "label" : "citekey", key: m.key },
           });
         }
         const items = cl.items.filter((i) => cp.has(i.key));

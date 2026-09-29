@@ -69,7 +69,7 @@ const previewFingerprint = (record) => page.evaluate(async (rec) => {
 }, record);
 const exportAs = async (format) => {
   await page.locator(".toast.tone-busy").waitFor({ state: "detached", timeout: 120_000 });
-  await page.getByRole("button", { name: "Export", exact: true }).click();
+  await page.getByRole("button", { name: "Export formats" }).click();
   await page.getByRole("menuitem", { name: format }).click();
 };
 const editorText = () => page.evaluate(() => document.querySelector(".cm-content")?.textContent ?? "");
@@ -91,7 +91,8 @@ await step("home lists the demo manuscripts", async () => {
 
 await step("an existing note becomes a manuscript, keeping its type and fields", async () => {
   await page.getByRole("button", { name: "New manuscript" }).click();
-  await page.locator(".adopt-note input").fill("drafts/on-inoperativity.md");
+  await page.locator(".adopt-note input").fill("inoperativity");
+  await page.locator(".note-option", { hasText: "On inoperativity" }).click();
   await page.getByRole("button", { name: "Use as manuscript" }).click();
   await page.locator(".bar-title", { hasText: "On inoperativity" }).waitFor();
   await waitFor(() => document.querySelectorAll(".preview-pages canvas.page").length > 0, null);
@@ -172,15 +173,15 @@ await step("a setting's problem opens the setting", async () => {
   await waitForRevisionAfter(before);
   await page.locator("button.bar-problems").click();
   await page.locator(".problem-row", { hasText: "no terms for" }).click();
-  await page.locator(".settings-dialog[open] .field-problem", { hasText: "no terms for" }).waitFor();
+  await page.locator(".settings-sheet .field-problem", { hasText: "no terms for" }).waitFor();
   assert.equal(await page.evaluate(() => document.activeElement?.value), "tlh");
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.type("en-GB");
   await page.keyboard.press("Tab");
   await waitFor(() => window.writer.workspace.getSnapshot().result?.meta.locale === "en-GB", null, 10_000);
   await page.keyboard.press("Escape");
-  await page.locator(".settings-dialog[open]").waitFor({ state: "detached", timeout: 2_000 }).catch(() => {});
-  assert.equal(await page.locator("dialog[open]").count(), 0);
+  await page.locator(".settings-sheet").waitFor({ state: "detached", timeout: 2_000 }).catch(() => {});
+  assert.equal(await page.locator(".settings-sheet").count(), 0);
 });
 
 await step("an unknown citekey is reported in Problems and in the editor", async () => {
@@ -299,6 +300,8 @@ await step("a thesis follows embedded chapter records", async () => {
   assert.deepEqual(s.diagnostics, []);
   const rows = await page.locator(".record-name").allTextContents();
   assert.deepEqual(rows, ["Refusing the Possible", "Potentiality", "The event"]);
+  // The manuscript's embeds are drawn as chapter cards.
+  await waitFor(() => [...document.querySelectorAll(".cm-chapter-title")].map((e) => e.textContent).join("|") === "Potentiality|The event", null);
   await page.screenshot({ path: "out/e2e-thesis.png" });
 });
 

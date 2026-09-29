@@ -28,18 +28,21 @@ its chapters. The preview is typeset by Typst in the browser as you type.
   session: autosave, conflict detection when something else edits it, exact
   recovery of interrupted saves. The outline numbers the chapters (records
   embedded on lines of their own); drag them, or press Alt-↑/↓, to reorder
-  them, and add a new chapter at the end. Notes, citations and cross-references run
-  across records.
+  them, and add a new chapter at the end. In the editor each chapter embed shows
+  as a card with its title, words and problems, and a button that opens it. Notes,
+  citations and cross-references run across records.
 - **Problems where they happen.** Unknown citekeys, missing labels, embeds or
   images, unused footnotes, malformed LaTeX and Typst errors are reported on
-  the Markdown line that caused them. Clicking the preview jumps to the block
-  it came from, and the preview follows the cursor. Problems with a setting
+  the Markdown line that caused them; an unknown citekey or label offers the
+  ones it most likely meant. Clicking the preview jumps to the block it came
+  from, and the preview follows the cursor and marks its block. Problems with a setting
   point at the setting.
 - **Writing aids.** Hover a citation for its bibliography entry, or a
   cross-reference for what it labels; Ctrl/⌘-click goes there. Word counts
   for the manuscript and each section, F8 for the next problem, and a layout
   (sidebar, editor/preview split, zoom) that is remembered in the browser.
-- **Export.** PDF; Word (DOCX), made in the browser by Pandoc's WebAssembly
+- **Export.** The Export button makes the format used last; its menu offers
+  PDF; Word (DOCX), made in the browser by Pandoc's WebAssembly
   build, with cross-references resolved and the layout's Word styles; and a
   Pandoc/Quarto bundle (zip) to build other formats yourself.
 - **Layouts.** Article and thesis templates, or a Typst file in the collection

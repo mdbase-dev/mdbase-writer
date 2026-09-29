@@ -27,3 +27,20 @@ export function relativeTime(iso: string, now = Date.now()): string {
   if (days < 7) return `${days} days ago`;
   return new Date(then).toLocaleDateString(undefined, { day: "numeric", month: "short", year: new Date(then).getFullYear() === new Date(now).getFullYear() ? undefined : "numeric" });
 }
+
+/** A note's name from its path, as a title would read ("drafts/on-inoperativity.md" → "On inoperativity"). */
+export function noteName(path: string): string {
+  const base = (path.split("/").pop() ?? path).replace(/\.md$/i, "").replace(/[-_]+/g, " ").trim();
+  return base ? base.charAt(0).toUpperCase() + base.slice(1) : path;
+}
+
+/** Manuscripts by when they were last edited, newest first; those without a time after, by title. */
+export function byRecentlyEdited<T extends { readonly title: string; readonly modified?: string }>(list: readonly T[]): T[] {
+  const time = (m: T) => (m.modified ? Date.parse(m.modified) : Number.NaN);
+  return [...list].sort((a, b) => {
+    const ta = time(a);
+    const tb = time(b);
+    if (Number.isNaN(ta) !== Number.isNaN(tb)) return Number.isNaN(ta) ? 1 : -1;
+    return (Number.isNaN(ta) ? 0 : tb - ta) || a.title.localeCompare(b.title);
+  });
+}

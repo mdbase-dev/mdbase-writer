@@ -259,7 +259,12 @@ function SourceRow({
         <button type="button" className="source-row" data-key={entry.key} aria-expanded={expanded} aria-controls={expanded ? detail : undefined} onClick={onToggle} title={`${entry.title} · @${entry.key}`}>
           <span className="source-title">{entry.title}</span>
           <span className="source-meta">{authorYear(entry) || entry.key}</span>
-          {uses > 0 && <span className="source-uses" aria-label={`cited ${uses === 1 ? "once" : `${uses} times`}`}>{uses}</span>}
+          {uses > 0 && (
+            <span className="source-uses" title={`Cited ${uses === 1 ? "once" : `${uses} times`} in this manuscript`}>
+              <span aria-hidden="true">×{uses}</span>
+              <span className="visually-hidden">cited {uses === 1 ? "once" : `${uses} times`}</span>
+            </span>
+          )}
         </button>
         <button type="button" className="cite-button" disabled={!canInsert} tabIndex={-1} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor (Enter)`}>
           Cite
@@ -275,35 +280,46 @@ function SourceRow({
               setLocator("");
             }}
           >
-            <input className="mdbase-field" value={locator} onChange={(e) => setLocator(e.target.value)} placeholder="Page, or e.g. ch. 3" aria-label={`Page or locator for ${entry.title}`} />
-            <button type="submit" className="mdbase-button" disabled={!canInsert}>
-              Cite
+            <input
+              className="mdbase-field"
+              value={locator}
+              onChange={(e) => setLocator(e.target.value)}
+              placeholder="Page (optional)"
+              aria-label={`Page or locator for ${entry.title}`}
+              title="A page (12, 12–14) or a locator (ch. 3, sec. 2)"
+            />
+            <button type="submit" className="mdbase-button is-primary" disabled={!canInsert}>
+              Cite{locator.trim() ? ` at ${/^\d/.test(locator.trim()) ? `p. ${locator.trim()}` : locator.trim()}` : ""}
             </button>
           </form>
           <div className="source-facts">
-            <code>@{entry.key}</code>
-            <button
-              type="button"
-              className="link small"
-              onClick={() => {
-                void navigator.clipboard?.writeText(entry.key).then(() => setCopied(true));
-              }}
-            >
-              {copied ? "Copied" : "Copy key"}
-            </button>
-            {href && (
-              <a className="small" href={href} target="_blank" rel="noopener">
-                Open in Reader
-              </a>
+            {uses > 0 ? (
+              <span className="source-uses-nav">
+                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(-1)} aria-label="Previous citation" title="Previous citation"><ChevronLeft /></button>
+                <span className="small">Cited {uses === 1 ? "once" : `${uses} times`}</span>
+                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(1)} aria-label="Next citation" title="Next citation"><ChevronRight /></button>
+              </span>
+            ) : (
+              <span className="muted small">Not cited yet</span>
             )}
+            <span className="source-links">
+              <button
+                type="button"
+                className="link small"
+                title={`@${entry.key}`}
+                onClick={() => {
+                  void navigator.clipboard?.writeText(entry.key).then(() => setCopied(true));
+                }}
+              >
+                {copied ? "Copied" : "Copy key"}
+              </button>
+              {href && (
+                <a className="small" href={href} target="_blank" rel="noopener">
+                  Open in Reader
+                </a>
+              )}
+            </span>
           </div>
-          {uses > 0 && (
-            <div className="source-uses-nav">
-              <span className="small">Cited {uses === 1 ? "once" : `${uses} times`}</span>
-              <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(-1)} aria-label="Previous citation" title="Previous citation"><ChevronLeft /></button>
-              <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(1)} aria-label="Next citation" title="Next citation"><ChevronRight /></button>
-            </div>
-          )}
           {annotations === null && <p className="muted small" role="status">Loading annotations…</p>}
           {problem && <p className="muted small">Annotations unavailable: {problem}</p>}
           {notes.length > 0 && (

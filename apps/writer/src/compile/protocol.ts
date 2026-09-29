@@ -11,6 +11,8 @@ export interface WriterDiagnostic {
   readonly origin: "writer" | "typst";
   /** Set when the problem is in a manuscript setting (frontmatter) rather than the body. */
   readonly field?: MetaField;
+  /** Set when a citation names a citekey or label that does not exist, for suggesting others. */
+  readonly unknown?: { readonly kind: "citekey" | "label"; readonly key: string };
 }
 
 export interface BlockPosition {
