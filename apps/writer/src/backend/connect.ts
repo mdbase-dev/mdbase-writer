@@ -7,8 +7,9 @@ import {
   commentPath,
   newCommentFields,
   NO_PEOPLE,
+  peopleFromDirectory,
   personKey,
-  personLink,
+  signingFromProblem,
   toContract,
   toLocal,
   type CommentChange,
@@ -55,7 +56,11 @@ export class ConnectBackend implements WriterBackend {
   private readonly lifetime = new AbortController();
   private stopFollowing: (() => void) | undefined;
 
-  constructor(private readonly connection: MdbaseConnection<JsonObject>) {
+  constructor(
+    private readonly connection: MdbaseConnection<JsonObject>,
+    /** Reopens Connect's approval for this collection (to allow the identity permission). */
+    private readonly authorize?: () => Promise<{ ok: true } | { ok: false; problem: { code: string; message?: string } }>,
+  ) {
     void this.startWatch();
   }
 
@@ -183,26 +188,31 @@ export class ConnectBackend implements WriterBackend {
   }
 
   private peoplePromise: Promise<People> | undefined;
-  people(): Promise<People> {
-    this.peoplePromise ??= (async () => {
-      const directory = await this.connection.people.directory({ members: "omit" });
-      if (directory.ok) {
-        const { me, people } = directory.value;
-        const names = new Map(people.map((p) => [personKey(p.path), p.name]));
-        return me.status === "linked" ? { names, me: { link: personLink(me.person.path), name: me.person.name } } : { names };
-      }
-      // Identity not approved (or unavailable): names only, and comments go unsigned.
-      const names = new Map<string, string>();
-      for await (const page of this.connection.queryPages({ contract: PERSON_CONTRACT, frontmatterMode: "effective" }, { pageSize: 500 })) {
-        if (!page.ok) return NO_PEOPLE;
-        for (const r of page.value.results) {
-          const name = (r.effectiveFrontmatter ?? r.frontmatter)?.["name"];
-          if (typeof name === "string") names.set(personKey(r.path), name);
-        }
-      }
-      return { names };
-    })();
+  people(options: { fresh?: boolean } = {}): Promise<People> {
+    if (options.fresh || !this.peoplePromise) this.peoplePromise = this.loadPeople();
     return this.peoplePromise;
+  }
+
+  private async loadPeople(): Promise<People> {
+    const directory = await this.connection.people.directory({ members: "omit" });
+    if (directory.ok) return peopleFromDirectory(directory.value);
+    // Without the account, person names still show; comments go unsigned.
+    const signing = signingFromProblem(directory.problem);
+    const names = new Map<string, string>();
+    for await (const page of this.connection.queryPages({ contract: PERSON_CONTRACT, frontmatterMode: "effective" }, { pageSize: 500 })) {
+      if (!page.ok) return { ...NO_PEOPLE, signing };
+      for (const r of page.value.results) {
+        const name = (r.effectiveFrontmatter ?? r.frontmatter)?.["name"];
+        if (typeof name === "string") names.set(personKey(r.path), name);
+      }
+    }
+    return { names, signing };
+  }
+
+  async reviewIdentityAccess(): Promise<Result<void>> {
+    if (!this.authorize) return fail("Writer cannot ask for access here.");
+    const outcome = await this.authorize();
+    return outcome.ok ? ok(undefined) : fail(outcome.problem.message ?? outcome.problem.code);
   }
 
   async createManuscript(input: NewManuscript): Promise<Result<string>> {

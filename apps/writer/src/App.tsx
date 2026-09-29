@@ -109,7 +109,11 @@ function ConnectedRoot({ session }: { session: WriterSession }) {
   const store = useMemo(() => externalStore(session), [session]);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const connection = snapshot.status === "ready" ? session.connection() : null;
-  const backend = useOwned(() => (connection ? new ConnectBackend(connection) : null), (b) => b.dispose(), [connection]);
+  const backend = useOwned(
+    () => (connection ? new ConnectBackend(connection, () => session.authorize("selected", { presentation: "popup" })) : null),
+    (b) => b.dispose(),
+    [connection],
+  );
   if (!backend) return <ConnectGate session={session} snapshot={snapshot} />;
   return <Manuscripts backend={backend} />;
 }

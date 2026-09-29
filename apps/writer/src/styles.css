@@ -290,6 +290,10 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 /* Comments: threads in the sidebar, anchors and tracked changes in the editor. */
 .comments { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.7rem; }
 .comments > p { margin: 0; padding: 0 0.45rem; }
+.signing { margin: 0; padding: 0 0.45rem; }
+.signing strong { color: var(--ink); }
+.signing.is-unsigned { display: grid; gap: 0.35rem; padding: 0.5rem 0.6rem; border: 1px solid var(--line); border-left: 3px solid var(--line-strong); border-radius: 6px; background: var(--subtle); }
+.signing.is-unsigned p { margin: 0; color: var(--ink-soft); }
 .comments-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
 .threads { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
 .threads-record { margin-top: 0.3rem; }

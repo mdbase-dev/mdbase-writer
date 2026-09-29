@@ -1,6 +1,6 @@
 // Comment records as both backends write them: mdbase.comment contract
 // fields, mapped to and from a collection's own field names.
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject, PeopleDirectory } from "@mdbase-dev/connect";
 import { linkPath, recordLink, type CommentRecord, type CommentTarget } from "@mdbase-writer/core/comments";
 
 export interface NewComment {
@@ -19,14 +19,52 @@ export type CommentChange =
   | { readonly kind: "reopen" }
   | { readonly kind: "withdraw" };
 
+/**
+ * Whether new comments are signed, and if not, why: the account has no person
+ * record here, several records (or an invalid one) claim it, Writer was not
+ * allowed to see the account, or the account could not be checked.
+ */
+export type Signing =
+  | { readonly kind: "linked" }
+  | { readonly kind: "unlinked" }
+  | { readonly kind: "conflict"; readonly paths: readonly string[] }
+  | { readonly kind: "not-approved" }
+  | { readonly kind: "unavailable"; readonly reason: string };
+
 /** Person records by link key (see `personKey`), and the signed-in account's own. */
 export interface People {
   readonly names: ReadonlyMap<string, string>;
   /** The link to the signed-in account's person record, when it has exactly one. */
   readonly me?: { readonly link: string; readonly name: string };
+  /** Unknown until the account has been checked. */
+  readonly signing?: Signing;
+  /** Where the account links itself to a person record (mdbase Editor's settings for this collection). */
+  readonly settingsUrl?: string;
 }
 
 export const NO_PEOPLE: People = { names: new Map() };
+
+/** People from Connect's directory: every person record's name, and how the account resolves. */
+export function peopleFromDirectory({ account, me, people }: Pick<PeopleDirectory, "account" | "me" | "people">): People {
+  const names = new Map(people.map((p) => [personKey(p.path), p.name]));
+  const settings = account.personSettingsUrl ? { settingsUrl: account.personSettingsUrl } : {};
+  switch (me.status) {
+    case "linked":
+      return { names, me: { link: personLink(me.person.path), name: me.person.name }, signing: { kind: "linked" }, ...settings };
+    case "unlinked":
+      return { names, signing: { kind: "unlinked" }, ...settings };
+    // Never pick one of several claimants, or trust an invalid one.
+    case "ambiguous":
+    case "invalid":
+      return { names, signing: { kind: "conflict", paths: me.paths }, ...settings };
+  }
+}
+
+/** Why the account could not be checked, from the directory's problem. */
+export function signingFromProblem(problem: { readonly code: string; readonly message?: string }): Signing {
+  if (problem.code === "access_denied") return { kind: "not-approved" };
+  return { kind: "unavailable", reason: problem.message ?? problem.code };
+}
 
 /** A record path or link, compared as links resolve: without `.md`, ignoring case. */
 export const personKey = (pathOrLink: string) => linkPath(pathOrLink).replace(/\.md$/i, "").toLowerCase();

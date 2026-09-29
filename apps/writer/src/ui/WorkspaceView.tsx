@@ -544,6 +544,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
                 setPendingComment({ kind: "comment", record: active });
                 setActiveComment(null);
               }}
+              onCheckAccount={() => workspace.refreshPeople()}
+              {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})}
             />
           ) : (
             <SourcesPanel

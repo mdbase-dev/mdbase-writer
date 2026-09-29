@@ -1,7 +1,7 @@
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 import { describe, expect, it } from "vitest";
 
-import { changeFields, newCommentFields, personName, toContract, toLocal } from "../backend/comments.js";
+import { changeFields, newCommentFields, peopleFromDirectory, personName, signingFromProblem, toContract, toLocal } from "../backend/comments.js";
 import { anchorsFor, describeSuggestion, placeThreads } from "./comments.js";
 
 const body = "# Method\n\nThe evidence suggests strongly that it works.\n";
@@ -84,5 +84,34 @@ describe("author names", () => {
     expect(personName("[[people/Gone Person]]", people)).toBe("Gone Person");
     expect(personName("[[people/x|Xavier]]", people)).toBe("Xavier");
     expect(personName(undefined, people)).toBeUndefined();
+  });
+});
+
+describe("signing comments", () => {
+  const account = { issuer: "https://mdbase.dev", subject: "acct_1", name: "Callum", personSettingsUrl: "https://editor.example/?surface=settings#your-person" };
+  const person = { path: "people/Callum Alpass.md", name: "Callum Alpass", identities: [], typeNames: ["person"] };
+
+  it("signs with the one person record linked to the account", () => {
+    const people = peopleFromDirectory({ account, me: { status: "linked", person }, people: [person] });
+    expect(people.signing).toEqual({ kind: "linked" });
+    expect(people.me).toEqual({ link: "[[people/Callum Alpass]]", name: "Callum Alpass" });
+    expect(people.names.get("people/callum alpass")).toBe("Callum Alpass");
+  });
+
+  it("does not sign, and says where to link, when no record is linked", () => {
+    const people = peopleFromDirectory({ account, me: { status: "unlinked" }, people: [person] });
+    expect(people.signing).toEqual({ kind: "unlinked" });
+    expect(people.me).toBeUndefined();
+    expect(people.settingsUrl).toBe(account.personSettingsUrl);
+  });
+
+  it("never picks one of several claimants, or an invalid one", () => {
+    expect(peopleFromDirectory({ account, me: { status: "ambiguous", paths: ["a.md", "b.md"] }, people: [] })).toMatchObject({ signing: { kind: "conflict", paths: ["a.md", "b.md"] } });
+    expect(peopleFromDirectory({ account, me: { status: "invalid", paths: ["a.md"] }, people: [] }).me).toBeUndefined();
+  });
+
+  it("tells a declined identity permission from an unavailable account", () => {
+    expect(signingFromProblem({ code: "access_denied", message: "not approved" })).toEqual({ kind: "not-approved" });
+    expect(signingFromProblem({ code: "temporarily_unavailable", message: "Account identity information is unavailable." })).toEqual({ kind: "unavailable", reason: "Account identity information is unavailable." });
   });
 });

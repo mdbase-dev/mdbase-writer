@@ -97,6 +97,15 @@ export class ManuscriptWorkspace {
     this.cleanups.push(this.compile.onResult((r) => this.onResult(r)));
     this.cleanups.push(this.compile.onFailure((message) => this.update({ problem: message })));
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
+    // Linking a person record happens in another tab (mdbase Editor): look again on return.
+    if (typeof window !== "undefined") {
+      const onFocus = () => {
+        if (this.current.people.signing?.kind === "linked" || Date.now() - this.peopleCheckedAt < 5_000) return;
+        void this.refreshPeople();
+      };
+      window.addEventListener("focus", onFocus);
+      this.cleanups.push(() => window.removeEventListener("focus", onFocus));
+    }
     void this.start();
   }
 
@@ -140,7 +149,24 @@ export class ManuscriptWorkspace {
     if (opened) void this.loadComments();
   }
 
+  private peopleCheckedAt = 0;
+
+  /** Checks the account against the collection's person records again. */
+  async refreshPeople(): Promise<void> {
+    this.peopleCheckedAt = Date.now();
+    this.update({ people: await this.backend.people({ fresh: true }) });
+  }
+
+  /** Asks Connect to approve Writer again (to allow the identity permission), then checks the account. */
+  async reviewIdentityAccess(): Promise<Result<void>> {
+    if (!this.backend.reviewIdentityAccess) return fail("Writer cannot ask for access here.");
+    const reviewed = await this.backend.reviewIdentityAccess();
+    if (reviewed.ok) await this.refreshPeople();
+    return reviewed;
+  }
+
   private async loadComments(): Promise<void> {
+    this.peopleCheckedAt = Date.now();
     const [comments, people] = await Promise.all([this.backend.comments(), this.backend.people()]);
     this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, people } : { commentsProblem: comments.message, people });
   }

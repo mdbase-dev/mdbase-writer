@@ -34,6 +34,8 @@ export function CommentsPanel({
   onChange,
   onAccept,
   onWholeRecord,
+  onCheckAccount,
+  onReviewAccess,
 }: {
   placed: readonly PlacedThread[];
   people: People;
@@ -51,6 +53,10 @@ export function CommentsPanel({
   onAccept(placed: PlacedThread): Promise<Result<unknown>>;
   /** Starts a comment on the whole of the record in the editor. */
   onWholeRecord(): void;
+  /** Checks the account against the person records again. */
+  onCheckAccount(): Promise<unknown>;
+  /** Reopens Connect's approval, where the identity permission can be allowed. */
+  onReviewAccess?(): Promise<Result<unknown>>;
 }) {
   const [filter, setFilter] = useState<Filter>("open");
   const panel = useRef<HTMLElement>(null);
@@ -69,6 +75,7 @@ export function CommentsPanel({
   let lastRecord: string | null = null;
   return (
     <section ref={panel} className="comments" aria-label="Comments">
+      <Signing people={people} onCheck={onCheckAccount} {...(onReviewAccess ? { onReviewAccess } : {})} />
       {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
       <div className="comments-bar">
         <div className="segmented" role="group" aria-label="Show">
@@ -301,3 +308,61 @@ function Comment({ comment, people, reply, children }: { comment: CommentRecord;
 
 /** "3 open comments", for the tab's title. */
 export const openCount = (placed: readonly PlacedThread[]) => plural(placed.filter((p) => p.thread.root.status === "open").length, "open comment");
+
+/**
+ * Who new comments are signed as, or why they are not and where to fix it.
+ * Linking an account to a person record happens in mdbase Editor, whose
+ * settings page Connect names for this collection.
+ */
+function Signing({ people, onCheck, onReviewAccess }: { people: People; onCheck(): Promise<unknown>; onReviewAccess?(): Promise<Result<unknown>> }) {
+  const { busy, error, run } = useAction();
+  const { signing, settingsUrl, me } = people;
+  if (!signing) return null;
+  if (signing.kind === "linked") {
+    return <p className="signing small muted">Commenting as <strong>{me?.name}</strong></p>;
+  }
+  const link = (label: string) =>
+    settingsUrl ? (
+      <a className="small" href={settingsUrl} target="_blank" rel="noopener">
+        {label}
+      </a>
+    ) : (
+      <span className="small muted">Link it in mdbase Editor’s settings for this collection.</span>
+    );
+  const check = (
+    <button type="button" className="link small" disabled={busy} onClick={() => void run(async () => (await onCheck(), { ok: true, value: null }))}>
+      Check again
+    </button>
+  );
+  let why: ReactNode;
+  let actions: ReactNode;
+  switch (signing.kind) {
+    case "unlinked":
+      why = "Your account is not linked to a person record in this collection.";
+      actions = <>{link("Link your account")}{check}</>;
+      break;
+    case "conflict":
+      why = signing.paths.length > 1 ? `${plural(signing.paths.length, "person record")} claim your account, so Writer will not guess which is you.` : "The person record that claims your account is not valid.";
+      actions = <>{link("Fix it in mdbase Editor")}{check}</>;
+      break;
+    case "not-approved":
+      why = "Writer was not allowed to see your account.";
+      actions = onReviewAccess ? (
+        <button type="button" className="mdbase-button" disabled={busy} onClick={() => void run(onReviewAccess)}>
+          {busy ? "Waiting for approval…" : "Review access"}
+        </button>
+      ) : null;
+      break;
+    case "unavailable":
+      why = `Your account could not be checked (${signing.reason}).`;
+      actions = check;
+      break;
+  }
+  return (
+    <div className="signing is-unsigned" role="status">
+      <p className="small"><strong>Your comments are not signed.</strong> {why}</p>
+      {actions && <div className="thread-actions">{actions}</div>}
+      {error && <p className="small tone-danger" role="alert">{error}</p>}
+    </div>
+  );
+}

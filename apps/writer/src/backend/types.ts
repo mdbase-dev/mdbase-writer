@@ -82,8 +82,10 @@ export interface WriterBackend {
   /** Writes a new comment, reply or suggestion, signed by the signed-in account's person record when it has one. */
   createComment(input: NewComment): Promise<Result<CommentRecord>>;
   changeComment(comment: CommentRecord, change: CommentChange): Promise<Result<CommentRecord>>;
-  /** Person records' names, and the signed-in account's own record (loaded once). */
-  people(): Promise<People>;
+  /** Person records' names, and the signed-in account's own record (loaded once, unless `fresh`). */
+  people(options?: { fresh?: boolean }): Promise<People>;
+  /** Asks Connect to approve Writer again, so the account can allow its identity to be seen. */
+  reviewIdentityAccess?(): Promise<Result<void>>;
   /** Paths changed by other applications or views (for refreshing the index and library). */
   onExternalChange(listener: (paths: readonly string[]) => void): () => void;
   dispose(): void;
