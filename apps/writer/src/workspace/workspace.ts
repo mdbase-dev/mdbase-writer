@@ -179,7 +179,8 @@ export class ManuscriptWorkspace {
     // An image, style or template the document uses changed: send its new bytes.
     const assets = paths.filter((p) => this.requestedAssets.has(p));
     if (assets.length) void this.loadAssets(assets);
-    if (paths.every((p) => this.leases.has(p) || this.requestedAssets.has(p))) return; // record sessions follow their own records
+    // Record sessions follow their own records (including ones still opening).
+    if (paths.every((p) => this.leases.has(p) || this.opening.has(p) || this.requestedAssets.has(p))) return;
     clearTimeout(this.refreshTimer);
     this.refreshTimer = setTimeout(() => void this.refreshCollection(), 2_000);
   }
@@ -224,11 +225,17 @@ export class ManuscriptWorkspace {
     const folder = first?.includes("/") ? first.slice(0, first.lastIndexOf("/")) : "chapters";
     const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`);
     if (!created.ok) return created;
-    // The index learns the new record first, so the embed resolves when it is added.
-    await this.refreshCollection();
+    const path = created.value;
+    // The index learns the new record (no need to list the collection again), so the embed resolves.
+    const recordPaths = [...this.current.recordPaths, path];
+    this.update({ recordPaths });
+    this.compile.send({ type: "collection", recordPaths, filePaths: this.current.filePaths });
+    // Its session opens now, rather than once the manuscript has been typeset with the embed.
+    const opened = this.open(path);
     const body = this.current.records.get(this.main)?.snapshot.body ?? "";
-    this.setBody(this.main, appendEmbed(body, created.value.replace(/\.md$/i, "")));
-    return ok(created.value);
+    this.setBody(this.main, appendEmbed(body, path.replace(/\.md$/i, "")));
+    await opened;
+    return ok(path);
   }
 
   patchFrontmatter(path: string, patch: JsonObject): void {
