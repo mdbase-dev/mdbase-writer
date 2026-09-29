@@ -29,7 +29,7 @@ import {
   SplitIcon,
 } from "./icons.js";
 import { readerSourceHref } from "../apps.js";
-import { clampSplit, gridFor, loadLayout, nextZoom, saveLayout, type Layout, type SidebarTab, type View } from "./layout.js";
+import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
@@ -440,6 +440,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             />
           )}
         </div>
+        <SidebarResizer width={layout.sidebarWidth} onChange={(sidebarWidth) => setLayout((l) => ({ ...l, sidebarWidth }))} />
       </aside>
 
       <section className="write" aria-label="Editor">
@@ -766,21 +767,55 @@ function Divider({ split, grid, onChange }: { split: number; grid: React.RefObje
       }}
       onPointerDown={(e) => {
         const box = measure();
-        if (!box || e.button !== 0) return;
+        if (box) dragResize(e, (x) => onChange(clampSplit((x - box.left) / box.width)));
+      }}
+    />
+  );
+}
+
+/** Follows a primary-button drag from a resize handle, reporting the pointer's x. */
+function dragResize(e: React.PointerEvent<HTMLElement>, onMove: (clientX: number) => void): void {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  const el = e.currentTarget;
+  el.setPointerCapture(e.pointerId);
+  document.body.classList.add("is-resizing");
+  const move = (ev: PointerEvent) => onMove(ev.clientX);
+  const up = () => {
+    el.removeEventListener("pointermove", move);
+    el.removeEventListener("pointerup", up);
+    el.removeEventListener("pointercancel", up);
+    document.body.classList.remove("is-resizing");
+  };
+  el.addEventListener("pointermove", move);
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
+}
+
+/** The sidebar's right edge: drag, or use the arrow keys, to resize it; double-click restores its width. */
+function SidebarResizer({ width, onChange }: { width: number; onChange(width: number): void }) {
+  return (
+    <div
+      className="sidebar-resizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize the sidebar"
+      aria-valuemin={SIDEBAR_MIN}
+      aria-valuemax={SIDEBAR_MAX}
+      aria-valuenow={width}
+      tabIndex={0}
+      title="Drag to resize; double-click to restore"
+      onDoubleClick={() => onChange(DEFAULT_LAYOUT.sidebarWidth)}
+      onKeyDown={(e) => {
+        const step = e.key === "ArrowLeft" ? -16 : e.key === "ArrowRight" ? 16 : 0;
+        if (step) onChange(clampSidebar(width + step));
+        else if (e.key === "Home" || e.key === "End") onChange(e.key === "Home" ? SIDEBAR_MIN : SIDEBAR_MAX);
+        else return;
         e.preventDefault();
-        const el = e.currentTarget;
-        el.setPointerCapture(e.pointerId);
-        document.body.classList.add("is-resizing");
-        const move = (ev: PointerEvent) => onChange(clampSplit((ev.clientX - box.left) / box.width));
-        const up = () => {
-          el.removeEventListener("pointermove", move);
-          el.removeEventListener("pointerup", up);
-          el.removeEventListener("pointercancel", up);
-          document.body.classList.remove("is-resizing");
-        };
-        el.addEventListener("pointermove", move);
-        el.addEventListener("pointerup", up);
-        el.addEventListener("pointercancel", up);
+      }}
+      onPointerDown={(e) => {
+        const left = e.currentTarget.parentElement?.getBoundingClientRect().left ?? 0;
+        dragResize(e, (x) => onChange(clampSidebar(x - left)));
       }}
     />
   );

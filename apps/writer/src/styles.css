@@ -162,7 +162,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .count { display: inline-grid; place-items: center; min-width: 1.4rem; height: 1.2rem; padding: 0 0.3rem; border-radius: 0.6rem; background: var(--subtle); border: 1px solid var(--line); font-size: 11px; font-weight: 400; color: var(--ink-soft); }
 .count.tone-warning { border-color: color-mix(in oklch, var(--warning) 50%, transparent); background: color-mix(in oklch, var(--warning) 12%, transparent); color: var(--ink); }
 
-.outline { grid-area: outline; min-height: 0; border-right: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.outline { grid-area: outline; position: relative; min-height: 0; border-right: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr); }
 /* Underlined tabs, as tall as the pane headers beside them so their rules meet. */
 .sidebar-tabs { display: flex; gap: 1rem; min-height: 38px; padding: 0 0.9rem; border-bottom: 1px solid var(--line); background: var(--canvas); }
 .sidebar-tabs button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font-size: 13px; cursor: pointer; }
@@ -171,6 +171,11 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .sidebar-tabs button:focus-visible { outline-offset: -2px; }
 .tab-count { font-size: 11px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .sidebar-panel { min-height: 0; overflow: auto; padding: 0.75rem; }
+/* A handle over the sidebar's right rule; it shows only while pointed at, focused or dragged. */
+.sidebar-resizer { position: absolute; top: 0; bottom: 0; right: -4px; width: 7px; z-index: 2; cursor: col-resize; touch-action: none; }
+.sidebar-resizer::after { content: ""; position: absolute; top: 0; bottom: 0; left: 2px; width: 3px; background: transparent; transition: background 150ms var(--ease); }
+.sidebar-resizer:hover::after, .sidebar-resizer:focus-visible::after, .is-resizing .sidebar-resizer:active::after { background: var(--accent); }
+.sidebar-resizer:focus-visible { outline: 0; }
 .sidebar-heading { margin: 0 0 0.2rem; padding: 0 0.45rem; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .heading-count { margin-left: 0.25rem; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .sidebar-more { display: inline-flex; align-items: center; gap: 0.35rem; justify-self: start; padding: 0.3rem 0.45rem; border: 0; border-radius: 5px; background: none; color: var(--muted); font-size: 12.5px; cursor: pointer; }
@@ -337,7 +342,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
   .workspace.pane-outline .outline { display: grid; }
   .workspace.pane-write .write { display: flex; }
   .workspace.pane-preview .preview-pane { display: grid; }
-  .divider { display: none !important; }
+  .divider, .sidebar-resizer { display: none !important; }
   .pane-path, .page-indicator { display: none; }
   .editor .cm-content { padding: 1rem 16px 40vh; }
   .settings, .new-manuscript, .adopt-note { grid-template-columns: 1fr; }

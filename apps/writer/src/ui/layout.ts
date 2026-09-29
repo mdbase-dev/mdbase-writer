@@ -6,6 +6,8 @@ export type SidebarTab = "outline" | "sources";
 export interface Layout {
   readonly sidebar: boolean;
   readonly tab: SidebarTab;
+  /** The sidebar's width in CSS pixels. */
+  readonly sidebarWidth: number;
   readonly view: View;
   /** The editor's share of the width it splits with the preview. */
   readonly split: number;
@@ -13,9 +15,12 @@ export interface Layout {
 }
 
 const KEY = "mdbase-writer:layout";
-export const DEFAULT_LAYOUT: Layout = { sidebar: true, tab: "outline", view: "both", split: 0.5, zoom: "fit" };
+export const DEFAULT_LAYOUT: Layout = { sidebar: true, tab: "outline", sidebarWidth: 272, view: "both", split: 0.5, zoom: "fit" };
 export const ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const;
 
+export const SIDEBAR_MIN = 200;
+export const SIDEBAR_MAX = 520;
+export const clampSidebar = (width: number) => Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, width)));
 export const clampSplit = (split: number) => Math.min(0.8, Math.max(0.2, split));
 
 export function loadLayout(): Layout {
@@ -24,6 +29,7 @@ export function loadLayout(): Layout {
     return {
       sidebar: typeof raw.sidebar === "boolean" ? raw.sidebar : DEFAULT_LAYOUT.sidebar,
       tab: raw.tab === "sources" ? "sources" : "outline",
+      sidebarWidth: typeof raw.sidebarWidth === "number" ? clampSidebar(raw.sidebarWidth) : DEFAULT_LAYOUT.sidebarWidth,
       view: raw.view === "write" || raw.view === "preview" || raw.view === "both" ? raw.view : DEFAULT_LAYOUT.view,
       split: typeof raw.split === "number" ? clampSplit(raw.split) : DEFAULT_LAYOUT.split,
       zoom: raw.zoom === "fit" || (typeof raw.zoom === "number" && raw.zoom >= 0.25 && raw.zoom <= 4) ? raw.zoom : DEFAULT_LAYOUT.zoom,
@@ -44,7 +50,7 @@ export function saveLayout(layout: Layout): void {
 /** Grid columns and areas for the desktop workspace. */
 export function gridFor(layout: Layout): { columns: string; areas: string } {
   const cols: [string, string][] = [];
-  if (layout.sidebar) cols.push(["minmax(220px, 17rem)", "outline"]);
+  if (layout.sidebar) cols.push([`${clampSidebar(layout.sidebarWidth)}px`, "outline"]);
   if (layout.view !== "preview") cols.push([`minmax(0, ${layout.view === "both" ? layout.split : 1}fr)`, "write"]);
   if (layout.view === "both") cols.push(["7px", "divider"]);
   if (layout.view !== "write") cols.push([`minmax(0, ${layout.view === "both" ? 1 - layout.split : 1}fr)`, "preview"]);

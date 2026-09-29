@@ -256,6 +256,23 @@ await step("the sidebar and preview can be hidden, and the layout is remembered"
   await page.locator(".preview-pane").waitFor({ state: "visible" });
 });
 
+await step("the sidebar resizes by dragging its edge or with the arrow keys", async () => {
+  const width = () => page.evaluate(() => Math.round(document.querySelector(".outline").getBoundingClientRect().width));
+  const handle = page.getByRole("separator", { name: "Resize the sidebar" });
+  const box = await handle.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + 300);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 100, box.y + 300, { steps: 5 });
+  await page.mouse.up();
+  assert.equal(await width(), 372);
+  await handle.focus();
+  await page.keyboard.press("ArrowLeft");
+  assert.equal(await width(), 356);
+  assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem("mdbase-writer:layout")))).sidebarWidth, 356);
+  await handle.dblclick();
+  assert.equal(await width(), 272);
+});
+
 await step("clicking the preview moves the editor to that block", async () => {
   const target = await page.evaluate(async () => {
     const canvas = document.querySelectorAll(".preview-pages canvas.page")[1];
