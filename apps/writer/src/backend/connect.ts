@@ -6,6 +6,7 @@ import {
   fail,
   libraryEntry,
   manuscriptSlug,
+  numberedPath,
   ok,
   sourceAnnotation,
   titleFromNote,
@@ -136,6 +137,17 @@ export class ConnectBackend implements WriterBackend {
     if (typeof fm[titleField] !== "string" || !fm[titleField]) patch[titleField] = titleFromNote(path, current.value.body ?? "");
     const updated = await this.connection.update({ path, patch, ifRevision: current.value.revision });
     return updated.ok ? ok(updated.value.path) : fail(problemMessage(updated));
+  }
+
+  async createRecord(path: string, body: string): Promise<Result<string>> {
+    let last = "";
+    for (let n = 1; n <= 20; n++) {
+      const created = await this.connection.create({ path: numberedPath(path, n), frontmatter: {}, body });
+      if (created.ok) return ok(created.value.path);
+      last = problemMessage(created);
+      if (!/exist/i.test(`${created.problem.code} ${last}`)) break;
+    }
+    return fail(last);
   }
 
   async index(): Promise<Result<CollectionIndex>> {

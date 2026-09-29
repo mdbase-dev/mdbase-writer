@@ -68,6 +68,8 @@ export interface WriterBackend {
   createManuscript(input: NewManuscript): Promise<Result<string>>;
   /** Marks an existing note as a manuscript (adds the manuscript type; keeps its other types). */
   adoptManuscript(path: string): Promise<Result<string>>;
+  /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path. */
+  createRecord(path: string, body: string): Promise<Result<string>>;
   index(): Promise<Result<CollectionIndex>>;
   library(): Promise<Result<LibraryEntry[]>>;
   /** Reader annotations in the collection (records implementing dev.mdbase.reader.annotation). */
@@ -111,6 +113,9 @@ export function sourceAnnotation(path: string, frontmatter: JsonObject | undefin
   if (!quote && !note) return null;
   return { path, source, quote, note, ...(label ? { locator: label } : {}) };
 }
+
+/** `chapters/x.md` numbered for the nth try: `chapters/x-2.md`. */
+export const numberedPath = (path: string, n: number) => (n > 1 ? path.replace(/(\.md)?$/i, `-${n}$1`) : path);
 
 export function manuscriptSlug(title: string): string {
   const slug = title

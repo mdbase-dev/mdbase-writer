@@ -6,7 +6,7 @@ import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import type { CslItem } from "@mdbase-writer/core";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
 
-import { bodySummary, fail, manuscriptSlug, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import { bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -87,6 +87,13 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
       manuscripts.set(path, { path, title });
       return ok(path);
+    },
+    async createRecord(path: string, body: string) {
+      let at = path;
+      for (let n = 2; paths.has(at); n++) at = numberedPath(path, n);
+      authority.seed(at, { body, frontmatter: {} });
+      paths.add(at);
+      return ok(at);
     },
     async index(): Promise<Result<CollectionIndex>> {
       return ok({ recordPaths: [...paths], filePaths: [...files.keys()] });

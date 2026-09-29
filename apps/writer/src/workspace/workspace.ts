@@ -8,13 +8,15 @@
 import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
 import type { CslItem, WriterRecord } from "@mdbase-writer/core";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
+import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
-import type { LibraryEntry, WriterBackend } from "../backend/types.js";
+import { fail, manuscriptSlug, ok, type LibraryEntry, type Result, type WriterBackend } from "../backend/types.js";
 import { CompileClient } from "../compile/client.js";
 import type { CompileResult } from "../compile/protocol.js";
 import { toDocx } from "../export/pandoc.js";
 import { zip } from "../export/zip.js";
+import { appendEmbed, chapterEmbeds, moveEmbed } from "./chapters.js";
 
 // Styles and locales are fetched, not bundled: only the worker needs most of them.
 const cslUrls = import.meta.glob("../../../../packages/core/assets/csl/*.{csl,xml}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -80,6 +82,11 @@ export class ManuscriptWorkspace {
     this.cleanups.push(this.compile.onFailure((message) => this.update({ problem: message })));
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
     void this.start();
+  }
+
+  /** Whether this is a real collection or the demo. */
+  get kind(): WriterBackend["kind"] {
+    return this.backend.kind;
   }
 
   getSnapshot = (): WorkspaceSnapshot => this.current;
@@ -191,6 +198,37 @@ export class ManuscriptWorkspace {
 
   setBody(path: string, body: string): void {
     this.leases.get(path)?.lease.session.setBody(body);
+  }
+
+  /** The record each of the manuscript's chapter embeds resolves to (null when none does), in order. */
+  chapterPaths(): (string | null)[] {
+    const body = this.current.records.get(this.main)?.snapshot.body ?? "";
+    const candidates = new Set(this.current.recordPaths);
+    return chapterEmbeds(body).map((e) => resolveLinkTarget(e.target, this.main, candidates));
+  }
+
+  /** Moves the manuscript's chapter embed at index `from` to index `to`. */
+  moveChapter(from: number, to: number): void {
+    const body = this.current.records.get(this.main)?.snapshot.body;
+    if (body !== undefined) this.setBody(this.main, moveEmbed(body, from, to));
+  }
+
+  /**
+   * Creates a record for a new chapter beside the existing chapters (or in
+   * chapters/) and embeds it after the last one. Resolves to its path.
+   */
+  async addChapter(title: string): Promise<Result<string>> {
+    const name = title.trim();
+    if (!name) return fail("A chapter needs a title.");
+    const first = this.chapterPaths().find((p): p is string => Boolean(p));
+    const folder = first?.includes("/") ? first.slice(0, first.lastIndexOf("/")) : "chapters";
+    const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`);
+    if (!created.ok) return created;
+    // The index learns the new record first, so the embed resolves when it is added.
+    await this.refreshCollection();
+    const body = this.current.records.get(this.main)?.snapshot.body ?? "";
+    this.setBody(this.main, appendEmbed(body, created.value.replace(/\.md$/i, "")));
+    return ok(created.value);
   }
 
   patchFrontmatter(path: string, patch: JsonObject): void {

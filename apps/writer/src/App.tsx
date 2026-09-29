@@ -7,6 +7,7 @@ import { Component, useEffect, useMemo, useState, useSyncExternalStore, type Rea
 import { ConnectBackend } from "./backend/connect.js";
 import type { WriterBackend } from "./backend/types.js";
 import { createWriterSession, type WriterSession } from "./connect/session.js";
+import { appUrls } from "./apps.js";
 import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { Home } from "./ui/Home.js";
@@ -17,12 +18,6 @@ import { OpeningScreen } from "@mdbase-dev/ui/screens";
 import { WorkspaceView } from "./ui/WorkspaceView.js";
 import { ManuscriptWorkspace } from "./workspace/workspace.js";
 
-// Local builds point the app menu at local copies of the other apps.
-const appUrls = {
-  editor: import.meta.env.VITE_MDBASE_EDITOR_URL,
-  reader: import.meta.env.VITE_MDBASE_READER_URL,
-  writer: import.meta.env.VITE_MDBASE_WRITER_URL,
-};
 
 const params = new URL(location.href).searchParams;
 const demoRequested = (import.meta.env.DEV || import.meta.env.VITE_WRITER_DEMO === "1") && params.has("demo");

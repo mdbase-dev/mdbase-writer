@@ -309,6 +309,71 @@ await step("an edit made elsewhere during typing becomes a resolvable conflict",
   assert.match(await editorText(), /Mine\./);
 });
 
+const mainBody = () => page.evaluate(() => window.writer.workspace.getSnapshot().records.get("manuscripts/refusing-the-possible.md").snapshot.body);
+const orderIs = (order) => waitFor((o) => JSON.stringify(window.writer.workspace.getSnapshot().result?.order) === JSON.stringify(o), order, 15_000);
+
+await step("the outline numbers chapters without repeating their titles", async () => {
+  await page.getByRole("tab", { name: "Outline" }).click();
+  assert.deepEqual(await page.locator(".record-number").allTextContents(), ["1", "2"]);
+  // Each chapter opens with a heading that is its title; the outline does not list it again.
+  assert.equal(await page.locator(".records .heading-row", { hasText: /^Potentiality/ }).count(), 0);
+  assert.match(await page.locator(".outline-manuscript .record-words").textContent(), /words/);
+});
+
+await step("chapters reorder with Alt-arrow keys and by dragging", async () => {
+  await page.locator('.record-row[data-path="chapters/event.md"]').focus();
+  await page.keyboard.press("Alt+ArrowUp");
+  await orderIs(["manuscripts/refusing-the-possible.md", "chapters/event.md", "chapters/potentiality.md"]);
+  assert.ok((await mainBody()).indexOf("chapters/event") < (await mainBody()).indexOf("chapters/potentiality"));
+  await page.locator(".records > li", { hasText: "Potentiality" }).dragTo(page.locator(".records > li", { hasText: "The event" }), { targetPosition: { x: 20, y: 4 } });
+  await orderIs(["manuscripts/refusing-the-possible.md", "chapters/potentiality.md", "chapters/event.md"]);
+});
+
+await step("a new chapter is created and embedded after the last", async () => {
+  await page.getByRole("button", { name: "Add chapter" }).click();
+  await page.getByRole("textbox", { name: "New chapter title" }).fill("The aftermath");
+  await page.keyboard.press("Enter");
+  await orderIs(["manuscripts/refusing-the-possible.md", "chapters/potentiality.md", "chapters/event.md", "chapters/the-aftermath.md"]);
+  await page.locator(".pane-path", { hasText: "chapters/the-aftermath.md" }).waitFor();
+  assert.match(await mainBody(), /!\[\[chapters\/event\]\]\n\n!\[\[chapters\/the-aftermath\]\]/);
+  assert.deepEqual(await page.locator(".record-number").allTextContents(), ["1", "2", "3"]);
+});
+
+await step("sources list the manuscript's citations first, and cite with a page", async () => {
+  await page.getByRole("tab", { name: /Sources/ }).click();
+  const cited = page.locator(".source-group", { has: page.getByRole("heading", { name: /In this manuscript/ }) });
+  const titles = await cited.locator(".source-title").allTextContents();
+  assert.equal(titles.length, 3, `cited: ${titles.join(" | ")}`);
+  assert.match(titles[0] ?? "", /Potentialities/);
+  await typeAtEndOfParagraph("The aftermath", "");
+  await page.keyboard.press("End");
+  await page.keyboard.type("\n\nAs argued ");
+  await cited.locator(".source-row", { hasText: "Being and Event" }).click();
+  await page.getByRole("textbox", { name: /Page or locator/ }).fill("23-24");
+  await page.getByRole("textbox", { name: /Page or locator/ }).press("Enter");
+  assert.match(await editorText(), /As argued \[@badiouBeing07, p\. 23-24\]/);
+});
+
+await step("a source steps through its citations, and the one at the cursor is marked", async () => {
+  // The cursor is after the citation just made (the workspace hears of cursor moves after a pause).
+  await page.waitForTimeout(250);
+  await page.locator(".source-row", { hasText: "Being and Event" }).focus();
+  await page.getByRole("button", { name: "Next citation" }).click();
+  await page.locator(".pane-path", { hasText: "chapters/event.md" }).waitFor();
+  await page.locator(".sources li.is-here", { hasText: "Being and Event" }).waitFor({ timeout: 5_000 });
+});
+
+await step("the sources list moves with the arrow keys and cites with Enter", async () => {
+  await page.getByRole("searchbox", { name: "Find a source" }).fill("");
+  await page.getByRole("searchbox", { name: "Find a source" }).press("ArrowDown");
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.key), "agambenPotentialities99");
+  await page.keyboard.press("ArrowDown");
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.key), "agambenBartleby99");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Enter");
+  await page.locator(".cm-content", { hasText: "[@agambenPotentialities99]" }).first().waitFor({ timeout: 5_000 });
+});
+
 await step("Export PDF downloads a PDF", async () => {
   const [file] = await Promise.all([
     page.waitForEvent("download", { timeout: 30_000 }),

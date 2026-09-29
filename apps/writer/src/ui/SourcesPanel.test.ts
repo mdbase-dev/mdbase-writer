@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { sourceAnnotation } from "../backend/types.js";
 import { headings } from "./outline.js";
 import { parseAuthors } from "./Settings.js";
-import { citationFor, quotationFor } from "./SourcesPanel.js";
+import { citationAt, citationFor, quotationFor } from "./SourcesPanel.js";
 
 describe("Reader annotations", () => {
   it("reads the source link, locator, quotation and note as Reader writes them", () => {
@@ -20,6 +20,13 @@ describe("Reader annotations", () => {
     expect(citationFor("k", "p. 182")).toBe("[@k, p. 182]");
     expect(citationFor("k", "Chapter 2 · 40% through")).toBe("[@k]");
     expect(citationFor("k")).toBe("[@k]");
+  });
+
+  it("reads a typed page number or range as a page, and keeps other locators as typed", () => {
+    expect(citationAt("k", " 12 ")).toBe("[@k, p. 12]");
+    expect(citationAt("k", "12–14")).toBe("[@k, p. 12–14]");
+    expect(citationAt("k", "ch. 3")).toBe("[@k, ch. 3]");
+    expect(citationAt("k", "")).toBe("[@k]");
   });
 
   it("quotes short passages inline and long ones as block quotes", () => {

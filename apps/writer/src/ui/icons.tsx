@@ -4,6 +4,7 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { ArticleIcon as PhArticle } from "@phosphor-icons/react/Article";
 import { CaretDownIcon as PhCaretDown } from "@phosphor-icons/react/CaretDown";
 import { CaretLeftIcon as PhCaretLeft } from "@phosphor-icons/react/CaretLeft";
+import { CaretRightIcon as PhCaretRight } from "@phosphor-icons/react/CaretRight";
 import { CheckIcon as PhCheck } from "@phosphor-icons/react/Check";
 import { ColumnsIcon as PhColumns } from "@phosphor-icons/react/Columns";
 import { DownloadSimpleIcon as PhDownloadSimple } from "@phosphor-icons/react/DownloadSimple";
@@ -26,6 +27,7 @@ function icon(Glyph: PhosphorIcon) {
 
 export const ChevronDown = icon(PhCaretDown);
 export const ChevronLeft = icon(PhCaretLeft);
+export const ChevronRight = icon(PhCaretRight);
 export const SidebarIcon = icon(PhSidebarSimple);
 export const EditorOnly = icon(PhArticle);
 export const SplitIcon = icon(PhColumns);

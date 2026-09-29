@@ -1,9 +1,11 @@
 // How the workspace is laid out, remembered in this browser (all mdbase
 // writer manuscripts share it).
 export type View = "write" | "both" | "preview";
+export type SidebarTab = "outline" | "sources";
 
 export interface Layout {
   readonly sidebar: boolean;
+  readonly tab: SidebarTab;
   readonly view: View;
   /** The editor's share of the width it splits with the preview. */
   readonly split: number;
@@ -11,7 +13,7 @@ export interface Layout {
 }
 
 const KEY = "mdbase-writer:layout";
-export const DEFAULT_LAYOUT: Layout = { sidebar: true, view: "both", split: 0.5, zoom: "fit" };
+export const DEFAULT_LAYOUT: Layout = { sidebar: true, tab: "outline", view: "both", split: 0.5, zoom: "fit" };
 export const ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const;
 
 export const clampSplit = (split: number) => Math.min(0.8, Math.max(0.2, split));
@@ -21,6 +23,7 @@ export function loadLayout(): Layout {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Partial<Layout>;
     return {
       sidebar: typeof raw.sidebar === "boolean" ? raw.sidebar : DEFAULT_LAYOUT.sidebar,
+      tab: raw.tab === "sources" ? "sources" : "outline",
       view: raw.view === "write" || raw.view === "preview" || raw.view === "both" ? raw.view : DEFAULT_LAYOUT.view,
       split: typeof raw.split === "number" ? clampSplit(raw.split) : DEFAULT_LAYOUT.split,
       zoom: raw.zoom === "fit" || (typeof raw.zoom === "number" && raw.zoom >= 0.25 && raw.zoom <= 4) ? raw.zoom : DEFAULT_LAYOUT.zoom,

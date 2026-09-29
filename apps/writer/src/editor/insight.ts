@@ -42,6 +42,23 @@ export function referenceKeys(text: string): string[] {
   return [...text.matchAll(KEY)].map((m) => (m[3] ?? "").replace(/[.:,;?~/#$%&+<>-]+$/u, "")).filter(Boolean);
 }
 
+/** Body offsets of each `@key` for one key (at the `@`). */
+export function referenceOffsets(text: string, key: string): number[] {
+  const out: number[] = [];
+  for (const m of text.matchAll(KEY)) {
+    if ((m[3] ?? "").replace(/[.:,;?~/#$%&+<>-]+$/u, "") !== key) continue;
+    out.push((m.index ?? 0) + (m[1] ?? "").length + (m[2] ?? "").length - 1);
+  }
+  return out;
+}
+
+/** The `@key` at a body offset, if the offset falls on one. */
+export function referenceAtOffset(text: string, offset: number): string | null {
+  const start = text.lastIndexOf("\n", offset - 1) + 1;
+  const end = text.indexOf("\n", offset);
+  return referenceAt(text.slice(start, end < 0 ? undefined : end), offset - start)?.key ?? null;
+}
+
 /** Labels (`{#sec-intro}`) defined in a record body, with the text they label. */
 export function labelTargets(record: string, body: string): [string, LabelTarget][] {
   const out: [string, LabelTarget][] = [];

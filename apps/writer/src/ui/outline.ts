@@ -40,3 +40,9 @@ export function headingAt(list: readonly OutlineHeading[], offset: number): Outl
   for (const h of list) if (h.offset <= offset) hit = h;
   return hit;
 }
+
+/** A heading list without the opening heading when it only repeats the record's title. */
+export function withoutTitle(list: readonly OutlineHeading[], title: string): readonly OutlineHeading[] {
+  const same = (a: string) => a.replace(/\s+/g, " ").trim().toLowerCase();
+  return list[0] && same(list[0].text) === same(title) ? list.slice(1) : list;
+}

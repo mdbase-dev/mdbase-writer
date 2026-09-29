@@ -16,15 +16,19 @@ its chapters. The preview is typeset by Typst in the browser as you type.
   compiled in a Web Worker; only pages near the viewport are drawn.
 - **Citations from Reader.** Sources are the collection's records implementing
   `dev.mdbase.reader.source`; each one's `csl` field is its CSL-JSON. Sources
-  complete as you type (`@`, `[@`) by citekey, author, title or year, and the
-  Sources panel inserts a citation, or a quotation highlighted in Reader with
-  its page. Citations are formatted by citeproc-js (six bundled styles, or a
+  complete as you type (`@`, `[@`) by citekey, author, title or year. The
+  Sources panel lists the sources the manuscript cites before the rest of the
+  library, marks the one under the cursor, steps through a source's
+  citations, and inserts a citation (with a page if you give one) or a
+  quotation highlighted in Reader with its page. Citations are formatted by citeproc-js (six bundled styles, or a
   `.csl` file in the collection; the manuscript's `lang` picks the locale) and
   match Pandoc's citeproc, including notes after punctuation, narrative
   citations in note styles and ibid/short forms.
 - **Multi-record manuscripts.** Every embedded record gets its own record
   session: autosave, conflict detection when something else edits it, exact
-  recovery of interrupted saves. Notes, citations and cross-references run
+  recovery of interrupted saves. The outline numbers the chapters (records
+  embedded on lines of their own); drag them, or press Alt-↑/↓, to reorder
+  them, and add a new chapter at the end. Notes, citations and cross-references run
   across records.
 - **Problems where they happen.** Unknown citekeys, missing labels, embeds or
   images, unused footnotes, malformed LaTeX and Typst errors are reported on

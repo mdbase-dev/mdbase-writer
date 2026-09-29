@@ -1,19 +1,31 @@
-// Citing from what you have read: search the Reader library by author, title,
-// year or key; cite a source at the cursor, or insert a quotation you
-// highlighted in Reader with its citation and page already filled in.
+// Citing from what you have read: the sources this manuscript cites, then the
+// rest of the Reader library; search by author, title, year or key. Cite a
+// source at the cursor (with a page if you like), step through where it is
+// cited, or insert a quotation you highlighted in Reader with its citation
+// and page already filled in.
 import { parseCiteItem } from "@mdbase-writer/core/cite-items";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import type { LibraryEntry, Result, SourceAnnotation } from "../backend/types.js";
 import { authorYear, searchLibrary } from "../editor/library-search.js";
+import { ChevronLeft, ChevronRight } from "./icons.js";
 
 /** Quotations up to this many words go inline; longer ones become block quotes (as most styles ask). */
 const INLINE_QUOTE_WORDS = 40;
+/** Library sources listed before "Show all". */
+const LIBRARY_PREVIEW = 20;
 
 /** The citation for a source, with Reader's locator when it reads as one ("p. 12"). */
 export function citationFor(key: string, locator?: string): string {
   const parsed = locator ? parseCiteItem(`@${key}, ${locator}`) : null;
   return parsed?.locator ? `[@${key}, ${locator}]` : `[@${key}]`;
+}
+
+/** The citation for a locator the writer typed: a bare number or range is a page ("12" → "p. 12"). */
+export function citationAt(key: string, typed: string): string {
+  const locator = typed.trim();
+  if (!locator) return `[@${key}]`;
+  return `[@${key}, ${/^\d/.test(locator) ? `p. ${locator}` : locator}]`;
 }
 
 /** Markdown for a quotation from an annotation: inline in quotation marks, or a block quote. */
@@ -30,34 +42,49 @@ export interface SourcesRequest {
   readonly nonce: number;
 }
 
+const byAuthorYear = (a: LibraryEntry, b: LibraryEntry) => authorYear(a).localeCompare(authorYear(b)) || a.title.localeCompare(b.title);
+
 export function SourcesPanel({
   library,
   cited,
+  atCursor,
   loadAnnotations,
   onInsert,
+  onStepCitation,
+  sourceHref,
   canInsert,
   request,
 }: {
   library: readonly LibraryEntry[];
-  /** How often the manuscript cites each source. */
+  /** How often the manuscript cites each source, in the order of first citation. */
   cited: ReadonlyMap<string, number>;
+  /** The source cited under the editor's cursor. */
+  atCursor?: string | null;
   loadAnnotations(): Promise<Result<SourceAnnotation[]>>;
   onInsert(text: string): void;
+  /** Moves the editor to the next (1) or previous (-1) citation of a source. */
+  onStepCitation(key: string, direction: 1 | -1): void;
+  /** Where the source opens in Reader, when it can. */
+  sourceHref?(entry: LibraryEntry): string | undefined;
   canInsert: boolean;
   request?: SourcesRequest | null;
 }) {
   const [query, setQuery] = useState("");
-  const [onlyCited, setOnlyCited] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [allLibrary, setAllLibrary] = useState(false);
   const [annotations, setAnnotations] = useState<SourceAnnotation[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
-  const list = useRef<HTMLUListElement>(null);
-  const pool = useMemo(() => (onlyCited ? library.filter((e) => cited.has(e.key)) : library), [library, cited, onlyCited]);
-  // A short list until the writer searches; the panel scrolls as a whole.
-  const results = useMemo(() => searchLibrary(pool, query, query.trim() ? 60 : onlyCited ? pool.length : 12), [pool, query, onlyCited]);
+  const panel = useRef<HTMLElement>(null);
 
-  // Show the requested source (opened, at the top of the list), or focus the search.
+  const byKey = useMemo(() => new Map(library.map((e) => [e.key, e])), [library]);
+  const inManuscript = useMemo(() => [...cited.keys()].map((k) => byKey.get(k)).filter((e): e is LibraryEntry => Boolean(e)), [cited, byKey]);
+  const rest = useMemo(() => library.filter((e) => !cited.has(e.key)).sort(byAuthorYear), [library, cited]);
+  const results = useMemo(() => (query.trim() ? searchLibrary(library, query, 60) : []), [library, query]);
+
+  const rowFor = (key: string) => panel.current?.querySelector<HTMLElement>(`.source-row[data-key="${CSS.escape(key)}"]`);
+
+  // Show the requested source (opened, in its group or as a search), or focus the search.
   useEffect(() => {
     if (!request) return;
     if (!request.key) {
@@ -65,11 +92,17 @@ export function SourcesPanel({
       search.current?.select();
       return;
     }
-    setOnlyCited(false);
-    setQuery(request.key);
-    setOpen(request.key);
-    requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(".source-row")?.focus());
+    const key = request.key;
+    setQuery(cited.has(key) ? "" : key);
+    setOpen(key);
+    requestAnimationFrame(() => rowFor(key)?.focus());
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new request moves focus
   }, [request]);
+
+  // The source under the cursor stays in view.
+  useEffect(() => {
+    if (atCursor) rowFor(atCursor)?.scrollIntoView({ block: "nearest" });
+  }, [atCursor]);
 
   // Annotations load the first time a source is opened.
   useEffect(() => {
@@ -88,6 +121,28 @@ export function SourcesPanel({
     };
   }, [open, annotations, loadAnnotations]);
 
+  // Arrow keys (and j/k) move between sources; Enter cites; → and ← open and close.
+  const onListKey = (e: KeyboardEvent<HTMLElement>) => {
+    const row = (e.target as HTMLElement).closest<HTMLElement>(".source-row");
+    if (!row) return;
+    const rows = [...(panel.current?.querySelectorAll<HTMLElement>(".source-row") ?? [])];
+    const at = rows.indexOf(row);
+    const key = row.dataset["key"] ?? "";
+    if (e.key === "ArrowDown" || e.key === "j") rows[at + 1]?.focus();
+    else if (e.key === "ArrowUp" || e.key === "k") (rows[at - 1] ?? search.current)?.focus();
+    else if (e.key === "ArrowRight") setOpen(key);
+    else if (e.key === "ArrowLeft") setOpen((o) => (o === key ? null : o));
+    else if (e.key === "Enter" && canInsert) onInsert(citationFor(key));
+    else return;
+    e.preventDefault();
+  };
+  const onSearchKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") panel.current?.querySelector<HTMLElement>(".source-row")?.focus();
+    else if (e.key === "Enter" && results[0] && canInsert) onInsert(citationFor(results[0].key));
+    else return;
+    e.preventDefault();
+  };
+
   if (!library.length) {
     return (
       <section className="sources" aria-label="Sources">
@@ -98,64 +153,177 @@ export function SourcesPanel({
     );
   }
 
+  const row = (entry: LibraryEntry) => (
+    <SourceRow
+      key={entry.key}
+      entry={entry}
+      uses={cited.get(entry.key) ?? 0}
+      here={entry.key === atCursor}
+      expanded={open === entry.key}
+      onToggle={() => setOpen(open === entry.key ? null : entry.key)}
+      annotations={annotations}
+      problem={problem}
+      canInsert={canInsert}
+      onInsert={onInsert}
+      onStep={(direction) => onStepCitation(entry.key, direction)}
+      href={sourceHref?.(entry)}
+    />
+  );
+  const shownRest = allLibrary ? rest : rest.slice(0, LIBRARY_PREVIEW);
+
   return (
-    <section className="sources" aria-label="Sources">
-      <input ref={search} className="mdbase-field" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Author, title, year or key" aria-label="Find a source" />
-      <div className="segmented small" role="group" aria-label="Show">
-        <button type="button" aria-pressed={!onlyCited} onClick={() => setOnlyCited(false)}>
-          All <span className="count">{library.length}</span>
+    <section ref={panel} className="sources" aria-label="Sources" onKeyDown={onListKey}>
+      <input
+        ref={search}
+        className="mdbase-field"
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={onSearchKey}
+        placeholder="Author, title, year or key"
+        aria-label="Find a source"
+        aria-describedby="sources-keys"
+      />
+      <span id="sources-keys" className="visually-hidden">Down arrow moves to the sources; Enter cites the first match.</span>
+      {query.trim() ? (
+        <div className="source-group">
+          <ul aria-label="Matching sources">{results.map(row)}</ul>
+          {results.length === 0 && <p className="muted small">Nothing matches “{query}”.</p>}
+        </div>
+      ) : (
+        <>
+          <div className="source-group">
+            <h3 className="sidebar-heading" id="sources-cited">
+              In this manuscript <span className="heading-count">{inManuscript.length}</span>
+            </h3>
+            {inManuscript.length ? <ul aria-labelledby="sources-cited">{inManuscript.map(row)}</ul> : <p className="muted small">Nothing cited yet. Cite a source below, or type <code>[@</code> in the editor.</p>}
+          </div>
+          {rest.length > 0 && (
+            <div className="source-group">
+              <h3 className="sidebar-heading" id="sources-library">
+                Library <span className="heading-count">{rest.length}</span>
+              </h3>
+              <ul aria-labelledby="sources-library">{shownRest.map(row)}</ul>
+              {rest.length > shownRest.length && (
+                <button type="button" className="sidebar-more" onClick={() => setAllLibrary(true)}>
+                  Show all {rest.length}
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function SourceRow({
+  entry,
+  uses,
+  here,
+  expanded,
+  onToggle,
+  annotations,
+  problem,
+  canInsert,
+  onInsert,
+  onStep,
+  href,
+}: {
+  entry: LibraryEntry;
+  uses: number;
+  here: boolean;
+  expanded: boolean;
+  onToggle(): void;
+  annotations: SourceAnnotation[] | null;
+  problem: string | null;
+  canInsert: boolean;
+  onInsert(text: string): void;
+  onStep(direction: 1 | -1): void;
+  href: string | undefined;
+}) {
+  const [locator, setLocator] = useState("");
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(t);
+  }, [copied]);
+  // Reader links a source by its path; a bare file name also matches.
+  const notes = expanded ? (annotations ?? []).filter((a) => a.source === entry.path || entry.path.endsWith(`/${a.source}`)) : [];
+  const detail = `source-${entry.key}`;
+
+  return (
+    <li className={[expanded && "is-open", here && "is-here"].filter(Boolean).join(" ") || undefined}>
+      <div className="source-line">
+        <button type="button" className="source-row" data-key={entry.key} aria-expanded={expanded} aria-controls={expanded ? detail : undefined} onClick={onToggle} title={`${entry.title} · @${entry.key}`}>
+          <span className="source-title">{entry.title}</span>
+          <span className="source-meta">{authorYear(entry) || entry.key}</span>
+          {uses > 0 && <span className="source-uses" aria-label={`cited ${uses === 1 ? "once" : `${uses} times`}`}>{uses}</span>}
         </button>
-        <button type="button" aria-pressed={onlyCited} onClick={() => setOnlyCited(true)}>
-          Cited <span className="count">{cited.size}</span>
+        <button type="button" className="cite-button" disabled={!canInsert} tabIndex={-1} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor (Enter)`}>
+          Cite
         </button>
       </div>
-      <ul ref={list}>
-        {results.map((entry) => {
-          const expanded = open === entry.key;
-          const uses = cited.get(entry.key) ?? 0;
-          // Reader links a source by its path; a bare file name also matches.
-          const notes = expanded ? (annotations ?? []).filter((a) => a.source === entry.path || entry.path.endsWith(`/${a.source}`)) : [];
-          return (
-            <li key={entry.key} className={expanded ? "is-open" : undefined}>
-              <div className="source-line">
-                <button type="button" className="source-row" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : entry.key)}>
-                  <span className="source-title">{entry.title}</span>
-                  <span className="source-meta">
-                    {authorYear(entry)} · <code>{entry.key}</code>
-                    {uses > 0 && <span className="cited-mark" title={`Cited ${uses} ${uses === 1 ? "time" : "times"} in this manuscript`}>cited{uses > 1 ? ` ×${uses}` : ""}</span>}
-                  </span>
-                </button>
-                <button type="button" className="mdbase-button cite-button" disabled={!canInsert} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor`}>
-                  Cite
-                </button>
-              </div>
-              {expanded && (
-                <div className="source-detail">
-                  {annotations === null && <p className="muted small" role="status">Loading annotations…</p>}
-                  {annotations !== null && notes.length === 0 && <p className="muted small">{problem ? `Annotations unavailable: ${problem}` : "No annotations from Reader."}</p>}
-                  {notes.length > 0 && (
-                    <ul className="annotations">
-                      {notes.map((a) => (
-                        <li key={a.path}>
-                          {a.quote && <blockquote>{a.quote}</blockquote>}
-                          {a.note && <p className="small">{a.note}</p>}
-                          <div className="annotation-actions">
-                            {a.locator && <span className="muted small">{a.locator}</span>}
-                            <button type="button" className="link" disabled={!canInsert} onClick={() => onInsert(a.quote ? quotationFor(entry.key, a) : citationFor(entry.key, a.locator))}>
-                              {a.quote ? "Insert quotation" : "Cite here"}
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      {results.length === 0 && <p className="muted small">{onlyCited && !query ? "Nothing cited yet." : `Nothing matches “${query}”.`}</p>}
-    </section>
+      {expanded && (
+        <div className="source-detail" id={detail}>
+          <form
+            className="cite-at"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onInsert(citationAt(entry.key, locator));
+              setLocator("");
+            }}
+          >
+            <input className="mdbase-field" value={locator} onChange={(e) => setLocator(e.target.value)} placeholder="Page, or e.g. ch. 3" aria-label={`Page or locator for ${entry.title}`} />
+            <button type="submit" className="mdbase-button" disabled={!canInsert}>
+              Cite
+            </button>
+          </form>
+          <div className="source-facts">
+            <code>@{entry.key}</code>
+            <button
+              type="button"
+              className="link small"
+              onClick={() => {
+                void navigator.clipboard?.writeText(entry.key).then(() => setCopied(true));
+              }}
+            >
+              {copied ? "Copied" : "Copy key"}
+            </button>
+            {href && (
+              <a className="small" href={href} target="_blank" rel="noopener">
+                Open in Reader
+              </a>
+            )}
+          </div>
+          {uses > 0 && (
+            <div className="source-uses-nav">
+              <span className="small">Cited {uses === 1 ? "once" : `${uses} times`}</span>
+              <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(-1)} aria-label="Previous citation" title="Previous citation"><ChevronLeft /></button>
+              <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(1)} aria-label="Next citation" title="Next citation"><ChevronRight /></button>
+            </div>
+          )}
+          {annotations === null && <p className="muted small" role="status">Loading annotations…</p>}
+          {problem && <p className="muted small">Annotations unavailable: {problem}</p>}
+          {notes.length > 0 && (
+            <ul className="annotations" aria-label="Annotations from Reader">
+              {notes.map((a) => (
+                <li key={a.path}>
+                  {a.quote && <blockquote>{a.quote}</blockquote>}
+                  {a.note && <p className="small">{a.note}</p>}
+                  <div className="annotation-actions">
+                    {a.locator && <span className="muted small">{a.locator}</span>}
+                    <button type="button" className="link" disabled={!canInsert} onClick={() => onInsert(a.quote ? quotationFor(entry.key, a) : citationFor(entry.key, a.locator))}>
+                      {a.quote ? "Insert quotation" : "Cite here"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </li>
   );
 }

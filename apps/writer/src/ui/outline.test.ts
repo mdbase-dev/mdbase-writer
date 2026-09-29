@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { embedCount, wordCount } from "../words.js";
-import { headingAt, headings, sectionWords } from "./outline.js";
+import { headingAt, headings, sectionWords, withoutTitle } from "./outline.js";
 
 describe("wordCount", () => {
   it("counts prose and leaves markup out", () => {
@@ -37,5 +37,13 @@ describe("headingAt", () => {
     const list = headings(body);
     expect(headingAt(list, 0)).toBeUndefined();
     expect(headingAt(list, body.indexOf("text"))?.text).toBe("One");
+  });
+});
+
+describe("withoutTitle", () => {
+  it("drops an opening heading that repeats the title", () => {
+    const list = headings("# Potentiality\n\n## Lack\n");
+    expect(withoutTitle(list, "potentiality ").map((h) => h.text)).toEqual(["Lack"]);
+    expect(withoutTitle(list, "Other").map((h) => h.text)).toEqual(["Potentiality", "Lack"]);
   });
 });

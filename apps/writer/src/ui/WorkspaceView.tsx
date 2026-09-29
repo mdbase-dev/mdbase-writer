@@ -5,10 +5,10 @@ import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useSt
 
 import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
-import { labelTargets, MOD_LABEL, referenceKeys, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
+import { labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
-import type { ManuscriptWorkspace, RecordView, SessionSnapshot } from "../workspace/workspace.js";
+import type { ManuscriptWorkspace } from "../workspace/workspace.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import {
   AlertIcon,
@@ -28,33 +28,21 @@ import {
   SidebarIcon,
   SplitIcon,
 } from "./icons.js";
-import { clampSplit, gridFor, loadLayout, nextZoom, saveLayout, type Layout, type View } from "./layout.js";
+import { readerSourceHref } from "../apps.js";
+import { clampSplit, gridFor, loadLayout, nextZoom, saveLayout, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
-import { headingAt, headings, sectionWords } from "./outline.js";
+import { OutlinePanel } from "./OutlinePanel.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
-import { SaveNotice, type SaveTone } from "@mdbase-dev/ui/save-notice";
+import { SaveNotice } from "@mdbase-dev/ui/save-notice";
+import { plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar } from "./topbar.js";
 
-const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
-  saved: "Saved",
-  unsaved: "Unsaved",
-  saving: "Saving…",
-  conflict: "Changed elsewhere",
-  recovery: "Recovering save…",
-  error: "Not saved",
-  deleted: "Deleted elsewhere",
-};
-const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
-  saved: "saved", unsaved: "pending", saving: "saving", conflict: "attention", recovery: "saving", error: "attention", deleted: "attention",
-};
-
 /** Which part a phone shows. */
 type Pane = "outline" | "write" | "preview";
-type SidebarTab = "outline" | "sources";
 interface ExportStatus {
   readonly text: string;
   readonly tone: "busy" | "ok" | "problem";
@@ -63,19 +51,11 @@ interface ExportStatus {
 const VIEW_ORDER: readonly View[] = ["both", "write", "preview"];
 const VIEW_NAME: Record<View, string> = { both: "Editor and preview", write: "Editor only", preview: "Preview only" };
 
-function recordTitle(view: RecordView | undefined, path: string): string {
-  const fm = view?.snapshot.frontmatter;
-  if (typeof fm?.["title"] === "string") return fm["title"];
-  const heading = /^#\s+(.+?)(?:\s*\{[^}]*\})?\s*$/m.exec(view?.snapshot.body ?? "");
-  return heading?.[1] ?? path.split("/").pop()?.replace(/\.md$/, "") ?? path;
-}
-
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const isMod = (e: KeyboardEvent) => (isMac ? e.metaKey : e.ctrlKey);
 /** Typing a "?" into a field or the editor is text, not a request for help. */
 const isTextEntry = (target: EventTarget | null) =>
   target instanceof Element && Boolean(target.closest("input, textarea, [contenteditable='true']"));
-const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 /** True once `flag` has held for `delay` ms, so a quick flicker of work never shows. */
 function useSustained(flag: boolean, delay: number): boolean {
@@ -97,7 +77,6 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const slowCompile = useSustained(snap.compiling, 600);
   const [active, setActive] = useState(workspace.main);
   const [pane, setPane] = useState<Pane>("write");
-  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("outline");
   const [layout, setLayoutState] = useState<Layout>(loadLayout);
   const [exportStatus, setExportStatus] = useState<ExportStatus | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -121,6 +100,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       return next;
     });
   }, []);
+  const setSidebarTab = useCallback((tab: SidebarTab) => setLayout((l) => ({ ...l, tab })), [setLayout]);
 
   const order = snap.result?.order.length ? snap.result.order : [workspace.main];
   const activeView = snap.records.get(active);
@@ -210,8 +190,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   }, []);
 
   const showSources = useCallback((key?: string) => {
-    setLayout((l) => (l.sidebar ? l : { ...l, sidebar: true }));
-    setSidebarTab("sources");
+    setLayout((l) => (l.sidebar && l.tab === "sources" ? l : { ...l, sidebar: true, tab: "sources" }));
     setPane("outline");
     setSourcesRequest((r) => ({ ...(key ? { key } : {}), nonce: (r?.nonce ?? 0) + 1 }));
   }, [setLayout]);
@@ -220,6 +199,33 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     if (target.kind === "label") jump(target.target.record, target.target.offset);
     else showSources(target.key);
   }, [jump, showSources]);
+
+  // The next or previous citation of a source, in reading order from the cursor.
+  const stepCitation = useCallback((key: string, direction: 1 | -1) => {
+    const uses = order.flatMap((record) => referenceOffsets(snap.records.get(record)?.snapshot.body ?? "", key).map((offset) => ({ record, offset })));
+    if (!uses.length) return;
+    const here = cursor ?? { record: active, offset: -1 };
+    const rank = (record: string, offset: number) => order.indexOf(record) * 1e9 + offset;
+    const at = rank(here.record, here.offset);
+    const next =
+      direction > 0
+        ? uses.find((u) => rank(u.record, u.offset) > at) ?? uses[0]
+        : [...uses].reverse().find((u) => rank(u.record, u.offset) < at) ?? uses[uses.length - 1];
+    if (next) jump(next.record, next.offset + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
+  }, [snap.records, snap.result?.order, cursor, active, jump]);
+
+  // The cited source under the cursor, for the sources list.
+  const citedAtCursor = useMemo(() => {
+    if (!cursor) return null;
+    const key = referenceAtOffset(snap.records.get(cursor.record)?.snapshot.body ?? "", cursor.offset);
+    return key && stats.cited.has(key) ? key : null;
+  }, [cursor, snap.records, stats.cited]);
+
+  const mainBody = snap.records.get(workspace.main)?.snapshot.body;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- recomputed when the manuscript's body or the index changes
+  const chapters = useMemo(() => workspace.chapterPaths(), [workspace, mainBody, snap.recordPaths]);
+  const sourceHref = useMemo(() => (workspace.kind === "connect" ? (e: { path: string }) => readerSourceHref(e.path) : undefined), [workspace]);
 
   // Problems in reading order, for F8 / Shift-F8.
   const bodyProblems = useMemo(
@@ -323,7 +329,6 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   const timings = snap.result?.timings;
   const { columns, areas } = gridFor(layout);
-  const cursorHeading = cursor ? { record: cursor.record, offset: cursor.offset } : null;
 
   return (
     <div
@@ -394,52 +399,47 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       </InTopbar>
 
       <aside className="outline" aria-label="Manuscript sidebar">
-        <div className="segmented sidebar-tabs" role="tablist" aria-label="Sidebar">
-          <button type="button" role="tab" aria-selected={sidebarTab === "outline"} onClick={() => setSidebarTab("outline")}>
-            Outline
-          </button>
-          <button type="button" role="tab" aria-selected={sidebarTab === "sources"} onClick={() => setSidebarTab("sources")} title={`Find a source (${MOD_LABEL}-Shift-F)`}>
-            Sources {snap.library.length > 0 && <span className="count">{snap.library.length}</span>}
-          </button>
+        <SidebarTabs
+          tab={layout.tab}
+          onTab={setSidebarTab}
+          sources={snap.library.length}
+        />
+        <div className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
+          {layout.tab === "outline" ? (
+            <OutlinePanel
+              main={workspace.main}
+              order={order}
+              records={snap.records}
+              chapters={chapters}
+              words={stats.words}
+              byRecord={byRecord}
+              active={active}
+              cursor={cursor}
+              onOpen={(path) => {
+                setActive(path);
+                setPane("write");
+              }}
+              onJump={jump}
+              onMove={(from, to) => workspace.moveChapter(from, to)}
+              onAdd={(title) => workspace.addChapter(title)}
+            />
+          ) : (
+            <SourcesPanel
+              library={snap.library}
+              cited={stats.cited}
+              atCursor={citedAtCursor}
+              loadAnnotations={workspace.annotations}
+              canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted")}
+              onInsert={(text) => {
+                setPane("write");
+                editor.current?.insert(text);
+              }}
+              onStepCitation={stepCitation}
+              {...(sourceHref ? { sourceHref } : {})}
+              request={sourcesRequest}
+            />
+          )}
         </div>
-        {sidebarTab === "outline" ? (
-          <ol className="records">
-            {order.map((path) => {
-              const view = snap.records.get(path);
-              const count = byRecord.get(path)?.length ?? 0;
-              const state = view?.snapshot.state;
-              return (
-                <li key={path}>
-                  <button type="button" className="record-row" aria-current={path === active ? "true" : undefined} onClick={() => { setActive(path); setPane("write"); }}>
-                    <span className="record-name">{recordTitle(view, path)}</span>
-                    <span className="record-path">{path}</span>
-                    <span className="record-state">
-                      {state && state !== "saved" && <span className={`status tone-${STATE_TONE[state]}`}><span className="dot" aria-hidden="true" />{STATE_LABEL[state]}</span>}
-                      {count > 0 && <span className="count tone-warning" title={plural(count, "problem")}>{count}</span>}
-                    </span>
-                  </button>
-                  <RecordHeadings
-                    body={view?.snapshot.body}
-                    current={cursorHeading?.record === path ? cursorHeading.offset : null}
-                    onJump={(offset) => jump(path, offset)}
-                  />
-                </li>
-              );
-            })}
-          </ol>
-        ) : (
-          <SourcesPanel
-            library={snap.library}
-            cited={stats.cited}
-            loadAnnotations={workspace.annotations}
-            canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted")}
-            onInsert={(text) => {
-              setPane("write");
-              editor.current?.insert(text);
-            }}
-            request={sourcesRequest}
-          />
-        )}
       </aside>
 
       <section className="write" aria-label="Editor">
@@ -583,33 +583,36 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   );
 }
 
-function RecordHeadings({ body, current, onJump }: { body: string | undefined; current: number | null; onJump(offset: number): void }) {
-  const list = useMemo(() => (body ? headings(body) : []), [body]);
-  const words = useMemo(() => (body ? sectionWords(body, list) : []), [body, list]);
-  const here = current === null ? undefined : headingAt(list, current);
-  const activeRow = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    activeRow.current?.scrollIntoView({ block: "nearest" });
-  }, [here?.offset]);
-  if (!list.length) return null;
-  const top = Math.min(...list.map((h) => h.level));
+/** Outline and Sources, as tabs: ←/→ move between them. */
+function SidebarTabs({ tab, onTab, sources }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number }) {
+  const tabs: readonly SidebarTab[] = ["outline", "sources"];
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    e.preventDefault();
+    const next = e.key === "Home" ? tabs[0] : e.key === "End" ? tabs[tabs.length - 1] : tabs[(tabs.indexOf(tab) + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    if (!next) return;
+    onTab(next);
+    requestAnimationFrame(() => document.getElementById(`sidebar-tab-${next}`)?.focus());
+  };
   return (
-    <ol className="headings">
-      {list.map((h, i) => (
-        <li key={h.offset} style={{ paddingLeft: `${(h.level - top) * 0.75}rem` }}>
-          <button
-            ref={h === here ? activeRow : undefined}
-            type="button"
-            className="heading-row"
-            aria-current={h === here ? "location" : undefined}
-            onClick={() => onJump(h.offset)}
-          >
-            <span className="heading-text">{h.text}</span>
-            <span className="heading-words" title={`${plural(words[i] ?? 0, "word")} in this section`}>{(words[i] ?? 0).toLocaleString()}</span>
-          </button>
-        </li>
+    <div className="sidebar-tabs" role="tablist" aria-label="Sidebar" onKeyDown={onKeyDown}>
+      {tabs.map((t) => (
+        <button
+          key={t}
+          id={`sidebar-tab-${t}`}
+          type="button"
+          role="tab"
+          aria-selected={tab === t}
+          aria-controls={`sidebar-${t}`}
+          tabIndex={tab === t ? 0 : -1}
+          onClick={() => onTab(t)}
+          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-F)` : undefined}
+        >
+          {t === "outline" ? "Outline" : "Sources"}
+          {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
+        </button>
       ))}
-    </ol>
+    </div>
   );
 }
 
