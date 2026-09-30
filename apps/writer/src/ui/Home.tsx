@@ -174,6 +174,10 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
   const [adoptOpen, setAdoptOpen] = useState(false);
   const titleField = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (open) titleField.current?.focus();
+  }, [open]);
+
   const create = async (event: React.FormEvent) => {
     event.preventDefault();
     if (creating || adopting) return;
