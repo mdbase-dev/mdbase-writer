@@ -16,25 +16,18 @@ import { byRecentlyEdited, noteName, relativeTime, styleName, templateName } fro
 const SEARCH_FROM = 6;
 /** Notes listed at once in the note picker. */
 const NOTES_SHOWN = 8;
+const TEMPLATE_OPTIONS = TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
+const STYLE_OPTIONS = STYLES.map((s) => ({ value: s.id, label: s.title }));
 
 export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path: string): void }) {
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [template, setTemplate] = useState<TemplateName>("article");
-  const [style, setStyle] = useState<StyleId>("chicago-notes-bibliography");
-  const [creating, setCreating] = useState(false);
   const [notes, setNotes] = useState<string[]>([]);
   const [recordPaths, setRecordPaths] = useState<readonly string[] | null>(null);
   const [bookWords, setBookWords] = useState<ReadonlyMap<string, number>>(new Map());
-  const [notePath, setNotePath] = useState("");
-  const [adopting, setAdopting] = useState(false);
   const [sources, setSources] = useState<number | null>(null);
   const [dialog, setDialog] = useState(false);
   const [filter, setFilter] = useState("");
-  const [untitled, setUntitled] = useState(false);
-  const [adoptOpen, setAdoptOpen] = useState(false);
-  const titleField = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let live = true;
@@ -72,34 +65,10 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
     };
   }, [backend, manuscripts, recordPaths]);
 
-  const create = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!title.trim()) {
-      setUntitled(true);
-      titleField.current?.focus();
-      return;
-    }
-    setCreating(true);
-    setProblem(null);
-    const created = await backend.createManuscript({ title: title.trim(), template, style });
-    setCreating(false);
-    if (created.ok) onOpen(created.value);
-    else setProblem(created.message);
-  };
-
-  const adopt = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const path = notePath.trim();
-    if (!path) return;
-    setAdopting(true);
-    setProblem(null);
-    const adopted = await backend.adoptManuscript(path);
-    setAdopting(false);
-    if (adopted.ok) onOpen(adopted.value);
-    else setProblem(adopted.message);
-  };
-  const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
-  const candidates = notes.filter((p) => !manuscriptPaths.has(p));
+  const candidates = useMemo(() => {
+    const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
+    return notes.filter((p) => !manuscriptPaths.has(p));
+  }, [notes, manuscripts]);
   const shown = useMemo(() => {
     const words = filter.toLowerCase().split(/\s+/).filter(Boolean);
     const sorted = byRecentlyEdited(manuscripts ?? []);
@@ -181,12 +150,76 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
         {problem && !dialog && <p className="problem" role="alert">{problem}</p>}
       </section>
 
+      <NewManuscriptDialog backend={backend} open={dialog} onClose={() => setDialog(false)} onOpen={onOpen} candidates={candidates} />
+    </main>
+  );
+}
+
+/** Keep form updates local: typing must not rerender the collection behind the dialog. */
+function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
+  backend: WriterBackend;
+  open: boolean;
+  onClose(): void;
+  onOpen(path: string): void;
+  candidates: readonly string[];
+}) {
+  const [title, setTitle] = useState("");
+  const [template, setTemplate] = useState<TemplateName>("article");
+  const [style, setStyle] = useState<StyleId>("chicago-notes-bibliography");
+  const [creating, setCreating] = useState(false);
+  const [notePath, setNotePath] = useState("");
+  const [adopting, setAdopting] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [untitled, setUntitled] = useState(false);
+  const [adoptOpen, setAdoptOpen] = useState(false);
+  const titleField = useRef<HTMLInputElement>(null);
+
+  const create = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (creating || adopting) return;
+    if (!title.trim()) {
+      setUntitled(true);
+      titleField.current?.focus();
+      return;
+    }
+    setCreating(true);
+    setProblem(null);
+    try {
+      const created = await backend.createManuscript({ title: title.trim(), template, style });
+      if (created.ok) onOpen(created.value);
+      else setProblem(created.message);
+    } catch (error) {
+      setProblem(error instanceof Error ? error.message : "Could not create the manuscript. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const adopt = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const path = notePath.trim();
+    if (!path || creating || adopting) return;
+    setAdopting(true);
+    setProblem(null);
+    try {
+      const adopted = await backend.adoptManuscript(path);
+      if (adopted.ok) onOpen(adopted.value);
+      else setProblem(adopted.message);
+    } catch (error) {
+      setProblem(error instanceof Error ? error.message : "Could not use the note as a manuscript. Please try again.");
+    } finally {
+      setAdopting(false);
+    }
+  };
+
+  return (
       <Dialog
-        open={dialog}
+        open={open}
         onClose={() => {
-          setDialog(false);
+          onClose();
           setAdoptOpen(false);
           setUntitled(false);
+          setProblem(null);
         }}
         title="New manuscript"
         className="new-dialog"
@@ -211,13 +244,13 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
           </label>
           <label>
             Layout
-            <Select aria-label="Layout" value={template} options={TEMPLATES.map((t) => ({ value: t, label: templateName(t) }))} onChange={setTemplate} />
+            <Select aria-label="Layout" value={template} options={TEMPLATE_OPTIONS} onChange={setTemplate} />
           </label>
           <label>
             Citation style
-            <Select aria-label="Citation style" value={style} options={STYLES.map((s) => ({ value: s.id, label: s.title }))} onChange={setStyle} />
+            <Select aria-label="Citation style" value={style} options={STYLE_OPTIONS} onChange={setStyle} />
           </label>
-          <button className="mdbase-button is-primary" type="submit" disabled={creating}>
+          <button className="mdbase-button is-primary" type="submit" disabled={creating || adopting}>
             {creating ? "Creating…" : "Create manuscript"}
           </button>
         </form>
@@ -226,7 +259,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
             <div className="or-divider" role="separator"><span>or use a note you already have</span></div>
             <form className="adopt-note" onSubmit={(e) => void adopt(e)}>
               <NotePicker notes={candidates} value={notePath} onChange={setNotePath} />
-              <button className="mdbase-button" type="submit" disabled={adopting || !candidates.includes(notePath)}>
+              <button className="mdbase-button" type="submit" disabled={creating || adopting || !candidates.includes(notePath)}>
                 {adopting ? "Updating…" : "Use as manuscript"}
               </button>
             </form>
@@ -243,7 +276,6 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
         )}
         {problem && <p className="problem" role="alert">{problem}</p>}
       </Dialog>
-    </main>
   );
 }
 
