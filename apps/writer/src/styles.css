@@ -149,12 +149,23 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .home { width: 100%; max-width: 50rem; margin: 0 auto; padding: 2rem 16px; display: grid; gap: 2rem; align-content: start; overflow: auto; }
 .home-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .home-header p { margin: 0; }
-.collection-picker-trigger { font: inherit; color: inherit; background: none; border: 0; padding: 0.2rem 0.3rem; margin: -0.2rem -0.3rem; border-radius: 0.25rem; cursor: pointer; }
-.collection-picker-trigger:hover { text-decoration: underline; }
-.collection-picker-trigger:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-.collection-picker-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
-.collection-picker-list .mdbase-button { width: 100%; display: flex; align-items: flex-start; flex-direction: column; text-align: left; white-space: normal; overflow-wrap: anywhere; }
-.collection-picker-list [aria-current="true"] { border-color: currentColor; }
+/* Home's collection, and the menu that switches it (CollectionPicker.tsx), as in mdbase Reader. The trigger's margins cancel its padding and border, so the sentence it sits in keeps its spacing. */
+.collection-picker-trigger { display: inline-flex; align-items: center; gap: 0.25rem; max-width: 100%; margin: calc(-0.15rem - 1px) calc(-0.2rem - 1px); padding: 0.15rem 0.2rem; border: 1px solid transparent; border-radius: var(--control-radius); background: none; font: inherit; color: inherit; vertical-align: baseline; cursor: pointer; transition: background var(--motion-quick) ease, border-color var(--motion-quick) ease; }
+.collection-picker-trigger strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.collection-picker-trigger:hover, .collection-picker-trigger[aria-expanded="true"] { border-color: var(--line); background: var(--surface); }
+/* Inside running text, the focus ring is drawn on the trigger's own edge, not over the words beside it. */
+.collection-picker-trigger:focus-visible { outline-offset: -2px; }
+.collection-picker-chevron { width: 12px; height: 12px; flex: none; color: var(--muted); transition: transform var(--motion-quick) ease; }
+.collection-picker-trigger[aria-expanded="true"] .collection-picker-chevron { transform: rotate(180deg); }
+.collection-menu-filter { margin: 2px 2px 6px; }
+.collection-menu-item { display: flex; align-items: center; gap: 0.75rem; }
+.collection-menu-copy { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.collection-menu-copy strong, .collection-menu-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.collection-menu-check { width: 15px; height: 15px; flex: none; color: var(--accent); }
+.collection-menu-note { margin: 4px 10px; font-size: 12px; line-height: 1.4; }
+.collection-menu-connect { display: flex; align-items: center; gap: 0.5rem; font-size: 13px; color: var(--accent); }
+.collection-menu-connect .icon { width: 14px; height: 14px; flex: none; }
+@media (pointer: coarse) { .collection-menu-item, .collection-menu-connect { min-height: 44px; } }
 .manuscripts { list-style: none; padding: 0; margin: 1.25rem 0 0; border-top: 1px solid var(--line); }
 .manuscript-row { display: grid; row-gap: 0.15rem; width: 100%; text-align: left; padding: 0.8rem 0.5rem; border: 0; border-bottom: 1px solid var(--line); background: none; cursor: pointer; }
 .manuscript-row:hover { background: var(--subtle); }
