@@ -399,6 +399,27 @@ await step("an edit made elsewhere during typing becomes a resolvable conflict",
 const mainBody = () => page.evaluate(() => window.writer.workspace.getSnapshot().records.get("manuscripts/refusing-the-possible.md").snapshot.body);
 const orderIs = (order) => waitFor((o) => JSON.stringify(window.writer.workspace.getSnapshot().result?.order) === JSON.stringify(o), order, 15_000);
 
+await step("search finds text across the manuscript's records and goes to it", async () => {
+  await page.keyboard.press("ControlOrMeta+Shift+F");
+  const field = page.getByRole("searchbox", { name: "Search the manuscript" });
+  await waitFor(() => document.activeElement?.getAttribute("aria-label") === "Search the manuscript", null, 5_000);
+  await field.fill("badiou");
+  await page.locator(".search-group").nth(1).waitFor({ timeout: 5_000 });
+  const records = await page.locator(".search-group .sidebar-heading").allTextContents();
+  assert.ok(records.length >= 2 && records.some((r) => r.startsWith("The event")), records.join(" | "));
+  assert.equal(await page.locator(".outline-panel").count(), 0, "the matches take the outline's place");
+  // Enter steps from the field, which keeps focus; a click goes to a match and into the editor.
+  await field.press("Enter");
+  await page.locator('.search-hit[aria-current="true"]').waitFor();
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Search the manuscript");
+  await page.locator(".search-group", { hasText: "The event" }).locator(".search-hit").first().click();
+  await page.locator(".pane-title", { hasText: "The event" }).waitFor({ timeout: 5_000 });
+  await waitFor(() => window.getSelection()?.toString().toLowerCase() === "badiou", null, 5_000);
+  // Escape in the field clears it, and the outline comes back.
+  await field.press("Escape");
+  await page.locator(".outline-panel").waitFor();
+});
+
 await step("the outline numbers chapters without repeating their titles", async () => {
   await page.getByRole("tab", { name: "Outline" }).click();
   assert.deepEqual(await page.locator(".record-number").allTextContents(), ["1", "2"]);

@@ -286,9 +286,18 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 
 .sources { display: grid; grid-template-columns: minmax(0, 1fr); }
 /* The search stays at the top while the list scrolls under it. */
-.sources-search { position: sticky; top: -0.5rem; z-index: 1; margin: -0.5rem -0.5rem 0; padding: 0.5rem; background: var(--canvas); }
-.sources-search .icon { position: absolute; left: 1.1rem; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; color: var(--muted); pointer-events: none; }
-.sources-search .mdbase-field { padding-left: 2rem; }
+.sources-search, .manuscript-search { position: sticky; top: -0.5rem; z-index: 1; margin: -0.5rem -0.5rem 0; padding: 0.5rem; background: var(--canvas); }
+.sources-search .icon, .manuscript-search .icon { position: absolute; left: 1.1rem; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; color: var(--muted); pointer-events: none; }
+.sources-search .mdbase-field, .manuscript-search .mdbase-field { padding-left: 2rem; }
+.manuscript-search { margin-bottom: 0.25rem; }
+.search-summary { margin: 0.25rem 0.5rem 0; }
+.search-group .sidebar-heading { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--ink); }
+.search-group .sidebar-heading .heading-count { color: var(--muted); }
+.search-group ul { list-style: none; margin: 0; padding: 0; }
+.search-hit { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 0.3rem 0.5rem; border-radius: 4px; cursor: pointer; font: inherit; font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); overflow-wrap: anywhere; }
+.search-hit:hover { background: var(--subtle); color: var(--ink); }
+.search-hit[aria-current="true"] { background: var(--selected); color: var(--ink); }
+.search-hit mark { background: none; color: var(--ink); font-weight: 700; }
 .source-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
 .source-group > ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
 .source-group > p { padding: 0.3rem 0.5rem; margin: 0; }

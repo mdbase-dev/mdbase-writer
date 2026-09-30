@@ -24,7 +24,8 @@ import { writerLanguage } from "./language.js";
 const remote = Annotation.define<boolean>();
 
 export interface EditorHandle {
-  reveal(offset: number): void;
+  /** Scrolls to `offset` (selecting up to `to`, when given) and focuses the editor unless `focus` is false. */
+  reveal(offset: number, options?: { to?: number; focus?: boolean }): void;
   /** Replaces the selection with text (a citation, a quotation) and leaves the cursor after it. */
   insert(text: string): void;
   /** The main selection (UTF-16 offsets) and the text it is in. */
@@ -125,10 +126,11 @@ export const Editor = memo(function Editor({ path, text, readOnly, joinLines = f
     view.current = v;
     shownDiagnostics.current = "";
     onReady?.({
-      reveal(offset) {
+      reveal(offset, options) {
         const at = Math.min(offset, v.state.doc.length);
-        v.dispatch({ selection: { anchor: at }, effects: EditorView.scrollIntoView(at, { y: "center" }) });
-        v.focus();
+        const head = options?.to === undefined ? at : Math.min(options.to, v.state.doc.length);
+        v.dispatch({ selection: { anchor: at, head }, effects: EditorView.scrollIntoView(at, { y: "center" }) });
+        if (options?.focus !== false) v.focus();
       },
       selection() {
         const { from, to } = v.state.selection.main;

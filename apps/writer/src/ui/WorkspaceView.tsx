@@ -40,6 +40,7 @@ import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom
 import { styleName, templateName } from "./names.js";
 import { anchorsFor, placeThreads, type PlacedThread } from "./comments.js";
 import { CommentsPanel, openCount, type PendingComment } from "./CommentsPanel.js";
+import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
@@ -130,7 +131,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
   const [activeComment, setActiveComment] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
-  const pendingReveal = useRef<number | null>(null);
+  const pendingReveal = useRef<{ offset: number; to?: number; focus?: boolean } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null);
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const grid = useRef<HTMLDivElement>(null);
   // Where the cursor is now (the cursor state above trails it slightly), and
@@ -272,13 +275,15 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     return hit;
   }, [cursor, positions]);
 
-  const jump = useCallback((record: string, offset: number) => {
-    setPane("write");
+  /** Shows `offset` in its record (selecting up to `to`, when given); focus goes to the editor unless `focus` is false. */
+  const jump = useCallback((record: string, offset: number, options?: { to?: number; focus?: boolean }) => {
+    // On a phone the editor replaces the sidebar only when it is to take focus.
+    if (options?.focus !== false) setPane("write");
     setLayout((l) => (l.view === "preview" ? { ...l, view: "both" } : l));
     setCursor({ record, offset });
-    if (record === active && editor.current) editor.current.reveal(offset);
+    if (record === active && editor.current) editor.current.reveal(offset, options);
     else {
-      pendingReveal.current = offset;
+      pendingReveal.current = { offset, ...options };
       setActive(record);
     }
   }, [active, setLayout]);
@@ -301,9 +306,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const onEditorReady = useCallback((handle: EditorHandle) => {
     editor.current = handle;
     if (pendingReveal.current !== null) {
-      const at = pendingReveal.current;
+      const { offset, ...options } = pendingReveal.current;
       pendingReveal.current = null;
-      requestAnimationFrame(() => handle.reveal(at));
+      // The editor that is current by then: in development React sets a new
+      // editor up twice, and the first is gone before the frame.
+      requestAnimationFrame(() => editor.current?.reveal(offset, options));
     }
   }, []);
 
@@ -325,6 +332,12 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     if (action === "cite") citePassage(selected);
     else startComment(action);
   }, [citePassage, startComment]);
+
+  const showSearch = useCallback(() => {
+    setLayout((l) => (l.sidebar && l.tab === "outline" ? l : { ...l, sidebar: true, tab: "outline" }));
+    setPane("outline");
+    setSearchRequest((r) => ({ nonce: (r?.nonce ?? 0) + 1 }));
+  }, [setLayout]);
 
   const onFollow = useCallback((target: FollowTarget) => {
     if (target.kind === "label") jump(target.target.record, target.target.offset);
@@ -465,7 +478,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     let handled = true;
     if (mod && !e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, sidebar: !l.sidebar }));
     else if (mod && e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, view: VIEW_ORDER[(VIEW_ORDER.indexOf(l.view) + 1) % VIEW_ORDER.length] as View }));
-    else if (mod && e.shiftKey && e.code === "KeyF") showSources();
+    else if (mod && e.shiftKey && e.code === "KeyF") showSearch();
+    else if (mod && e.shiftKey && e.code === "KeyE") showSources();
     else if (mod && !e.shiftKey && e.key === ",") (settingsOpen ? closeSettings() : setSettingsOpen(true));
     else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
     else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
@@ -582,23 +596,36 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         />
         <div className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
           {layout.tab === "outline" ? (
-            <OutlinePanel
-              main={workspace.main}
-              order={order}
-              records={snap.records}
-              chapters={chapters}
-              words={stats.words}
-              byRecord={byRecord}
-              active={active}
-              cursor={cursor}
-              onOpen={(path) => {
-                setActive(path);
-                setPane("write");
-              }}
-              onJump={jump}
-              onMove={(from, to) => workspace.moveChapter(from, to)}
-              onAdd={(title) => workspace.addChapter(title)}
-            />
+            <>
+              <ManuscriptSearch
+                query={searchQuery}
+                onQuery={setSearchQuery}
+                order={order}
+                records={records}
+                recordTitle={(path) => recordTitle(snap.records.get(path), path)}
+                onGo={(hit, focus) => jump(hit.record, hit.from, { to: hit.to, focus })}
+                request={searchRequest}
+              />
+              {!searchQuery.trim() && (
+                <OutlinePanel
+                  main={workspace.main}
+                  order={order}
+                  records={snap.records}
+                  chapters={chapters}
+                  words={stats.words}
+                  byRecord={byRecord}
+                  active={active}
+                  cursor={cursor}
+                  onOpen={(path) => {
+                    setActive(path);
+                    setPane("write");
+                  }}
+                  onJump={jump}
+                  onMove={(from, to) => workspace.moveChapter(from, to)}
+                  onAdd={(title) => workspace.addChapter(title)}
+                />
+              )}
+            </>
           ) : layout.tab === "comments" ? (
             <CommentsPanel
               placed={placed}
@@ -792,7 +819,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         label="Writer commands"
         commands={[
           { id: "settings", group: "Manuscript", label: "Manuscript settings", shortcut: "mod+,", run: () => setSettingsOpen(true) },
-          { id: "sources", group: "Manuscript", label: "Find a source", shortcut: "mod+shift+f", run: () => showSources() },
+          { id: "search", group: "Manuscript", label: "Search the manuscript", shortcut: "mod+shift+f", keywords: "find all chapters", run: showSearch },
+          { id: "sources", group: "Manuscript", label: "Find a source", shortcut: "mod+shift+e", run: () => showSources() },
           { id: "bold", group: "Format", label: "Bold", shortcut: "mod+b", run: () => editor.current?.format("bold") },
           { id: "italic", group: "Format", label: "Italic", shortcut: "mod+i", run: () => editor.current?.format("italic") },
           { id: "code", group: "Format", label: "Inline code", run: () => editor.current?.format("code") },
@@ -852,7 +880,7 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle }: { tab: Si
           aria-controls={`sidebar-${t}`}
           tabIndex={tab === t ? 0 : -1}
           onClick={() => onTab(t)}
-          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-F)` : t === "comments" ? commentsTitle : undefined}
+          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? commentsTitle : `Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
         >
           {t === "outline" ? "Outline" : t === "sources" ? "Sources" : "Comments"}
           {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
@@ -1147,7 +1175,8 @@ function SidebarResizer({ width, onChange }: { width: number; onChange(width: nu
 const SHORTCUTS: readonly [string, string][] = [
   [`${MOD_LABEL} \\`, "Show or hide the sidebar"],
   [`${MOD_LABEL} Shift \\`, "Editor and preview → editor only → preview only"],
-  [`${MOD_LABEL} Shift F`, "Find a source"],
+  [`${MOD_LABEL} Shift F`, "Search the whole manuscript"],
+  [`${MOD_LABEL} Shift E`, "Find a source"],
   [`${MOD_LABEL} ,`, "Manuscript settings"],
   [`${MOD_LABEL} B / ${MOD_LABEL} I`, "Bold / italic (again to remove it)"],
   [`${MOD_LABEL} Shift K`, "Make the selection a link"],
