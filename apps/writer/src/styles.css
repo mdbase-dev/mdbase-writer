@@ -147,6 +147,12 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .home { width: 100%; max-width: 50rem; margin: 0 auto; padding: 2rem 16px; display: grid; gap: 2rem; align-content: start; overflow: auto; }
 .home-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .home-header p { margin: 0; }
+.collection-picker-trigger { font: inherit; color: inherit; background: none; border: 0; padding: 0.2rem 0.3rem; margin: -0.2rem -0.3rem; border-radius: 0.25rem; cursor: pointer; }
+.collection-picker-trigger:hover { text-decoration: underline; }
+.collection-picker-trigger:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.collection-picker-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.collection-picker-list .mdbase-button { width: 100%; display: flex; align-items: flex-start; flex-direction: column; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.collection-picker-list [aria-current="true"] { border-color: currentColor; }
 .manuscripts { list-style: none; padding: 0; margin: 1.25rem 0 0; border-top: 1px solid var(--line); }
 .manuscript-row { display: grid; row-gap: 0.15rem; width: 100%; text-align: left; padding: 0.8rem 0.5rem; border: 0; border-bottom: 1px solid var(--line); background: none; cursor: pointer; }
 .manuscript-row:hover { background: var(--subtle); }
