@@ -1,7 +1,7 @@
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
-import { annotationKey, blockQuotation, sourceAnnotation } from "@mdbase-writer/core/annotations";
+import { annotationSourcePath, blockQuotation, sourceAnnotation } from "@mdbase-writer/core/annotations";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -388,10 +388,12 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         // An embedded annotation shows the quotation it renders (once loaded, and if it has one).
         const annotation = view && workspace.isQuotation(path) ? sourceAnnotation(path, view.snapshot.frontmatter, view.snapshot.body) : null;
         if (annotation?.quote) {
-          const key = annotationKey(annotation, keys);
+          const sourcePath = annotationSourcePath(annotation, keys);
+          const key = sourcePath ? (keys.get(sourcePath) ?? null) : null;
           const entry = key ? entries.get(key) : undefined;
           const cite = entry ? [authorYear(entry) || entry.key, annotation.locator].filter(Boolean).join(", ") : "";
-          return { quotation: true, path, quote: annotation.quote, cite, detached: blockQuotation(key, annotation) };
+          const href = sourcePath && workspace.kind === "connect" ? readerSourceHref(sourcePath, path) : undefined;
+          return { quotation: true, path, quote: annotation.quote, cite, detached: blockQuotation(key, annotation), ...(href ? { href } : {}) };
         }
         return { path, title: recordTitle(view, path), ...(view ? { words: wordCount(view.snapshot.body) } : {}), problems: byRecord.get(path)?.length ?? 0 };
       },

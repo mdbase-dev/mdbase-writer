@@ -23,6 +23,8 @@ export interface QuotationCard {
   readonly quote: string;
   /** Who and where, as the reader sees it ("Badiou, 2007, p. 178"); empty when the source is not in the library. */
   readonly cite: string;
+  /** Opens the quoted passage in Reader, where there is one. */
+  readonly href?: string;
   /** The Markdown that replaces the embed when it is detached. */
   readonly detached: string;
 }
@@ -111,9 +113,15 @@ class QuotationWidget extends WidgetType {
     quote.textContent = card.quote;
     const meta = document.createElement("div");
     meta.className = "cm-quote-meta";
-    const cite = document.createElement("span");
+    const cite = document.createElement(card.href ? "a" : "span");
     cite.textContent = card.cite ? `${card.cite} · from Reader` : "From Reader · its source is not in the library";
-    cite.title = card.path;
+    cite.title = card.href ? "Open this passage in Reader" : card.path;
+    if (cite instanceof HTMLAnchorElement && card.href) {
+      cite.href = card.href;
+      cite.target = "_blank";
+      cite.rel = "noopener";
+      cite.className = "cm-quote-source";
+    }
     const detach = document.createElement("button");
     detach.type = "button";
     detach.className = "text-button";
@@ -130,9 +138,9 @@ class QuotationWidget extends WidgetType {
     return dom;
   }
 
-  // Detach handles its own clicks; a click elsewhere puts the cursor on the line.
+  // Detach and the link handle their own clicks; a click elsewhere puts the cursor on the line.
   override ignoreEvent(event: Event) {
-    return event.target instanceof Element && Boolean(event.target.closest("button"));
+    return event.target instanceof Element && Boolean(event.target.closest("button, a"));
   }
 }
 

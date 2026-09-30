@@ -74,9 +74,14 @@ export function blockQuotation(key: string | null, annotation: Pick<SourceAnnota
   return quoted.join("\n");
 }
 
+/** The collection path of an annotation's source, from source record paths → citekeys. */
+export function annotationSourcePath(annotation: Pick<SourceAnnotation, "path" | "source">, sourceKeys: ReadonlyMap<string, string>): string | null {
+  return resolveLinkTarget(annotation.source, annotation.path, new Set(sourceKeys.keys()));
+}
+
 /** The citekey of an annotation's source, from source record paths → citekeys. */
 export function annotationKey(annotation: Pick<SourceAnnotation, "path" | "source">, sourceKeys: ReadonlyMap<string, string>): string | null {
-  const path = resolveLinkTarget(annotation.source, annotation.path, new Set(sourceKeys.keys()));
+  const path = annotationSourcePath(annotation, sourceKeys);
   return path ? (sourceKeys.get(path) ?? null) : null;
 }
 
