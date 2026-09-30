@@ -10,6 +10,7 @@ import { createWriterSession, type WriterSession } from "./connect/session.js";
 import { appUrls } from "./apps.js";
 import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
 import { ConnectGate } from "./ui/ConnectGate.js";
+import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { Home } from "./ui/Home.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { ThemeChoice, TopbarSlot } from "./ui/topbar.js";
@@ -109,13 +110,18 @@ function ConnectedRoot({ session }: { session: WriterSession }) {
   const store = useMemo(() => externalStore(session), [session]);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const connection = snapshot.status === "ready" ? session.connection() : null;
-  const backend = useOwned(
-    () => (connection ? new ConnectBackend(connection, () => session.authorize("selected", { presentation: "popup" })) : null),
-    (b) => b.dispose(),
+  const owned = useOwned(
+    () => (connection ? { connection, backend: new ConnectBackend(connection, () => session.authorize("selected", { presentation: "popup" })) } : null),
+    (value) => value.backend.dispose(),
     [connection],
   );
-  if (!backend) return <ConnectGate session={session} snapshot={snapshot} />;
-  return <Manuscripts backend={backend} />;
+  const backend = owned?.connection === connection ? owned?.backend : null;
+  if (!backend || snapshot.status !== "ready") {
+    return <ConnectGate session={session} snapshot={snapshot} />;
+  }
+  return <Manuscripts key={snapshot.collectionId} backend={backend} collectionPicker={
+    <CollectionPicker name={backend.collectionName} collectionId={snapshot.collectionId} connections={snapshot.connections} session={session} />
+  } />;
 }
 
 function DemoRoot() {
@@ -134,11 +140,11 @@ function DemoRoot() {
   return <Manuscripts backend={backend} />;
 }
 
-function Manuscripts({ backend }: { backend: WriterBackend }) {
+function Manuscripts({ backend, collectionPicker }: { backend: WriterBackend; collectionPicker?: ReactNode }) {
   const [path, setPath] = useManuscriptParam();
   const workspace = useOwned(() => (path ? new ManuscriptWorkspace(backend, path) : null), (w) => void w.dispose(), [backend, path]);
   (window as unknown as { writer?: unknown }).writer = { backend, workspace };
-  if (!path) return <Home backend={backend} onOpen={setPath} />;
+  if (!path) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} />;
   if (!workspace) return null;
   return <WorkspaceView key={workspace.main} workspace={workspace} onClose={() => setPath(null)} />;
 }

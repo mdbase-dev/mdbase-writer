@@ -3,7 +3,7 @@ import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
 import { Select } from "@mdbase-dev/ui/select";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { ManuscriptSummary, WriterBackend } from "../backend/types.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
@@ -19,7 +19,7 @@ const NOTES_SHOWN = 8;
 const TEMPLATE_OPTIONS = TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const STYLE_OPTIONS = STYLES.map((s) => ({ value: s.id, label: s.title }));
 
-export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path: string): void }) {
+export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode }) {
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
@@ -88,7 +88,7 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
           <div>
             <h1>Manuscripts</h1>
             <p className="muted">
-              In <strong>{backend.collectionName}</strong>
+              In {collectionPicker ?? <strong>{backend.collectionName}</strong>}
               {sources !== null && sources > 0 && <> · {sources} {sources === 1 ? "source" : "sources"} to cite from mdbase Reader</>}
             </p>
           </div>
