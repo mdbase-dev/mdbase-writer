@@ -164,7 +164,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .note-list > li.muted { padding: 0.35rem 0.55rem; }
 .note-option { display: flex; align-items: baseline; gap: 0.6rem; width: 100%; text-align: left; padding: 0.35rem 0.55rem; border: 0; border-radius: 4px; background: none; cursor: pointer; }
 .note-option:hover { background: var(--subtle); }
-[aria-selected="true"] > .note-option { background: var(--selected); box-shadow: inset 2px 0 0 var(--app-writer); }
+[aria-selected="true"] > .note-option { background: var(--selected); font-weight: 700; }
 .note-name { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note-folder { margin-left: auto; flex: none; font-family: var(--mono); font-size: 11px; color: var(--faint); }
 .new-dialog .mdbase-dialog-body > p { margin: -0.5rem 0 0; }
@@ -196,7 +196,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .sidebar-tabs button:hover { color: var(--ink); }
 .sidebar-tabs button[aria-selected="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--app-writer); }
 .sidebar-tabs button:focus-visible { outline-offset: -2px; }
-.tab-count { min-width: 1.1rem; padding: 0 0.3rem; border-radius: 0.55rem; background: var(--subtle); font-size: 10.5px; font-weight: 400; line-height: 1.5; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tab-count { font-size: 11px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .sidebar-panel { min-height: 0; overflow: auto; padding: 0.5rem 0.5rem 1.5rem; scrollbar-gutter: stable; }
 /* A handle over the sidebar's right rule; it shows only while pointed at, focused or dragged. */
 .sidebar-resizer { position: absolute; top: 0; bottom: 0; right: -4px; width: 7px; z-index: 2; cursor: col-resize; touch-action: none; }
@@ -208,8 +208,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .sidebar-more { display: inline-flex; align-items: center; gap: 0.4rem; justify-self: start; padding: 0.35rem 0.5rem; border: 0; border-radius: 5px; background: none; color: var(--muted); font-size: 12.5px; cursor: pointer; }
 .sidebar-more:hover { background: var(--subtle); color: var(--ink); }
 .sidebar-more .icon { width: 14px; height: 14px; }
-.sidebar-empty { display: grid; justify-items: center; gap: 0.3rem; padding: 2.25rem 1rem; text-align: center; color: var(--muted); }
-.sidebar-empty > .icon { width: 26px; height: 26px; margin-bottom: 0.3rem; color: var(--faint); }
+.sidebar-empty { display: grid; gap: 0.25rem; padding: 0.75rem 0.5rem; color: var(--muted); }
 .sidebar-empty p { margin: 0; max-width: 17rem; line-height: 1.6; }
 .sidebar-empty strong { color: var(--ink); font-size: 13px; }
 .sidebar-empty kbd { font-size: 10.5px; }
@@ -229,7 +228,8 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .outline-manuscript .record-name { font-size: 14px; line-height: 1.35; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .outline-manuscript .record-words { grid-area: words; font-size: 12px; color: var(--muted); }
 .outline-manuscript:hover, .record-row:hover { background: var(--subtle); }
-.outline-manuscript[aria-current="true"], .record-row[aria-current="true"] { background: var(--selected); box-shadow: inset 2px 0 0 var(--app-writer); }
+.outline-manuscript[aria-current="true"], .record-row[aria-current="true"] { background: var(--selected); }
+.record-row[aria-current="true"] .record-name { font-weight: 700; }
 .outline-chapters { margin-top: 0.5rem; }
 .records { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
 .records > li { border-radius: 6px; }
@@ -245,7 +245,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .records > li[draggable="true"]:hover .record-index { opacity: 0; }
 @media (hover: none) { .record-grip.icon { display: none; } }
 .record-name { grid-area: name; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.record-row .record-name { grid-area: auto; font-size: 13.5px; }
+.record-row .record-name { grid-area: auto; font-size: 13.5px; font-weight: 400; }
 .is-nested .record-name { font-weight: 400; }
 .record-words { font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .record-state { grid-area: state; display: flex; gap: 0.35rem; align-items: center; align-self: center; }
@@ -259,7 +259,6 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .heading-row { display: flex; align-items: baseline; gap: 0.5rem; width: 100%; text-align: left; border: 0; background: none; padding: 0.22rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 12.5px; color: var(--ink-soft); position: relative; }
 .heading-row:hover { background: var(--subtle); color: var(--ink); }
 .heading-row[aria-current="location"] { color: var(--ink); font-weight: 700; }
-.heading-row[aria-current="location"]::before { content: ""; position: absolute; left: -0.3rem; top: 0.3rem; bottom: 0.3rem; width: 2px; border-radius: 1px; background: var(--app-writer); }
 .heading-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .heading-words { flex: none; font-size: 11px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .add-chapter { margin-top: 0.35rem; }
@@ -274,9 +273,9 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .settings { display: grid; grid-template-columns: 1fr; gap: 0.9rem; align-items: start; }
 .settings > label, .settings > div { min-width: 0; }
 .settings .span-2 > label { display: grid; }
-.field-problem { font-size: 12px; line-height: 1.35; padding-left: 0.45rem; border-left: 2px solid var(--line-strong); }
-.field-problem.severity-error { color: var(--danger); border-left-color: var(--danger); }
-.field-problem.severity-warning { color: var(--ink-soft); border-left-color: var(--warning); }
+.field-problem { font-size: 12px; line-height: 1.35; }
+.field-problem.severity-error { color: var(--danger); }
+.field-problem.severity-warning { color: var(--color-warning-text); }
 .has-problem :is(.mdbase-field, .mdbase-select) { border-color: var(--warning); }
 
 .sources { display: grid; grid-template-columns: minmax(0, 1fr); }
@@ -289,8 +288,9 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .source-group > p { padding: 0.3rem 0.5rem; margin: 0; }
 .source-line { display: flex; align-items: center; gap: 0.25rem; border-radius: 6px; }
 .source-line:hover { background: var(--subtle); }
-/* The source cited at the cursor carries the same mark as the heading the cursor is under. */
-.is-here > .source-line { background: var(--selected); box-shadow: inset 2px 0 0 var(--app-writer); }
+/* The source cited at the cursor is selected, as the open record is in the outline. */
+.is-here > .source-line { background: var(--selected); }
+.is-here .source-title { font-weight: 700; }
 .source-row { flex: 1; min-width: 0; display: grid; gap: 0.1rem; text-align: left; border: 0; background: none; padding: 0.4rem 0.5rem; border-radius: 6px; cursor: pointer; }
 .source-row:focus-visible { outline-offset: -2px; }
 .source-title { font-size: 13px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -302,9 +302,8 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .cite-button:disabled { color: var(--muted); cursor: default; }
 .source-line:hover .cite-button, .source-line:focus-within .cite-button, .is-here .cite-button { opacity: 1; }
 @media (hover: none) { .cite-button { opacity: 1; } }
-/* An opened source is one card: its row, citing at a page, and its highlights from Reader. */
-.source-group li.is-open { margin: 0.3rem 0; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); box-shadow: 0 1px 3px var(--color-shadow); }
-.is-open > .source-line { border-radius: 7px 7px 0 0; }
+/* An opened source expands in place between fine rules: citing at a page, then its highlights from Reader. */
+.source-group li.is-open { margin: 0.25rem 0; padding: 0.15rem 0; border-block: 1px solid var(--line); }
 .is-open .source-title { -webkit-line-clamp: unset; font-weight: 700; }
 .source-detail { display: grid; gap: 0.6rem; padding: 0.15rem 0.5rem 0.6rem; }
 .cite-at { display: flex; gap: 0.35rem; }
@@ -317,7 +316,9 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .source-links .text-button:first-child { margin-left: 0; }
 .annotations { list-style: none; margin: 0; padding: 0.6rem 0 0; border-top: 1px solid var(--line); display: grid; gap: 0.75rem; width: 100%; }
 .annotations li { display: grid; gap: 0.3rem; }
-.annotations blockquote { margin: 0; padding-left: 0.6rem; border-left: 2px solid var(--app-reader); font-size: 13px; line-height: 1.5; color: var(--ink); }
+.annotations blockquote { margin: 0; font-size: 13px; font-style: italic; line-height: 1.5; color: var(--ink); }
+.annotations blockquote::before { content: "“"; }
+.annotations blockquote::after { content: "”"; }
 .annotations p { margin: 0; color: var(--ink-soft); }
 .annotation-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
 .annotation-actions .text-button:last-child { margin-right: -0.4rem; }
@@ -327,47 +328,46 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .comments > p { margin: 0; padding: 0 0.5rem; }
 .comments-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.15rem 0 0.1rem; }
 .signing { margin: 0; }
-.signing.is-unsigned { display: grid; gap: 0.35rem; padding: 0.6rem 0.7rem; border: 1px solid var(--color-warning-border); border-radius: 8px; background: var(--color-warning-surface); }
+.signing.is-unsigned { display: grid; gap: 0.35rem; padding: 0.6rem 0.7rem; border: 1px solid var(--color-warning-border); border-radius: var(--control-radius); background: var(--color-warning-surface); }
 .signing.is-unsigned p { margin: 0; color: var(--color-warning-text); }
 .signing.is-unsigned strong { color: var(--color-warning-strong); }
-.threads { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
-.threads-record .sidebar-heading { padding: 0.5rem 0.5rem 0; text-transform: none; letter-spacing: 0; font-size: 12px; }
-.threads-record:first-child .sidebar-heading { padding-top: 0; }
-.thread { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.55rem; padding: 0.7rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); transition: border-color var(--motion-quick) ease, box-shadow var(--motion-quick) ease; }
-.thread:hover { border-color: var(--line-strong); }
-.thread.is-active { border-color: color-mix(in oklch, var(--warning) 75%, var(--line)); box-shadow: 0 0 0 1px color-mix(in oklch, var(--warning) 45%, transparent), 0 2px 8px var(--color-shadow); }
-.thread.composer { margin: 0; }
-.thread.composer.is-active { border-color: var(--line-strong); box-shadow: 0 2px 8px var(--color-shadow); }
+.threads { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.threads-record .sidebar-heading { padding: 0.9rem 0.5rem 0.3rem; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.threads-record:first-child .sidebar-heading { padding-top: 0.2rem; }
+/* Threads are rows ruled apart; the one selected in the editor is the selected surface. */
+.threads > .thread { border-top: 1px solid var(--line); }
+.threads > .threads-record + .thread { border-top: 0; }
+.thread { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; padding: 0.75rem 0.5rem; border-radius: 6px; transition: background var(--motion-quick) ease; }
+.thread.is-active { background: var(--selected); }
+.thread.is-active + .thread, .thread.is-active { border-top-color: transparent; }
+.thread.composer { margin: 0; padding: 0.75rem; border: 1px solid var(--line-strong); }
 .thread-anchor { display: grid; gap: 0.25rem; padding: 0; border: 0; background: none; text-align: left; color: inherit; font: inherit; cursor: pointer; }
-.thread-quote { margin: 0; padding-left: 0.55rem; border-left: 2px solid color-mix(in oklch, var(--warning) 75%, transparent); font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
-:is(.thread.is-detached, .thread.is-resolved, .composer) .thread-quote { border-left-color: var(--line-strong); }
+.thread-quote { margin: 0; font-size: 12.5px; font-style: italic; line-height: 1.5; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
+blockquote.thread-quote::before { content: "“"; }
+blockquote.thread-quote::after { content: "”"; }
 .thread-whole { font-style: italic; }
-.thread-suggestion { display: grid; gap: 0.15rem; font-size: 13px; line-height: 1.5; color: var(--ink); }
-.thread-suggestion-kind { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.thread-suggestion { font-size: 13px; line-height: 1.5; color: var(--ink); }
+.thread-suggestion-kind { color: var(--muted); }
 .thread-suggestion del { padding: 0 2px; border-radius: 3px; color: var(--danger); background: color-mix(in oklch, var(--danger) 10%, transparent); text-decoration-thickness: 1.5px; }
 .thread-suggestion ins { padding: 0 2px; border-radius: 3px; color: var(--connected); background: color-mix(in oklch, var(--connected) 12%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
 .thread-detached { color: var(--muted); font-style: italic; }
-.thread-record, .thread-resolved { margin: 0; }
+.thread-resolved { margin: 0; }
 .thread-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
 .thread-reply, .composer-field { display: grid; gap: 0.3rem; }
 .thread textarea { width: 100%; resize: vertical; font: inherit; font-size: 13px; }
 .composer-title { display: grid; gap: 0.05rem; margin: 0; }
 .composer-title strong { font-size: 13px; }
 .composer-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* A comment: its author's initials beside their name and when, the text beneath. */
-.comment { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 0.2rem 0.5rem; }
-.comment > :not(.avatar, .comment-meta) { grid-column: 2; }
-.comment.is-reply { padding-top: 0.55rem; border-top: 1px solid var(--line); }
-.avatar { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 50%; background: var(--subtle); color: var(--ink-soft); font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; line-height: 1; }
-.avatar.is-me { border-color: transparent; background: var(--color-accent-soft); color: var(--action); }
-.avatar.is-unsigned { color: var(--faint); }
+/* A comment: who and when, the text beneath; replies are indented under the first. */
+.comment { display: grid; gap: 0.1rem; }
+.comment.is-reply { margin-left: 0.75rem; }
 .comment-meta { display: flex; align-items: baseline; gap: 0.45rem; min-width: 0; margin: 0; color: var(--muted); }
 .comment-meta strong { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .comment-meta time { flex: none; }
 /* Withdrawing shows over the end of the line only while the comment is pointed at, so the name keeps its room. */
 .comment { position: relative; }
-.comment-meta .text-button { position: absolute; top: 0; right: 0; height: 22px; font-size: 11.5px; background: var(--surface); opacity: 0; pointer-events: none; }
-.comment.is-reply .comment-meta .text-button { top: 0.55rem; }
+.comment-meta .text-button { position: absolute; top: -2px; right: 0; height: 22px; font-size: 11.5px; background: var(--canvas); opacity: 0; pointer-events: none; }
+.thread.is-active .comment-meta .text-button { background: var(--selected); }
 .comment:is(:hover, :focus-within) .comment-meta .text-button { opacity: 1; pointer-events: auto; }
 @media (hover: none) { .comment-meta .text-button { position: static; margin-left: auto; opacity: 1; pointer-events: auto; } }
 .comment-text { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -381,11 +381,14 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 :is(.cm-suggest-delete, .cm-suggest-insert).is-active { outline: 1px solid var(--line-strong); border-radius: 2px; }
 
 .problems { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
-.problem-row { display: grid; gap: 0.1rem; width: 100%; text-align: left; border: 0; background: none; padding: 0.4rem 0.55rem; border-radius: 5px; cursor: pointer; font-size: 13px; color: var(--ink); border-left: 2px solid var(--line-strong); }
+.problem-row { display: grid; gap: 0.1rem; width: 100%; text-align: left; border: 0; background: none; padding: 0.4rem 0.55rem; border-radius: 5px; cursor: pointer; font-size: 13px; color: var(--ink); }
+/* A problem's severity is the dot before its message. */
+.problem-row > span:first-child::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 0.5rem; border-radius: 50%; vertical-align: 0.08em; background: var(--line-strong); }
 .problem-row:hover, .problem-row:focus-visible { background: var(--subtle); outline: 0; }
 .problem-row .record-path { grid-area: auto; }
-.problem-row.severity-error { border-left-color: var(--danger); }
-.problem-row.severity-warning { border-left-color: var(--warning); }
+.problem-row.severity-error > span:first-child::before { background: var(--danger); }
+.problem-row.severity-warning > span:first-child::before { background: var(--warning); }
+.problem-row .record-path { padding-left: calc(7px + 0.5rem); }
 
 .write { grid-area: write; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
 .write > .editor { flex: 1; }
@@ -424,9 +427,9 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .editor .cm-attr { color: var(--faint); font-family: var(--mono); font-size: 0.72em; font-weight: 400; letter-spacing: -0.01em; }
 .editor .cm-fnmark { color: var(--muted); font-family: var(--mono); font-size: 0.78em; }
 /* A chapter embed, drawn as a card until the cursor is on its line. */
-.editor .cm-chapter-card { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0; padding: 0.6rem 0.6rem 0.6rem 0.8rem; border: 1px solid var(--line); border-left: 3px solid var(--app-writer); border-radius: var(--control-radius); background: var(--surface); font-family: var(--sans); cursor: text; }
-.editor .cm-chapter-card:hover { border-color: var(--line-strong); border-left-color: var(--app-writer); }
-.editor .cm-chapter-card.is-missing { border-left-color: var(--warning); }
+.editor .cm-chapter-card { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0; padding: 0.6rem 0.6rem 0.6rem 0.8rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); font-family: var(--sans); cursor: text; }
+.editor .cm-chapter-card:hover { border-color: var(--line-strong); }
+.editor .cm-chapter-card.is-missing { border-color: var(--color-warning-border); background: var(--color-warning-surface); }
 .cm-chapter-number { flex: none; min-width: 1.4rem; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .cm-chapter-text { flex: 1; min-width: 0; display: grid; }
 .cm-chapter-title { font-size: 15px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

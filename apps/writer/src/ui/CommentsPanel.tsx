@@ -9,7 +9,7 @@ import type { Result } from "../backend/types.js";
 import { ALT_LABEL, MOD_LABEL } from "../editor/insight.js";
 import type { CommentDraft } from "../workspace/workspace.js";
 import { clipPassage, describeSuggestion, when, type PlacedThread } from "./comments.js";
-import { CommentIcon, PlusIcon } from "./icons.js";
+import { PlusIcon } from "./icons.js";
 import { plural } from "./records.js";
 
 /** A passage chosen to comment on or suggest an edit to, or (without a draft) a whole record. */
@@ -94,7 +94,6 @@ export function CommentsPanel({
       {problem && <p className="muted small">Comments unavailable: {problem}</p>}
       {!problem && !shown.length && !pending && (
         <div className="sidebar-empty">
-          <CommentIcon />
           {filter === "open" ? (
             <>
               <p><strong>No open comments</strong></p>
@@ -322,35 +321,22 @@ function Suggestion({ root }: { root: CommentRecord }) {
   const replacement = root.suggestion?.replacement ?? "";
   return (
     <span className="thread-suggestion" aria-label={describeSuggestion(root)}>
-      <span className="thread-suggestion-kind" aria-hidden="true">{exact && replacement ? "Replace" : exact ? "Delete" : "Insert"}</span>
       <span aria-hidden="true">
+        <span className="thread-suggestion-kind">{exact && replacement ? "Replace" : exact ? "Delete" : "Insert"}</span>{" "}
         {exact && <del>{clipPassage(exact)}</del>}
-        {exact && replacement && " "}
+        {exact && replacement && <span className="thread-suggestion-kind"> with </span>}
         {replacement && <ins>{clipPassage(replacement)}</ins>}
       </span>
     </span>
   );
 }
 
-/** Up to two initials for a name, or "?" for an unsigned comment. */
-const initials = (name: string | undefined) =>
-  name
-    ? name
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((w) => w[0]!.toUpperCase())
-        .filter((_, i, all) => i === 0 || i === all.length - 1)
-        .join("")
-    : "?";
-
 function Comment({ comment, people, reply, children }: { comment: CommentRecord; people: People; reply?: boolean; children?: ReactNode }) {
-  const name = personName(comment.createdBy, people);
-  const mine = people.me !== undefined && comment.createdBy?.toLowerCase() === people.me.link.toLowerCase();
+  const author = personName(comment.createdBy, people) ?? "Unsigned";
   return (
     <div className={`comment${reply ? " is-reply" : ""}`}>
-      <span className={`avatar${mine ? " is-me" : ""}${name ? "" : " is-unsigned"}`} aria-hidden="true">{initials(name)}</span>
       <p className="comment-meta small">
-        <strong>{name ?? "Unsigned"}</strong> <time dateTime={comment.createdAt} title={new Date(comment.createdAt).toLocaleString()}>{when(comment.createdAt)}</time>
+        <strong>{author}</strong> <time dateTime={comment.createdAt} title={new Date(comment.createdAt).toLocaleString()}>{when(comment.createdAt)}</time>
         {children}
       </p>
       {comment.deletedAt ? <p className="small muted">Withdrawn.</p> : comment.text ? <p className="comment-text">{comment.text}</p> : null}
