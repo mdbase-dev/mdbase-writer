@@ -315,9 +315,11 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
   const onMouseMove = (event: React.MouseEvent) => {
     const at = pointOf(event);
     if (!at) return;
-    const mark = latest.current.onSource ? markAt(latest.current.marks, at.page, at.y) : undefined;
-    at.canvas.classList.toggle("over-source", Boolean(mark));
-    at.canvas.title = mark ? "Show in Sources" : "";
+    const over = Boolean(latest.current.onSource && markAt(latest.current.marks, at.page, at.y));
+    // Only crossing into or out of a passage changes the page.
+    if (at.canvas.classList.contains("over-source") === over) return;
+    at.canvas.classList.toggle("over-source", over);
+    at.canvas.title = over ? "Show in Sources" : "";
   };
 
   const onClick = (event: React.MouseEvent) => {
