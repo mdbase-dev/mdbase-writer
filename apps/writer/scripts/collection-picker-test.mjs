@@ -18,38 +18,43 @@ try {
     window.pickerTest = mount();
   });
   const trigger = page.getByRole("button", { name: "Switch collection: Current" });
-  const dialog = page.getByRole("dialog", { name: "Choose a collection" });
+  const menu = page.getByRole("menu", { name: "Switch collection" });
   await trigger.click();
-  await dialog.waitFor();
-  assert.equal(await dialog.getByRole("button", { name: /Current collection/ }).count(), 1);
-  assert.equal(await dialog.getByText("Cached name").count(), 0);
-  await dialog.getByRole("button", { name: /Current collection/ }).click();
-  await dialog.waitFor({ state: "hidden" });
+  await menu.waitFor();
+  // The current collection comes first, checked, under its fresh name, and has focus.
+  const current = menu.getByRole("menuitemradio", { name: /Current/ });
+  assert.equal(await current.getAttribute("aria-checked"), "true");
+  assert.equal(await menu.getByText("Cached name").count(), 0);
+  assert.deepEqual(await menu.getByRole("menuitemradio").allTextContents(), ["CurrentOpen now · Hosted by mdbase", "OtherOn your computer"]);
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-checked")), "true");
+  await current.click();
+  await menu.waitFor({ state: "hidden" });
   assert.deepEqual(await page.evaluate(() => window.pickerTest.calls), []);
   await trigger.click();
   await page.keyboard.press("Escape");
-  await dialog.waitFor({ state: "hidden" });
+  await menu.waitFor({ state: "hidden" });
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Switch collection: Current");
   await trigger.click();
   await page.evaluate(() => { window.pickerTest.fail = true; });
-  await dialog.getByRole("button", { name: "Other", exact: true }).click();
-  await dialog.getByRole("alert").filter({ hasText: "Selection failed" }).waitFor();
+  await menu.getByRole("menuitemradio", { name: "Other" }).click();
+  await menu.getByRole("alert").filter({ hasText: "Selection failed" }).waitFor();
   await page.evaluate(() => { window.pickerTest.fail = false; });
-  await dialog.getByRole("button", { name: "Other", exact: true }).click();
-  await dialog.waitFor({ state: "hidden" });
+  await menu.getByRole("menuitemradio", { name: "Other" }).click();
+  await menu.waitFor({ state: "hidden" });
   await trigger.click();
-  await dialog.getByRole("button", { name: "Connect another collection" }).click();
-  await dialog.getByRole("button", { name: "Waiting for mdbase connect…" }).waitFor();
-  assert.equal(await dialog.getByRole("button", { name: "Other", exact: true }).isDisabled(), true);
+  await menu.getByRole("menuitem", { name: "Connect another collection…" }).click();
+  await menu.getByRole("menuitem", { name: "Waiting for mdbase connect…" }).waitFor();
+  assert.equal(await menu.getByRole("menuitemradio", { name: "Other" }).isDisabled(), true);
   await page.evaluate(() => window.pickerTest.finish());
-  await dialog.getByRole("alert").filter({ hasText: "Authorization cancelled" }).waitFor();
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
-  await dialog.waitFor({ state: "hidden" });
+  await menu.getByRole("alert").filter({ hasText: "Authorization cancelled" }).waitFor();
+  await page.keyboard.press("Escape");
+  await menu.waitFor({ state: "hidden" });
   assert.deepEqual(await page.evaluate(() => window.pickerTest.calls), [
     ["select", "other"], ["select", "other"],
     ["authorize", "choose", { presentation: "popup", timeoutMs: 600000 }],
   ]);
   assert.deepEqual(errors, []);
-  console.log("ok collection picker: demo label, current collection, Escape, switching, errors, popup authorization");
+  console.log("ok collection picker: demo label, current collection first, Escape, switching, errors, popup authorization");
 } finally {
   await browser.close();
 }

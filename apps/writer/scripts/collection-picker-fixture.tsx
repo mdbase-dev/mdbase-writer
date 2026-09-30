@@ -9,8 +9,8 @@ export function mount() {
   const state = { calls, fail: false, finish: () => {} };
   const root = createRoot(host);
   root.render(<CollectionPicker name="Current" collectionId="current" connections={[
-    { collectionId: "current", displayName: "Cached name" },
-    { collectionId: "other", displayName: "Other" },
+    { collectionId: "current", displayName: "Cached name", authority: { kind: "hosted" } },
+    { collectionId: "other", displayName: "Other", authority: { kind: "connector" } },
   ] as never} session={{
     select: (id: string) => {
       calls.push(["select", id]);
