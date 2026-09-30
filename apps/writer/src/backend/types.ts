@@ -2,10 +2,13 @@
 // collections) and a demo on the SDK's in-memory record authority.
 import type { JsonObject, MdbaseRecords } from "@mdbase-dev/connect";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
+import type { SourceAnnotation } from "@mdbase-writer/core/annotations";
 import type { CommentRecord } from "@mdbase-writer/core/comments";
 
 import { embedCount, wordCount } from "../words.js";
 import type { CommentChange, NewComment, People } from "./comments.js";
+
+export { sourceAnnotation, type SourceAnnotation } from "@mdbase-writer/core/annotations";
 
 export type Result<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly message: string };
 
@@ -36,17 +39,6 @@ export interface LibraryEntry {
   readonly item: CslItem;
   readonly title: string;
   readonly path: string;
-}
-
-/** A Reader annotation: a quotation and/or note on a source, with where it is in the source. */
-export interface SourceAnnotation {
-  readonly path: string;
-  /** Collection path of the annotated source record. */
-  readonly source: string;
-  readonly quote: string | null;
-  readonly note: string;
-  /** Reader's locator label ("p. 12"), when it has one. */
-  readonly locator?: string;
 }
 
 export interface CollectionIndex {
@@ -100,29 +92,6 @@ export function libraryEntry(path: string, frontmatter: JsonObject | undefined):
   if (!key) return null;
   const title = typeof item["title"] === "string" ? item["title"] : typeof frontmatter?.["title"] === "string" ? frontmatter["title"] : key;
   return { key, item: { ...item, id: key }, title, path };
-}
-
-/**
- * A Reader annotation record as the writer uses it. Reader links the source
- * as `[[path|title]]`; the first blockquote of the body is the quotation and
- * the rest is the note (as Reader's annotationBodyText splits it).
- */
-export function sourceAnnotation(path: string, frontmatter: JsonObject | undefined, body: string): SourceAnnotation | null {
-  const link = typeof frontmatter?.["source"] === "string" ? frontmatter["source"] : "";
-  const target = /^\[\[([^\]|#]+)/.exec(link.trim())?.[1]?.trim() ?? link.trim();
-  if (!target) return null;
-  const source = /\.md$/i.test(target) ? target : `${target}.md`;
-  const locator = frontmatter?.["locator"];
-  const rawLabel = locator && typeof locator === "object" && !Array.isArray(locator) ? (locator as JsonObject)["label"] : undefined;
-  const label = typeof rawLabel === "string" && rawLabel.trim() ? rawLabel.trim() : undefined;
-  const lines = body.replace(/\r\n?/g, "\n").split("\n");
-  const start = lines.findIndex((l) => /^ {0,3}>/.test(l));
-  let end = start;
-  if (start >= 0) while (end < lines.length && /^ {0,3}>/.test(lines[end] ?? "")) end++;
-  const quote = start >= 0 ? lines.slice(start, end).map((l) => l.replace(/^ {0,3}> ?/, "")).join("\n").trim() || null : null;
-  const note = (start >= 0 ? [...lines.slice(0, start), ...lines.slice(end)] : lines).join("\n").trim();
-  if (!quote && !note) return null;
-  return { path, source, quote, note, ...(label ? { locator: label } : {}) };
 }
 
 /** `chapters/x.md` numbered for the nth try: `chapters/x-2.md`. */

@@ -28,6 +28,8 @@ export type ToWorker =
   | { readonly type: "init"; readonly library: readonly CslItem[]; readonly styles: readonly [string, string][]; readonly locales: readonly [string, string][]; readonly baseUrl: string }
   | { readonly type: "library"; readonly library: readonly CslItem[] }
   | { readonly type: "collection"; readonly recordPaths: readonly string[]; readonly filePaths: readonly string[] }
+  /** For quoting embedded annotations: the records that are annotations, and each source record's citekey. */
+  | { readonly type: "quotations"; readonly annotationPaths: readonly string[]; readonly sourceKeys: readonly [string, string][] }
   | { readonly type: "records"; readonly upsert: readonly WriterRecord[]; readonly remove?: readonly string[] }
   | { readonly type: "main"; readonly path: string }
   | { readonly type: "assets"; readonly files: readonly [string, Uint8Array][] }

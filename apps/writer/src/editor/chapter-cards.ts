@@ -1,10 +1,12 @@
 // A record embedded on a line of its own (a chapter) is drawn as a card: its
-// title, words and problems, and a button that opens it. The Markdown stays
-// as written; putting the cursor on the line shows it for editing.
+// title, words and problems, and a button that opens it. An embedded Reader
+// annotation is drawn as the quotation it renders, with a button that detaches
+// it (writes the quotation in its place, to edit). The Markdown stays as
+// written; putting the cursor on the line shows it for editing.
 import { StateEffect, StateField, type EditorState, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view";
 
-import { EMBED_LINE } from "../workspace/chapters.js";
+import { embedTarget } from "../workspace/chapters.js";
 
 export interface ChapterCard {
   /** Collection path the embed resolves to; null when nothing matches. */
@@ -14,9 +16,20 @@ export interface ChapterCard {
   readonly problems?: number;
 }
 
+/** An embedded annotation: the quotation it renders. */
+export interface QuotationCard {
+  readonly quotation: true;
+  readonly path: string;
+  readonly quote: string;
+  /** Who and where, as the reader sees it ("Badiou, 2007, p. 178"); empty when the source is not in the library. */
+  readonly cite: string;
+  /** The Markdown that replaces the embed when it is detached. */
+  readonly detached: string;
+}
+
 /** What the editor needs to draw chapter cards: each embed target's card, and opening one. */
 export interface ChapterCards {
-  card(target: string): ChapterCard;
+  card(target: string): ChapterCard | QuotationCard;
   open(path: string): void;
 }
 
@@ -80,6 +93,49 @@ class CardWidget extends WidgetType {
   }
 }
 
+class QuotationWidget extends WidgetType {
+  constructor(readonly card: QuotationCard) {
+    super();
+  }
+
+  override eq(other: QuotationWidget) {
+    return JSON.stringify(other.card) === JSON.stringify(this.card);
+  }
+
+  toDOM(view: EditorView) {
+    const { card } = this;
+    const dom = document.createElement("div");
+    dom.className = "cm-quote-card";
+    const quote = document.createElement("blockquote");
+    quote.className = "cm-quote-text";
+    quote.textContent = card.quote;
+    const meta = document.createElement("div");
+    meta.className = "cm-quote-meta";
+    const cite = document.createElement("span");
+    cite.textContent = card.cite ? `${card.cite} · from Reader` : "From Reader · its source is not in the library";
+    cite.title = card.path;
+    const detach = document.createElement("button");
+    detach.type = "button";
+    detach.className = "text-button";
+    detach.textContent = "Detach";
+    detach.title = "Write the quotation here, to edit it; it no longer follows the annotation";
+    detach.addEventListener("click", (e) => {
+      e.preventDefault();
+      const line = view.state.doc.lineAt(view.posAtDOM(dom));
+      view.dispatch({ changes: { from: line.from, to: line.to, insert: card.detached }, userEvent: "input.detach" });
+      view.focus();
+    });
+    meta.append(cite, detach);
+    dom.append(quote, meta);
+    return dom;
+  }
+
+  // Detach handles its own clicks; a click elsewhere puts the cursor on the line.
+  override ignoreEvent(event: Event) {
+    return event.target instanceof Element && Boolean(event.target.closest("button"));
+  }
+}
+
 function build(state: EditorState, cards: () => ChapterCards | undefined): DecorationSet {
   const source = cards();
   if (!source) return Decoration.none;
@@ -88,12 +144,14 @@ function build(state: EditorState, cards: () => ChapterCards | undefined): Decor
   let number = 0;
   for (let i = 1; i <= state.doc.lines; i++) {
     const line = state.doc.line(i);
-    const target = EMBED_LINE.exec(line.text)?.[1]?.split(/[|#]/)[0]?.trim();
+    const target = embedTarget(line.text);
     if (!target) continue;
-    number++;
+    const card = source.card(target);
+    if (!("quotation" in card)) number++;
     // The line being edited shows its Markdown.
     if (selection.some((r) => r.to >= line.from && r.from <= line.to)) continue;
-    ranges.push(Decoration.replace({ widget: new CardWidget(number, target, source.card(target), source.open), block: true }).range(line.from, line.to));
+    const widget = "quotation" in card ? new QuotationWidget(card) : new CardWidget(number, target, card, source.open);
+    ranges.push(Decoration.replace({ widget, block: true }).range(line.from, line.to));
   }
   return Decoration.set(ranges);
 }

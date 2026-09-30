@@ -439,6 +439,11 @@ blockquote.thread-quote::after { content: "”"; }
 .cm-chapter-title { font-size: 15px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cm-chapter-meta { font-size: 12px; line-height: 1.4; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .editor .cm-chapter-open { flex: none; min-height: 28px; padding: 0 0.7rem; font-size: 12.5px; }
+/* An embedded annotation, drawn as the block quote it renders until the cursor is on its line. */
+.editor .cm-quote-card { margin: 0.25rem 0; padding: 0.1rem 0 0.1rem 1.5rem; cursor: text; }
+.cm-quote-text { margin: 0; white-space: pre-line; color: var(--ink); }
+.cm-quote-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem; font-family: var(--sans); font-size: 12px; line-height: 1.4; color: var(--muted); }
+.cm-quote-meta .text-button { height: 22px; font-size: 12px; }
 /* The toolbar over a selection: formatting icons, a fine rule, then Writer's actions. */
 .cm-tooltip:has(> .cm-selection-bar) { transform: translateY(-6px); }
 .cm-selection-bar-row { display: flex; align-items: center; gap: 1px; padding: 3px; }

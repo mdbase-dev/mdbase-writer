@@ -1,3 +1,4 @@
+export * from "./annotations.js";
 export * from "./assemble.js";
 export * from "./cite-items.js";
 export * from "./citeproc.js";

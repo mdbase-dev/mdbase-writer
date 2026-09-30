@@ -159,6 +159,37 @@ await step("a Reader quotation goes in with its citation and page", async () => 
   assert.match(await editorText(), /“To be potential means: to be one's own lack, to be in relation to one's own incapacity\.” \[@agambenPotentialities99, p\. 182\]/);
 });
 
+await step("an embedded Reader annotation shows and typesets as its quotation, and detaches", async () => {
+  const main = "manuscripts/potentiality.md";
+  const before = (await snapshot()).revision;
+  await page.evaluate((path) => {
+    const w = window.writer.workspace;
+    w.setBody(path, `${w.getSnapshot().records.get(path).snapshot.body.trimEnd()}\n\n![[annotations/agamben-potentiality-lack]]\n`);
+  }, main);
+  const card = page.locator(".cm-quote-card");
+  // Lines out of view are not drawn.
+  await waitFor(() => {
+    const scroller = document.querySelector(".cm-scroller");
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    return document.querySelector(".cm-quote-card");
+  }, null, 10_000);
+  assert.match(await card.textContent(), /To be potential means.*Agamben, 1999, p\. 182/);
+  assert.doesNotMatch(await card.textContent(), /The definition the paper/);
+  await waitForRevisionAfter(before);
+  const s = await page.evaluate(() => {
+    const r = window.writer.workspace.getSnapshot().result;
+    return { diagnostics: r.diagnostics.map((d) => d.message), order: r.order, positions: r.positions.filter((p) => p.record.startsWith("annotations/")).length };
+  });
+  assert.deepEqual(s.diagnostics, []);
+  assert.ok(!s.order.includes("annotations/agamben-potentiality-lack.md"), "an embedded annotation is not a chapter");
+  assert.equal(s.positions, 0, "the quotation's blocks map to the embed");
+  assert.ok(!(await page.evaluate(() => window.writer.workspace.chapterPaths())).includes("annotations/agamben-potentiality-lack.md"));
+  await card.getByRole("button", { name: "Detach" }).click();
+  assert.match(await editorText(), /> To be potential means: to be one's own lack, to be in relation to one's own incapacity\. \[@agambenPotentialities99, p\. 182\]/);
+  assert.equal(await card.count(), 0);
+  await page.evaluate(() => document.querySelector(".cm-scroller")?.scrollTo({ top: 0 }));
+});
+
 await step("a toolbar over a selection formats it and finds a source for it", async () => {
   const before = await editorText();
   const bar = page.locator(".cm-selection-bar");

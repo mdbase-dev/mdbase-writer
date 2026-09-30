@@ -29,10 +29,10 @@ describe("Reader annotations", () => {
     expect(citationAt("k", "")).toBe("[@k]");
   });
 
-  it("quotes short passages inline and long ones as block quotes", () => {
-    expect(quotationFor("k", { quote: "Short  text.", locator: "p. 3" })).toBe("“Short text.” [@k, p. 3]");
+  it("quotes short passages inline and embeds long ones", () => {
+    expect(quotationFor("k", { path: "notes/a.md", quote: "Short  text.", locator: "p. 3" })).toBe("“Short text.” [@k, p. 3]");
     const long = Array.from({ length: 50 }, (_, i) => `w${i}`).join(" ");
-    expect(quotationFor("k", { quote: long })).toBe(`\n\n> ${long} [@k]\n\n`);
+    expect(quotationFor("k", { path: "notes/a.md", quote: long })).toBe("\n\n![[notes/a]]\n\n");
   });
 });
 

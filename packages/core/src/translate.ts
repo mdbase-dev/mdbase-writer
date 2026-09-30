@@ -158,6 +158,8 @@ interface Shared {
   footnotes: Map<string, SyntaxNode>;
   footnoteText: string;
   usedFootnotes: Set<string>;
+  /** Offset in footnoteText → the offset reported (the identity, or an embed's). */
+  bodyOffset: (offset: number) => number;
 }
 
 class BodyTranslator {
@@ -655,7 +657,7 @@ class BodyTranslator {
     };
     this.shared.events.push({ t: "fn-open" });
     this.out.write("#footnote[");
-    const sub = new BodyTranslator(body, map, this.shared, false);
+    const sub = new BodyTranslator(body, (local) => this.shared.bodyOffset(map(local)), this.shared, false);
     let first = true;
     for (let c = markdownParser.parse(body).topNode.firstChild; c; c = c.nextSibling) {
       if (c.name === "Paragraph") {
@@ -669,8 +671,12 @@ class BodyTranslator {
   }
 }
 
-/** Translates a record body (no frontmatter). */
-export function translateRecord(body: string, options: { markers?: boolean } = {}): TranslatedRecord {
+/**
+ * Translates a record body (no frontmatter). With `at`, every offset maps to
+ * that one body offset: Markdown standing in for an embed (a quotation) maps
+ * to the embed in the record that holds it.
+ */
+export function translateRecord(body: string, options: { markers?: boolean; at?: number } = {}): TranslatedRecord {
   const shared: Shared = {
     out: new Emitter(),
     clusters: [],
@@ -683,9 +689,10 @@ export function translateRecord(body: string, options: { markers?: boolean } = {
     footnotes: new Map(),
     footnoteText: body,
     usedFootnotes: new Set(),
+    bodyOffset: options.at === undefined ? (x) => x : () => options.at ?? 0,
   };
   shared.out.write(HEADER);
-  new BodyTranslator(body, (x) => x, shared, options.markers ?? true).document();
+  new BodyTranslator(body, shared.bodyOffset, shared, options.markers ?? true).document();
   return {
     typst: shared.out.toString(),
     anchors: shared.out.anchors,

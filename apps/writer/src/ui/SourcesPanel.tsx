@@ -2,24 +2,18 @@
 // rest of the Reader library; search by author, title, year or key. Cite a
 // source at the cursor (with a page if you like), step through where it is
 // cited, or insert a quotation you highlighted in Reader with its citation
-// and page already filled in.
-import { parseCiteItem } from "@mdbase-writer/core/cite-items";
+// and page already filled in (a long one is embedded, so it follows Reader).
+import { citationFor, inlineQuotation, isInlineQuote } from "@mdbase-writer/core/annotations";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import type { LibraryEntry, Result, SourceAnnotation } from "../backend/types.js";
 import { authorYear, searchLibrary } from "../editor/library-search.js";
 import { ChevronLeft, ChevronRight, ExternalIcon, SearchIcon } from "./icons.js";
 
-/** Quotations up to this many words go inline; longer ones become block quotes (as most styles ask). */
-const INLINE_QUOTE_WORDS = 40;
 /** Library sources listed before "Show all". */
 const LIBRARY_PREVIEW = 20;
 
-/** The citation for a source, with Reader's locator when it reads as one ("p. 12"). */
-export function citationFor(key: string, locator?: string): string {
-  const parsed = locator ? parseCiteItem(`@${key}, ${locator}`) : null;
-  return parsed?.locator ? `[@${key}, ${locator}]` : `[@${key}]`;
-}
+export { citationFor };
 
 /** The citation for a locator the writer typed: a bare number or range is a page ("12" → "p. 12"). */
 export function citationAt(key: string, typed: string): string {
@@ -28,12 +22,14 @@ export function citationAt(key: string, typed: string): string {
   return `[@${key}, ${/^\d/.test(locator) ? `p. ${locator}` : locator}]`;
 }
 
-/** Markdown for a quotation from an annotation: inline in quotation marks, or a block quote. */
-export function quotationFor(key: string, annotation: Pick<SourceAnnotation, "quote" | "locator">): string {
-  const quote = (annotation.quote ?? "").replace(/\s+/g, " ").trim();
-  const cite = citationFor(key, annotation.locator);
-  if (quote.split(" ").length <= INLINE_QUOTE_WORDS) return `“${quote}” ${cite}`;
-  return `\n\n> ${quote} ${cite}\n\n`;
+/**
+ * Markdown for a quotation from an annotation: a short one inline in
+ * quotation marks; a long one (a block quote, as most styles ask) embedded,
+ * so it is quoted and cited from the annotation as it stands.
+ */
+export function quotationFor(key: string, annotation: Pick<SourceAnnotation, "path" | "quote" | "locator">): string {
+  if (isInlineQuote(annotation.quote ?? "")) return inlineQuotation(key, annotation);
+  return `\n\n![[${annotation.path.replace(/\.md$/i, "")}]]\n\n`;
 }
 
 /** A request to show one source (from the editor), or to search (for a passage, or afresh); a new nonce repeats it. */
