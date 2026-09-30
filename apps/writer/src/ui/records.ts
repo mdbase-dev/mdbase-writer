@@ -12,6 +12,12 @@ export const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
   error: "Not saved",
   deleted: "Deleted elsewhere",
 };
+/** The states that need attention, in few words, for a phone's top bar (the editor's banner says more). */
+export const STATE_SHORT_LABEL: Partial<Record<SessionSnapshot["state"], string>> = {
+  conflict: "Conflict",
+  error: "Not saved",
+  deleted: "Deleted",
+};
 export const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
   saved: "saved", unsaved: "pending", saving: "saving", conflict: "attention", recovery: "saving", error: "attention", deleted: "attention",
 };

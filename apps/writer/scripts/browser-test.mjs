@@ -72,7 +72,13 @@ const exportAs = async (format) => {
   await page.getByRole("button", { name: "Export formats" }).click();
   await page.getByRole("menuitem", { name: format }).click();
 };
-const editorText = () => page.evaluate(() => document.querySelector(".cm-content")?.textContent ?? "");
+// The text of the record in the editor, from its session: the editor's DOM
+// holds only the lines near the view, so it changes as the editor scrolls.
+const editorText = () =>
+  page.evaluate(() => {
+    const path = document.querySelector(".cm-content")?.getAttribute("aria-label")?.replace(/^Markdown for /, "");
+    return (path && window.writer.workspace.getSnapshot().records.get(path)?.snapshot.body) ?? "";
+  });
 
 async function typeAtEndOfParagraph(needle, text) {
   // Place the cursor right after `needle` in the editor, then type like a person.

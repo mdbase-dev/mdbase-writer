@@ -100,6 +100,8 @@ label > .mdbase-select { width: 100%; }
 .bar > :not(.bar-title, .bar-spacer) { flex: none; }
 .bar-words { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .bar-spacer { flex: 1; }
+/* The short form of a save state is for phones (see below). */
+.bar .mdbase-save-notice.is-short { display: none; }
 .bar-layout { display: flex; align-items: center; gap: 0.3rem; }
 .bar-problems { display: inline-flex; align-items: center; gap: 0.3rem; height: 26px; padding: 0 0.5rem; border: 1px solid transparent; border-radius: 13px; background: none; font-size: 12px; white-space: nowrap; }
 .bar-problems .icon { width: 14px; height: 14px; }
@@ -514,7 +516,11 @@ blockquote.thread-quote::after { content: "”"; }
   .topbar { gap: 0.4rem; padding: 0 0.5rem 0 16px; }
   .mdbase-app-switcher .wordmark-label, .mdbase-app-switcher-chevron { display: none; }
   .bar { gap: 0.4rem; }
-  .bar-back span, .bar-divider, .bar-layout, .bar .mdbase-save-notice.is-saved { display: none; }
+  /* "No problems" is the Write tab's missing badge here. */
+  .bar-back span, .bar-divider, .bar-layout, .bar-problems.is-clear { display: none; }
+  /* Only a save state that needs attention, in few words. The title gives way first; if the bar is still too wide the notice does, rather than push the buttons off screen. */
+  .bar .mdbase-save-notice.is-long { display: none; }
+  .bar .mdbase-save-notice.is-short { display: block; flex: 0 0.001 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .bar .mdbase-button { padding: 0 0.55rem; min-height: 32px; }
   .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "main" "tabs"; }
   .pane-tabs { grid-area: tabs; display: flex; border-top: 1px solid var(--line); background: var(--canvas); padding-bottom: env(safe-area-inset-bottom); }

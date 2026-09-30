@@ -46,7 +46,7 @@ import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
-import { plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
+import { plural, recordTitle, STATE_LABEL, STATE_SHORT_LABEL, STATE_TONE } from "./records.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar, ThemeChoice } from "./topbar.js";
@@ -537,7 +537,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
-          <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} />
+          <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} className="is-long" />
+          {STATE_SHORT_LABEL[overall] && <SaveNotice tone="attention" label={STATE_SHORT_LABEL[overall]} className="is-short" />}
           <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
             {plural(stats.words, "word")}
           </span>
