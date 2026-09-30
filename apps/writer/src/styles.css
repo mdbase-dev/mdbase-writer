@@ -482,6 +482,7 @@ blockquote.thread-quote::after { content: "”"; }
 .preview-cursor { position: absolute; width: 3px; border-radius: 2px; background: var(--app-writer); opacity: 0.75; pointer-events: none; transition: top var(--motion-quick) var(--ease-out), height var(--motion-quick) var(--ease-out); }
 .preview-cursor[hidden] { display: none; }
 .preview-pages canvas.page { display: block; height: auto; max-width: none; background: #fff; box-shadow: var(--page-shadow); cursor: text; }
+.preview-pages canvas.page.over-source { cursor: pointer; }
 .preview.is-fit .preview-pages canvas.page { width: 100%; max-width: 1100px; }
 
 .toast { position: fixed; right: 16px; bottom: 16px; z-index: 90; display: flex; align-items: center; gap: 0.6rem; max-width: min(28rem, calc(100vw - 32px)); padding: 0.6rem 0.6rem 0.6rem 0.8rem; border: 1px solid var(--line-strong); border-radius: var(--control-radius); background: var(--surface); font-size: 13px; animation: mdbase-popover-in var(--motion-base) var(--ease-out); }

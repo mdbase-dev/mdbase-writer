@@ -11,7 +11,8 @@ import { createTypstRenderer, type RenderSession } from "@myriaddreamin/typst.ts
 import rendererWasm from "@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url";
 import { memo, useEffect, useRef, useState } from "react";
 
-import type { BlockPosition } from "../compile/protocol.js";
+import { markAt } from "../compile/marks.js";
+import type { BlockPosition, SourceMark } from "../compile/protocol.js";
 
 type Renderer = ReturnType<typeof createTypstRenderer>;
 interface PageBox {
@@ -47,8 +48,12 @@ export interface PreviewProps {
   /** Compile revision of the artifact; recorded on the element once its visible pages are drawn. */
   revision?: number;
   positions: readonly BlockPosition[];
+  /** Bibliography entries and citation notes, which show their sources on a click. */
+  marks?: readonly SourceMark[];
   stale: boolean;
   onJump(position: BlockPosition): void;
+  /** A click on a bibliography entry or a citation note. */
+  onSource?(mark: SourceMark): void;
   /** The block at the editor's cursor: scrolled into view when it is off screen. */
   follow?: BlockPosition | undefined;
   /** "fit" to the pane's width, or a scale of the printed size. */
@@ -75,7 +80,9 @@ const SETTLE_MS = 250;
 
 const yieldToInput = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-export const Preview = memo(function Preview({ artifact, revision, positions, stale, onJump, follow, zoom, onView, onTitleClick }: PreviewProps) {
+const NO_MARKS: readonly SourceMark[] = [];
+
+export const Preview = memo(function Preview({ artifact, revision, positions, marks = NO_MARKS, stale, onJump, onSource, follow, zoom, onView, onTitleClick }: PreviewProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const pagesHost = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<readonly PageBox[]>([]);
@@ -91,8 +98,8 @@ export const Preview = memo(function Preview({ artifact, revision, positions, st
   /** Counts documents as they arrive; a draw in progress stops when a newer one is waiting. */
   const arrived = useRef(0);
   const marker = useRef<HTMLDivElement>(null);
-  const latest = useRef({ positions, onJump, revision, onView, onTitleClick, follow });
-  latest.current = { positions, onJump, revision, onView, onTitleClick, follow };
+  const latest = useRef({ positions, marks, onJump, onSource, revision, onView, onTitleClick, follow });
+  latest.current = { positions, marks, onJump, onSource, revision, onView, onTitleClick, follow };
 
   /** Marks the cursor's block in the margin of its page, from its top to the next block's. */
   const placeMarker = () => {
@@ -293,15 +300,32 @@ export const Preview = memo(function Preview({ artifact, revision, positions, st
   // eslint-disable-next-line react-hooks/exhaustive-deps -- placeMarker reads refs only
   useEffect(placeMarker, [follow, pages, positions]);
 
-  const onClick = (event: React.MouseEvent) => {
-    const target = (event.target as HTMLElement).closest<HTMLCanvasElement>("canvas[data-page]");
-    if (!target) return;
-    const index = Number(target.dataset["page"]);
+  /** The page (1-based) and height on it, in pt, of a pointer event over a page. */
+  const pointOf = (event: React.MouseEvent): { canvas: HTMLCanvasElement; page: number; y: number } | null => {
+    const canvas = (event.target as HTMLElement).closest<HTMLCanvasElement>("canvas[data-page]");
+    if (!canvas) return null;
+    const index = Number(canvas.dataset["page"]);
     const box = pagesRef.current[index];
-    if (!box) return;
-    const rect = target.getBoundingClientRect();
-    const y = ((event.clientY - rect.top) / rect.height) * box.height;
-    const page = index + 1;
+    if (!box) return null;
+    const rect = canvas.getBoundingClientRect();
+    return { canvas, page: index + 1, y: ((event.clientY - rect.top) / rect.height) * box.height };
+  };
+
+  // Over a bibliography entry or citation note, the pointer says it can be clicked.
+  const onMouseMove = (event: React.MouseEvent) => {
+    const at = pointOf(event);
+    if (!at) return;
+    const mark = latest.current.onSource ? markAt(latest.current.marks, at.page, at.y) : undefined;
+    at.canvas.classList.toggle("over-source", Boolean(mark));
+    at.canvas.title = mark ? "Show in Sources" : "";
+  };
+
+  const onClick = (event: React.MouseEvent) => {
+    const at = pointOf(event);
+    if (!at) return;
+    const { page, y } = at;
+    const mark = markAt(latest.current.marks, page, y);
+    if (mark && latest.current.onSource) return latest.current.onSource(mark);
     const before = latest.current.positions.filter((p) => p.page < page || (p.page === page && p.y <= y + 2));
     const hit = before[before.length - 1];
     if (hit) latest.current.onJump(hit);
@@ -312,7 +336,7 @@ export const Preview = memo(function Preview({ artifact, revision, positions, st
     <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} aria-label={`Typeset preview, ${pages.length} ${pages.length === 1 ? "page" : "pages"}`} onScroll={reportView}>
       {!artifact && <p className="preview-empty">Typesetting…</p>}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer shortcut; Problems and the outline offer the same navigation */}
-      <div className="preview-pages" ref={pagesHost} onClick={onClick}>
+      <div className="preview-pages" ref={pagesHost} onClick={onClick} onMouseMove={onMouseMove}>
         {pages.map((p, i) => (
           <canvas
             key={i}

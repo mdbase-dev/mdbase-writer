@@ -482,6 +482,37 @@ await step("the sources list moves with the arrow keys and cites with Enter", as
   await page.locator(".cm-content", { hasText: "[@agambenPotentialities99]" }).first().waitFor({ timeout: 5_000 });
 });
 
+/** Moves the pointer down page `n` (1-based) until the preview offers to show a source there, and clicks. */
+async function clickSourceInPreview(n, from = 0) {
+  const canvas = page.locator(`.preview-pages canvas[data-page="${n - 1}"]`);
+  await canvas.scrollIntoViewIfNeeded();
+  const box = await canvas.boundingBox();
+  for (let y = box.y + from * box.height; y < box.y + box.height; y += 4) {
+    await page.mouse.move(box.x + box.width / 2, y);
+    if ((await canvas.getAttribute("title")) === "Show in Sources") {
+      await page.mouse.click(box.x + box.width / 2, y);
+      return;
+    }
+  }
+  throw new Error(`nothing on page ${n} offers to show a source`);
+}
+
+await step("a bibliography entry or citation note in the preview shows its source", async () => {
+  await page.getByRole("tab", { name: "Outline" }).click();
+  const marks = await page.evaluate(() => window.writer.workspace.getSnapshot().result.marks);
+  const entry = marks.find((m) => m.kind === "entry");
+  const note = marks.find((m) => m.kind === "note" && m.record === "chapters/potentiality.md");
+  assert.ok(entry && note, `marks: ${JSON.stringify(marks).slice(0, 300)}`);
+  // The first bibliography entry: its source opens in Sources.
+  await clickSourceInPreview(entry.page);
+  await page.locator(`.sources li.is-open .source-row[data-key="${entry.keys[0]}"]`).waitFor({ timeout: 5_000 });
+  // A citation note: its source opens, and the editor goes to the citation.
+  await page.getByRole("tab", { name: "Outline" }).click();
+  await clickSourceInPreview(note.page, 0.5);
+  await page.locator(".sources li.is-open .source-row").waitFor({ timeout: 5_000 });
+  await page.locator(".pane-path", { hasText: "chapters/potentiality.md" }).waitFor({ timeout: 5_000 });
+});
+
 await step("Export PDF downloads a PDF", async () => {
   const [file] = await Promise.all([
     page.waitForEvent("download", { timeout: 30_000 }),

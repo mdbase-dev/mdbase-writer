@@ -6,7 +6,7 @@ import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
-import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";
+import type { BlockPosition, SourceMark, WriterDiagnostic } from "../compile/protocol.js";
 import type { ChapterCards } from "../editor/chapter-cards.js";
 import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
@@ -82,6 +82,7 @@ const NO_DIAGNOSTICS: readonly WriterDiagnostic[] = [];
 /** How long typing pauses before problems on the line being typed are shown. */
 const SETTLE_MS = 1500;
 const NO_POSITIONS: readonly BlockPosition[] = [];
+const NO_MARKS: readonly SourceMark[] = [];
 
 const THEME_NAME: Record<ThemePreference, string> = { system: "System", light: "Light", dark: "Dark" };
 
@@ -332,6 +333,12 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     if (action === "cite") citePassage(selected);
     else startComment(action);
   }, [citePassage, startComment]);
+
+  // A bibliography entry shows its source; a citation note also goes to its citation in the text.
+  const onPreviewSource = useCallback((mark: SourceMark) => {
+    if (mark.record !== undefined && mark.offset !== undefined) jump(mark.record, mark.offset, { focus: false });
+    showSources(mark.keys[0]);
+  }, [jump, showSources]);
 
   const showSearch = useCallback(() => {
     setLayout((l) => (l.sidebar && l.tab === "outline" ? l : { ...l, sidebar: true, tab: "outline" }));
@@ -776,6 +783,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           {...(snap.artifact ? { artifact: snap.artifact } : {})}
           {...(snap.artifactRevision !== undefined ? { revision: snap.artifactRevision } : {})}
           positions={snap.result?.positions ?? NO_POSITIONS}
+          marks={snap.result?.marks ?? NO_MARKS}
+          onSource={onPreviewSource}
           stale={Boolean(snap.result && !snap.result.artifact)}
           onJump={onPreviewJump}
           follow={follow}

@@ -24,6 +24,19 @@ export interface BlockPosition {
   readonly y: number;
 }
 
+/** A bibliography entry or generated citation note in the preview, for showing its source on a click. */
+export interface SourceMark {
+  readonly kind: "entry" | "note";
+  readonly keys: readonly string[];
+  /** Where a note's citation is in the text. */
+  readonly record?: string;
+  readonly offset?: number;
+  readonly page: number;
+  /** The passage's extent on its page, in pt from the top. */
+  readonly top: number;
+  readonly bottom: number;
+}
+
 export type ToWorker =
   | { readonly type: "init"; readonly library: readonly CslItem[]; readonly styles: readonly [string, string][]; readonly locales: readonly [string, string][]; readonly baseUrl: string }
   | { readonly type: "library"; readonly library: readonly CslItem[] }
@@ -43,6 +56,7 @@ export interface CompileResult {
   readonly artifact?: Uint8Array;
   readonly diagnostics: readonly WriterDiagnostic[];
   readonly positions: readonly BlockPosition[];
+  readonly marks: readonly SourceMark[];
   readonly meta: ManuscriptMeta;
   readonly order: readonly string[];
   readonly unloaded: readonly string[];

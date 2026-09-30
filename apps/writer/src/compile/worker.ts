@@ -17,7 +17,8 @@ import {
   type WriterRecord,
 } from "@mdbase-writer/core";
 
-import type { BlockPosition, CompileResult, FromWorker, ToWorker, WriterDiagnostic } from "./protocol.js";
+import { sourceMarks, type RawMark } from "./marks.js";
+import type { BlockPosition, CompileResult, FromWorker, ToWorker, SourceMark, WriterDiagnostic } from "./protocol.js";
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -164,6 +165,7 @@ async function compile(c: TypstCompiler): Promise<CompileResult> {
     ...(outcome.artifact ? { artifact: outcome.artifact } : {}),
     diagnostics: dedupe(diagnostics),
     positions: outcome.positions,
+    marks: outcome.marks,
     meta: assembly.meta,
     order: assembly.order,
     unloaded: assembly.unloaded,
@@ -188,11 +190,11 @@ function pushSources(c: TypstCompiler, sources: ReadonlyMap<string, string>) {
   }
 }
 
-async function typeset(c: TypstCompiler): Promise<{ artifact?: Uint8Array; diagnostics: TypstDiagnostic[]; positions: BlockPosition[] }> {
+async function typeset(c: TypstCompiler): Promise<{ artifact?: Uint8Array; diagnostics: TypstDiagnostic[]; positions: BlockPosition[]; marks: SourceMark[] }> {
   return c.runWithWorld({ mainFilePath: MAIN }, async (world) => {
     const compiled = await world.compile({ diagnostics: "full" });
     const diagnostics = ((compiled.diagnostics ?? []) as TypstDiagnostic[]).filter((d) => d.severity === "error" || d.severity === "warning");
-    if (compiled.hasError) return { diagnostics, positions: [] };
+    if (compiled.hasError) return { diagnostics, positions: [], marks: [] };
     // typst.ts 0.7.0 returns no result for diagnostics: "none"; always ask for "full".
     const vector = await world.vector({ diagnostics: "full" });
     let positions: BlockPosition[] = [];
@@ -202,7 +204,14 @@ async function typeset(c: TypstCompiler): Promise<{ artifact?: Uint8Array; diagn
     } catch {
       // Positions only power click-to-source; a failed query leaves them empty.
     }
-    return { ...(vector.result ? { artifact: vector.result } : {}), diagnostics, positions };
+    let marks: SourceMark[] = [];
+    try {
+      const q = (await world.query({ selector: "<md-refs>", field: "value" })) as [RawMark[]];
+      marks = sourceMarks(q[0] ?? []);
+    } catch {
+      // Likewise for clicks on bibliography entries and notes.
+    }
+    return { ...(vector.result ? { artifact: vector.result } : {}), diagnostics, positions, marks };
   });
 }
 

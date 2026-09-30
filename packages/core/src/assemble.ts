@@ -89,6 +89,9 @@ type Plan =
       footnote: boolean;
       inNote: boolean;
       bracketed: boolean;
+      /** The cited keys and where the citation is in its record's body. */
+      keys: readonly string[];
+      from: number;
     };
 
 interface Rendered {
@@ -266,6 +269,8 @@ export class ManuscriptAssembler {
           footnote,
           inNote: cp.isNoteStyle && inNote,
           bracketed: cl.bracketed,
+          keys: items.map((i) => i.key),
+          from: cl.from,
           ...(narrative ? { narrative } : {}),
           ...(first !== undefined ? { first } : {}),
         };
@@ -273,19 +278,21 @@ export class ManuscriptAssembler {
     }
     const result = cp.process(requests);
 
-    const render = (p: Plan | undefined): Rendered => {
+    // `marked` puts source markers in a generated note, so a click on it in the preview finds its sources.
+    const render = (p: Plan | undefined, marked = false): Rendered => {
       if (!p) return { text: "" };
       if (p.kind === "text") return { text: p.text };
+      const note = (body: string) => (marked ? `${noteMarker(p.keys, p.from)}${body}${END_MARKER}` : body);
       let s = result.strings[p.request] ?? "";
       // Inside a note the surrounding sentence supplies punctuation.
       if (p.inNote) s = s.replace(/\.$/, "");
       if (p.narrative) {
         const author = cp.authorOnly(p.narrative.key, p.first ?? false);
-        if (cp.isNoteStyle) return { text: `${author}#footnote[${s}];` };
+        if (cp.isNoteStyle) return { text: `${author}#footnote[${note(s)}];` };
         return { text: author ? `${author} ${s}` : s };
       }
       if (p.inNote && p.bracketed) return { text: `(${s})` };
-      if (p.footnote) return { text: `#footnote[${s.replace(/^[a-z]/, (c) => c.toUpperCase())}];`, note: true };
+      if (p.footnote) return { text: `#footnote[${note(s.replace(/^[a-z]/, (c) => c.toUpperCase()))}];`, note: true };
       return { text: s };
     };
 
@@ -321,7 +328,7 @@ export class ManuscriptAssembler {
       for (const p of plan) if (p?.kind === "cite") debugCitations.push(render(p).text);
       const targets = includeTargets.get(path) ?? [];
       const substituted = substitute(tr, {
-        cluster: (i) => render(plan[i]),
+        cluster: (i) => render(plan[i], true),
         image: (i) => imageExpression(path, i),
         include: (i) => {
           const t = targets[i];
@@ -360,6 +367,15 @@ export class ManuscriptAssembler {
   }
 }
 
+/**
+ * Source markers, for finding what a click in the preview landed on: one
+ * opens a bibliography entry (its key) or a generated note (its keys, and the
+ * record and body offset of its citation); END_MARKER closes it.
+ */
+const entryMarker = (key: string) => `#metadata(("entry", ${typstString(key)}))<md-ref>`;
+const noteMarker = (keys: readonly string[], from: number) => `#metadata(("note", md-file, ${from}, (${keys.map(typstString).join(", ")},)))<md-ref>`;
+const END_MARKER = `#metadata(("end",))<md-ref>`;
+
 function looseEscape(s: string): string {
   return s.replace(/[\\#*_`$@<>[\]~]/g, "\\$&");
 }
@@ -387,13 +403,15 @@ function mainSource(mainPath: string, meta: ManuscriptMeta, bib: Bibliography): 
   ];
   if (bib.entries.length) {
     const entries = bib.entries.map((e) => {
-      const anchor = `#metadata(none)<ref-${typstLabel(e.key)}>`;
-      return bib.secondFieldAlign && e.label !== undefined ? `([${anchor}${e.label}], [${e.body}])` : `[${anchor}${e.body}]`;
+      const anchor = `#metadata(none)<ref-${typstLabel(e.key)}>${entryMarker(e.key)}`;
+      return bib.secondFieldAlign && e.label !== undefined ? `([${anchor}${e.label}], [${e.body}${END_MARKER}])` : `[${anchor}${e.body}${END_MARKER}]`;
     });
     lines.push([`#bibliography-list(hanging: ${bib.hangingIndent}, (\n${entries.join(",\n")},\n))`, "csl"]);
   }
-  // One query target listing every block marker's page position (preview click → source).
+  // One query target listing every block marker's page position (preview click → source),
+  // and one for the source markers around bibliography entries and generated notes.
   lines.push([`#context [#metadata(query(<md-src>).map(m => (m.value, m.location().position()))) <md-pos>]`]);
+  lines.push([`#context [#metadata(query(<md-ref>).map(m => (m.value, m.location().position()))) <md-refs>]`]);
   const fields = new Map<number, MetaField>();
   const out: string[] = [];
   let line = 0;
