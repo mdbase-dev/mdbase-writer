@@ -159,6 +159,28 @@ await step("a Reader quotation goes in with its citation and page", async () => 
   assert.match(await editorText(), /“To be potential means: to be one's own lack, to be in relation to one's own incapacity\.” \[@agambenPotentialities99, p\. 182\]/);
 });
 
+await step("a toolbar over a selection formats it and finds a source for it", async () => {
+  const before = await editorText();
+  const bar = page.locator(".cm-selection-bar");
+  await page.locator(".cm-line", { hasText: "Giorgio Agamben across" }).first().click();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("ControlOrMeta+Shift+ArrowRight");
+  await page.keyboard.press("ControlOrMeta+Shift+ArrowRight");
+  await bar.waitFor({ timeout: 5_000 });
+  await bar.getByRole("button", { name: "Bold" }).click();
+  assert.match(await editorText(), /\*\*Giorgio Agamben\*\* across/);
+  assert.ok(await bar.isVisible(), "the bar stays up after formatting");
+  // Escape puts the bar away and keeps the selection; the shortcut toggles bold off again.
+  await page.keyboard.press("Escape");
+  await bar.waitFor({ state: "hidden", timeout: 5_000 });
+  await page.keyboard.press("ControlOrMeta+b");
+  assert.equal(await editorText(), before);
+  await page.keyboard.press("Shift+ArrowLeft");
+  await bar.getByRole("button", { name: "Cite", exact: true }).click();
+  await waitFor(() => document.querySelector(".sources input[type=search]")?.value === "Giorgio Agambe", undefined, 5_000);
+  assert.equal(await editorText(), before);
+});
+
 await step("the preview follows the cursor", async () => {
   await page.evaluate(() => (document.querySelector(".preview").scrollTop = 0));
   await page.locator(".cm-content").focus();

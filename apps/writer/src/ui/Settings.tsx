@@ -8,7 +8,7 @@ import type { JsonObject } from "@mdbase-dev/connect";
 import { Select, type SelectItems } from "@mdbase-dev/ui/select";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 import { TEMPLATES, type MetaField } from "@mdbase-writer/core/meta";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
@@ -43,6 +43,7 @@ export function Settings({
   open,
   onClose,
   focus,
+  joinLines = false,
 }: {
   workspace: ManuscriptWorkspace;
   view: RecordView | undefined;
@@ -51,6 +52,8 @@ export function Settings({
   open: boolean;
   onClose(): void;
   focus: SettingsFocus | null;
+  /** Shows the abstract's soft line breaks as spaces, as the editor does. */
+  joinLines?: boolean;
 }) {
   const titleId = useId();
   const sheet = useRef<HTMLElement>(null);
@@ -109,10 +112,10 @@ export function Settings({
       </header>
       <div className="settings">
         <div className="span-2">
-          <TextField label="Title" value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
+          <TextField label="Title" multiline={1} grow singleLine value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
         </div>
         <div className="span-2">
-          <TextField label="Subtitle" value={str("subtitle")} onCommit={(v) => patch({ subtitle: v || null })} {...props("subtitle")} />
+          <TextField label="Subtitle" multiline={1} grow singleLine value={str("subtitle")} onCommit={(v) => patch({ subtitle: v || null })} {...props("subtitle")} />
         </div>
         <TextField
           label="Authors"
@@ -124,7 +127,7 @@ export function Settings({
         />
         <TextField label="Date" hint="as it should appear" value={str("date")} onCommit={(v) => patch({ date: v || null })} {...props("date")} />
         <div className="span-2">
-          <TextField label="Abstract" multiline={7} value={str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
+          <TextField label="Abstract" multiline={7} grow value={joinLines ? joinSoftBreaks(str("abstract")) : str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
         </div>
         <SelectField
           label="Citation style"
@@ -202,8 +205,36 @@ function useFocusRequest(field: MetaField, focus: SettingsFocus | null, element:
   }, [field, focus, element]);
 }
 
-function TextField(props: FieldProps & { value: string; onCommit(value: string): void; multiline?: number; placeholder?: string; list?: readonly (readonly [string, string])[] }) {
-  const { value, onCommit, multiline, placeholder, list, field, problems, focus } = props;
+/**
+ * A paragraph's text with its soft line breaks (single newlines, not after a
+ * hard break) as spaces. Markdown reads them as spaces, so saving this form
+ * after an edit changes nothing in the typeset text.
+ */
+export function joinSoftBreaks(text: string): string {
+  const lines = text.split("\n");
+  let out = lines[0] ?? "";
+  for (let i = 1; i < lines.length; i++) {
+    const before = lines[i - 1] ?? "";
+    const line = lines[i] ?? "";
+    const soft = before.trim() && line.trim() && !/(?: {2,}|\\)$/.test(before);
+    out = soft ? `${out.trimEnd()} ${line.trimStart()}` : `${out}\n${line}`;
+  }
+  return out;
+}
+
+function TextField(props: FieldProps & {
+  value: string;
+  onCommit(value: string): void;
+  /** Rows of a text area (a text field without it); with `grow`, the fewest it shows. */
+  multiline?: number;
+  /** The text area grows with its text. */
+  grow?: boolean;
+  /** One line of text that wraps: Enter does not add a line break. */
+  singleLine?: boolean;
+  placeholder?: string;
+  list?: readonly (readonly [string, string])[];
+}) {
+  const { value, onCommit, multiline, grow, singleLine, placeholder, list, field, problems, focus } = props;
   const [draft, setDraft] = useState(value);
   const editing = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -211,6 +242,12 @@ function TextField(props: FieldProps & { value: string; onCommit(value: string):
   const problemId = useId();
   const listId = useId();
   useFocusRequest(field, focus, element);
+  useLayoutEffect(() => {
+    const el = element.current;
+    if (!grow || !el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
+  }, [grow, draft]);
 
   // Follow the record while this field is not being edited.
   useEffect(() => {
@@ -246,7 +283,7 @@ function TextField(props: FieldProps & { value: string; onCommit(value: string):
       commit(draft);
     },
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const next = e.target.value;
+      const next = singleLine ? e.target.value.replace(/\s*\n\s*/g, " ") : e.target.value;
       setDraft(next);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => commit(next), COMMIT_AFTER_MS);
@@ -254,7 +291,14 @@ function TextField(props: FieldProps & { value: string; onCommit(value: string):
   };
   return (
     <FieldFrame {...props} id={problemId}>
-      {multiline ? <textarea className="mdbase-field" rows={multiline} {...common} /> : <input className="mdbase-field" {...common} list={list ? listId : undefined} />}
+      {multiline ? (
+        <textarea
+          className={`mdbase-field${grow ? " is-growing" : ""}`}
+          rows={multiline}
+          {...common}
+          {...(singleLine ? { onKeyDown: (e: React.KeyboardEvent) => e.key === "Enter" && e.preventDefault() } : {})}
+        />
+      ) : <input className="mdbase-field" {...common} list={list ? listId : undefined} />}
       {list && (
         <datalist id={listId}>
           {list.map(([v, name]) => <option key={v} value={v}>{name}</option>)}

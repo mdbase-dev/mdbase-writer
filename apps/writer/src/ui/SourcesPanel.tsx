@@ -36,9 +36,10 @@ export function quotationFor(key: string, annotation: Pick<SourceAnnotation, "qu
   return `\n\n> ${quote} ${cite}\n\n`;
 }
 
-/** A request to show one source (from the editor), or to focus the search; a new nonce repeats it. */
+/** A request to show one source (from the editor), or to search (for a passage, or afresh); a new nonce repeats it. */
 export interface SourcesRequest {
   readonly key?: string;
+  readonly query?: string;
   readonly nonce: number;
 }
 
@@ -88,6 +89,10 @@ export function SourcesPanel({
   useEffect(() => {
     if (!request) return;
     if (!request.key) {
+      if (request.query !== undefined) {
+        setQuery(request.query);
+        setOpen(null);
+      }
       search.current?.focus();
       search.current?.select();
       return;

@@ -276,6 +276,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .settings { display: grid; grid-template-columns: 1fr; gap: 0.9rem; align-items: start; }
 .settings > label, .settings > div { min-width: 0; }
 .settings .span-2 > label { display: grid; }
+.settings textarea.is-growing { resize: none; overflow: hidden; line-height: 1.45; }
 .field-problem { font-size: 12px; line-height: 1.35; }
 .field-problem.severity-error { color: var(--danger); }
 .field-problem.severity-warning { color: var(--color-warning-text); }
@@ -438,6 +439,16 @@ blockquote.thread-quote::after { content: "”"; }
 .cm-chapter-title { font-size: 15px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cm-chapter-meta { font-size: 12px; line-height: 1.4; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .editor .cm-chapter-open { flex: none; min-height: 28px; padding: 0 0.7rem; font-size: 12.5px; }
+/* The toolbar over a selection: formatting icons, a fine rule, then Writer's actions. */
+.cm-tooltip:has(> .cm-selection-bar) { transform: translateY(-6px); }
+.cm-selection-bar-row { display: flex; align-items: center; gap: 1px; padding: 3px; }
+.cm-selection-button { display: inline-grid; place-items: center; height: 28px; padding: 0 0.55rem; border: 0; border-radius: var(--control-radius); background: none; color: var(--ink-soft); font: 700 12.5px/1 var(--sans); cursor: pointer; transition: background var(--motion-quick) ease, color var(--motion-quick) ease; }
+.cm-selection-button.is-icon { width: 28px; padding: 0; }
+.cm-selection-button .icon { width: 16px; height: 16px; }
+.cm-selection-button:hover { background: var(--subtle); color: var(--ink); }
+.cm-selection-button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cm-selection-divider { width: 1px; height: 18px; margin: 0 4px; background: var(--line); }
+@media print { .cm-selection-bar { display: none; } }
 /* Quick fixes in a problem's tooltip. */
 .editor .cm-editor .cm-diagnosticAction { margin: 2px 0 2px 6px; padding: 1px 7px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); color: var(--accent); font: 12px/1.5 var(--sans); cursor: pointer; }
 .editor .cm-editor .cm-diagnosticAction:hover { background: var(--selected); }

@@ -9,6 +9,7 @@ import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";
 import type { ChapterCards } from "../editor/chapter-cards.js";
 import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
+import type { SelectionAction } from "../editor/selection-bar.js";
 import { ALT_LABEL, labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
@@ -75,6 +76,8 @@ function saveExportFormat(format: ExportFormat): void {
 }
 
 const NO_DIAGNOSTICS: readonly WriterDiagnostic[] = [];
+/** How long typing pauses before problems on the line being typed are shown. */
+const SETTLE_MS = 1500;
 const NO_POSITIONS: readonly BlockPosition[] = [];
 
 const THEME_NAME: Record<ThemePreference, string> = { system: "System", light: "Light", dark: "Dark" };
@@ -128,6 +131,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const pendingReveal = useRef<number | null>(null);
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const grid = useRef<HTMLDivElement>(null);
+  // Where the cursor is now (the cursor state above trails it slightly), and
+  // whether typing has paused, for holding back problems on the line being typed.
+  const liveCursor = useRef<{ record: string; offset: number } | null>(null);
+  const [typing, setTyping] = useState(false);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const setLayout = useCallback((change: (l: Layout) => Layout) => {
     setLayoutState((l) => {
@@ -136,11 +144,24 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       return next;
     });
   }, []);
+  const toggleJoinLines = useCallback(() => setLayout((l) => ({ ...l, joinLines: !l.joinLines })), [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => setLayout((l) => ({ ...l, tab })), [setLayout]);
 
   const order = snap.result?.order.length ? snap.result.order : [workspace.main];
   const activeView = snap.records.get(active);
-  const diagnostics = snap.result?.diagnostics ?? [];
+  const allDiagnostics = snap.result?.diagnostics ?? NO_DIAGNOSTICS;
+  // A citation or label half typed is not a problem yet: problems on the line
+  // being typed wait until typing pauses or the cursor leaves the line.
+  const diagnostics = useMemo(() => {
+    const at = liveCursor.current;
+    const body = at && typing ? snap.records.get(at.record)?.snapshot.body : undefined;
+    if (!at || body === undefined) return allDiagnostics;
+    const from = body.lastIndexOf("\n", at.offset - 1) + 1;
+    const end = body.indexOf("\n", at.offset);
+    const to = end < 0 ? body.length : end;
+    const shown = allDiagnostics.filter((d) => d.field || d.record !== at.record || d.from < from || d.from > to);
+    return shown.length === allDiagnostics.length ? allDiagnostics : shown;
+  }, [allDiagnostics, typing, snap.records]);
   const byRecord = useMemo(() => {
     const map = new Map<string, WriterDiagnostic[]>();
     // Problems with a setting belong to the settings dialog, not to a line of the body.
@@ -231,10 +252,14 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
 
   // The preview follows the cursor's block (after the cursor rests briefly).
   const onCursor = useCallback((offset: number) => {
+    liveCursor.current = { record: active, offset };
     clearTimeout(cursorTimer.current);
     cursorTimer.current = setTimeout(() => setCursor({ record: active, offset }), 120);
   }, [active]);
-  useEffect(() => () => clearTimeout(cursorTimer.current), []);
+  useEffect(() => () => {
+    clearTimeout(cursorTimer.current);
+    clearTimeout(typingTimer.current);
+  }, []);
   const positions = snap.result?.positions;
   const follow = useMemo(() => {
     if (!cursor || !positions) return undefined;
@@ -255,7 +280,12 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   }, [active, setLayout]);
 
   // Stable handlers, so the editor and preview only render when what they show changes.
-  const onEditorChange = useCallback((text: string) => workspace.setBody(active, text), [workspace, active]);
+  const onEditorChange = useCallback((text: string) => {
+    workspace.setBody(active, text);
+    setTyping(true);
+    clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => setTyping(false), SETTLE_MS);
+  }, [workspace, active]);
   const onEditorAnchor = useCallback((id: string) => {
     setActiveComment(id);
     showComments();
@@ -278,6 +308,19 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     setPane("outline");
     setSourcesRequest((r) => ({ ...(key ? { key } : {}), nonce: (r?.nonce ?? 0) + 1 }));
   }, [setLayout]);
+
+  /** Sources, searching for a short passage (a name, a title) or afresh for a longer one. */
+  const citePassage = useCallback((passage: string) => {
+    const words = passage.replace(/[*_`“”"‘’()[\]{}.,;:!?]/g, " ").trim().split(/\s+/).filter(Boolean);
+    setLayout((l) => (l.sidebar && l.tab === "sources" ? l : { ...l, sidebar: true, tab: "sources" }));
+    setPane("outline");
+    setSourcesRequest((r) => ({ query: words.length <= 4 ? words.join(" ") : "", nonce: (r?.nonce ?? 0) + 1 }));
+  }, [setLayout]);
+
+  const onSelectionAction = useCallback((action: SelectionAction, selected: string) => {
+    if (action === "cite") citePassage(selected);
+    else startComment(action);
+  }, [citePassage, startComment]);
 
   const onFollow = useCallback((target: FollowTarget) => {
     if (target.kind === "label") jump(target.target.record, target.target.offset);
@@ -508,6 +551,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             setOpen={setMoreOpen}
             onCommands={() => setPaletteOpen(true)}
             onShortcuts={() => setShortcutsOpen(true)}
+            joinLines={layout.joinLines}
+            onJoinLines={toggleJoinLines}
             {...(themeChoice ? { theme: themeChoice.theme, onTheme: themeChoice.setTheme } : {})}
           />
         </div>
@@ -578,7 +623,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted")}
               onInsert={(text) => {
                 setPane("write");
-                editor.current?.insert(text);
+                const at = editor.current?.selection();
+                const before = at && at.from === at.to ? at.text[at.from - 1] : undefined;
+                editor.current?.insert(text.startsWith("[@") && before && /[^\s([{]/.test(before) ? ` ${text}` : text);
               }}
               onStepCitation={stepCitation}
               {...(sourceHref ? { sourceHref } : {})}
@@ -617,6 +664,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             path={active}
             text={activeView.snapshot.body}
             readOnly={activeView.snapshot.state === "deleted"}
+            joinLines={layout.joinLines}
             diagnostics={byRecord.get(active) ?? NO_DIAGNOSTICS}
             completion={completion}
             insight={insight}
@@ -629,6 +677,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             anchors={anchors}
             activeComment={activeComment}
             onAnchor={onEditorAnchor}
+            onSelectionAction={onSelectionAction}
           />
         ) : (
           <p className="muted pad">Opening…</p>
@@ -719,6 +768,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         open={settingsOpen}
         onClose={closeSettings}
         focus={settingsFocus}
+        joinLines={layout.joinLines}
       />
       <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} />
       <CommandPalette
@@ -728,12 +778,17 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         commands={[
           { id: "settings", group: "Manuscript", label: "Manuscript settings", shortcut: "mod+,", run: () => setSettingsOpen(true) },
           { id: "sources", group: "Manuscript", label: "Find a source", shortcut: "mod+shift+f", run: () => showSources() },
+          { id: "bold", group: "Format", label: "Bold", shortcut: "mod+b", run: () => editor.current?.format("bold") },
+          { id: "italic", group: "Format", label: "Italic", shortcut: "mod+i", run: () => editor.current?.format("italic") },
+          { id: "code", group: "Format", label: "Inline code", run: () => editor.current?.format("code") },
+          { id: "link", group: "Format", label: "Link", shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
           { id: "comment", group: "Comments", label: "Comment on the selection", shortcut: "mod+alt+m", run: () => startComment("comment") },
           { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
           { id: "comments", group: "Comments", label: "Show comments", run: showComments },
           { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: onClose },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
+          { id: "join-lines", group: "View", label: layout.joinLines ? "Show line breaks as written" : "Join hard-wrapped lines", keywords: "wrap reflow soft line breaks", run: toggleJoinLines },
           ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
           ...(snap.artifact ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => runExport("pdf") }] : []),
           { id: "export-docx", group: "Export", label: "Export Word (DOCX)", run: () => runExport("docx") },
@@ -926,8 +981,8 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
   );
 }
 
-/** Commands, keyboard shortcuts and the theme, out of the bar's way. */
-function MoreMenu({ open, setOpen, onCommands, onShortcuts, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
+/** Commands, keyboard shortcuts, how lines are shown and the theme, out of the bar's way. */
+function MoreMenu({ open, setOpen, onCommands, onShortcuts, joinLines, onJoinLines, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; joinLines: boolean; onJoinLines(): void; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
   const run = (action: () => void) => () => {
@@ -945,7 +1000,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, theme, onTheme }: { 
         aria-controls={open ? id : undefined}
         aria-label="More"
         onClick={() => setOpen(!open)}
-        title="Commands, shortcuts and theme"
+        title="Commands, shortcuts, line breaks and theme"
       >
         <MoreIcon />
       </button>
@@ -961,6 +1016,17 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, theme, onTheme }: { 
           <button type="button" role="menuitem" className="menu-item is-row" onClick={run(onShortcuts)}>
             <span>Keyboard shortcuts</span>
             <kbd>?</kbd>
+          </button>
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={joinLines}
+            className="menu-item is-row"
+            onClick={onJoinLines}
+            title="A line break inside a paragraph reads as a space; show it as one, so hard-wrapped text flows to the editor's width. The text is not changed."
+          >
+            <span>Join hard-wrapped lines</span>
+            {joinLines && <CheckIcon />}
           </button>
           {theme && onTheme && (
             <div role="group" aria-label="Theme" className="menu-group">
@@ -1068,6 +1134,8 @@ const SHORTCUTS: readonly [string, string][] = [
   [`${MOD_LABEL} Shift \\`, "Editor and preview → editor only → preview only"],
   [`${MOD_LABEL} Shift F`, "Find a source"],
   [`${MOD_LABEL} ,`, "Manuscript settings"],
+  [`${MOD_LABEL} B / ${MOD_LABEL} I`, "Bold / italic (again to remove it)"],
+  [`${MOD_LABEL} Shift K`, "Make the selection a link"],
   [`${MOD_LABEL} ${ALT_LABEL} M`, "Comment on the selection"],
   [`${MOD_LABEL} ${ALT_LABEL} S`, "Suggest an edit to the selection"],
   [`${MOD_LABEL} Shift S`, "Export"],
