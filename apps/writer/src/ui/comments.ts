@@ -50,12 +50,15 @@ export function anchorsFor(placed: readonly PlacedThread[], record: string): Com
     }));
 }
 
+/** A passage on one line, shortened to about 60 characters. */
+export function clipPassage(passage: string): string {
+  const one = passage.replace(/\s+/g, " ").trim();
+  return one.length > 60 ? `${one.slice(0, 57)}…` : one;
+}
+
 /** "Replace “x” with “y”", "Delete “x”" or "Insert “y”", for a suggestion. */
 export function describeSuggestion(root: CommentRecord): string {
-  const clip = (s: string) => {
-    const one = s.replace(/\s+/g, " ").trim();
-    return `“${one.length > 60 ? `${one.slice(0, 57)}…` : one}”`;
-  };
+  const clip = (s: string) => `“${clipPassage(s)}”`;
   const exact = root.target?.quote.exact ?? "";
   const replacement = root.suggestion?.replacement ?? "";
   if (exact && replacement) return `Replace ${clip(exact)} with ${clip(replacement)}`;

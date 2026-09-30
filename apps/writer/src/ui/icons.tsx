@@ -1,12 +1,15 @@
 // Phosphor icons, as Editor uses them, under Writer's names. Each carries the .icon
 // sizing class and stays hidden from assistive technology.
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon as PhArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { ArticleIcon as PhArticle } from "@phosphor-icons/react/Article";
 import { CaretDownIcon as PhCaretDown } from "@phosphor-icons/react/CaretDown";
 import { CaretLeftIcon as PhCaretLeft } from "@phosphor-icons/react/CaretLeft";
 import { CaretRightIcon as PhCaretRight } from "@phosphor-icons/react/CaretRight";
+import { ChatCircleIcon as PhChatCircle } from "@phosphor-icons/react/ChatCircle";
 import { CheckIcon as PhCheck } from "@phosphor-icons/react/Check";
 import { ColumnsIcon as PhColumns } from "@phosphor-icons/react/Columns";
+import { DotsSixVerticalIcon as PhDotsSixVertical } from "@phosphor-icons/react/DotsSixVertical";
 import { DotsThreeIcon as PhDotsThree } from "@phosphor-icons/react/DotsThree";
 import { DownloadSimpleIcon as PhDownloadSimple } from "@phosphor-icons/react/DownloadSimple";
 import { FileTextIcon as PhFileText } from "@phosphor-icons/react/FileText";
@@ -46,3 +49,6 @@ export const MoreIcon = icon(PhDotsThree);
 export const SearchIcon = icon(PhMagnifyingGlass);
 export const OutlineIcon = icon(PhListBullets);
 export const PenIcon = icon(PhPencilSimple);
+export const GripIcon = icon(PhDotsSixVertical);
+export const CommentIcon = icon(PhChatCircle);
+export const ExternalIcon = icon(PhArrowSquareOut);

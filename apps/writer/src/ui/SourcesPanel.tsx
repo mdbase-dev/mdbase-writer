@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 import type { LibraryEntry, Result, SourceAnnotation } from "../backend/types.js";
 import { authorYear, searchLibrary } from "../editor/library-search.js";
-import { ChevronLeft, ChevronRight } from "./icons.js";
+import { ChevronLeft, ChevronRight, ExternalIcon, SearchIcon } from "./icons.js";
 
 /** Quotations up to this many words go inline; longer ones become block quotes (as most styles ask). */
 const INLINE_QUOTE_WORDS = 40;
@@ -173,17 +173,20 @@ export function SourcesPanel({
 
   return (
     <section ref={panel} className="sources" aria-label="Sources" onKeyDown={onListKey}>
-      <input
-        ref={search}
-        className="mdbase-field"
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={onSearchKey}
-        placeholder="Author, title, year or key"
-        aria-label="Find a source"
-        aria-describedby="sources-keys"
-      />
+      <div className="sources-search">
+        <SearchIcon />
+        <input
+          ref={search}
+          className="mdbase-field"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onSearchKey}
+          placeholder="Search by author, title, year or key"
+          aria-label="Find a source"
+          aria-describedby="sources-keys"
+        />
+      </div>
       <span id="sources-keys" className="visually-hidden">Down arrow moves to the sources; Enter cites the first match.</span>
       {query.trim() ? (
         <div className="source-group">
@@ -258,15 +261,12 @@ function SourceRow({
       <div className="source-line">
         <button type="button" className="source-row" data-key={entry.key} aria-expanded={expanded} aria-controls={expanded ? detail : undefined} onClick={onToggle} title={`${entry.title} · @${entry.key}`}>
           <span className="source-title">{entry.title}</span>
-          <span className="source-meta">{authorYear(entry) || entry.key}</span>
-          {uses > 0 && (
-            <span className="source-uses" title={`Cited ${uses === 1 ? "once" : `${uses} times`} in this manuscript`}>
-              <span aria-hidden="true">×{uses}</span>
-              <span className="visually-hidden">cited {uses === 1 ? "once" : `${uses} times`}</span>
-            </span>
-          )}
+          <span className="source-meta">
+            {authorYear(entry) || entry.key}
+            {uses > 0 && <span className="source-uses" title="In this manuscript">{uses === 1 ? "cited once" : `cited ${uses}×`}</span>}
+          </span>
         </button>
-        <button type="button" className="cite-button" disabled={!canInsert} tabIndex={-1} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor (Enter)`}>
+        <button type="button" className="cite-button" hidden={expanded} disabled={!canInsert} tabIndex={-1} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor (Enter)`}>
           Cite
         </button>
       </div>
@@ -305,7 +305,7 @@ function SourceRow({
             <span className="source-links">
               <button
                 type="button"
-                className="link small"
+                className="text-button"
                 title={`@${entry.key}`}
                 onClick={() => {
                   void navigator.clipboard?.writeText(entry.key).then(() => setCopied(true));
@@ -314,8 +314,8 @@ function SourceRow({
                 {copied ? "Copied" : "Copy key"}
               </button>
               {href && (
-                <a className="small" href={href} target="_blank" rel="noopener">
-                  Open in Reader
+                <a className="text-button" href={href} target="_blank" rel="noopener">
+                  Open in Reader <ExternalIcon />
                 </a>
               )}
             </span>
@@ -323,14 +323,14 @@ function SourceRow({
           {annotations === null && <p className="muted small" role="status">Loading annotations…</p>}
           {problem && <p className="muted small">Annotations unavailable: {problem}</p>}
           {notes.length > 0 && (
-            <ul className="annotations" aria-label="Annotations from Reader">
+            <ul className="annotations" aria-label="Highlights from Reader">
               {notes.map((a) => (
                 <li key={a.path}>
                   {a.quote && <blockquote>{a.quote}</blockquote>}
                   {a.note && <p className="small">{a.note}</p>}
                   <div className="annotation-actions">
                     {a.locator && <span className="muted small">{a.locator}</span>}
-                    <button type="button" className="link" disabled={!canInsert} onClick={() => onInsert(a.quote ? quotationFor(entry.key, a) : citationFor(entry.key, a.locator))}>
+                    <button type="button" className="text-button" disabled={!canInsert} onClick={() => onInsert(a.quote ? quotationFor(entry.key, a) : citationFor(entry.key, a.locator))}>
                       {a.quote ? "Insert quotation" : "Cite here"}
                     </button>
                   </div>

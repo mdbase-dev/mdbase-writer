@@ -8,7 +8,7 @@ import type { Result } from "../backend/types.js";
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { wordCount } from "../words.js";
 import type { RecordView } from "../workspace/workspace.js";
-import { PlusIcon } from "./icons.js";
+import { GripIcon, PlusIcon } from "./icons.js";
 import { headingAt, headings, sectionWords, withoutTitle } from "./outline.js";
 import { formatCount, plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
 
@@ -88,7 +88,12 @@ export function OutlinePanel({
       <RecordHeadings view={mainView} path={main} cursor={cursor?.record === main ? cursor.offset : null} onJump={onJump} />
 
       {rest.length > 0 && (
-        <ol ref={list} className="records" aria-label="Chapters" onDragOver={(e) => dragging !== null && e.preventDefault()} onDrop={onDrop}>
+        <h3 className="sidebar-heading outline-chapters" id="outline-chapters">
+          Chapters <span className="heading-count">{chapters.filter(Boolean).length}</span>
+        </h3>
+      )}
+      {rest.length > 0 && (
+        <ol ref={list} className="records" aria-labelledby="outline-chapters" onDragOver={(e) => dragging !== null && e.preventDefault()} onDrop={onDrop}>
           {rest.map((path) => {
             const view = records.get(path);
             const index = chapters.indexOf(path);
@@ -132,7 +137,10 @@ export function OutlinePanel({
                   onKeyDown={onKeyDown}
                   title={direct ? `${path} · drag, or Alt-↑/↓, to reorder` : path}
                 >
-                  <span className="record-number" aria-hidden={!direct}>{direct ? index + 1 : ""}</span>
+                  <span className="record-number" aria-hidden={!direct}>
+                    <span className="record-index">{direct ? index + 1 : ""}</span>
+                    {direct && <GripIcon className="record-grip" />}
+                  </span>
                   <span className="record-name">{recordTitle(view, path)}</span>
                   <RecordState view={view} problems={byRecord.get(path)?.length ?? 0} />
                   <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>

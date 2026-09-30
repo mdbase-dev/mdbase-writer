@@ -8,7 +8,8 @@ import { personName, type CommentChange, type People } from "../backend/comments
 import type { Result } from "../backend/types.js";
 import { ALT_LABEL, MOD_LABEL } from "../editor/insight.js";
 import type { CommentDraft } from "../workspace/workspace.js";
-import { describeSuggestion, when, type PlacedThread } from "./comments.js";
+import { clipPassage, describeSuggestion, when, type PlacedThread } from "./comments.js";
+import { CommentIcon, PlusIcon } from "./icons.js";
 import { plural } from "./records.js";
 
 /** A passage chosen to comment on or suggest an edit to, or (without a draft) a whole record. */
@@ -72,32 +73,48 @@ export function CommentsPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new selection moves the list
   }, [active]);
 
+  const signer = people.signing?.kind === "linked" ? people.me?.name : undefined;
   let lastRecord: string | null = null;
   return (
     <section ref={panel} className="comments" aria-label="Comments">
-      <Signing people={people} onCheck={onCheckAccount} {...(onReviewAccess ? { onReviewAccess } : {})} />
-      {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
       <div className="comments-bar">
-        <div className="segmented" role="group" aria-label="Show">
+        <div className="segmented small" role="group" aria-label="Show">
           {(["open", "resolved"] as const).map((f) => (
             <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}>
               {f === "open" ? "Open" : "Resolved"} <span className="heading-count">{counts[f]}</span>
             </button>
           ))}
         </div>
-        <button type="button" className="link small" onClick={onWholeRecord} title="Comment on the whole record in the editor">
-          Comment on this record
+        <button type="button" className="text-button" onClick={onWholeRecord} title="Comment on the whole record in the editor">
+          <PlusIcon /> Comment
         </button>
       </div>
+      <Signing people={people} onCheck={onCheckAccount} {...(onReviewAccess ? { onReviewAccess } : {})} />
+      {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} signer={signer} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
       {problem && <p className="muted small">Comments unavailable: {problem}</p>}
-      {!problem && !shown.length && (
-        <p className="muted small">
-          {filter === "open" ? <>No open comments. Select text and press <kbd>{MOD_LABEL}-{ALT_LABEL}-M</kbd> to comment, or <kbd>{MOD_LABEL}-{ALT_LABEL}-S</kbd> to suggest an edit.</> : "Nothing resolved yet."}
-        </p>
+      {!problem && !shown.length && !pending && (
+        <div className="sidebar-empty">
+          <CommentIcon />
+          {filter === "open" ? (
+            <>
+              <p><strong>No open comments</strong></p>
+              <p className="small muted">
+                Select a passage and press <kbd>{MOD_LABEL}-{ALT_LABEL}-M</kbd> to comment, or <kbd>{MOD_LABEL}-{ALT_LABEL}-S</kbd> to suggest an edit.
+              </p>
+            </>
+          ) : (
+            <p className="small muted">Nothing resolved yet.</p>
+          )}
+        </div>
       )}
       <ul className="threads">
         {shown.map((p) => {
-          const heading = p.record !== lastRecord ? <li className="threads-record" key={`h:${p.record}`}><h3 className="sidebar-heading">{recordTitle(p.record)}</h3></li> : null;
+          const heading =
+            p.record !== lastRecord ? (
+              <li className="threads-record" key={`h:${p.record}`}>
+                <h3 className="sidebar-heading" title={recordTitle(p.record)}>{recordTitle(p.record)}</h3>
+              </li>
+            ) : null;
           lastRecord = p.record;
           return [
             heading,
@@ -133,7 +150,7 @@ function useAction() {
   return { busy, error, run };
 }
 
-function Composer({ pending, recordTitle, onSubmit, onCancel }: { pending: PendingComment; recordTitle(path: string): string; onSubmit(text: string, replacement?: string): Promise<Result<unknown>>; onCancel(): void }) {
+function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: { pending: PendingComment; signer: string | undefined; recordTitle(path: string): string; onSubmit(text: string, replacement?: string): Promise<Result<unknown>>; onCancel(): void }) {
   const { draft, kind } = pending;
   const quote = draft ? draft.body.slice(draft.from, draft.to) : "";
   const [text, setText] = useState("");
@@ -159,7 +176,13 @@ function Composer({ pending, recordTitle, onSubmit, onCancel }: { pending: Pendi
         }
       }}
     >
-      <p className="thread-record small muted">{suggest ? "Suggest an edit" : "Comment"} · {recordTitle(pending.record)}</p>
+      <p className="composer-title">
+        <strong>{suggest ? "Suggest an edit" : "New comment"}</strong>
+        <span className="small muted" title={recordTitle(pending.record)}>
+          {signer ? <>as {signer} · </> : null}
+          {recordTitle(pending.record)}
+        </span>
+      </p>
       {quote ? <blockquote className="thread-quote">{quote}</blockquote> : <p className="thread-quote muted small">{draft ? (suggest ? "Insert at the cursor" : "At the cursor") : "On the whole record"}</p>}
       {suggest && (
         <label className="composer-field">
@@ -178,10 +201,10 @@ function Composer({ pending, recordTitle, onSubmit, onCancel }: { pending: Pendi
       />
       {error && <p className="small tone-danger" role="alert">{error}</p>}
       <div className="thread-actions">
-        <button type="submit" className="mdbase-button is-primary" disabled={busy || empty} title={`${MOD_LABEL}-Enter`}>
+        <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || empty} title={`${MOD_LABEL}-Enter`}>
           {suggest ? "Suggest" : "Comment"}
         </button>
-        <button type="button" className="mdbase-button" onClick={onCancel} disabled={busy}>
+        <button type="button" className="mdbase-button is-small" onClick={onCancel} disabled={busy}>
           Cancel
         </button>
       </div>
@@ -219,16 +242,16 @@ function Thread({
   const resolvedNote = !open ? `${suggestion ? outcome : "Resolved"}${root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""}${root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""}` : null;
 
   return (
-    <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}`} data-thread={root.path}>
+    <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}`} data-thread={root.path}>
       <button type="button" className="thread-anchor" onClick={onSelect} title={at === null ? "This passage is no longer in the text" : "Show in the editor"}>
-        {suggestion ? <span className="thread-suggestion">{describeSuggestion(root)}</span> : root.target ? <blockquote className="thread-quote">{root.target.quote.exact || "(a point in the text)"}</blockquote> : <span className="small muted">On the whole record</span>}
+        {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{root.target.quote.exact || "(a point in the text)"}</blockquote> : <span className="thread-whole small muted">On the whole record</span>}
         {at === null && <span className="thread-detached small">Detached: the text has changed</span>}
       </button>
       <Comment comment={root} people={people} />
       {thread.replies.map((r) => (
         <Comment key={r.path} comment={r} people={people} reply>
           {!r.deletedAt && mine(r) && (
-            <button type="button" className="link small" disabled={busy} onClick={() => void run(() => onChange(r, { kind: "withdraw" }))}>
+            <button type="button" className="text-button is-quiet" disabled={busy} onClick={() => void run(() => onChange(r, { kind: "withdraw" }))}>
               Withdraw
             </button>
           )}
@@ -253,37 +276,37 @@ function Thread({
         >
           <textarea className="mdbase-field" rows={2} autoFocus value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Reply" aria-label="Reply" />
           <div className="thread-actions">
-            <button type="submit" className="mdbase-button is-primary" disabled={busy || !reply.trim()} title={`${MOD_LABEL}-Enter`}>Reply</button>
-            <button type="button" className="mdbase-button" onClick={() => setReplying(false)}>Cancel</button>
+            <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || !reply.trim()} title={`${MOD_LABEL}-Enter`}>Reply</button>
+            <button type="button" className="mdbase-button is-small" onClick={() => setReplying(false)}>Cancel</button>
           </div>
         </form>
       ) : (
         <div className="thread-actions">
           {open && suggestion && (
             <>
-              <button type="button" className="mdbase-button is-primary" disabled={busy || at === null} onClick={() => void run(onAccept)} title={at === null ? "The suggested text is no longer there" : "Make this edit"}>
+              <button type="button" className="mdbase-button is-primary is-small" disabled={busy || at === null} onClick={() => void run(onAccept)} title={at === null ? "The suggested text is no longer there" : "Make this edit"}>
                 Accept
               </button>
-              <button type="button" className="mdbase-button" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve", outcome: "rejected" }))}>
+              <button type="button" className="mdbase-button is-small" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve", outcome: "rejected" }))}>
                 Reject
               </button>
             </>
           )}
-          <button type="button" className="link small" onClick={() => setReplying(true)}>
+          <button type="button" className="text-button" onClick={() => setReplying(true)}>
             Reply
           </button>
           {open && !suggestion && (
-            <button type="button" className="link small" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve" }))}>
+            <button type="button" className="text-button" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve" }))}>
               Resolve
             </button>
           )}
           {!open && (
-            <button type="button" className="link small" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "reopen" }))}>
+            <button type="button" className="text-button" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "reopen" }))}>
               Reopen
             </button>
           )}
           {!root.deletedAt && mine(root) && !thread.replies.length && (
-            <button type="button" className="link small" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "withdraw" }))}>
+            <button type="button" className="text-button is-quiet" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "withdraw" }))}>
               Withdraw
             </button>
           )}
@@ -293,12 +316,41 @@ function Thread({
   );
 }
 
+/** A suggested edit as it will read: the text taken out, struck through, and the text put in. */
+function Suggestion({ root }: { root: CommentRecord }) {
+  const exact = root.target?.quote.exact ?? "";
+  const replacement = root.suggestion?.replacement ?? "";
+  return (
+    <span className="thread-suggestion" aria-label={describeSuggestion(root)}>
+      <span className="thread-suggestion-kind" aria-hidden="true">{exact && replacement ? "Replace" : exact ? "Delete" : "Insert"}</span>
+      <span aria-hidden="true">
+        {exact && <del>{clipPassage(exact)}</del>}
+        {exact && replacement && " "}
+        {replacement && <ins>{clipPassage(replacement)}</ins>}
+      </span>
+    </span>
+  );
+}
+
+/** Up to two initials for a name, or "?" for an unsigned comment. */
+const initials = (name: string | undefined) =>
+  name
+    ? name
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => w[0]!.toUpperCase())
+        .filter((_, i, all) => i === 0 || i === all.length - 1)
+        .join("")
+    : "?";
+
 function Comment({ comment, people, reply, children }: { comment: CommentRecord; people: People; reply?: boolean; children?: ReactNode }) {
-  const author = personName(comment.createdBy, people) ?? "Unsigned";
+  const name = personName(comment.createdBy, people);
+  const mine = people.me !== undefined && comment.createdBy?.toLowerCase() === people.me.link.toLowerCase();
   return (
     <div className={`comment${reply ? " is-reply" : ""}`}>
+      <span className={`avatar${mine ? " is-me" : ""}${name ? "" : " is-unsigned"}`} aria-hidden="true">{initials(name)}</span>
       <p className="comment-meta small">
-        <strong>{author}</strong> <time dateTime={comment.createdAt} title={new Date(comment.createdAt).toLocaleString()}>{when(comment.createdAt)}</time>
+        <strong>{name ?? "Unsigned"}</strong> <time dateTime={comment.createdAt} title={new Date(comment.createdAt).toLocaleString()}>{when(comment.createdAt)}</time>
         {children}
       </p>
       {comment.deletedAt ? <p className="small muted">Withdrawn.</p> : comment.text ? <p className="comment-text">{comment.text}</p> : null}
@@ -310,27 +362,25 @@ function Comment({ comment, people, reply, children }: { comment: CommentRecord;
 export const openCount = (placed: readonly PlacedThread[]) => plural(placed.filter((p) => p.thread.root.status === "open").length, "open comment");
 
 /**
- * Who new comments are signed as, or why they are not and where to fix it.
+ * Why new comments are not signed, and where to fix it (a linked account is
+ * named in the composer instead).
  * Linking an account to a person record happens in mdbase Editor, whose
  * settings page Connect names for this collection.
  */
 function Signing({ people, onCheck, onReviewAccess }: { people: People; onCheck(): Promise<unknown>; onReviewAccess?(): Promise<Result<unknown>> }) {
   const { busy, error, run } = useAction();
-  const { signing, settingsUrl, me } = people;
-  if (!signing) return null;
-  if (signing.kind === "linked") {
-    return <p className="signing small muted">Commenting as <strong>{me?.name}</strong></p>;
-  }
+  const { signing, settingsUrl } = people;
+  if (!signing || signing.kind === "linked") return null;
   const link = (label: string) =>
     settingsUrl ? (
-      <a className="small" href={settingsUrl} target="_blank" rel="noopener">
+      <a className="text-button" href={settingsUrl} target="_blank" rel="noopener">
         {label}
       </a>
     ) : (
       <span className="small muted">Link it in mdbase Editor’s settings for this collection.</span>
     );
   const check = (
-    <button type="button" className="link small" disabled={busy} onClick={() => void run(async () => (await onCheck(), { ok: true, value: null }))}>
+    <button type="button" className="text-button" disabled={busy} onClick={() => void run(async () => (await onCheck(), { ok: true, value: null }))}>
       Check again
     </button>
   );
