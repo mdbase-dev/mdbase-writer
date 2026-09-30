@@ -7,6 +7,7 @@
 // disambiguation and note numbers are right across chapters), resolves
 // embeds and images against the collection, substitutes placeholders and
 // shifts source maps to match.
+import { embeddedQuotation, isAnnotation } from "./annotations.js";
 import type { CiteItem } from "./cite-items.js";
 import { Citeproc, type Bibliography, type CitationRequest, type CiteprocMode, type CslItem } from "./citeproc.js";
 import { typstLabel, typstString } from "./escape.js";
@@ -50,6 +51,10 @@ export interface AssemblyInput {
   readonly locales: ReadonlyMap<string, string>;
   /** Collection text files loaded so far (a .csl style or .typ template the settings name), by path. */
   readonly texts?: ReadonlyMap<string, string>;
+  /** Records the collection lists as Reader annotations (embedding one quotes it). */
+  readonly annotationPaths?: ReadonlySet<string>;
+  /** Source record path → citekey, for citing embedded annotations. */
+  readonly sourceKeys?: ReadonlyMap<string, string>;
 }
 
 export interface Assembly {
@@ -57,7 +62,7 @@ export interface Assembly {
   /** Typst path → source. */
   readonly sources: ReadonlyMap<string, string>;
   readonly maps: ReadonlyMap<string, SourceMap>;
-  /** Records in include order (main first). */
+  /** Records in include order (main first); embedded annotations are not among them. */
   readonly order: readonly string[];
   /** Embedded records that exist in the collection but are not loaded yet. */
   readonly unloaded: readonly string[];
@@ -93,15 +98,16 @@ interface Rendered {
 }
 
 export class ManuscriptAssembler {
-  private readonly translations = new Map<string, { body: string; tr: TranslatedRecord }>();
+  private readonly translations = new Map<string, { body: string; at?: number; tr: TranslatedRecord }>();
   private readonly engines = new Map<string, Citeproc>();
   private engineLibrary?: ReadonlyMap<string, CslItem>;
 
-  private translate(record: WriterRecord): TranslatedRecord {
-    const cached = this.translations.get(record.path);
-    if (cached && cached.body === record.body) return cached.tr;
-    const tr = translateRecord(record.body);
-    this.translations.set(record.path, { body: record.body, tr });
+  /** Translates a record's body, or (with `at`) Markdown standing in for an embed at that offset. */
+  private translate(path: string, body: string, at?: number): TranslatedRecord {
+    const cached = this.translations.get(path);
+    if (cached && cached.body === body && cached.at === at) return cached.tr;
+    const tr = translateRecord(body, at === undefined ? {} : { at });
+    this.translations.set(path, { body, ...(at === undefined ? {} : { at }), tr });
     return tr;
   }
 
@@ -132,19 +138,34 @@ export class ManuscriptAssembler {
     });
     for (const p of problems) diagnostics.push({ record: input.main, from: 0, to: 0, severity: "warning", message: p.message, field: p.field });
 
-    // Include order, depth-first as Typst evaluates it.
+    // Include order, depth-first as Typst evaluates it. An embedded
+    // annotation is included as its quotation, which maps to the embed in the
+    // record holding it (its host).
     const order: string[] = [];
+    const files: string[] = [];
     const unloaded: string[] = [];
     const includeTargets = new Map<string, (string | null)[]>();
-    const visit = (path: string, stack: readonly string[]) => {
+    const translated = new Map<string, TranslatedRecord>();
+    const hosts = new Map<string, string>();
+    const recordOf = (path: string) => hosts.get(path) ?? path;
+    const visit = (path: string, stack: readonly string[], embed?: { host: string; from: number; to: number }) => {
       const record = input.records.get(path);
       if (!record) {
         if (!unloaded.includes(path)) unloaded.push(path);
         return;
       }
-      if (order.includes(path)) return;
+      if (files.includes(path)) return;
+      files.push(path);
+      if (embed && isAnnotation(record, input.annotationPaths)) {
+        hosts.set(path, embed.host);
+        const quotation = embeddedQuotation(record, input.sourceKeys ?? new Map());
+        if (quotation.problem) diagnostics.push({ record: embed.host, from: embed.from, to: embed.to, ...quotation.problem });
+        translated.set(path, this.translate(path, quotation.markdown, embed.from));
+        return;
+      }
       order.push(path);
-      const tr = this.translate(record);
+      const tr = this.translate(path, record.body);
+      translated.set(path, tr);
       const targets = tr.includes.map((inc) => {
         const resolved = resolveLinkTarget(inc.target, path, input.recordPaths);
         if (!resolved) {
@@ -158,16 +179,18 @@ export class ManuscriptAssembler {
         return resolved;
       });
       includeTargets.set(path, targets);
-      for (const t of targets) if (t) visit(t, [...stack, path]);
+      targets.forEach((t, i) => {
+        const inc = tr.includes[i];
+        if (t && inc) visit(t, [...stack, path], { host: path, from: inc.from, to: inc.to });
+      });
     };
     visit(input.main, []);
 
-    const translated = new Map(order.map((p) => [p, this.translate(input.records.get(p) as WriterRecord)]));
-    for (const [path, tr] of translated) for (const d of tr.diagnostics) diagnostics.push({ record: path, ...d });
+    for (const [path, tr] of translated) for (const d of tr.diagnostics) diagnostics.push({ record: recordOf(path), ...d });
     const labels = new Set<string>();
     for (const [path, tr] of translated) {
       for (const label of tr.labels) {
-        if (labels.has(label)) diagnostics.push({ record: path, from: 0, to: 0, severity: "warning", message: `The label ${label} is used more than once.` });
+        if (labels.has(label)) diagnostics.push({ record: recordOf(path), from: 0, to: 0, severity: "warning", message: `The label ${label} is used more than once.` });
         labels.add(label);
       }
     }
@@ -179,7 +202,7 @@ export class ManuscriptAssembler {
     let note = 0;
     let inFootnote: number | null = null;
     const seen = new Set<string>();
-    for (const path of order) {
+    for (const path of files) {
       const tr = translated.get(path) as TranslatedRecord;
       const plan: Plan[] = [];
       plans.set(path, plan);
@@ -208,7 +231,7 @@ export class ManuscriptAssembler {
         for (const m of cl.items.filter((i) => !labels.has(i.key) && !cp.has(i.key))) {
           const looksLikeXref = /^(sec|fig|tbl|eq|lst|thm|lem|def)-/.test(m.key);
           diagnostics.push({
-            record: path,
+            record: recordOf(path),
             from: cl.from,
             to: cl.to,
             severity: "error",
@@ -219,7 +242,7 @@ export class ManuscriptAssembler {
         const items = cl.items.filter((i) => cp.has(i.key));
         if (!items.length || refs.length) {
           if (refs.length && items.length) {
-            diagnostics.push({ record: path, from: cl.from, to: cl.to, severity: "error", message: "A citation cannot mix cross-references and citekeys." });
+            diagnostics.push({ record: recordOf(path), from: cl.from, to: cl.to, severity: "error", message: "A citation cannot mix cross-references and citekeys." });
           }
           plan[ev.index] = { kind: "text", text: cl.items.map((i) => `#missing(${typstString(i.key)});`).join(", ") };
           continue;
@@ -276,7 +299,7 @@ export class ManuscriptAssembler {
       const resolved = remote ? null : resolveLinkTarget(ref.target, path, input.filePaths, "");
       if (!resolved || !IMAGE_EXTENSION.test(resolved)) {
         diagnostics.push({
-          record: path,
+          record: recordOf(path),
           from: ref.from,
           to: ref.to,
           severity: "error",
@@ -292,7 +315,7 @@ export class ManuscriptAssembler {
     const maps = new Map<string, SourceMap>();
     const rawBlocks = new Map<string, (readonly [number, number, number])[]>();
     const debugCitations: string[] = [];
-    for (const path of order) {
+    for (const path of files) {
       const tr = translated.get(path) as TranslatedRecord;
       const plan = plans.get(path) ?? [];
       for (const p of plan) if (p?.kind === "cite") debugCitations.push(render(p).text);
@@ -306,9 +329,9 @@ export class ManuscriptAssembler {
           return t && input.records.has(t) ? `#include ${typstString(typstPathFor(t))}` : "";
         },
       });
-      const bound = bindRecordPath(substituted, path);
+      const bound = bindRecordPath(substituted, recordOf(path));
       sources.set(typstPathFor(path), bound.text);
-      maps.set(typstPathFor(path), { record: path, anchors: bound.anchors });
+      maps.set(typstPathFor(path), { record: recordOf(path), anchors: bound.anchors });
       rawBlocks.set(
         typstPathFor(path),
         tr.rawBlocks.map((b) => [bound.shift(b.typstFrom), bound.shift(b.typstTo), b.from] as const),

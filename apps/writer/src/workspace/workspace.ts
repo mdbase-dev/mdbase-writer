@@ -9,6 +9,7 @@ import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, Record
 import type { CslItem, WriterRecord } from "@mdbase-writer/core";
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
+import { isAnnotation } from "@mdbase-writer/core/annotations";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
@@ -39,6 +40,9 @@ function loadStyles() {
   return stylesPromise;
 }
 
+/** Source record path → citekey. */
+export const sourceKeys = (library: readonly LibraryEntry[]) => new Map(library.map((e) => [e.path, e.key]));
+
 export type SessionSnapshot = MdbaseRecordSessionSnapshot<RecordDocument<JsonObject>>;
 
 export interface RecordView {
@@ -58,6 +62,8 @@ export interface WorkspaceSnapshot {
   readonly library: readonly LibraryEntry[];
   readonly recordPaths: readonly string[];
   readonly filePaths: readonly string[];
+  /** Records the collection lists as Reader annotations (an embedded one is a quotation). */
+  readonly annotationPaths: ReadonlySet<string>;
   readonly compiling: boolean;
   /** Every comment in the collection; the UI keeps those on this manuscript's records. */
   readonly comments: readonly CommentRecord[];
@@ -93,7 +99,7 @@ export class ManuscriptWorkspace {
     private readonly backend: WriterBackend,
     readonly main: string,
   ) {
-    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], compiling: true, comments: [], people: NO_PEOPLE };
+    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], annotationPaths: new Set(), compiling: true, comments: [], people: NO_PEOPLE };
     this.cleanups.push(this.compile.onResult((r) => this.onResult(r)));
     this.cleanups.push(this.compile.onFailure((message) => this.update({ problem: message })));
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
@@ -144,6 +150,7 @@ export class ManuscriptWorkspace {
     this.compile.send({ type: "collection", recordPaths: index.value.recordPaths, filePaths: index.value.filePaths });
     this.compile.send({ type: "main", path: this.main });
     this.update({ library: library.value, recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
+    void this.loadAnnotationPaths();
     const opened = await this.open(this.main);
     this.update({ phase: opened ? "ready" : "failed" });
     if (opened) void this.loadComments();
@@ -163,6 +170,17 @@ export class ManuscriptWorkspace {
     const reviewed = await this.backend.reviewIdentityAccess();
     if (reviewed.ok) await this.refreshPeople();
     return reviewed;
+  }
+
+  /** Learns which records are annotations, and tells the worker how to cite them. */
+  private async loadAnnotationPaths(): Promise<void> {
+    const annotations = await this.annotations();
+    if (annotations.ok) this.update({ annotationPaths: new Set(annotations.value.map((a) => a.path)) });
+    this.sendQuotations();
+  }
+
+  private sendQuotations(): void {
+    this.compile.send({ type: "quotations", annotationPaths: [...this.current.annotationPaths], sourceKeys: [...sourceKeys(this.current.library)] });
   }
 
   private async loadComments(): Promise<void> {
@@ -252,6 +270,9 @@ export class ManuscriptWorkspace {
       this.compile.send({ type: "library", library: library.value.map((e) => e.item) as CslItem[] });
       this.update({ library: library.value });
     }
+    // A new record may be a new annotation.
+    this.annotationsPromise = undefined;
+    await this.loadAnnotationPaths();
     // A path we did not know may be someone's new comment.
     await this.loadComments();
   }
@@ -260,17 +281,29 @@ export class ManuscriptWorkspace {
     this.leases.get(path)?.lease.session.setBody(body);
   }
 
+  /** Whether a record is a Reader annotation (embedded, a quotation). */
+  isQuotation(path: string): boolean {
+    const view = this.current.records.get(path);
+    return this.current.annotationPaths.has(path) || Boolean(view && isAnnotation({ path, body: view.snapshot.body, frontmatter: view.snapshot.frontmatter }));
+  }
+
+  /** Whether an embed in the manuscript is a chapter (not a quotation). */
+  private isChapter = (target: string): boolean => {
+    const path = resolveLinkTarget(target, this.main, new Set(this.current.recordPaths));
+    return !path || !this.isQuotation(path);
+  };
+
   /** The record each of the manuscript's chapter embeds resolves to (null when none does), in order. */
   chapterPaths(): (string | null)[] {
     const body = this.current.records.get(this.main)?.snapshot.body ?? "";
     const candidates = new Set(this.current.recordPaths);
-    return chapterEmbeds(body).map((e) => resolveLinkTarget(e.target, this.main, candidates));
+    return chapterEmbeds(body, this.isChapter).map((e) => resolveLinkTarget(e.target, this.main, candidates));
   }
 
   /** Moves the manuscript's chapter embed at index `from` to index `to`. */
   moveChapter(from: number, to: number): void {
     const body = this.current.records.get(this.main)?.snapshot.body;
-    if (body !== undefined) this.setBody(this.main, moveEmbed(body, from, to));
+    if (body !== undefined) this.setBody(this.main, moveEmbed(body, from, to, this.isChapter));
   }
 
   /**
@@ -292,7 +325,7 @@ export class ManuscriptWorkspace {
     // Its session opens now, rather than once the manuscript has been typeset with the embed.
     const opened = this.open(path);
     const body = this.current.records.get(this.main)?.snapshot.body ?? "";
-    this.setBody(this.main, appendEmbed(body, path.replace(/\.md$/i, "")));
+    this.setBody(this.main, appendEmbed(body, path.replace(/\.md$/i, ""), this.isChapter));
     await opened;
     return ok(path);
   }
@@ -367,6 +400,8 @@ export class ManuscriptWorkspace {
       locales,
       texts: this.texts,
       crossReferences,
+      annotationPaths: snap.annotationPaths,
+      sourceKeys: sourceKeys(snap.library),
     });
     const problems = [...out.problems];
     const media: [string, Uint8Array][] = [];

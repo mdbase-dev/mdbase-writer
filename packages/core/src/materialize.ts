@@ -6,6 +6,7 @@
 import type { SyntaxNode } from "@lezer/common";
 import { stringify as yamlStringify } from "yaml";
 
+import { embeddedQuotation, isAnnotation } from "./annotations.js";
 import { resolveCrossReferences } from "./crossref.js";
 import { manuscriptMeta } from "./meta.js";
 import type { CslItem } from "./citeproc.js";
@@ -29,6 +30,10 @@ export interface MaterializeInput {
    * writes the numbers into the text and captions for plain Pandoc.
    */
   readonly crossReferences?: "quarto" | "resolved";
+  /** Records the collection lists as Reader annotations (embedding one quotes it). */
+  readonly annotationPaths?: ReadonlySet<string>;
+  /** Source record path → citekey, for citing embedded annotations. */
+  readonly sourceKeys?: ReadonlyMap<string, string>;
 }
 
 export interface MaterializedManuscript {
@@ -82,7 +87,13 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
               problems.push(`The embed ![[${target}]] in ${path} was left out.`);
               edits.push({ from: node.from, to: node.to, text: "" });
             } else {
-              edits.push({ from: node.from, to: node.to, text: expand(resolved, [...stack, path]).trim() });
+              const embedded = input.records.get(resolved);
+              if (embedded && isAnnotation(embedded, input.annotationPaths)) {
+                const quotation = embeddedQuotation(embedded, input.sourceKeys ?? new Map());
+                if (quotation.problem) problems.push(`${path}: ${quotation.problem.message}`);
+                if (quotation.key && input.library.has(quotation.key)) cited.add(quotation.key);
+                edits.push({ from: node.from, to: node.to, text: quotation.markdown });
+              } else edits.push({ from: node.from, to: node.to, text: expand(resolved, [...stack, path]).trim() });
             }
           }
           return;

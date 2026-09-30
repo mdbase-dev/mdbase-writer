@@ -1,6 +1,7 @@
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
+import { annotationKey, blockQuotation, sourceAnnotation } from "@mdbase-writer/core/annotations";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -10,10 +11,11 @@ import type { ChapterCards } from "../editor/chapter-cards.js";
 import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
+import { authorYear } from "../editor/library-search.js";
 import { ALT_LABEL, labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
-import type { ManuscriptWorkspace } from "../workspace/workspace.js";
+import { sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import {
   AlertIcon,
@@ -352,24 +354,34 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   }, [cursor, snap.records, stats.cited]);
 
   const mainBody = snap.records.get(workspace.main)?.snapshot.body;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- recomputed when the manuscript's body or the index changes
-  const chapters = useMemo(() => workspace.chapterPaths(), [workspace, mainBody, snap.recordPaths]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- recomputed when the manuscript's body, the index or the annotations change
+  const chapters = useMemo(() => workspace.chapterPaths(), [workspace, mainBody, snap.recordPaths, snap.annotationPaths, records]);
   const recordSet = useMemo(() => new Set(snap.recordPaths), [snap.recordPaths]);
-  const cards = useMemo<ChapterCards>(
-    () => ({
+  const cards = useMemo<ChapterCards>(() => {
+    const keys = sourceKeys(snap.library);
+    const entries = new Map(snap.library.map((e) => [e.key, e]));
+    return {
       card(target) {
         const path = resolveLinkTarget(target, active, recordSet);
         if (!path) return { path: null, title: target };
         const view = records.get(path);
+        // An embedded annotation shows the quotation it renders (once loaded, and if it has one).
+        const annotation = view && workspace.isQuotation(path) ? sourceAnnotation(path, view.snapshot.frontmatter, view.snapshot.body) : null;
+        if (annotation?.quote) {
+          const key = annotationKey(annotation, keys);
+          const entry = key ? entries.get(key) : undefined;
+          const cite = entry ? [authorYear(entry) || entry.key, annotation.locator].filter(Boolean).join(", ") : "";
+          return { quotation: true, path, quote: annotation.quote, cite, detached: blockQuotation(key, annotation) };
+        }
         return { path, title: recordTitle(view, path), ...(view ? { words: wordCount(view.snapshot.body) } : {}), problems: byRecord.get(path)?.length ?? 0 };
       },
       open(path) {
         setActive(path);
         setPane("write");
       },
-    }),
-    [active, recordSet, records, byRecord],
-  );
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isQuotation reads the annotations the snapshot holds
+  }, [active, recordSet, records, byRecord, snap.library, snap.annotationPaths]);
   const sourceHref = useMemo(() => (workspace.kind === "connect" ? (e: { path: string }) => readerSourceHref(e.path) : undefined), [workspace]);
 
   // Problems in reading order, for F8 / Shift-F8.

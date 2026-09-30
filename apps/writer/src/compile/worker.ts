@@ -49,6 +49,8 @@ const texts = new Map<string, string>();
 const records = new Map<string, WriterRecord>();
 let recordPaths = new Set<string>();
 let filePaths = new Set<string>();
+let annotationPaths = new Set<string>();
+let sourceKeys = new Map<string, string>();
 let main = "";
 const loadedAssets = new Set<string>();
 const requestedAssets = new Set<string>();
@@ -122,7 +124,7 @@ interface TypstDiagnostic {
 
 async function compile(c: TypstCompiler): Promise<CompileResult> {
   const started = performance.now();
-  const assembly = assembler.assemble({ main, records, recordPaths, filePaths, library, styles, locales, texts });
+  const assembly = assembler.assemble({ main, records, recordPaths, filePaths, library, styles, locales, texts, annotationPaths, sourceKeys });
   const assembled = performance.now();
 
   const neededAssets = assembly.assets.filter((a) => !loadedAssets.has(a));
@@ -275,6 +277,10 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
     case "collection":
       recordPaths = new Set(message.recordPaths);
       filePaths = new Set(message.filePaths);
+      break;
+    case "quotations":
+      annotationPaths = new Set(message.annotationPaths);
+      sourceKeys = new Map(message.sourceKeys);
       break;
     case "records":
       for (const r of message.upsert) records.set(r.path, r);
