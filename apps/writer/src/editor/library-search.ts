@@ -34,6 +34,14 @@ export function yearOf(entry: LibraryEntry): string | undefined {
   return year === undefined ? undefined : String(year);
 }
 
+/** The title up to its subtitle, shortened to about `max` characters: "Potentialities". */
+export function shortTitle(title: string, max = 40): string {
+  const main = title.split(/[:.?!]\s/)[0]?.trim() ?? title;
+  if (main.length <= max) return main;
+  const cut = main.slice(0, max);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max / 2)).replace(/[\s,;]+$/, "")}…`;
+}
+
 /** "Agamben, 1999" or "Agamben et al., 1999". */
 export function authorYear(entry: LibraryEntry): string {
   const author = (entry.item["author"] ?? entry.item["editor"]) as { family?: string; literal?: string }[] | undefined;
@@ -45,20 +53,22 @@ export function authorYear(entry: LibraryEntry): string {
 /**
  * Sources matching every word of the query (in the key, names, title,
  * container or year), citekey prefixes first. "agamben 1999", "bartleby",
- * "badiouBe" all work.
+ * "badiouBe" all work. Among equally good matches, `preferred` keys (the
+ * sources a manuscript already cites) come first.
  */
-export function searchLibrary(library: readonly LibraryEntry[], query: string, limit = 50): LibraryEntry[] {
+export function searchLibrary(library: readonly LibraryEntry[], query: string, limit = 50, preferred?: { has(key: string): boolean }): LibraryEntry[] {
+  const prefer = (e: LibraryEntry) => (preferred?.has(e.key) ? 1 : 0);
   // A citekey-shaped query also splits where letters meet digits ("agamben99").
   const words = fold(query)
     .split(/[\s,;]+|(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u)
     .filter(Boolean);
   const q = fold(query.trim());
-  if (!words.length) return library.slice(0, limit);
+  if (!words.length) return (preferred ? [...library].sort((a, b) => prefer(b) - prefer(a)) : library).slice(0, limit);
   const scored: { entry: LibraryEntry; score: number }[] = [];
   for (const i of index(library)) {
     const score = i.key.startsWith(q) ? 3 : i.key.includes(q) ? 2 : words.every((w) => i.haystack.includes(w)) ? 1 : 0;
     if (score) scored.push({ entry: i.entry, score });
   }
-  scored.sort((a, b) => b.score - a.score || authorYear(a.entry).localeCompare(authorYear(b.entry)));
+  scored.sort((a, b) => b.score - a.score || prefer(b.entry) - prefer(a.entry) || authorYear(a.entry).localeCompare(authorYear(b.entry)));
   return scored.slice(0, limit).map((s) => s.entry);
 }

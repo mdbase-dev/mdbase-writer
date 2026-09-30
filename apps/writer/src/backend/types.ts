@@ -4,6 +4,7 @@ import type { JsonObject, MdbaseRecords } from "@mdbase-dev/connect";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
 import type { CommentRecord } from "@mdbase-writer/core/comments";
 
+import { chapterEmbeds } from "../workspace/chapters.js";
 import { embedCount, wordCount } from "../words.js";
 import type { CommentChange, NewComment, People } from "./comments.js";
 
@@ -23,11 +24,13 @@ export interface ManuscriptSummary {
   readonly words?: number;
   /** Records embedded on a line of their own (chapters). */
   readonly embeds?: number;
+  /** Those embeds' targets as written, for counting a book's words. */
+  readonly chapters?: readonly string[];
 }
 
 /** What the manuscript list shows of a record's body. */
-export function bodySummary(body: string | undefined): Pick<ManuscriptSummary, "words" | "embeds"> {
-  return body === undefined ? {} : { words: wordCount(body), embeds: embedCount(body) };
+export function bodySummary(body: string | undefined): Pick<ManuscriptSummary, "words" | "embeds" | "chapters"> {
+  return body === undefined ? {} : { words: wordCount(body), embeds: embedCount(body), chapters: chapterEmbeds(body).map((e) => e.target) };
 }
 
 /** A Reader source that can be cited. */
@@ -54,6 +57,11 @@ export interface CollectionIndex {
   readonly recordPaths: readonly string[];
   /** Every other file path (for resolving images). */
   readonly filePaths: readonly string[];
+  /**
+   * The Markdown records that are someone's writing, which could become a
+   * manuscript: not comments, people, or Reader's sources and annotations.
+   */
+  readonly notePaths: readonly string[];
 }
 
 export interface NewManuscript {
@@ -77,6 +85,8 @@ export interface WriterBackend {
   /** Reader annotations in the collection (records implementing dev.mdbase.reader.annotation). */
   annotations(): Promise<Result<SourceAnnotation[]>>;
   readFile(path: string): Promise<Result<Uint8Array>>;
+  /** A Markdown record's body, read once (no record session). */
+  readBody(path: string): Promise<Result<string>>;
   /** Every comment in the collection (records implementing mdbase.comment), withdrawn ones included. */
   comments(): Promise<Result<CommentRecord[]>>;
   /** Writes a new comment, reply or suggestion, signed by the signed-in account's person record when it has one. */

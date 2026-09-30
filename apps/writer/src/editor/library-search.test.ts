@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LibraryEntry } from "../backend/types.js";
-import { authorYear, searchLibrary } from "./library-search.js";
+import { authorYear, searchLibrary, shortTitle } from "./library-search.js";
 
 const entry = (key: string, family: string, title: string, year: number): LibraryEntry => ({
   key,
@@ -31,5 +31,19 @@ describe("searchLibrary", () => {
 
   it("formats author and year", () => {
     expect(authorYear(library[2] as LibraryEntry)).toBe("Badiou, 2007");
+  });
+
+  it("puts preferred (cited) sources first among equal matches", () => {
+    const cited = new Set(["agambenPotentialities99"]);
+    expect(searchLibrary(library, "agamben", 50, cited).map((e) => e.key)).toEqual(["agambenPotentialities99", "agambenBartleby99"]);
+    expect(searchLibrary(library, "", 50, cited)[0]?.key).toBe("agambenPotentialities99");
+    // A better match still wins.
+    expect(searchLibrary(library, "agambenB", 50, cited).map((e) => e.key)).toEqual(["agambenBartleby99"]);
+  });
+
+  it("shortens titles to the part before a subtitle", () => {
+    expect(shortTitle("Potentialities: Collected Essays in Philosophy")).toBe("Potentialities");
+    expect(shortTitle("The Rigveda. The Earliest Religious Poetry of India")).toBe("The Rigveda");
+    expect(shortTitle("An exceptionally long title that goes on well past forty characters", 40)).toBe("An exceptionally long title that goes…");
   });
 });

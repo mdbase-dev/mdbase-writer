@@ -171,6 +171,8 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .note-name { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note-folder { margin-left: auto; flex: none; font-family: var(--mono); font-size: 11px; color: var(--faint); }
 .new-dialog .mdbase-dialog-body > p { margin: -0.5rem 0 0; }
+.new-dialog .mdbase-dialog-body > p.adopt-offer { margin: 0; }
+.new-manuscript .field-problem { display: block; margin-top: 0.3rem; }
 .or-divider { display: flex; align-items: center; gap: 0.75rem; color: var(--muted); font-size: 12px; }
 .or-divider::before, .or-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
@@ -423,6 +425,7 @@ blockquote.thread-quote::after { content: "”"; }
 .editor .cm-editor { height: 100%; font-size: 15px; background: var(--canvas); color: var(--ink); }
 .editor .cm-scroller { font-family: "Atkinson Hyperlegible", sans-serif; line-height: 1.65; }
 .editor .cm-content { max-width: 72ch; margin: 0 auto; padding: 1.5rem 1.25rem 40vh; caret-color: var(--ink); }
+.editor .cm-soft-break::after { content: " "; }
 .editor .cm-activeLine { background: transparent; }
 .editor .cm-focused { outline: none; }
 .editor .cm-gutters { background: var(--canvas); border: 0; }

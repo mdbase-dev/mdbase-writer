@@ -12,6 +12,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
+import { joinSoftBreaks } from "../editor/join-lines.js";
 import { CloseIcon } from "./icons.js";
 import { templateName } from "./names.js";
 
@@ -203,23 +204,6 @@ function useFocusRequest(field: MetaField, focus: SettingsFocus | null, element:
     el.scrollIntoView({ block: "center", behavior: "smooth" });
     el.focus({ preventScroll: true });
   }, [field, focus, element]);
-}
-
-/**
- * A paragraph's text with its soft line breaks (single newlines, not after a
- * hard break) as spaces. Markdown reads them as spaces, so saving this form
- * after an edit changes nothing in the typeset text.
- */
-export function joinSoftBreaks(text: string): string {
-  const lines = text.split("\n");
-  let out = lines[0] ?? "";
-  for (let i = 1; i < lines.length; i++) {
-    const before = lines[i - 1] ?? "";
-    const line = lines[i] ?? "";
-    const soft = before.trim() && line.trim() && !/(?: {2,}|\\)$/.test(before);
-    out = soft ? `${out.trimEnd()} ${line.trimStart()}` : `${out}\n${line}`;
-  }
-  return out;
 }
 
 function TextField(props: FieldProps & {

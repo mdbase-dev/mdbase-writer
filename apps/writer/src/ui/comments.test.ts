@@ -2,7 +2,7 @@ import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comme
 import { describe, expect, it } from "vitest";
 
 import { changeFields, newCommentFields, peopleFromDirectory, personName, signingFromProblem, toContract, toLocal } from "../backend/comments.js";
-import { anchorsFor, describeSuggestion, placeThreads } from "./comments.js";
+import { anchorsFor, describeSuggestion, placeThreads, plainPassage } from "./comments.js";
 
 const body = "# Method\n\nThe evidence suggests strongly that it works.\n";
 const comment = (path: string, fields: Record<string, unknown>) =>
@@ -113,5 +113,14 @@ describe("signing comments", () => {
   it("tells a declined identity permission from an unavailable account", () => {
     expect(signingFromProblem({ code: "access_denied", message: "not approved" })).toEqual({ kind: "not-approved" });
     expect(signingFromProblem({ code: "temporarily_unavailable", message: "Account identity information is unavailable." })).toEqual({ kind: "unavailable", reason: "Account identity information is unavailable." });
+  });
+});
+
+describe("passages as they read", () => {
+  it("drops emphasis, code and link markup, and soft line breaks", () => {
+    expect(plainPassage("the *modal picture*")).toBe("the modal picture");
+    expect(plainPassage("**bold** and `code` and [a link](https://x.org)")).toBe("bold and code and a link");
+    expect(plainPassage("snake_case_name stays; _this_ goes")).toBe("snake_case_name stays; this goes");
+    expect(plainPassage("wrapped\nline\n\nnew paragraph")).toBe("wrapped line\n\nnew paragraph");
   });
 });

@@ -1,11 +1,14 @@
 // The collection's manuscripts, and creating a new one.
 import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
+import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
 import { Select } from "@mdbase-dev/ui/select";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type { ManuscriptSummary, WriterBackend } from "../backend/types.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
+import { chapterEmbeds } from "../workspace/chapters.js";
+import { wordCount } from "../words.js";
 import { PlusIcon, SearchIcon } from "./icons.js";
 import { byRecentlyEdited, noteName, relativeTime, styleName, templateName } from "./names.js";
 
@@ -22,11 +25,16 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
   const [style, setStyle] = useState<StyleId>("chicago-notes-bibliography");
   const [creating, setCreating] = useState(false);
   const [notes, setNotes] = useState<string[]>([]);
+  const [recordPaths, setRecordPaths] = useState<readonly string[] | null>(null);
+  const [bookWords, setBookWords] = useState<ReadonlyMap<string, number>>(new Map());
   const [notePath, setNotePath] = useState("");
   const [adopting, setAdopting] = useState(false);
   const [sources, setSources] = useState<number | null>(null);
   const [dialog, setDialog] = useState(false);
   const [filter, setFilter] = useState("");
+  const [untitled, setUntitled] = useState(false);
+  const [adoptOpen, setAdoptOpen] = useState(false);
+  const titleField = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let live = true;
@@ -39,16 +47,38 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
       if (live) setSources(r.ok ? r.value.length : 0);
     });
     void backend.index().then((r) => {
-      if (live && r.ok) setNotes(r.value.recordPaths.filter((p) => p.toLowerCase().endsWith(".md")).sort());
+      if (!live || !r.ok) return;
+      setNotes([...r.value.notePaths].sort());
+      setRecordPaths(r.value.recordPaths);
     });
     return () => {
       live = false;
     };
   }, [backend]);
 
+  // A book's words are its chapters' too: read them once the list is shown.
+  useEffect(() => {
+    if (!manuscripts || !recordPaths) return;
+    let live = true;
+    const candidates = new Set(recordPaths);
+    for (const m of manuscripts) {
+      if (!m.chapters?.length || m.words === undefined) continue;
+      void chapterWords(backend, m.path, m.chapters, candidates, new Set([m.path])).then((words) => {
+        if (live) setBookWords((known) => new Map(known).set(m.path, (m.words ?? 0) + words));
+      });
+    }
+    return () => {
+      live = false;
+    };
+  }, [backend, manuscripts, recordPaths]);
+
   const create = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setUntitled(true);
+      titleField.current?.focus();
+      return;
+    }
     setCreating(true);
     setProblem(null);
     const created = await backend.createManuscript({ title: title.trim(), template, style });
@@ -135,7 +165,8 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
                     {[
                       m.template ? templateName(m.template) : null,
                       m.style ? styleName(m.style) : null,
-                      m.embeds ? `${m.embeds} ${m.embeds === 1 ? "chapter" : "chapters"}` : m.words !== undefined ? `${m.words.toLocaleString()} ${m.words === 1 ? "word" : "words"}` : null,
+                      m.embeds ? `${m.embeds} ${m.embeds === 1 ? "chapter" : "chapters"}` : null,
+                      wordsLabel(m.embeds ? bookWords.get(m.path) : m.words),
                       m.modified ? `edited ${relativeTime(m.modified)}` : null,
                     ]
                       .filter(Boolean)
@@ -150,11 +181,33 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
         {problem && !dialog && <p className="problem" role="alert">{problem}</p>}
       </section>
 
-      <Dialog open={dialog} onClose={() => setDialog(false)} title="New manuscript" className="new-dialog">
+      <Dialog
+        open={dialog}
+        onClose={() => {
+          setDialog(false);
+          setAdoptOpen(false);
+          setUntitled(false);
+        }}
+        title="New manuscript"
+        className="new-dialog"
+      >
         <form className="new-manuscript" onSubmit={(e) => void create(e)}>
           <label className="span-2">
             Title
-            <input className="mdbase-field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="On the limits of the possible" required autoFocus />
+            <input
+              ref={titleField}
+              className="mdbase-field"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setUntitled(false);
+              }}
+              placeholder="On the limits of the possible"
+              aria-invalid={untitled || undefined}
+              aria-describedby={untitled ? "new-title-problem" : undefined}
+              autoFocus
+            />
+            {untitled && <span id="new-title-problem" className="field-problem severity-error">Give the manuscript a title; it can be changed later.</span>}
           </label>
           <label>
             Layout
@@ -164,22 +217,55 @@ export function Home({ backend, onOpen }: { backend: WriterBackend; onOpen(path:
             Citation style
             <Select aria-label="Citation style" value={style} options={STYLES.map((s) => ({ value: s.id, label: s.title }))} onChange={setStyle} />
           </label>
-          <button className="mdbase-button is-primary" type="submit" disabled={creating || !title.trim()}>
+          <button className="mdbase-button is-primary" type="submit" disabled={creating}>
             {creating ? "Creating…" : "Create manuscript"}
           </button>
         </form>
-        <div className="or-divider" role="separator"><span>or use a note you already have</span></div>
-        <form className="adopt-note" onSubmit={(e) => void adopt(e)}>
-          <NotePicker notes={candidates} value={notePath} onChange={setNotePath} />
-          <button className="mdbase-button" type="submit" disabled={adopting || !candidates.includes(notePath)}>
-            {adopting ? "Updating…" : "Use as manuscript"}
-          </button>
-        </form>
-        <p className="muted small">Adds the manuscript type to the note. Its other types, text and location stay as they are.</p>
+        {adoptOpen ? (
+          <>
+            <div className="or-divider" role="separator"><span>or use a note you already have</span></div>
+            <form className="adopt-note" onSubmit={(e) => void adopt(e)}>
+              <NotePicker notes={candidates} value={notePath} onChange={setNotePath} />
+              <button className="mdbase-button" type="submit" disabled={adopting || !candidates.includes(notePath)}>
+                {adopting ? "Updating…" : "Use as manuscript"}
+              </button>
+            </form>
+            <p className="muted small">Adds the manuscript type to the note. Its other types, text and location stay as they are.</p>
+          </>
+        ) : (
+          candidates.length > 0 && (
+            <p className="adopt-offer">
+              <button type="button" className="text-button" onClick={() => setAdoptOpen(true)}>
+                Use a note you already have…
+              </button>
+            </p>
+          )
+        )}
         {problem && <p className="problem" role="alert">{problem}</p>}
       </Dialog>
     </main>
   );
+}
+
+const wordsLabel = (words: number | undefined) => (words === undefined ? null : `${words.toLocaleString()} ${words === 1 ? "word" : "words"}`);
+
+/**
+ * Words in the records a body embeds on lines of their own, and in the
+ * records those embed; `seen` keeps a record that embeds itself from counting twice.
+ */
+async function chapterWords(backend: WriterBackend, from: string, targets: readonly string[], candidates: ReadonlySet<string>, seen: Set<string>): Promise<number> {
+  const counts = await Promise.all(
+    targets.map(async (target) => {
+      const path = resolveLinkTarget(target, from, candidates);
+      if (!path || seen.has(path)) return 0;
+      seen.add(path);
+      const body = await backend.readBody(path);
+      if (!body.ok) return 0;
+      const nested = chapterEmbeds(body.value).map((e) => e.target);
+      return wordCount(body.value) + (nested.length ? await chapterWords(backend, path, nested, candidates, seen) : 0);
+    }),
+  );
+  return counts.reduce((a, b) => a + b, 0);
 }
 
 /** Finds a note by its name or folder; the notes listed are the closest matches. */

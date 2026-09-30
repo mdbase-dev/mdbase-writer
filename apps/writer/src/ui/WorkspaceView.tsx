@@ -161,17 +161,15 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     const to = end < 0 ? body.length : end;
     const shown = allDiagnostics.filter((d) => d.field || d.record !== at.record || d.from < from || d.from > to);
     return shown.length === allDiagnostics.length ? allDiagnostics : shown;
-  }, [allDiagnostics, typing, snap.records]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the live cursor is a ref; the trailing cursor says when it moved
+  }, [allDiagnostics, typing, snap.records, cursor]);
   const byRecord = useMemo(() => {
     const map = new Map<string, WriterDiagnostic[]>();
     // Problems with a setting belong to the settings dialog, not to a line of the body.
     for (const d of diagnostics) if (!d.field) map.set(d.record, [...(map.get(d.record) ?? []), d]);
     return map;
   }, [diagnostics]);
-  const completion = useMemo(
-    () => ({ library: snap.library, labels: snap.result?.labels ?? [], recordPaths: snap.recordPaths }),
-    [snap.library, snap.result?.labels, snap.recordPaths],
-  );
+
 
   // Counts and lookups over every record's text trail typing slightly (deferred).
   const records = useDeferredValue(snap.records);
@@ -190,6 +188,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     return { words, labels, cited };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
   }, [records, snap.library, snap.result?.order]);
+  const completion = useMemo(
+    () => ({ library: snap.library, labels: snap.result?.labels ?? [], recordPaths: snap.recordPaths, cited: stats.cited }),
+    [snap.library, snap.result?.labels, snap.recordPaths, stats.cited],
+  );
   const insight = useMemo<EditorInsight>(
     () => ({
       library: new Map(snap.library.map((e) => [e.key, e])),
@@ -588,6 +590,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           ) : layout.tab === "comments" ? (
             <CommentsPanel
               placed={placed}
+              grouped={order.length > 1}
               people={snap.people}
               problem={snap.commentsProblem}
               active={activeComment}

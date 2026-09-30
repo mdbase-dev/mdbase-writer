@@ -264,10 +264,19 @@ export class ConnectBackend implements WriterBackend {
   }
 
   async index(): Promise<Result<CollectionIndex>> {
+    // Records of these contracts' types are not notes (Reader's starter annotation type is named as a fallback, as in annotations()).
+    const notNotes = new Set(["reader-annotation"]);
+    const described = await this.connection.describe();
+    const contracts = new Set<string>([commentContract.id, PERSON_CONTRACT.id, sourceContract.id, annotationContract.id]);
+    if (described.ok) for (const c of described.value.contracts) if (contracts.has(c.id)) for (const i of c.implementations) notNotes.add(i.typeName);
     const recordPaths: string[] = [];
+    const notePaths: string[] = [];
     for await (const page of this.connection.queryPages({ frontmatterMode: "persisted" }, { pageSize: 1_000 })) {
       if (!page.ok) return fail(problemMessage(page));
-      for (const r of page.value.results) recordPaths.push(r.path);
+      for (const r of page.value.results) {
+        recordPaths.push(r.path);
+        if (r.path.toLowerCase().endsWith(".md") && !r.types.some((t) => notNotes.has(t))) notePaths.push(r.path);
+      }
     }
     this.files.clear();
     try {
@@ -275,7 +284,7 @@ export class ConnectBackend implements WriterBackend {
     } catch (e) {
       return fail(e instanceof Error ? e.message : String(e));
     }
-    return ok({ recordPaths, filePaths: [...this.files.keys()].filter((p) => !p.endsWith(".md")) });
+    return ok({ recordPaths, filePaths: [...this.files.keys()].filter((p) => !p.endsWith(".md")), notePaths });
   }
 
   async library(): Promise<Result<LibraryEntry[]>> {
@@ -306,6 +315,11 @@ export class ConnectBackend implements WriterBackend {
     };
     const byContract = await collect({ contract: annotationContract, frontmatterMode: "effective", includeBody: true });
     return byContract.ok ? byContract : collect({ types: ["reader-annotation"], frontmatterMode: "persisted", includeBody: true });
+  }
+
+  async readBody(path: string): Promise<Result<string>> {
+    const read = await this.connection.read({ path });
+    return read.ok ? ok(read.value.body ?? "") : fail(problemMessage(read));
   }
 
   async readFile(path: string): Promise<Result<Uint8Array>> {

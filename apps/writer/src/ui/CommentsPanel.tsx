@@ -8,7 +8,7 @@ import { personName, type CommentChange, type People } from "../backend/comments
 import type { Result } from "../backend/types.js";
 import { ALT_LABEL, MOD_LABEL } from "../editor/insight.js";
 import type { CommentDraft } from "../workspace/workspace.js";
-import { clipPassage, describeSuggestion, when, type PlacedThread } from "./comments.js";
+import { clipPassage, describeSuggestion, plainPassage, when, type PlacedThread } from "./comments.js";
 import { PlusIcon } from "./icons.js";
 import { plural } from "./records.js";
 
@@ -37,8 +37,11 @@ export function CommentsPanel({
   onWholeRecord,
   onCheckAccount,
   onReviewAccess,
+  grouped = true,
 }: {
   placed: readonly PlacedThread[];
+  /** Threads are headed by their record's title (not for a manuscript of one record, whose title the top bar shows). */
+  grouped?: boolean;
   people: People;
   /** Why comments could not be loaded. */
   problem?: string | undefined;
@@ -109,7 +112,7 @@ export function CommentsPanel({
       <ul className="threads">
         {shown.map((p) => {
           const heading =
-            p.record !== lastRecord ? (
+            grouped && p.record !== lastRecord ? (
               <li className="threads-record" key={`h:${p.record}`}>
                 <h3 className="sidebar-heading" title={recordTitle(p.record)}>{recordTitle(p.record)}</h3>
               </li>
@@ -182,7 +185,7 @@ function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: { pendin
           {recordTitle(pending.record)}
         </span>
       </p>
-      {quote ? <blockquote className="thread-quote">{quote}</blockquote> : <p className="thread-quote muted small">{draft ? (suggest ? "Insert at the cursor" : "At the cursor") : "On the whole record"}</p>}
+      {quote ? <blockquote className="thread-quote">{plainPassage(quote)}</blockquote> : <p className="thread-quote muted small">{draft ? (suggest ? "Insert at the cursor" : "At the cursor") : "On the whole record"}</p>}
       {suggest && (
         <label className="composer-field">
           <span className="small">Replace with</span>
@@ -243,7 +246,7 @@ function Thread({
   return (
     <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}`} data-thread={root.path}>
       <button type="button" className="thread-anchor" onClick={onSelect} title={at === null ? "This passage is no longer in the text" : "Show in the editor"}>
-        {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{root.target.quote.exact || "(a point in the text)"}</blockquote> : <span className="thread-whole small muted">On the whole record</span>}
+        {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{plainPassage(root.target.quote.exact) || "(a point in the text)"}</blockquote> : <span className="thread-whole small muted">On the whole record</span>}
         {at === null && <span className="thread-detached small">Detached: the text has changed</span>}
       </button>
       <Comment comment={root} people={people} />

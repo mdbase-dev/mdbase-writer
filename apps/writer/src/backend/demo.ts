@@ -65,6 +65,11 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     return commentFromRecord(path, frontmatter, body);
   };
 
+  // When each manuscript was last written, for the list: a few days before the
+  // demo opened, and then when this demo last changed its text.
+  const lastWritten = new Map<string, { body: string; modified: string }>();
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+
   const backend: WriterBackend & { authority: typeof authority } = {
     /** Exposed so browser tests can simulate other applications' edits. */
     authority,
@@ -80,8 +85,14 @@ export async function createDemoBackend(): Promise<WriterBackend> {
           out.push(m);
           continue;
         }
-        out.push({ ...m, ...bodySummary(opened.value.session.getSnapshot().body) });
+        const { body } = opened.value.session.getSnapshot();
         opened.value.release();
+        let written = lastWritten.get(m.path);
+        if (!written || written.body !== body) {
+          written = { body, modified: written ? new Date().toISOString() : daysAgo(lastWritten.size * 4 + 2) };
+          lastWritten.set(m.path, written);
+        }
+        out.push({ ...m, ...bodySummary(body), modified: written.modified });
       }
       return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
     },
@@ -94,6 +105,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       });
       paths.add(path);
       manuscripts.set(path, { path, title: input.title, template: input.template, style: input.style });
+      lastWritten.set(path, { body: "# Introduction {#sec-intro}\n\n", modified: new Date().toISOString() });
       return ok(path);
     },
     async adoptManuscript(path: string): Promise<Result<string>> {
@@ -107,6 +119,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       release();
       if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
       manuscripts.set(path, { path, title });
+      lastWritten.set(path, { body, modified: new Date().toISOString() });
       return ok(path);
     },
     async createRecord(path: string, body: string) {
@@ -117,7 +130,16 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       return ok(at);
     },
     async index(): Promise<Result<CollectionIndex>> {
-      return ok({ recordPaths: [...paths], filePaths: [...files.keys()] });
+      const notNotes = new Set(["comment", "person", "reader-annotation", "reader-source"]);
+      const notePaths = [...paths].filter((p) => p.endsWith(".md") && !notNotes.has(String(splitFrontmatter(markdown[`../../demo/${p}`] ?? "").frontmatter["type"] ?? "")));
+      return ok({ recordPaths: [...paths], filePaths: [...files.keys()], notePaths });
+    },
+    async readBody(path: string) {
+      const opened = await authority.records.open(path, { autosave: false });
+      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
+      const { body } = opened.value.session.getSnapshot();
+      opened.value.release();
+      return ok(body);
     },
     async library() {
       return ok(entries);

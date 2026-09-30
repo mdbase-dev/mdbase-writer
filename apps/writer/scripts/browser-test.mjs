@@ -91,6 +91,7 @@ await step("home lists the demo manuscripts", async () => {
 
 await step("an existing note becomes a manuscript, keeping its type and fields", async () => {
   await page.getByRole("button", { name: "New manuscript" }).click();
+  await page.getByRole("button", { name: "Use a note you already have…" }).click();
   await page.locator(".adopt-note input").fill("inoperativity");
   await page.locator(".note-option", { hasText: "On inoperativity" }).click();
   await page.getByRole("button", { name: "Use as manuscript" }).click();
@@ -162,9 +163,22 @@ await step("a Reader quotation goes in with its citation and page", async () => 
 await step("a toolbar over a selection formats it and finds a source for it", async () => {
   const before = await editorText();
   const bar = page.locator(".cm-selection-bar");
-  await page.locator(".cm-line", { hasText: "Giorgio Agamben across" }).first().click();
-  await page.keyboard.press("Home");
-  await page.keyboard.press("ControlOrMeta+Shift+ArrowRight");
+  // Double-click "Giorgio" (mid-line: hard-wrapped lines are joined), then take "Agamben" too.
+  const giorgio = await page.evaluate(() => {
+    const walker = document.createTreeWalker(document.querySelector(".cm-content"), NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const at = node.textContent.indexOf("Giorgio Agamben across");
+      if (at < 0) continue;
+      const range = document.createRange();
+      range.setStart(node, at);
+      range.setEnd(node, at + "Giorgio".length);
+      const r = range.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    return null;
+  });
+  assert.ok(giorgio, "found “Giorgio Agamben across” in the editor");
+  await page.mouse.dblclick(giorgio.x, giorgio.y);
   await page.keyboard.press("ControlOrMeta+Shift+ArrowRight");
   await bar.waitFor({ timeout: 5_000 });
   await bar.getByRole("button", { name: "Bold" }).click();

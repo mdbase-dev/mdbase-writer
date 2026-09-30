@@ -51,8 +51,23 @@ export function anchorsFor(placed: readonly PlacedThread[], record: string): Com
 }
 
 /** A passage on one line, shortened to about 60 characters. */
+/**
+ * A passage of Markdown as it reads: emphasis, code and link markup dropped,
+ * soft line breaks as spaces ("*modal picture*" → "modal picture").
+ */
+export function plainPassage(passage: string): string {
+  return passage
+    .replace(/!?\[([^\]\n]*)\]\([^)\n]*\)/g, "$1")
+    .replace(/\[\[(?:[^\]|\n]*\|)?([^\]\n]*)\]\]/g, "$1")
+    .replace(/(\*\*|__)(?=\S)([^\n]*?\S)\1/g, "$2")
+    .replace(/\*(?=\S)([^*\n]*?\S)\*/g, "$1")
+    .replace(/(?<![\p{L}\p{N}])_(?=\S)([^_\n]*?\S)_(?![\p{L}\p{N}])/gu, "$1")
+    .replace(/`([^`\n]*)`/g, "$1")
+    .replace(/([^\n])\n(?!\n)[ \t]*/g, "$1 ");
+}
+
 export function clipPassage(passage: string): string {
-  const one = passage.replace(/\s+/g, " ").trim();
+  const one = plainPassage(passage).replace(/\s+/g, " ").trim();
   return one.length > 60 ? `${one.slice(0, 57)}…` : one;
 }
 
