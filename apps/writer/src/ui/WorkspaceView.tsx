@@ -3,10 +3,11 @@
 // (either can be hidden, and the split between them dragged).
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
-import { useCallback, useContext, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import type { BlockPosition, WriterDiagnostic } from "../compile/protocol.js";
 import type { ChapterCards } from "../editor/chapter-cards.js";
+import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle } from "../editor/Editor.js";
 import { ALT_LABEL, labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
@@ -72,6 +73,9 @@ function saveExportFormat(format: ExportFormat): void {
     // Storage may be blocked; the button then starts from PDF next time.
   }
 }
+
+const NO_DIAGNOSTICS: readonly WriterDiagnostic[] = [];
+const NO_POSITIONS: readonly BlockPosition[] = [];
 
 const THEME_NAME: Record<ThemePreference, string> = { system: "System", light: "Light", dark: "Dark" };
 
@@ -180,7 +184,15 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
     [snap.comments, records, snap.recordPaths, snap.result?.order],
   );
-  const anchors = useMemo(() => anchorsFor(placed, active), [placed, active]);
+  // Threads are placed again after every edit, but the editor's anchors follow
+  // edits themselves: it is only given new ones when they change.
+  const shownAnchors = useRef<{ key: string; anchors: CommentAnchor[] } | null>(null);
+  const anchors = useMemo(() => {
+    const next = anchorsFor(placed, active);
+    const key = JSON.stringify([active, next]);
+    if (shownAnchors.current?.key !== key) shownAnchors.current = { key, anchors: next };
+    return shownAnchors.current.anchors;
+  }, [placed, active]);
 
   const showComments = useCallback(() => {
     setLayout((l) => (l.sidebar && l.tab === "comments" ? l : { ...l, sidebar: true, tab: "comments" }));
@@ -241,6 +253,16 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       setActive(record);
     }
   }, [active, setLayout]);
+
+  // Stable handlers, so the editor and preview only render when what they show changes.
+  const onEditorChange = useCallback((text: string) => workspace.setBody(active, text), [workspace, active]);
+  const onEditorAnchor = useCallback((id: string) => {
+    setActiveComment(id);
+    showComments();
+  }, [showComments]);
+  const onPreviewJump = useCallback((p: BlockPosition) => jump(p.record, p.offset), [jump]);
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const closeShortcuts = useCallback(() => setShortcutsOpen(false), []);
 
   const onEditorReady = useCallback((handle: EditorHandle) => {
     editor.current = handle;
@@ -595,10 +617,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             path={active}
             text={activeView.snapshot.body}
             readOnly={activeView.snapshot.state === "deleted"}
-            diagnostics={byRecord.get(active) ?? []}
+            diagnostics={byRecord.get(active) ?? NO_DIAGNOSTICS}
             completion={completion}
             insight={insight}
-            onChange={(text) => workspace.setBody(active, text)}
+            onChange={onEditorChange}
             onReady={onEditorReady}
             onCursor={onCursor}
             onFollow={onFollow}
@@ -606,10 +628,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             onFindSource={showSources}
             anchors={anchors}
             activeComment={activeComment}
-            onAnchor={(id) => {
-              setActiveComment(id);
-              showComments();
-            }}
+            onAnchor={onEditorAnchor}
           />
         ) : (
           <p className="muted pad">Opening…</p>
@@ -665,13 +684,13 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         <Preview
           {...(snap.artifact ? { artifact: snap.artifact } : {})}
           {...(snap.artifactRevision !== undefined ? { revision: snap.artifactRevision } : {})}
-          positions={snap.result?.positions ?? []}
+          positions={snap.result?.positions ?? NO_POSITIONS}
           stale={Boolean(snap.result && !snap.result.artifact)}
-          onJump={(p: BlockPosition) => jump(p.record, p.offset)}
+          onJump={onPreviewJump}
           follow={follow}
           zoom={layout.zoom}
           onView={setPreviewView}
-          onTitleClick={() => setSettingsOpen(true)}
+          onTitleClick={openSettings}
         />
       </section>
 
@@ -701,7 +720,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         onClose={closeSettings}
         focus={settingsFocus}
       />
-      <Shortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} />
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
@@ -1061,7 +1080,7 @@ const SHORTCUTS: readonly [string, string][] = [
   ["?", "This list"],
 ];
 
-function Shortcuts({ open, onClose }: { open: boolean; onClose(): void }) {
+const Shortcuts = memo(function Shortcuts({ open, onClose }: { open: boolean; onClose(): void }) {
   return (
     <Dialog open={open} onClose={onClose} title="Keyboard shortcuts" className="shortcuts-dialog">
       <dl className="shortcuts">
@@ -1074,4 +1093,4 @@ function Shortcuts({ open, onClose }: { open: boolean; onClose(): void }) {
       </dl>
     </Dialog>
   );
-}
+});

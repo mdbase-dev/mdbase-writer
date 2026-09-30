@@ -195,12 +195,15 @@ export class ManuscriptWorkspace {
   private onSession(path: string, snapshot: SessionSnapshot): void {
     const records = new Map(this.current.records);
     records.set(path, { path, snapshot });
-    this.update({ records });
     // Forward only content changes; save-state transitions don't need a compile.
     const key = `${snapshot.body}\u0000${JSON.stringify(snapshot.frontmatter)}`;
-    if (this.sent.get(path) === key) return;
+    if (this.sent.get(path) === key) {
+      this.update({ records });
+      return;
+    }
     this.sent.set(path, key);
-    this.update({ compiling: true });
+    // One update per edit: each re-renders the whole workspace.
+    this.update({ records, compiling: true });
     this.compile.send({ type: "records", upsert: [{ path, body: snapshot.body, frontmatter: snapshot.frontmatter }] });
   }
 

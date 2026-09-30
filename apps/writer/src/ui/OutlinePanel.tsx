@@ -2,7 +2,7 @@
 // chapters (records embedded on lines of their own) in reading order, each
 // with its headings. Chapters are dragged, or moved with Alt-↑/↓, to reorder
 // them; a new chapter is added at the end.
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 
 import type { Result } from "../backend/types.js";
 import type { WriterDiagnostic } from "../compile/protocol.js";
@@ -10,7 +10,7 @@ import { wordCount } from "../words.js";
 import type { RecordView } from "../workspace/workspace.js";
 import { PlusIcon } from "./icons.js";
 import { headingAt, headings, sectionWords, withoutTitle } from "./outline.js";
-import { plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
+import { formatCount, plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
 
 export function OutlinePanel({
   main,
@@ -85,7 +85,7 @@ export function OutlinePanel({
         <RecordState view={mainView} problems={byRecord.get(main)?.length ?? 0} />
         <span className="record-words" title="In the whole manuscript; citations, code and math are not counted">{plural(words, "word")}</span>
       </button>
-      <RecordHeadings view={mainView} path={main} cursor={cursor} onJump={(offset) => onJump(main, offset)} />
+      <RecordHeadings view={mainView} path={main} cursor={cursor?.record === main ? cursor.offset : null} onJump={onJump} />
 
       {rest.length > 0 && (
         <ol ref={list} className="records" aria-label="Chapters" onDragOver={(e) => dragging !== null && e.preventDefault()} onDrop={onDrop}>
@@ -135,9 +135,9 @@ export function OutlinePanel({
                   <span className="record-number" aria-hidden={!direct}>{direct ? index + 1 : ""}</span>
                   <span className="record-name">{recordTitle(view, path)}</span>
                   <RecordState view={view} problems={byRecord.get(path)?.length ?? 0} />
-                  <span className="record-words">{view ? wordCount(view.snapshot.body).toLocaleString() : ""}</span>
+                  <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
                 </button>
-                <RecordHeadings view={view} path={path} cursor={cursor} onJump={(offset) => onJump(path, offset)} />
+                <RecordHeadings view={view} path={path} cursor={cursor?.record === path ? cursor.offset : null} onJump={onJump} />
               </li>
             );
           })}
@@ -160,14 +160,22 @@ function RecordState({ view, problems }: { view: RecordView | undefined; problem
   );
 }
 
-/** A record's headings, less an opening heading that repeats its title. */
-function RecordHeadings({ view, path, cursor, onJump }: { view: RecordView | undefined; path: string; cursor: { record: string; offset: number } | null; onJump(offset: number): void }) {
+/** A record's word count, counted again only when its text changes. */
+const Words = memo(function Words({ body }: { body: string }) {
+  return formatCount(wordCount(body));
+});
+
+/**
+ * A record's headings, less an opening heading that repeats its title. Only
+ * the record being edited, or the one the cursor is in, renders as you type.
+ */
+const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump }: { view: RecordView | undefined; path: string; cursor: number | null; onJump(path: string, offset: number): void }) {
   const body = view?.snapshot.body;
   const title = recordTitle(view, path);
   const all = useMemo(() => (body ? headings(body) : []), [body]);
   const words = useMemo(() => (body ? sectionWords(body, all) : []), [body, all]);
   const list = useMemo(() => withoutTitle(all, title), [all, title]);
-  const here = cursor?.record === path ? headingAt(all, cursor.offset) : undefined;
+  const here = cursor !== null ? headingAt(all, cursor) : undefined;
   const activeRow = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     activeRow.current?.scrollIntoView({ block: "nearest" });
@@ -183,16 +191,16 @@ function RecordHeadings({ view, path, cursor, onJump }: { view: RecordView | und
             type="button"
             className="heading-row"
             aria-current={h === here ? "location" : undefined}
-            onClick={() => onJump(h.offset)}
+            onClick={() => onJump(path, h.offset)}
           >
             <span className="heading-text">{h.text}</span>
-            <span className="heading-words" title={`${plural(words[all.indexOf(h)] ?? 0, "word")} in this section`}>{(words[all.indexOf(h)] ?? 0).toLocaleString()}</span>
+            <span className="heading-words" title={`${plural(words[all.indexOf(h)] ?? 0, "word")} in this section`}>{formatCount(words[all.indexOf(h)] ?? 0)}</span>
           </button>
         </li>
       ))}
     </ol>
   );
-}
+});
 
 function AddChapter({ onAdd, onAdded }: { onAdd(title: string): Promise<Result<string>>; onAdded(path: string): void }) {
   const [editing, setEditing] = useState(false);

@@ -8,7 +8,7 @@ import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@co
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
 import { Annotation, EditorState } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
@@ -52,7 +52,7 @@ export interface EditorProps {
   onAnchor?(id: string): void;
 }
 
-export function Editor({ path, text, readOnly, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor }: EditorProps) {
+export const Editor = memo(function Editor({ path, text, readOnly, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -185,4 +185,4 @@ export function Editor({ path, text, readOnly, diagnostics, completion, insight,
   }, [anchors, activeComment, path, readOnly]);
 
   return <div className="editor" ref={host} />;
-}
+});

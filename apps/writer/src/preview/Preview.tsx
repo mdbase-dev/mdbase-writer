@@ -1,12 +1,15 @@
 // Typeset preview. Each page is a placeholder sized from the document's page
 // list; only pages near the viewport are drawn (to canvas), so the cost of an
 // update stays proportional to what is on screen rather than to the length
-// of the manuscript. Clicking a page jumps to the Markdown block it came from.
+// of the manuscript. While the writer types, a new document is drawn only
+// once they pause, the page in view first, so drawing never holds up a
+// keystroke. A page whose content did not change (the renderer fingerprints
+// each) is left as drawn. Clicking a page jumps to the Markdown block it came from.
 // Pages fit the pane's width, or are shown at a zoom (1 = the page's printed
 // size at 96 CSS pixels per inch).
 import { createTypstRenderer, type RenderSession } from "@myriaddreamin/typst.ts/renderer";
 import rendererWasm from "@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import type { BlockPosition } from "../compile/protocol.js";
 
@@ -67,8 +70,12 @@ export interface PreviewView {
 const PX_PER_PT = 96 / 72;
 
 const NEAR_VIEWPORT = "900px 0px";
+/** How long documents must stop arriving (the writer pause) before the newest is drawn. */
+const SETTLE_MS = 250;
 
-export function Preview({ artifact, revision, positions, stale, onJump, follow, zoom, onView, onTitleClick }: PreviewProps) {
+const yieldToInput = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+export const Preview = memo(function Preview({ artifact, revision, positions, stale, onJump, follow, zoom, onView, onTitleClick }: PreviewProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const pagesHost = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<readonly PageBox[]>([]);
@@ -78,7 +85,11 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
   const visible = useRef(new Set<number>());
   const drawn = useRef(new Map<number, number>());
   const drawnWidth = useRef(new Map<number, number>());
+  /** The renderer's fingerprint of what each page's bitmap shows. */
+  const drawnKey = useRef(new Map<number, string>());
   const drawing = useRef<Promise<void>>(Promise.resolve());
+  /** Counts documents as they arrive; a draw in progress stops when a newer one is waiting. */
+  const arrived = useRef(0);
   const marker = useRef<HTMLDivElement>(null);
   const latest = useRef({ positions, onJump, revision, onView, onTitleClick, follow });
   latest.current = { positions, onJump, revision, onView, onTitleClick, follow };
@@ -124,25 +135,47 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
       const host = pagesHost.current;
       if (!s || !host) return;
       const v = version.current;
-      for (const index of [...visible.current].sort((a, b) => a - b)) {
-        const canvas = host.querySelector<HTMLCanvasElement>(`canvas[data-page="${index}"]`);
+      const waiting = arrived.current;
+      // Pages on screen first, then those just above and below it.
+      const view = scroller.current?.getBoundingClientRect();
+      const onScreen = (c: HTMLCanvasElement | null) => {
+        const r = c?.getBoundingClientRect();
+        return Boolean(r && view && r.bottom > view.top && r.top < view.bottom);
+      };
+      const canvases = [...visible.current].map((index) => ({ index, canvas: host.querySelector<HTMLCanvasElement>(`canvas[data-page="${index}"]`) }));
+      canvases.sort((a, b) => Number(onScreen(b.canvas)) - Number(onScreen(a.canvas)) || a.index - b.index);
+      let first = true;
+      for (const { index, canvas } of canvases) {
         const box = pagesRef.current[index];
         if (!canvas || !box) continue;
         const cssWidth = canvas.clientWidth || 600;
         // Drawn for this document at this size (a zoom or a wider pane needs more pixels).
         if (drawn.current.get(index) === v && drawnWidth.current.get(index) === cssWidth) continue;
+        // Each page is a long task: let keystrokes in between, and leave the
+        // rest for the newer document if one arrived meanwhile.
+        if (!first) await yieldToInput();
+        first = false;
+        if (arrived.current !== waiting || version.current !== v) return;
         const pixelPerPt = Math.min(4, Math.max(1, (cssWidth / box.width) * (window.devicePixelRatio || 1)));
         const next = document.createElement("canvas");
         next.width = Math.round(box.width * pixelPerPt);
         next.height = Math.round(box.height * pixelPerPt);
         const ctx = next.getContext("2d");
         if (!ctx) continue;
-        await s.renderer.renderCanvas({ renderSession: s.session, canvas: ctx, pageOffset: index, backgroundColor: "#ffffff", pixelPerPt } as Parameters<Renderer["renderCanvas"]>[0]);
+        // Given the fingerprint of the bitmap on screen, the renderer draws
+        // nothing when the page is unchanged and returns the same one.
+        const shown = drawnWidth.current.get(index) === cssWidth ? drawnKey.current.get(index) : undefined;
+        const result = (await s.renderer.renderCanvas({ renderSession: s.session, canvas: ctx, pageOffset: index, backgroundColor: "#ffffff", pixelPerPt, ...(shown ? { cacheKey: shown } : {}) } as Parameters<Renderer["renderCanvas"]>[0])) as { cacheKey?: string } | undefined;
         if (version.current !== v) return; // a newer document arrived; its pass redraws
-        // Swap in the finished bitmap in one step so a page never flashes blank.
-        canvas.width = next.width;
-        canvas.height = next.height;
-        canvas.getContext("2d")?.drawImage(next, 0, 0);
+        const key = result?.cacheKey;
+        if (!shown || key !== shown) {
+          // Swap in the finished bitmap in one step so a page never flashes blank.
+          canvas.width = next.width;
+          canvas.height = next.height;
+          canvas.getContext("2d")?.drawImage(next, 0, 0);
+        }
+        if (key) drawnKey.current.set(index, key);
+        else drawnKey.current.delete(index);
         drawn.current.set(index, v);
         drawnWidth.current.set(index, cssWidth);
         canvas.dataset["version"] = String(v);
@@ -152,9 +185,13 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
     });
   };
 
-  // A new document: load it into the session and redraw what is visible.
+  // A new document: load it into the session and redraw what is visible. The
+  // first is drawn at once; later ones once documents stop arriving for a
+  // moment. (Drawing each as it comes slows typing, and so the next compile,
+  // until drawing is all the page does.)
   useEffect(() => {
     if (!artifact) return;
+    arrived.current++;
     let cancelled = false;
     const load = async () => {
       while (!session.current && !cancelled) await new Promise((r) => setTimeout(r, 20));
@@ -168,9 +205,11 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
       setPages((prev) => (prev.length === info.length && prev.every((p, i) => p.width === info[i]?.width && p.height === info[i]?.height) ? prev : info));
       requestAnimationFrame(drawVisible);
     };
-    void load();
+    const timer = version.current === 0 ? undefined : setTimeout(() => void load(), SETTLE_MS);
+    if (!timer) void load();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one load per artifact
   }, [artifact]);
@@ -287,4 +326,4 @@ export function Preview({ artifact, revision, positions, stale, onJump, follow, 
       </div>
     </div>
   );
-}
+});

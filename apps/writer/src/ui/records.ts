@@ -23,4 +23,7 @@ export function recordTitle(view: RecordView | undefined, path: string): string 
   return heading?.[1] ?? path.split("/").pop()?.replace(/\.md$/, "") ?? path;
 }
 
-export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
+// One formatter for every count: toLocaleString makes a new one each call.
+const numbers = new Intl.NumberFormat();
+export const formatCount = (n: number) => numbers.format(n);
+export const plural = (n: number, one: string, many = `${one}s`) => `${formatCount(n)} ${n === 1 ? one : many}`;
