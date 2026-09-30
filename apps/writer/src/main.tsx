@@ -11,6 +11,12 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App.js";
 
+import { setupPwaInstall } from "./pwa-install.js";
+import "./pwa-install.css";
+
+const stopPwaInstall = setupPwaInstall("mdbase writer");
+if (import.meta.hot) import.meta.hot.dispose(stopPwaInstall);
+
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root");
 createRoot(root).render(
