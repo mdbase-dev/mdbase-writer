@@ -100,6 +100,8 @@ label > .mdbase-select { width: 100%; }
 .bar > :not(.bar-title, .bar-spacer) { flex: none; }
 .bar-words { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .bar-spacer { flex: 1; }
+/* Save feedback follows the same text rhythm as the neighboring word count. */
+.bar .mdbase-save-notice { font-family: inherit; font-size: 12px; line-height: 1.5; }
 /* The short form of a save state is for phones (see below). */
 .bar .mdbase-save-notice.is-short { display: none; }
 .bar-layout { display: flex; align-items: center; gap: 0.3rem; }
