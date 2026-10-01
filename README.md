@@ -41,10 +41,20 @@ its chapters. The preview is typeset by Typst in the browser as you type.
   cross-reference for what it labels; Ctrl/⌘-click goes there. Word counts
   for the manuscript and each section, F8 for the next problem, and a layout
   (sidebar, editor/preview split, zoom) that is remembered in the browser.
+  Switching chapters retains undo/redo, selection and scroll position.
+- **Recoverable writing.** Preview failures do not block the editor or chapters;
+  failed downloads and rendering can be retried. Unsent text and settings are
+  backed up in this browser, scoped to the collection and record, and offered
+  for review after reopening. Storage is best-effort, not a substitute for
+  saving to the collection. Failed saves can be retried or downloaded; conflicts
+  have a side-by-side comparison and editable merged text.
 - **Export.** The Export button makes the format used last; its menu offers
   PDF; Word (DOCX), made in the browser by Pandoc's WebAssembly
   build, with cross-references resolved and the layout's Word styles; and a
-  Pandoc/Quarto bundle (zip) to build other formats yourself.
+  Pandoc/Quarto bundle (zip) to build other formats yourself. Every export
+  checks nested records and images and freezes its inputs; incomplete output
+  requires explicit consent before download. Exports can be cancelled or retried.
+  Collection Typst layouts apply to PDF only; Word uses article styles.
 - **Layouts.** Article and thesis templates, or a Typst file in the collection
   defining `template(title:, subtitle:, authors:, abstract:, date:, body)`.
 
@@ -64,14 +74,17 @@ See [docs/architecture.md](docs/architecture.md) for how the pieces fit.
 ```sh
 pnpm install
 pnpm dev                 # http://127.0.0.1:5320/?demo — a demo collection, no account needed
-pnpm check               # typecheck and tests (core, manifest)
+pnpm check               # typecheck and tests (core, app, manifest)
 pnpm --filter @mdbase-writer/app test:browser   # end-to-end in Chromium; needs `pnpm dev` running
 ```
 
 The `?demo` collection runs on the SDK's in-memory record authority
 (`@mdbase-dev/connect-testing`), so record sessions, autosave, conflicts and
 recovery behave as they do against a real collection. It exists only in
-development builds.
+development and LAB builds. The browser command includes both the baseline
+suite and fault-injection checks for recovery, early exports, chapter history,
+conflicts, cancellation and selectable preview text. Run only the latter with
+`pnpm --filter @mdbase-writer/app test:browser:reliability`.
 
 ### Against a real collection
 

@@ -9,7 +9,7 @@ import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useM
 import type { BlockPosition, SourceMark, WriterDiagnostic } from "../compile/protocol.js";
 import type { ChapterCards } from "../editor/chapter-cards.js";
 import type { CommentAnchor } from "../editor/comments.js";
-import { Editor, type EditorHandle } from "../editor/Editor.js";
+import { Editor, type EditorHandle, type RetainedEditor } from "../editor/Editor.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
 import { authorYear } from "../editor/library-search.js";
 import { ALT_LABEL, labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
@@ -36,6 +36,9 @@ import {
   SplitIcon,
 } from "./icons.js";
 import { readerSourceHref } from "../apps.js";
+import { errorMessage } from "../async.js";
+import { zip } from "../export/zip.js";
+import { CompareDialog, type Comparison } from "./CompareDialog.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
 import { anchorsFor, placeThreads, type PlacedThread } from "./comments.js";
@@ -109,7 +112,7 @@ function useSustained(flag: boolean, delay: number): boolean {
   return flag && held;
 }
 
-export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWorkspace; onClose(): void }) {
+export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWorkspace; onClose(force?: boolean): void }) {
   const snap = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot);
   // Most typesets finish between keystrokes; saying so each time only flickers.
   const slowCompile = useSustained(snap.compiling, 600);
@@ -132,6 +135,14 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
   const [activeComment, setActiveComment] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
+  const editorStates = useRef(new Map<string, RetainedEditor>());
+  const [comparisonPath, setComparisonPath] = useState<string | null>(null);
+  const [leaveProblem, setLeaveProblem] = useState<string | null>(null);
+  const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
+  const [pendingExport, setPendingExport] = useState<{ bytes: Uint8Array; type: string; name: string; problems: readonly string[] } | null>(null);
+  const exportJob = useRef<AbortController | null>(null);
+  const lastExport = useRef<ExportFormat>(exportFormat);
+  useEffect(() => () => exportJob.current?.abort(), []);
   const pendingReveal = useRef<{ offset: number; to?: number; focus?: boolean } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null);
@@ -153,9 +164,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const toggleJoinLines = useCallback(() => setLayout((l) => ({ ...l, joinLines: !l.joinLines })), [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => setLayout((l) => ({ ...l, tab })), [setLayout]);
 
-  const order = snap.result?.order.length ? snap.result.order : [workspace.main];
+  const order = useMemo(() => workspace.readingOrder(), [workspace, snap.records, snap.recordPaths, snap.annotationPaths]);
   const activeView = snap.records.get(active);
-  const allDiagnostics = snap.result?.diagnostics ?? NO_DIAGNOSTICS;
+  const dependencyDiagnostics = useMemo(() => workspace.dependencyDiagnostics(), [workspace, snap.assetProblems, snap.recordProblems, snap.records]);
+  const allDiagnostics = useMemo(() => [...(snap.result?.diagnostics ?? NO_DIAGNOSTICS), ...dependencyDiagnostics], [snap.result?.diagnostics, dependencyDiagnostics]);
   // A citation or label half typed is not a problem yet: problems on the line
   // being typed wait until typing pauses or the cursor leaves the line.
   const diagnostics = useMemo(() => {
@@ -192,8 +204,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       for (const key of referenceKeys(body)) if (libraryKeys.has(key)) cited.set(key, (cited.get(key) ?? 0) + 1);
     }
     return { words, labels, cited };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
-  }, [records, snap.library, snap.result?.order]);
+  }, [records, snap.library, order]);
   const completion = useMemo(
     () => ({ library: snap.library, labels: snap.result?.labels ?? [], recordPaths: snap.recordPaths, cited: stats.cited }),
     [snap.library, snap.result?.labels, snap.recordPaths, stats.cited],
@@ -210,8 +221,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   // Threads on the manuscript's records, placed in their (slightly deferred) text.
   const placed = useMemo(
     () => placeThreads(snap.comments, order, (path) => records.get(path)?.snapshot.body, snap.recordPaths),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
-    [snap.comments, records, snap.recordPaths, snap.result?.order],
+    [snap.comments, records, snap.recordPaths, order],
   );
   // Threads are placed again after every edit, but the editor's anchors follow
   // edits themselves: it is only given new ones when they change.
@@ -247,6 +257,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
 
   const manuscriptTitle = recordTitle(snap.records.get(workspace.main), workspace.main);
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
+  if (snap.pendingSettings) states.push("unsaved");
   const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
 
   useEffect(() => {
@@ -363,8 +374,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         ? uses.find((u) => rank(u.record, u.offset) > at) ?? uses[0]
         : [...uses].reverse().find((u) => rank(u.record, u.offset) < at) ?? uses[uses.length - 1];
     if (next) jump(next.record, next.offset + 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
-  }, [snap.records, snap.result?.order, cursor, active, jump]);
+  }, [snap.records, order, cursor, active, jump]);
 
   // The cited source under the cursor, for the sources list.
   const citedAtCursor = useMemo(() => {
@@ -409,8 +419,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   // Problems in reading order, for F8 / Shift-F8.
   const bodyProblems = useMemo(
     () => diagnostics.filter((d) => !d.field).slice().sort((a, b) => order.indexOf(a.record) - order.indexOf(b.record) || a.from - b.from),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
-    [diagnostics, snap.result?.order],
+    [diagnostics, order],
   );
   const stepProblem = useCallback((direction: 1 | -1) => {
     if (!bodyProblems.length) return;
@@ -422,8 +431,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         ? bodyProblems.find((d) => rank(d.record, d.from) > at) ?? bodyProblems[0]
         : [...bodyProblems].reverse().find((d) => rank(d.record, d.from) < at) ?? bodyProblems[bodyProblems.length - 1];
     if (next) jump(next.record, next.from);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- order is derived from the result
-  }, [bodyProblems, cursor, active, jump, snap.result?.order]);
+  }, [bodyProblems, cursor, active, jump, order]);
 
   const fileStem = manuscriptTitle.replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "manuscript";
   const download = (bytes: Uint8Array, type: string, name: string) => {
@@ -440,33 +448,60 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         ? { tone: "problem", text: `Exported ${name} with ${plural(problems.length, "problem")}: ${problems[0]}` }
         : { tone: "ok", text: `Exported ${name}.` },
     );
-  const exportPdf = async () => {
-    setExportStatus({ tone: "busy", text: "Exporting the PDF…" });
-    const out = await workspace.exportPdf();
-    if (!out.bytes) return setExportStatus({ tone: "problem", text: out.error ?? "Export failed." });
-    download(out.bytes, "application/pdf", `${fileStem}.pdf`);
-    exported("the PDF", []);
-  };
-  const exportDocx = async () => {
-    setExportStatus({ tone: "busy", text: "Making the Word document… (the first export loads Pandoc, about 16 MB)" });
-    const out = await workspace.exportDocx();
-    if (!out.bytes) return setExportStatus({ tone: "problem", text: out.error ?? "Export failed." });
-    download(out.bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", `${fileStem}.docx`);
-    exported("the Word document", out.problems);
-  };
-  const exportBundle = async () => {
-    setExportStatus({ tone: "busy", text: "Making the Pandoc bundle…" });
-    const out = await workspace.exportBundle();
-    download(out.bytes, "application/zip", `${fileStem} (Pandoc).zip`);
-    exported("the Pandoc bundle", out.problems);
-  };
-  /** Exports, and makes this format the Export button's. */
+  /** Preflight loads every dependency; no incomplete file downloads without consent. */
   const runExport = (format: ExportFormat) => {
+    if (exportJob.current || pendingExport || snap.phase !== "ready") return;
+    lastExport.current = format;
     setExportFormat(format);
     saveExportFormat(format);
-    void (format === "pdf" ? exportPdf() : format === "docx" ? exportDocx() : exportBundle());
+    const controller = new AbortController();
+    exportJob.current = controller;
+    setExportStatus({ tone: "busy", text: format === "docx" ? "Checking chapters and images, then making Word… (first use loads about 16 MB)" : `Checking chapters and images, then making ${EXPORT_NAME[format]}…` });
+    void (async () => {
+      try {
+        const out = await (format === "pdf" ? workspace.exportPdf(controller.signal) : format === "docx" ? workspace.exportDocx(controller.signal) : workspace.exportBundle(controller.signal));
+        controller.signal.throwIfAborted();
+        if (!out.bytes) throw new Error("error" in out ? out.error ?? "Export failed." : "Export failed.");
+        const type = format === "pdf" ? "application/pdf" : format === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/zip";
+        const name = format === "bundle" ? `${fileStem} (Pandoc).zip` : `${fileStem}.${format}`;
+        if (out.problems.length) {
+          setPendingExport({ bytes: out.bytes, type, name, problems: out.problems });
+          setExportStatus(null);
+        } else {
+          download(out.bytes, type, name);
+          exported(EXPORT_NAME[format], []);
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) setExportStatus({ tone: "problem", text: errorMessage(error) });
+      } finally {
+        if (exportJob.current === controller) exportJob.current = null;
+      }
+    })();
   };
-  const canExport: Record<ExportFormat, boolean> = { pdf: Boolean(snap.artifact), docx: snap.phase === "ready", bundle: snap.phase === "ready" };
+  const cancelExport = () => {
+    exportJob.current?.abort();
+    exportJob.current = null;
+    setExportStatus(null);
+    setPendingExport(null);
+  };
+  const canExport: Record<ExportFormat, boolean> = { pdf: snap.phase === "ready", docx: snap.phase === "ready", bundle: snap.phase === "ready" };
+  const downloadDrafts = () => download(zip(workspace.localDrafts()), "application/zip", `${fileStem} (local drafts).zip`);
+  const requestClose = async () => {
+    if (savingBeforeLeave) return;
+    setSavingBeforeLeave(true);
+    const saved = await workspace.retrySave();
+    setSavingBeforeLeave(false);
+    if (saved.ok) { cancelExport(); onClose(true); }
+    else setLeaveProblem(saved.message);
+  };
+  const compared = comparisonPath ? snap.records.get(comparisonPath)?.snapshot : undefined;
+  const recovered = comparisonPath ? snap.recoveredDrafts.get(comparisonPath) : undefined;
+  const comparison: Comparison | null = comparisonPath && compared && (recovered || compared.remote) ? {
+    path: comparisonPath, kind: recovered ? "draft" : "conflict",
+    mine: recovered?.body ?? compared.body, theirs: recovered ? compared.body : compared.remote?.body ?? "",
+    mineFields: recovered ? workspace.canonicalFields(recovered.frontmatter, compared.record.types) : compared.frontmatter,
+    theirFields: recovered ? compared.frontmatter : workspace.canonicalFields(compared.remote?.frontmatter ?? {}, compared.remote?.types ?? []),
+  } : null;
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
     setSettingsFocus(null);
@@ -493,6 +528,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
     else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
+    else if (mod && !e.shiftKey && e.code === "KeyS") void workspace.retrySave();
     else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
     else if (mod && (e.key === "?" || (e.shiftKey && e.code === "Slash"))) setShortcutsOpen(true);
     else if (!mod && e.key === "?" && !isTextEntry(e.target)) setShortcutsOpen(true);
@@ -512,7 +548,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   if (snap.phase === "failed") {
     return (
       <ConnectLayout app="writer" title="This manuscript could not be opened" error={snap.problem}>
-        <button className="mdbase-connect-action" type="button" onClick={onClose}>
+        <button className="mdbase-connect-action" type="button" onClick={() => void workspace.retryOpen()}>Retry opening</button>
+        {snap.recoveredDrafts.size > 0 && <><p>A local draft is still available in this browser.</p><button type="button" className="mdbase-connect-action" onClick={downloadDrafts}>Download local drafts</button></>}
+        <button className="mdbase-connect-action" type="button" onClick={() => onClose()}>
           Back to manuscripts
         </button>
       </ConnectLayout>
@@ -531,7 +569,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     >
       <InTopbar>
         <div className="bar mdbase-settle-host">
-          <button type="button" className="bar-back" onClick={onClose} aria-label="Manuscripts" title="All manuscripts">
+          <button type="button" className="bar-back" onClick={() => void requestClose()} disabled={savingBeforeLeave} aria-label="Manuscripts" title="All manuscripts">
             <ChevronLeft />
             <span>Manuscripts</span>
           </button>
@@ -579,9 +617,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           <ExportMenu
             open={exportOpen}
             setOpen={setExportOpen}
-            busy={exportStatus?.tone === "busy"}
+            busy={exportStatus?.tone === "busy" || Boolean(pendingExport)}
             format={exportFormat}
             can={canExport}
+            customTemplate={snap.result?.meta.customTemplate ?? false}
             onExport={runExport}
           />
           <MoreMenu
@@ -672,7 +711,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               cited={stats.cited}
               atCursor={citedAtCursor}
               loadAnnotations={workspace.annotations}
-              canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted")}
+              canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted" && !snap.recoveredDrafts.has(active))}
               onInsert={(text) => {
                 setPane("write");
                 const at = editor.current?.selection();
@@ -698,24 +737,33 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             <code className="pane-path">{active}</code>
           </header>
         )}
+        {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button></div>}
+        {snap.recoveredDrafts.size > 0 && <div className="banner" role="alert">
+          <span>{snap.recoveredDrafts.size} recovered local draft(s) need review before writing in those records.</span>
+          {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}>Review {recordTitle(snap.records.get(path), path)}</button>)}
+        </div>}
         {activeView?.snapshot.state === "conflict" && (
           <div className="banner" role="alert">
             <span>This record changed elsewhere while you were editing it.</span>
-            <button type="button" className="mdbase-button" onClick={() => workspace.resolveConflict(active, "mine")}>Keep mine</button>
-            <button type="button" className="mdbase-button" onClick={() => workspace.resolveConflict(active, "theirs")}>Use theirs</button>
+            <button type="button" className="mdbase-button" onClick={() => setComparisonPath(active)}>Compare versions</button>
+            <button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button>
           </div>
         )}
+        {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span>This record was deleted elsewhere. Your local text is still available here.</span><button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button></div>}
         {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
           <div className="banner" role="alert">
-            <span>Not saved: {activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept; saving retries when you type.</span>
+            <span>Not saved: {activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.</span>
+            <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active)}>Retry save</button>
+            <button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button>
           </div>
         )}
         {activeView ? (
           <Editor
             key={active}
+            states={editorStates.current}
             path={active}
             text={activeView.snapshot.body}
-            readOnly={activeView.snapshot.state === "deleted"}
+            readOnly={activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)}
             joinLines={layout.joinLines}
             diagnostics={byRecord.get(active) ?? NO_DIAGNOSTICS}
             completion={completion}
@@ -743,6 +791,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       />
 
       <section className="preview-pane" aria-label="Preview">
+        <div className="preview-top">
         <header className="pane-header preview-header">
           <span
             className="muted small preview-meta"
@@ -782,13 +831,20 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             </button>
           </div>
         </header>
+        {snap.previewProblem && <div className="banner" role="alert"><span>Preview unavailable: {snap.previewProblem}. You can keep writing.</span><button type="button" className="mdbase-button" onClick={() => void workspace.retryPreview()}>Retry preview</button></div>}
+        {(snap.assetProblems.size > 0 || snap.recordProblems.size > 0) && <div className="banner" role="alert">
+          <span>Some images or chapters could not be loaded. See Problems for their locations.</span>
+          <button type="button" className="mdbase-button" onClick={() => { void workspace.retryAssets(); void workspace.retryRecords(); }}>Retry dependencies</button>
+        </div>}
+        </div>
         <Preview
           {...(snap.artifact ? { artifact: snap.artifact } : {})}
           {...(snap.artifactRevision !== undefined ? { revision: snap.artifactRevision } : {})}
           positions={snap.result?.positions ?? NO_POSITIONS}
           marks={snap.result?.marks ?? NO_MARKS}
           onSource={onPreviewSource}
-          stale={Boolean(snap.result && !snap.result.artifact)}
+          problem={snap.previewProblem}
+          stale={Boolean(snap.previewProblem || snap.result && !snap.result.artifact)}
           onJump={onPreviewJump}
           follow={follow}
           zoom={layout.zoom}
@@ -830,6 +886,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         onClose={() => setPaletteOpen(false)}
         label="Writer commands"
         commands={[
+          { id: "save", group: "Manuscript", label: "Save all records now", shortcut: "mod+s", run: () => { void workspace.retrySave(); } },
+          { id: "local-drafts", group: "Manuscript", label: "Download local drafts", keywords: "backup unsaved recovery", run: downloadDrafts },
           { id: "settings", group: "Manuscript", label: "Manuscript settings", shortcut: "mod+,", run: () => setSettingsOpen(true) },
           { id: "search", group: "Manuscript", label: "Search the manuscript", shortcut: "mod+shift+f", keywords: "find all chapters", run: showSearch },
           { id: "sources", group: "Manuscript", label: "Find a source", shortcut: "mod+shift+e", run: () => showSources() },
@@ -841,11 +899,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
           { id: "comments", group: "Comments", label: "Show comments", run: showComments },
           { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
-          { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: onClose },
+          { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: () => void requestClose() },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
           { id: "join-lines", group: "View", label: layout.joinLines ? "Show line breaks as written" : "Join hard-wrapped lines", keywords: "wrap reflow soft line breaks", run: toggleJoinLines },
           ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
-          ...(snap.artifact ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => runExport("pdf") }] : []),
+          ...(snap.phase === "ready" ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => runExport("pdf") }] : []),
           { id: "export-docx", group: "Export", label: "Export Word (DOCX)", run: () => runExport("docx") },
           { id: "export-bundle", group: "Export", label: "Export Pandoc bundle (zip)", run: () => runExport("bundle") },
           ...(themeChoice
@@ -854,10 +912,40 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           { id: "shortcuts", group: "Help", label: "Keyboard shortcuts", shortcut: "?", run: () => setShortcutsOpen(true) },
         ]}
       />
+      <CompareDialog comparison={comparison} canRestore={compared?.state !== "deleted"} onClose={() => setComparisonPath(null)} onDownload={downloadDrafts} onResolve={(choice) => {
+        if (!comparisonPath) return;
+        if (recovered) choice === "theirs" ? workspace.discardDraft(comparisonPath) : workspace.restoreDraft(comparisonPath);
+        else workspace.resolveConflict(comparisonPath, choice);
+        setComparisonPath(null);
+      }} />
+      <Dialog open={Boolean(leaveProblem)} onClose={() => setLeaveProblem(null)} title="Some changes are not saved">
+        <p className="problem">{leaveProblem}</p>
+        <p>Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup.</p>
+        <div className="compare-actions">
+          <button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button>
+          <button type="button" className="mdbase-button is-primary" onClick={() => setLeaveProblem(null)}>Keep writing</button>
+          <button type="button" className="mdbase-button" onClick={() => void requestClose()} disabled={savingBeforeLeave}>Retry saving</button>
+          <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}>Leave without saving</button>
+        </div>
+      </Dialog>
+      <Dialog open={Boolean(pendingExport)} onClose={cancelExport} title="Review export problems">
+        <p>No file has been downloaded yet. This export may be incomplete or differ from the PDF preview.</p>
+        <ul className="export-problems">{pendingExport?.problems.map((problem, index) => <li key={index}>{problem}</li>)}</ul>
+        <div className="compare-actions">
+          <button type="button" className="mdbase-button is-primary" onClick={cancelExport}>Cancel and fix problems</button>
+          <button type="button" className="mdbase-button" onClick={() => {
+            const pending = pendingExport;
+            setPendingExport(null);
+            if (pending) { download(pending.bytes, pending.type, pending.name); exported(EXPORT_NAME[lastExport.current], pending.problems); }
+          }}>Export anyway</button>
+        </div>
+      </Dialog>
       {exportStatus && (
         <div className={`toast tone-${exportStatus.tone}${exportStatus.tone === "ok" ? " mdbase-settle" : ""}`} role={exportStatus.tone === "problem" ? "alert" : "status"}>
           {exportStatus.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : exportStatus.tone === "ok" ? <CheckIcon /> : <AlertIcon />}
           <span>{exportStatus.text}</span>
+          {exportStatus.tone === "busy" && <button type="button" className="text-button" onClick={cancelExport}>Cancel export</button>}
+          {exportStatus.tone === "problem" && <button type="button" className="text-button" onClick={() => runExport(lastExport.current)}>Retry export</button>}
           {exportStatus.tone !== "busy" && (
             <button type="button" className="mdbase-icon-button is-small" aria-label="Dismiss" onClick={() => setExportStatus(null)}>
               <CloseIcon />
@@ -973,8 +1061,8 @@ function Popover({ id, trigger, width, label, align = "start", focus, onClose, c
 }
 
 /** Export as a split button: the main part makes the format used last; the chevron offers them all. */
-function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: boolean; format: ExportFormat; can: Record<ExportFormat, boolean>; onExport(format: ExportFormat): void }) {
-  const { open, setOpen, busy, format, can, onExport } = props;
+function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: boolean; format: ExportFormat; can: Record<ExportFormat, boolean>; customTemplate: boolean; onExport(format: ExportFormat): void }) {
+  const { open, setOpen, busy, format, can, customTemplate, onExport } = props;
   const trigger = useRef<HTMLButtonElement>(null);
   const group = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -1003,7 +1091,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           disabled={!can[format] || busy}
           onClick={() => onExport(format)}
           aria-label={`Export ${EXPORT_NAME[format]}`}
-          title={can[format] ? `Export ${EXPORT_NAME[format]}` : format === "pdf" ? "The PDF can be exported once the manuscript typesets" : "Opening the manuscript…"}
+          title={can[format] ? format === "docx" && customTemplate ? "Export Word using article styles; your custom Typst layout applies only to PDF" : `Export ${EXPORT_NAME[format]}` : "Opening the manuscript…"}
         >
           <DownloadIcon />
           <span className="button-label">Export {EXPORT_NAME[format]}</span>
@@ -1027,8 +1115,8 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
-          {item("pdf", "PDF", "Exactly as typeset in the preview")}
-          {item("docx", "Word (DOCX)", "Made in your browser by Pandoc, with the layout’s Word styles. The first export downloads about 16 MB.")}
+          {item("pdf", "PDF", "Typeset from your latest text, with chapters and images checked before download")}
+          {item("docx", "Word (DOCX)", customTemplate ? "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB." : "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB.")}
           {item("bundle", "Pandoc bundle (zip)", "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself")}
         </Popover>
       )}
@@ -1194,6 +1282,7 @@ const SHORTCUTS: readonly [string, string][] = [
   [`${MOD_LABEL} Shift K`, "Make the selection a link"],
   [`${MOD_LABEL} ${ALT_LABEL} M`, "Comment on the selection"],
   [`${MOD_LABEL} ${ALT_LABEL} S`, "Suggest an edit to the selection"],
+  [`${MOD_LABEL} S`, "Save all records now"],
   [`${MOD_LABEL} Shift S`, "Export"],
   ["F8 / Shift F8", "Next / previous problem"],
   [`${MOD_LABEL}-click`, "On a citation: show the source. On a cross-reference: go to what it labels"],

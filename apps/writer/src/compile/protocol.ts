@@ -46,7 +46,7 @@ export type ToWorker =
   | { readonly type: "records"; readonly upsert: readonly WriterRecord[]; readonly remove?: readonly string[] }
   | { readonly type: "main"; readonly path: string }
   | { readonly type: "assets"; readonly files: readonly [string, Uint8Array][] }
-  | { readonly type: "export-pdf"; readonly id: number };
+  | { readonly type: "export-pdf"; readonly id: number; readonly sources?: readonly [string, string][] };
 
 export interface CompileResult {
   readonly type: "result";

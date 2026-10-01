@@ -18,6 +18,7 @@ import {
 } from "@mdbase-writer/core";
 
 import { sourceMarks, type RawMark } from "./marks.js";
+import { fetchChecked } from "../async.js";
 import type { BlockPosition, CompileResult, FromWorker, ToWorker, SourceMark, WriterDiagnostic } from "./protocol.js";
 
 declare const self: DedicatedWorkerGlobalScope;
@@ -54,15 +55,16 @@ let annotationPaths = new Set<string>();
 let sourceKeys = new Map<string, string>();
 let main = "";
 const loadedAssets = new Set<string>();
+const assetData = new Map<string, Uint8Array>();
 const requestedAssets = new Set<string>();
 const pushed = new Map<string, string>();
 let revision = 0;
 let dirty = false;
 let busy = false;
-const pdfRequests: number[] = [];
+const pdfRequests: Extract<ToWorker, { type: "export-pdf" }>[] = [];
 
 const post = (message: FromWorker, transfer: Transferable[] = []) => self.postMessage(message, transfer);
-const bytes = async (url: string) => new Uint8Array(await (await fetch(url)).arrayBuffer());
+const bytes = async (url: string) => new Uint8Array(await (await fetchChecked(url)).arrayBuffer());
 
 async function init(message: Extract<ToWorker, { type: "init" }>) {
   const started = performance.now();
@@ -75,9 +77,10 @@ async function init(message: Extract<ToWorker, { type: "init" }>) {
   ]);
   const c = createTypstCompiler();
   const wasmUrl = await compilerUrl(message.baseUrl);
-  await c.init({ getModule: () => fetch(wasmUrl), beforeBuild: [disableDefaultFontAssets(), loadFonts(fonts)] });
+  await c.init({ getModule: () => fetchChecked(wasmUrl), beforeBuild: [disableDefaultFontAssets(), loadFonts(fonts)] });
   MITEX.forEach((f, i) => c.mapShadow(`/vendor/mitex/${f}`, mitex[i] ?? new Uint8Array()));
   for (const [path, source] of Object.entries(runtime)) c.addSource(path.replace(/^\.\.\/\.\.\/typst/, ""), source);
+  for (const [path, data] of assetData) c.mapShadow(`/${path}`, data);
   compiler = c;
   post({ type: "ready", initMs: performance.now() - started });
   schedule();
@@ -104,8 +107,11 @@ async function drain() {
         post(result, result.artifact ? [result.artifact.buffer] : []);
       } else dirty = false;
       while (pdfRequests.length) {
-        const id = pdfRequests.shift() as number;
-        await exportPdf(compiler, id);
+        const request = pdfRequests.shift()!;
+        if (request.sources) pushSources(compiler, new Map(request.sources));
+        await exportPdf(compiler, request.id);
+        // An export uses its frozen snapshot; restore live editing afterwards.
+        if (request.sources) dirty = true;
       }
       await yieldToQueue();
     }
@@ -278,7 +284,7 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
   const message = event.data;
   switch (message.type) {
     case "init":
-      void init(message);
+      void init(message).catch((error: unknown) => post({ type: "failure", message: error instanceof Error ? error.message : String(error) }));
       return;
     case "library":
       library = new Map(message.library.map((i) => [i.id, i]));
@@ -301,12 +307,13 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
     case "assets":
       for (const [path, data] of message.files) {
         if (/\.(csl|typ)$/i.test(path)) texts.set(path, new TextDecoder().decode(data));
+        assetData.set(path, data);
         compiler?.mapShadow(`/${path}`, data);
         loadedAssets.add(path);
       }
       break;
     case "export-pdf":
-      pdfRequests.push(message.id);
+      pdfRequests.push(message);
       void drain();
       return;
   }

@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 import type { LibraryEntry, Result, SourceAnnotation } from "../backend/types.js";
 import { authorYear, searchLibrary } from "../editor/library-search.js";
+import { readerSourceHref } from "../apps.js";
 import { ChevronLeft, ChevronRight, ExternalIcon, SearchIcon } from "./icons.js";
 
 /** Library sources listed before "Show all". */
@@ -149,6 +150,7 @@ export function SourcesPanel({
       <section className="sources" aria-label="Sources">
         <p className="muted small">
           No sources in this collection yet. Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.
+          {readerSourceHref() && <> <a href={readerSourceHref()} target="_blank" rel="noopener">Open Reader to add a source</a>.</>}
         </p>
       </section>
     );

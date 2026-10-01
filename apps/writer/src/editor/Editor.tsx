@@ -6,9 +6,9 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Annotation, Compartment, EditorState } from "@codemirror/state";
+import { Annotation, Compartment, EditorState, StateEffect, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
@@ -34,7 +34,14 @@ export interface EditorHandle {
   format(kind: InlineFormat | "link"): void;
 }
 
+export interface RetainedEditor {
+  readonly state: EditorState;
+  readonly scroll: ReturnType<EditorView["scrollSnapshot"]>;
+}
+
 export interface EditorProps {
+  /** Scoped to one workspace, retaining history and selection between chapters. */
+  states?: Map<string, RetainedEditor>;
   path: string;
   text: string;
   readOnly: boolean;
@@ -62,7 +69,7 @@ export interface EditorProps {
   onSelectionAction?(action: SelectionAction, selected: string): void;
 }
 
-export const Editor = memo(function Editor({ path, text, readOnly, joinLines = false, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, onSelectionAction }: EditorProps) {
+export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, onSelectionAction }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -76,14 +83,11 @@ export const Editor = memo(function Editor({ path, text, readOnly, joinLines = f
   const latest = useRef({ onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction });
   latest.current = { onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction };
 
-  // One view per record path.
-  useEffect(() => {
+  // Layout cleanup snapshots the viewport before React detaches its DOM (which
+  // would reset scrollTop), including development's setup/cleanup/setup cycle.
+  useLayoutEffect(() => {
     if (!host.current) return;
-    const v = new EditorView({
-      parent: host.current,
-      state: EditorState.create({
-        doc: text,
-        extensions: [
+    const extensions = [
           history(),
           drawSelection(),
           indentOnInput(),
@@ -120,10 +124,18 @@ export const Editor = memo(function Editor({ path, text, readOnly, joinLines = f
             if (emitted.current.length > 50) emitted.current.shift();
             latest.current.onChange(next);
           }),
-        ],
-      }),
-    });
+        ];
+    const retained = states?.get(path);
+    const state = retained
+      ? retained.state.update({ effects: StateEffect.reconfigure.of(extensions) }).state
+      : EditorState.create({ doc: text, extensions });
+    // CodeMirror restores against its measured viewport; assigning scrollTop in
+    // an animation frame is clamped while long documents are still virtualised.
+    const v = new EditorView({ parent: host.current, state, ...(retained ? { scrollTo: retained.scroll } : {}) });
+    let measured = false;
+    v.requestMeasure({ read: () => undefined, write: () => { measured = true; } });
     view.current = v;
+    latest.current.onCursor?.(v.state.selection.main.head);
     shownDiagnostics.current = "";
     onReady?.({
       reveal(offset, options) {
@@ -148,6 +160,9 @@ export const Editor = memo(function Editor({ path, text, readOnly, joinLines = f
       },
     });
     return () => {
+      // React's development setup/cleanup/setup must not replace the retained
+      // scroll target with zero before CodeMirror has had a layout pass.
+      states?.set(path, { state: v.state, scroll: retained && !measured ? retained.scroll : v.scrollSnapshot() });
       v.destroy();
       view.current = null;
     };
@@ -177,7 +192,7 @@ export const Editor = memo(function Editor({ path, text, readOnly, joinLines = f
       endA--;
       endB--;
     }
-    v.dispatch({ changes: { from, to: endA, insert: text.slice(from, endB) }, annotations: [remote.of(true)] });
+    v.dispatch({ changes: { from, to: endA, insert: text.slice(from, endB) }, annotations: [remote.of(true), Transaction.addToHistory.of(false)] });
   }, [text]);
 
   useEffect(() => {

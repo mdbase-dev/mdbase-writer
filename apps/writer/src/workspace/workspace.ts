@@ -6,7 +6,7 @@
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
 import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
-import type { CslItem, WriterRecord } from "@mdbase-writer/core";
+import { ManuscriptAssembler, translateRecord, type CslItem, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";
@@ -14,9 +14,12 @@ import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
-import { fail, manuscriptSlug, ok, type LibraryEntry, type Result, type WriterBackend } from "../backend/types.js";
+import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type Result, type WriterBackend } from "../backend/types.js";
+import { toLocal } from "../backend/comments.js";
+import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
+import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
 import { CompileClient } from "../compile/client.js";
-import type { CompileResult } from "../compile/protocol.js";
+import type { CompileResult, WriterDiagnostic } from "../compile/protocol.js";
 import { toDocx } from "../export/pandoc.js";
 import { zip } from "../export/zip.js";
 import { appendEmbed, chapterEmbeds, moveEmbed } from "./chapters.js";
@@ -27,7 +30,7 @@ const cslUrl = (file: string) => cslUrls[`../../../../packages/core/assets/csl/$
 let stylesPromise: Promise<{ styles: Map<string, string>; locales: Map<string, string> }> | undefined;
 function loadStyles() {
   stylesPromise ??= (async () => {
-    const text = (url: string) => fetch(url).then((r) => r.text());
+    const text = (url: string) => fetchChecked(url).then((r) => r.text());
     const [styles, locales] = await Promise.all([
       Promise.all(STYLES.map((s) => text(cslUrl(`${s.id}.csl`)))),
       Promise.all(LOCALES.map((l) => text(cslUrl(`locales-${l}.xml`)))),
@@ -36,7 +39,7 @@ function loadStyles() {
       styles: new Map(STYLES.map((s, i) => [s.id, styles[i] ?? ""])),
       locales: new Map(LOCALES.map((l, i) => [l, locales[i] ?? ""])),
     };
-  })();
+  })().catch((error: unknown) => { stylesPromise = undefined; throw error; });
   return stylesPromise;
 }
 
@@ -53,7 +56,12 @@ export interface RecordView {
 export interface WorkspaceSnapshot {
   readonly main: string;
   readonly phase: "loading" | "ready" | "failed";
-  readonly problem?: string;
+  readonly problem?: string | undefined;
+  readonly previewProblem?: string | undefined;
+  readonly draftProblem?: string | undefined;
+  readonly recoveredDrafts: ReadonlyMap<string, LocalDraft>;
+  readonly assetProblems: ReadonlyMap<string, string>;
+  readonly recordProblems: ReadonlyMap<string, string>;
   readonly records: ReadonlyMap<string, RecordView>;
   readonly result?: CompileResult;
   /** The latest artifact that compiled (kept while later edits have errors). */
@@ -65,6 +73,7 @@ export interface WorkspaceSnapshot {
   /** Records the collection lists as Reader annotations (an embedded one is a quotation). */
   readonly annotationPaths: ReadonlySet<string>;
   readonly compiling: boolean;
+  readonly pendingSettings: boolean;
   /** Every comment in the collection; the UI keeps those on this manuscript's records. */
   readonly comments: readonly CommentRecord[];
   /** Why comments could not be loaded (a collection not set up for them, say). */
@@ -81,10 +90,20 @@ export interface CommentDraft {
 }
 
 export class ManuscriptWorkspace {
-  private readonly compile = new CompileClient();
+  private compile = new CompileClient();
+  private compileCleanups: (() => void)[] = [];
+  private bindings: readonly ManuscriptBinding[] = [];
+  private readonly drafts: DraftStore;
+  private readonly stagedSettings = new Map<string, JsonObject>();
+  private readonly assetBytes = new Map<string, Uint8Array>();
+  private readonly assetJobs = new Map<string, Promise<void>>();
+  private readonly assetAttempts = new Map<string, number>();
+  private readonly retryTimers = new Set<ReturnType<typeof setTimeout>>();
   private readonly leases = new Map<string, { lease: MdbaseRecordLease<JsonObject>; unsubscribe: () => void }>();
-  private readonly opening = new Set<string>();
+  private readonly opening = new Map<string, Promise<boolean>>();
   private readonly sent = new Map<string, string>();
+  private readonly translations = new Map<string, { body: string; translated: ReturnType<typeof translateRecord> }>();
+  private lastOrder: readonly string[] = [];
   private readonly requestedAssets = new Set<string>();
   /** Collection text files loaded for the settings (a .csl style, a .typ template). */
   private readonly texts = new Map<string, string>();
@@ -99,9 +118,9 @@ export class ManuscriptWorkspace {
     private readonly backend: WriterBackend,
     readonly main: string,
   ) {
-    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], annotationPaths: new Set(), compiling: true, comments: [], people: NO_PEOPLE };
-    this.cleanups.push(this.compile.onResult((r) => this.onResult(r)));
-    this.cleanups.push(this.compile.onFailure((message) => this.update({ problem: message })));
+    this.drafts = new DraftStore(backend.draftNamespace ?? `${backend.kind}:${backend.collectionName}`);
+    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], annotationPaths: new Set(), compiling: true, pendingSettings: false, comments: [], people: NO_PEOPLE, recoveredDrafts: new Map(), assetProblems: new Map(), recordProblems: new Map() };
+    this.followCompiler();
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
     // Linking a person record happens in another tab (mdbase Editor): look again on return.
     if (typeof window !== "undefined") {
@@ -109,8 +128,20 @@ export class ManuscriptWorkspace {
         if (this.current.people.signing?.kind === "linked" || Date.now() - this.peopleCheckedAt < 5_000) return;
         void this.refreshPeople();
       };
+      const onUnload = (event: BeforeUnloadEvent) => {
+        if (!this.hasUnsavedChanges()) return;
+        event.preventDefault();
+        event.returnValue = "";
+      };
+      const onOnline = () => { void this.retrySave(); void this.retryAssets(); };
       window.addEventListener("focus", onFocus);
-      this.cleanups.push(() => window.removeEventListener("focus", onFocus));
+      window.addEventListener("beforeunload", onUnload);
+      window.addEventListener("online", onOnline);
+      this.cleanups.push(() => {
+        window.removeEventListener("focus", onFocus);
+        window.removeEventListener("beforeunload", onUnload);
+        window.removeEventListener("online", onOnline);
+      });
     }
     void this.start();
   }
@@ -133,27 +164,79 @@ export class ManuscriptWorkspace {
     for (const l of this.listeners) l();
   }
 
+  private followCompiler(): void {
+    this.compileCleanups = [
+      this.compile.onResult((result) => this.onResult(result)),
+      this.compile.onFailure((message) => this.update({ previewProblem: message, compiling: false })),
+    ];
+  }
+
   private async start(): Promise<void> {
-    const [index, library, csl] = await Promise.all([this.backend.index(), this.backend.library(), loadStyles()]);
-    if (!index.ok || !library.ok) {
-      this.update({ phase: "failed", problem: !index.ok ? index.message : library.ok ? "" : library.message });
-      return;
+    if (!this.leases.has(this.main)) {
+      const recovered = this.drafts.read(this.main);
+      if (recovered) this.update({ recoveredDrafts: new Map(this.current.recoveredDrafts).set(this.main, recovered) });
     }
-    const items = library.value.map((e) => e.item);
-    this.compile.send({
-      type: "init",
-      library: items,
-      styles: [...csl.styles],
-      locales: [...csl.locales],
-      baseUrl: import.meta.env.BASE_URL,
-    });
-    this.compile.send({ type: "collection", recordPaths: index.value.recordPaths, filePaths: index.value.filePaths });
-    this.compile.send({ type: "main", path: this.main });
-    this.update({ library: library.value, recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
-    void this.loadAnnotationPaths();
-    const opened = await this.open(this.main);
-    this.update({ phase: opened ? "ready" : "failed" });
-    if (opened) void this.loadComments();
+    try {
+      const [index, library, bindings] = await Promise.all([this.backend.index(), this.backend.library(), this.backend.manuscriptBindings?.()]);
+      if (!index.ok) throw new Error(index.message);
+      if (!library.ok) throw new Error(library.message);
+      if (bindings && !bindings.ok) throw new Error(bindings.message);
+      if (this.disposed) return;
+      this.bindings = bindings?.ok ? bindings.value : [];
+      this.update({ library: library.value, recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
+      const opened = await this.open(this.main);
+      this.update({ phase: opened ? "ready" : "failed", compiling: opened });
+      if (!opened) return;
+      // Fonts/styles/renderer availability must not prevent writing or saving.
+      void this.initializePreview();
+      void this.loadAnnotationPaths();
+      void this.loadComments();
+    } catch (error) {
+      this.update({ phase: "failed", problem: errorMessage(error), compiling: false });
+    }
+  }
+
+  async retryOpen(): Promise<void> {
+    this.update({ phase: "loading", problem: undefined });
+    await this.start();
+  }
+
+  private async initializePreview(): Promise<void> {
+    const client = this.compile;
+    try {
+      const csl = await loadStyles();
+      if (this.disposed || client !== this.compile) return;
+      client.send({ type: "init", library: this.current.library.map((e) => e.item), styles: [...csl.styles], locales: [...csl.locales], baseUrl: import.meta.env.BASE_URL });
+      client.send({ type: "collection", recordPaths: this.current.recordPaths, filePaths: this.current.filePaths });
+      client.send({ type: "main", path: this.main });
+      client.send({ type: "records", upsert: this.writerRecords() });
+      this.sendQuotations();
+      this.sendAssets([...this.assetBytes]);
+    } catch (error) {
+      if (client === this.compile) this.update({ previewProblem: errorMessage(error), compiling: false });
+    }
+  }
+
+  async retryPreview(): Promise<void> {
+    for (const cleanup of this.compileCleanups) cleanup();
+    this.compile.terminate();
+    this.compile = new CompileClient();
+    this.followCompiler();
+    this.update({ previewProblem: undefined, compiling: true });
+    await this.initializePreview();
+    await this.retryAssets();
+  }
+
+  private fieldsFor(types: readonly string[]): Readonly<Record<string, string>> {
+    return this.bindings.find((binding) => types.includes(binding.name))?.fields ?? {};
+  }
+
+  canonicalFields(frontmatter: JsonObject, types: readonly string[]): JsonObject {
+    return manuscriptFrontmatter(frontmatter, this.fieldsFor(types));
+  }
+
+  private writerRecords(): WriterRecord[] {
+    return [...this.current.records].map(([path, view]) => ({ path, body: view.snapshot.body, frontmatter: view.snapshot.frontmatter }));
   }
 
   private peopleCheckedAt = 0;
@@ -174,9 +257,12 @@ export class ManuscriptWorkspace {
 
   /** Learns which records are annotations, and tells the worker how to cite them. */
   private async loadAnnotationPaths(): Promise<void> {
-    const annotations = await this.annotations();
-    if (annotations.ok) this.update({ annotationPaths: new Set(annotations.value.map((a) => a.path)) });
-    this.sendQuotations();
+    try {
+      const annotations = await this.annotations();
+      if (this.disposed) return;
+      if (annotations.ok) this.update({ annotationPaths: new Set(annotations.value.map((a) => a.path)) });
+      this.sendQuotations();
+    } catch { this.annotationsPromise = undefined; }
   }
 
   private sendQuotations(): void {
@@ -185,32 +271,56 @@ export class ManuscriptWorkspace {
 
   private async loadComments(): Promise<void> {
     this.peopleCheckedAt = Date.now();
-    const [comments, people] = await Promise.all([this.backend.comments(), this.backend.people()]);
-    this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, people } : { commentsProblem: comments.message, people });
+    try {
+      const [comments, people] = await Promise.all([this.backend.comments(), this.backend.people()]);
+      this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, people } : { commentsProblem: comments.message, people });
+    } catch (error) { this.update({ commentsProblem: errorMessage(error) }); }
   }
 
   /** Opens (once) and follows the session for a record. */
-  private async open(path: string): Promise<boolean> {
-    if (this.leases.has(path) || this.opening.has(path)) return true;
-    this.opening.add(path);
-    const opened = await this.backend.records.open(path, { autosave: { idleMs: 1_000 }, timeoutMs: 15_000 });
-    this.opening.delete(path);
-    if (!opened.ok) {
-      if (path === this.main) this.update({ problem: opened.problem.message ?? opened.problem.code });
-      return false;
-    }
-    if (this.disposed) {
-      opened.value.release();
-      return false;
-    }
-    const { session } = opened.value;
-    const unsubscribe = session.subscribe(() => this.onSession(path, session.getSnapshot()));
-    this.leases.set(path, { lease: opened.value, unsubscribe });
-    this.onSession(path, session.getSnapshot());
-    return true;
+  private open(path: string): Promise<boolean> {
+    if (this.leases.has(path)) return Promise.resolve(true);
+    const existing = this.opening.get(path);
+    if (existing) return existing;
+    const job = this.openRecord(path).finally(() => this.opening.delete(path));
+    this.opening.set(path, job);
+    return job;
   }
 
-  private onSession(path: string, snapshot: SessionSnapshot): void {
+  private async openRecord(path: string): Promise<boolean> {
+    const recovered = this.drafts.read(path);
+    if (recovered) this.update({ recoveredDrafts: new Map(this.current.recoveredDrafts).set(path, recovered) });
+    try {
+      const opened = await this.backend.records.open(path, { autosave: { idleMs: 1_000 }, timeoutMs: 15_000 });
+      if (!opened.ok) throw new Error(opened.problem.message ?? opened.problem.code);
+      if (this.disposed) { opened.value.release(); return false; }
+      const { session } = opened.value;
+      if (recovered) {
+        const saved = session.getSnapshot();
+        if (saved.body === recovered.body && JSON.stringify(saved.frontmatter) === JSON.stringify(recovered.frontmatter)) this.discardDraft(path);
+      }
+      const unsubscribe = session.subscribe(() => this.onSession(path, session.getSnapshot()));
+      this.leases.set(path, { lease: opened.value, unsubscribe });
+      const recordProblems = new Map(this.current.recordProblems);
+      recordProblems.delete(path);
+      this.update({ recordProblems });
+      this.onSession(path, session.getSnapshot());
+      return true;
+    } catch (error) {
+      const message = errorMessage(error);
+      this.update({ recordProblems: new Map(this.current.recordProblems).set(path, message), ...(path === this.main ? { problem: message } : {}) });
+      return false;
+    }
+  }
+
+  async retryRecords(): Promise<void> {
+    await mapConcurrent([...this.current.recordProblems.keys()], 4, (path) => this.open(path));
+  }
+
+  private onSession(path: string, raw: SessionSnapshot): void {
+    if (this.disposed) return;
+    this.persistDraft(path, raw);
+    const snapshot = { ...raw, frontmatter: this.canonicalFields(raw.frontmatter, raw.record.types) };
     const records = new Map(this.current.records);
     records.set(path, { path, snapshot });
     // Forward only content changes; save-state transitions don't need a compile.
@@ -221,27 +331,131 @@ export class ManuscriptWorkspace {
     }
     this.sent.set(path, key);
     // One update per edit: each re-renders the whole workspace.
-    this.update({ records, compiling: true });
+    this.update({ records, compiling: !this.current.previewProblem });
     this.compile.send({ type: "records", upsert: [{ path, body: snapshot.body, frontmatter: snapshot.frontmatter }] });
+    // Opening chapters must not depend on a healthy compiler or renderer.
+    const candidates = new Set(this.current.recordPaths);
+    for (const embed of this.translated(path, snapshot.body).includes) {
+      const target = resolveLinkTarget(embed.target, path, candidates);
+      if (target && !this.current.recordProblems.has(target)) void this.open(target);
+    }
+  }
+
+  private translated(path: string, body: string) {
+    const known = this.translations.get(path);
+    if (known?.body === body) return known.translated;
+    const translated = translateRecord(body);
+    this.translations.set(path, { body, translated });
+    return translated;
+  }
+
+  readingOrder(): readonly string[] {
+    const order: string[] = [];
+    const seen = new Set<string>();
+    const candidates = new Set(this.current.recordPaths);
+    const visit = (path: string) => {
+      if (seen.has(path)) return;
+      seen.add(path);
+      const view = this.current.records.get(path);
+      if (path !== this.main && this.isQuotation(path)) return;
+      order.push(path);
+      if (!view) return;
+      for (const embed of this.translated(path, view.snapshot.body).includes) {
+        const target = resolveLinkTarget(embed.target, path, candidates);
+        if (target) visit(target);
+      }
+    };
+    visit(this.main);
+    if (order.length !== this.lastOrder.length || order.some((path, index) => path !== this.lastOrder[index])) this.lastOrder = order;
+    return this.lastOrder;
+  }
+
+  private persistDraft(path: string, raw: SessionSnapshot): void {
+    if (this.current.recoveredDrafts.has(path)) return;
+    const staged = this.stagedSettings.get(path);
+    if (staged || raw.dirty || raw.state === "conflict" || raw.state === "error" || raw.state === "deleted" && raw.body !== raw.record.body) {
+      const stored = this.drafts.write(path, { version: 1, body: raw.body, frontmatter: { ...raw.frontmatter, ...staged }, baseBody: raw.record.body ?? "", baseFrontmatter: raw.record.frontmatter, revision: raw.record.revision, updated: new Date().toISOString() });
+      if (!stored) this.update({ draftProblem: "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails." });
+    } else this.drafts.remove(path);
   }
 
   private onResult(result: CompileResult): void {
     this.update({ result, compiling: false, ...(result.artifact ? { artifact: result.artifact, artifactRevision: result.revision } : {}) });
-    for (const path of result.unloaded) void this.open(path);
+    for (const path of result.unloaded) if (!this.current.recordProblems.has(path)) void this.open(path);
     const wanted = result.neededAssets.filter((a) => !this.requestedAssets.has(a));
-    for (const a of wanted) this.requestedAssets.add(a);
     if (wanted.length) void this.loadAssets(wanted);
   }
 
+  private sendAssets(files: readonly [string, Uint8Array][]): void {
+    // Retain original bytes for preview retries and frozen exports.
+    const copies: [string, Uint8Array][] = files.map(([path, bytes]) => [path, bytes.slice()]);
+    if (copies.length) this.compile.send({ type: "assets", files: copies }, copies.map(([, bytes]) => bytes.buffer));
+  }
+
   private async loadAssets(paths: readonly string[]): Promise<void> {
-    const files: [string, Uint8Array][] = [];
-    for (const path of paths) {
+    await mapConcurrent(paths, 4, (path) => {
+      const existing = this.assetJobs.get(path);
+      if (existing) return existing;
+      this.requestedAssets.add(path);
+      const job = this.loadAsset(path).finally(() => this.assetJobs.delete(path));
+      this.assetJobs.set(path, job);
+      return job;
+    });
+  }
+
+  private async loadAsset(path: string): Promise<void> {
+    const attempt = (this.assetAttempts.get(path) ?? 0) + 1;
+    this.assetAttempts.set(path, attempt);
+    try {
       const read = await this.backend.readFile(path);
-      if (!read.ok) continue;
+      if (!read.ok) throw new Error(read.message);
+      if (this.disposed) return;
+      this.assetAttempts.delete(path);
+      this.assetBytes.set(path, read.value);
       if (/\.(csl|typ)$/i.test(path)) this.texts.set(path, new TextDecoder().decode(read.value));
-      files.push([path, read.value]);
+      const assetProblems = new Map(this.current.assetProblems);
+      assetProblems.delete(path);
+      this.update({ assetProblems });
+      this.sendAssets([[path, read.value]]);
+    } catch (error) {
+      if (this.disposed) return;
+      this.update({ assetProblems: new Map(this.current.assetProblems).set(path, errorMessage(error)) });
+      // Two bounded retries for transient failures; afterwards a visible Retry remains.
+      if (attempt < 3) {
+        const timer = setTimeout(() => {
+          this.retryTimers.delete(timer);
+          if (!this.disposed && this.current.assetProblems.has(path)) void this.loadAssets([path]);
+        }, 500 * 2 ** (attempt - 1));
+        this.retryTimers.add(timer);
+      }
     }
-    if (files.length) this.compile.send({ type: "assets", files }, files.map(([, b]) => b.buffer as ArrayBuffer));
+  }
+
+  async retryAssets(): Promise<void> {
+    const paths = [...this.current.assetProblems.keys()];
+    for (const path of paths) this.assetAttempts.delete(path);
+    await this.loadAssets(paths);
+  }
+
+  /** Failures belong to the same Markdown ranges as the missing dependency. */
+  dependencyDiagnostics(): WriterDiagnostic[] {
+    const diagnostics: WriterDiagnostic[] = [];
+    const candidates = new Set(this.current.filePaths);
+    const recordPaths = new Set(this.current.recordPaths);
+    for (const [path, view] of this.current.records) {
+      const translated = this.translated(path, view.snapshot.body);
+      for (const image of translated.images) {
+        const asset = resolveLinkTarget(image.target, path, candidates, "");
+        const problem = asset && this.current.assetProblems.get(asset);
+        if (problem) diagnostics.push({ record: path, from: image.from, to: image.to, severity: "error" as const, origin: "writer" as const, message: `Image could not be loaded: ${problem}` });
+      }
+      for (const embed of translated.includes) {
+        const target = resolveLinkTarget(embed.target, path, recordPaths);
+        const problem = target && this.current.recordProblems.get(target);
+        if (problem) diagnostics.push({ record: path, from: embed.from, to: embed.to, severity: "error" as const, origin: "writer" as const, message: `Embedded record could not be loaded: ${problem}` });
+      }
+    }
+    return diagnostics;
   }
 
   private onExternalChange(paths: readonly string[]): void {
@@ -257,7 +471,7 @@ export class ManuscriptWorkspace {
     // Record sessions follow their own records (including ones still opening).
     if (paths.every((p) => this.leases.has(p) || this.opening.has(p) || this.requestedAssets.has(p) || comments.has(p))) return;
     clearTimeout(this.refreshTimer);
-    this.refreshTimer = setTimeout(() => void this.refreshCollection(), 2_000);
+    this.refreshTimer = setTimeout(() => void this.refreshCollection().catch((error: unknown) => this.update({ problem: errorMessage(error) })), 2_000);
   }
 
   private async refreshCollection(): Promise<void> {
@@ -278,6 +492,7 @@ export class ManuscriptWorkspace {
   }
 
   setBody(path: string, body: string): void {
+    if (this.current.recoveredDrafts.has(path)) return;
     this.leases.get(path)?.lease.session.setBody(body);
   }
 
@@ -330,8 +545,43 @@ export class ManuscriptWorkspace {
     return ok(path);
   }
 
+  /** Focused setting drafts are backed up immediately, without typesetting half-parsed fields. */
+  stageFrontmatter(path: string, patch: JsonObject): void {
+    if (this.current.recoveredDrafts.has(path)) return;
+    const raw = this.leases.get(path)?.lease.session.getSnapshot();
+    if (!raw || raw.state === "deleted") return;
+    const staged = { ...this.stagedSettings.get(path) };
+    for (const [key, value] of Object.entries(toLocal(patch, this.fieldsFor(raw.record.types)))) {
+      if (JSON.stringify(raw.frontmatter[key]) === JSON.stringify(value)) delete staged[key];
+      else staged[key] = value;
+    }
+    if (Object.keys(staged).length) this.stagedSettings.set(path, staged);
+    else this.stagedSettings.delete(path);
+    this.update({ pendingSettings: this.stagedSettings.size > 0 });
+    this.persistDraft(path, raw);
+  }
+
   patchFrontmatter(path: string, patch: JsonObject): void {
-    this.leases.get(path)?.lease.session.patchFrontmatter(patch);
+    if (this.current.recoveredDrafts.has(path)) return;
+    const session = this.leases.get(path)?.lease.session;
+    if (!session || session.getSnapshot().state === "deleted") return;
+    const local = toLocal(patch, this.fieldsFor(session.getSnapshot().record.types));
+    const staged = { ...this.stagedSettings.get(path) };
+    for (const key of Object.keys(local)) delete staged[key];
+    if (Object.keys(staged).length) this.stagedSettings.set(path, staged);
+    else this.stagedSettings.delete(path);
+    this.update({ pendingSettings: this.stagedSettings.size > 0 });
+    session.patchFrontmatter(local);
+  }
+
+  private commitSettings(): void {
+    for (const [path, patch] of [...this.stagedSettings]) {
+      const session = this.leases.get(path)?.lease.session;
+      if (!session || session.getSnapshot().state === "deleted") continue;
+      this.stagedSettings.delete(path);
+      session.patchFrontmatter(patch);
+    }
+    this.update({ pendingSettings: this.stagedSettings.size > 0 });
   }
 
   /** A new thread on a passage (a suggestion when `replacement` is given), or on the whole record. */
@@ -369,8 +619,55 @@ export class ManuscriptWorkspace {
     return this.changeComment(suggestion, { kind: "resolve", outcome: "accepted" });
   }
 
-  resolveConflict(path: string, keep: "mine" | "theirs"): void {
-    this.leases.get(path)?.lease.session.resolve({ keep });
+  resolveConflict(path: string, keep: "mine" | "theirs" | { body: string }): void {
+    this.leases.get(path)?.lease.session.resolve(typeof keep === "string" ? { keep } : keep);
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.stagedSettings.size > 0 || this.current.recoveredDrafts.size > 0 || [...this.current.records.values()].some((view) => view.snapshot.dirty || view.snapshot.state === "conflict");
+  }
+
+  async retrySave(path?: string): Promise<Result<void>> {
+    this.commitSettings();
+    const problems: string[] = [];
+    await Promise.all([...this.leases].filter(([at]) => !path || at === path).map(async ([at, { lease }]) => {
+      try {
+        if (lease.session.getSnapshot().state === "deleted") { problems.push(`${at}: this record was deleted; download the local draft before leaving.`); return; }
+        const out = await lease.session.flush({ timeoutMs: 15_000 });
+        if (!out.ok) problems.push(`${at}: ${out.problem.message ?? out.problem.code}`);
+      } catch (error) { problems.push(`${at}: ${errorMessage(error)}`); }
+    }));
+    if (this.current.recoveredDrafts.size) problems.push("Review the recovered local drafts before leaving.");
+    return problems.length ? fail(problems.join("\n")) : ok(undefined);
+  }
+
+  restoreDraft(path: string): void {
+    const draft = this.current.recoveredDrafts.get(path);
+    const session = this.leases.get(path)?.lease.session;
+    if (!draft || !session || session.getSnapshot().state === "deleted") return;
+    const recoveredDrafts = new Map(this.current.recoveredDrafts);
+    recoveredDrafts.delete(path);
+    this.update({ recoveredDrafts });
+    session.setBody(draft.body);
+    session.patchFrontmatter(draftPatch(draft));
+  }
+
+  discardDraft(path: string): void {
+    this.drafts.remove(path);
+    const recoveredDrafts = new Map(this.current.recoveredDrafts);
+    recoveredDrafts.delete(path);
+    this.update({ recoveredDrafts });
+  }
+
+  localDrafts(): readonly [string, string][] {
+    const paths = new Set([...this.current.records.keys(), ...this.current.recoveredDrafts.keys()]);
+    return [...paths].map((path) => {
+      const view = this.current.records.get(path);
+      const recovered = this.current.recoveredDrafts.get(path);
+      const raw = this.leases.get(path)?.lease.session.getSnapshot();
+      const frontmatter = recovered?.frontmatter ?? { ...(raw?.frontmatter ?? view?.snapshot.frontmatter ?? {}), ...this.stagedSettings.get(path) };
+      return [path, `---\n${JSON.stringify(frontmatter, null, 2)}\n---\n\n${recovered?.body ?? view?.snapshot.body ?? ""}`];
+    });
   }
 
   private annotationsPromise: ReturnType<WriterBackend["annotations"]> | undefined;
@@ -380,45 +677,79 @@ export class ManuscriptWorkspace {
     return this.annotationsPromise;
   };
 
-  exportPdf(): Promise<{ bytes?: Uint8Array; error?: string }> {
-    return this.compile.exportPdf();
+  /** Independent of preview timing: discover and await all embeds, styles and images. */
+  private async preflight(signal?: AbortSignal) {
+    const check = () => {
+      signal?.throwIfAborted();
+      if (this.disposed) throw new Error("The manuscript was closed.");
+      if (this.current.phase !== "ready") throw new Error("Wait for the manuscript to open before exporting.");
+    };
+    check();
+    this.commitSettings();
+    const { styles, locales } = await loadStyles();
+    await this.loadAnnotationPaths();
+    const assembler = new ManuscriptAssembler();
+    const attemptedRecords = new Set<string>();
+    const attemptedAssets = new Set<string>();
+    for (let pass = 0; pass < 100; pass++) {
+      check();
+      const snap = this.current;
+      const input: AssemblyInput = {
+        main: this.main, records: new Map(this.writerRecords().map((record) => [record.path, record])),
+        recordPaths: new Set(snap.recordPaths), filePaths: new Set(snap.filePaths),
+        library: new Map(snap.library.map((entry) => [entry.key, entry.item])), styles, locales,
+        texts: new Map(this.texts), annotationPaths: new Set(snap.annotationPaths), sourceKeys: sourceKeys(snap.library),
+      };
+      const assembly = assembler.assemble(input);
+      const records = assembly.unloaded.filter((path) => !attemptedRecords.has(path));
+      const assets = assembly.assets.filter((path) => !attemptedAssets.has(path));
+      if (!records.length && !assets.length) {
+        const problems = [...new Set([
+          ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnostic.message}`),
+          ...assembly.unloaded.map((path) => `${path}: ${snap.recordProblems.get(path) ?? "Not loaded; it will be left out."}`),
+          ...assembly.assets.flatMap((path) => snap.assetProblems.has(path) ? [`${path}: ${snap.assetProblems.get(path)}`] : []),
+          ...assembly.order.flatMap((path) => snap.recoveredDrafts.has(path) ? [`${path}: A recovered draft has not been reviewed; the collection version will be exported.`] : []),
+        ])];
+        return { input, assembly, problems };
+      }
+      for (const path of records) attemptedRecords.add(path);
+      for (const path of assets) attemptedAssets.add(path);
+      await Promise.all([
+        mapConcurrent(records, 4, (path) => this.open(path)),
+        this.loadAssets(assets),
+      ]);
+    }
+    throw new Error("The manuscript kept changing while export dependencies were loading. Pause editing and try again.");
   }
 
-  private async materialize(crossReferences: "quarto" | "resolved") {
-    const snap = this.current;
-    const records = new Map<string, WriterRecord>(
-      [...snap.records].map(([path, r]) => [path, { path, body: r.snapshot.body, frontmatter: r.snapshot.frontmatter }]),
-    );
-    const { styles, locales } = await loadStyles();
-    const out = materialize({
-      main: this.main,
-      records,
-      recordPaths: new Set(snap.recordPaths),
-      filePaths: new Set(snap.filePaths),
-      library: new Map(snap.library.map((e) => [e.key, e.item])),
-      styles,
-      locales,
-      texts: this.texts,
-      crossReferences,
-      annotationPaths: snap.annotationPaths,
-      sourceKeys: sourceKeys(snap.library),
-    });
-    const problems = [...out.problems];
+  async exportPdf(signal?: AbortSignal): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {
+    const { assembly, problems } = await this.preflight(signal);
+    if (this.current.previewProblem) await this.retryPreview();
+    await this.compile.ready;
+    signal?.throwIfAborted();
+    const out = await this.compile.exportPdf([...assembly.sources], signal);
+    return { ...out, problems };
+  }
+
+  private async materialize(crossReferences: "quarto" | "resolved", signal?: AbortSignal) {
+    const prepared = await this.preflight(signal);
+    const out = materialize({ ...prepared.input, crossReferences });
+    const problems = [...new Set([...prepared.problems, ...out.problems])];
     const media: [string, Uint8Array][] = [];
     for (const [collectionPath, bundled] of out.media) {
-      const read = await this.backend.readFile(collectionPath);
-      if (read.ok) media.push([bundled, read.value]);
-      else problems.push(`${collectionPath}: ${read.message}`);
+      const bytes = this.assetBytes.get(collectionPath);
+      if (bytes && !this.current.assetProblems.has(collectionPath)) media.push([bundled, bytes.slice()]);
     }
-    return { out, media, problems };
+    return { out, media, problems, meta: prepared.assembly.meta };
   }
 
   /**
    * A Pandoc/Quarto bundle (zip): the manuscript as one Markdown file with
    * embeds inlined, the cited sources as CSL-JSON, the style and the images.
    */
-  async exportBundle(): Promise<{ bytes: Uint8Array; problems: readonly string[] }> {
-    const { out, media, problems } = await this.materialize("quarto");
+  async exportBundle(signal?: AbortSignal): Promise<{ bytes: Uint8Array; problems: readonly string[] }> {
+    const { out, media, problems } = await this.materialize("quarto", signal);
+    signal?.throwIfAborted();
     const files: [string, Uint8Array | string][] = [
       ["manuscript.md", out.markdown],
       ["references.json", `${JSON.stringify(out.references, null, 2)}\n`],
@@ -434,18 +765,20 @@ export class ManuscriptWorkspace {
    * resolved to text, citations formatted by Pandoc's citeproc with the same
    * style, and the layout's reference document supplies the Word styles.
    */
-  async exportDocx(): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {
-    const { out, media, problems } = await this.materialize("resolved");
-    const template = this.current.result?.meta.customTemplate ? "article" : (this.current.result?.meta.template ?? "article");
+  async exportDocx(signal?: AbortSignal): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {
+    const { out, media, problems, meta } = await this.materialize("resolved", signal);
+    if (meta.customTemplate) problems.push("Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ.");
+    const template = meta.customTemplate ? "article" : meta.template;
     // The layout's Word styles (public/docx, from scripts/reference-docx.mjs).
-    const referenceResponse = await fetch(`${import.meta.env.BASE_URL}docx/${template}.docx`);
-    const reference = referenceResponse.ok ? new Uint8Array(await referenceResponse.arrayBuffer()) : undefined;
+    const referenceResponse = await fetchChecked(`${import.meta.env.BASE_URL}docx/${template}.docx`, signal);
+    const reference = new Uint8Array(await referenceResponse.arrayBuffer());
+    signal?.throwIfAborted();
     const converted = await toDocx(out.markdown, [
       ["references.json", JSON.stringify(out.references)],
       ["style.csl", out.styleXml],
-      ...(reference ? [["reference.docx", reference] as const] : []),
+      ["reference.docx", reference],
       ...media,
-    ]);
+    ], signal);
     if (converted.error !== undefined) return { error: converted.error, problems };
     return { bytes: converted.bytes, problems: [...problems, ...converted.warnings] };
   }
@@ -453,16 +786,19 @@ export class ManuscriptWorkspace {
   /** Saves what is left, then releases every session and stops the worker. */
   async dispose(): Promise<void> {
     if (this.disposed) return;
+    this.commitSettings();
     this.disposed = true;
     clearTimeout(this.refreshTimer);
     clearTimeout(this.commentsTimer);
-    for (const c of this.cleanups) c();
+    for (const timer of this.retryTimers) clearTimeout(timer);
+    for (const c of [...this.cleanups, ...this.compileCleanups]) c();
+    this.compile.terminate();
     await Promise.all([...this.leases.values()].map(async ({ lease, unsubscribe }) => {
       unsubscribe();
-      await lease.session.flush();
-      lease.release();
+      try { await lease.session.flush({ timeoutMs: 15_000 }); }
+      catch { /* The synchronous local draft remains available for recovery. */ }
+      finally { lease.release(); }
     }));
     this.leases.clear();
-    this.compile.terminate();
   }
 }

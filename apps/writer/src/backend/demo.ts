@@ -8,7 +8,7 @@ import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comme
 import { splitFrontmatter } from "@mdbase-writer/core/records";
 
 import { changeFields, commentPath, newCommentFields, personKey, personLink, type People } from "./comments.js";
-import { bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import { manuscriptBody, bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -22,7 +22,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     authority.seed(relative(key), { body, frontmatter: frontmatter as JsonObject });
     paths.add(relative(key));
   }
-  authority.records.follow(authority.watch);
+  const stopFollowing = authority.records.follow(authority.watch);
   // Only the sources the demo manuscripts cite (the demo ships with public builds).
   const library = (await import("../../demo/library.json")).default as CslItem[];
   const entries: LibraryEntry[] = library.map((item) => ({
@@ -33,6 +33,10 @@ export async function createDemoBackend(): Promise<WriterBackend> {
   }));
   const files = new Map(Object.entries(assets).map(([key, url]) => [relative(key), url]));
   const listeners = new Set<(paths: readonly string[]) => void>();
+  const stopWatch = authority.watch.subscribe((change) => {
+    const path = change.payload["path"];
+    if (typeof path === "string") for (const listener of listeners) listener([path]);
+  });
   const manuscripts = new Map<string, ManuscriptSummary>();
   for (const path of paths) {
     const { frontmatter } = splitFrontmatter(markdown[`../../demo/${path}`] ?? "");
@@ -75,6 +79,8 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     authority,
     kind: "demo",
     collectionName: "Demo collection",
+    draftNamespace: "demo",
+
     records: authority.records,
     async listManuscripts() {
       const out: ManuscriptSummary[] = [];
@@ -85,27 +91,28 @@ export async function createDemoBackend(): Promise<WriterBackend> {
           out.push(m);
           continue;
         }
-        const { body } = opened.value.session.getSnapshot();
+        const { body, frontmatter } = opened.value.session.getSnapshot();
         opened.value.release();
         let written = lastWritten.get(m.path);
         if (!written || written.body !== body) {
           written = { body, modified: written ? new Date().toISOString() : daysAgo(lastWritten.size * 4 + 2) };
           lastWritten.set(m.path, written);
         }
-        out.push({ ...m, ...bodySummary(body), modified: written.modified });
+        out.push({ ...m, title: typeof frontmatter["title"] === "string" ? frontmatter["title"] : m.title, ...(typeof frontmatter["template"] === "string" ? { template: frontmatter["template"] } : {}), ...(typeof frontmatter["csl"] === "string" ? { style: frontmatter["csl"] } : {}), ...bodySummary(body), modified: written.modified });
       }
       return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
     },
     async createManuscript(input: NewManuscript): Promise<Result<string>> {
       let path = `manuscripts/${manuscriptSlug(input.title)}.md`;
       for (let n = 2; paths.has(path); n++) path = `manuscripts/${manuscriptSlug(input.title)}-${n}.md`;
+      const body = manuscriptBody(input.starter, entries[0]?.key);
       authority.seed(path, {
-        body: "# Introduction {#sec-intro}\n\n",
+        body,
         frontmatter: { type: "writer-manuscript", title: input.title, template: input.template, csl: input.style },
       });
       paths.add(path);
       manuscripts.set(path, { path, title: input.title, template: input.template, style: input.style });
-      lastWritten.set(path, { body: "# Introduction {#sec-intro}\n\n", modified: new Date().toISOString() });
+      lastWritten.set(path, { body, modified: new Date().toISOString() });
       return ok(path);
     },
     async adoptManuscript(path: string): Promise<Result<string>> {
@@ -198,6 +205,9 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       return () => listeners.delete(listener);
     },
     dispose() {
+      stopWatch();
+      stopFollowing();
+      authority.watch.close();
       listeners.clear();
     },
   };

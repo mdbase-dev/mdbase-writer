@@ -397,6 +397,8 @@ await step("an edit made elsewhere during typing becomes a resolvable conflict",
     a.editElsewhere("chapters/event.md", { body: current.body.replace("# The event", "# The event (theirs)") });
   });
   await page.getByText("This record changed elsewhere").waitFor({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Compare versions" }).click();
+  await page.getByRole("dialog", { name: "Compare conflicting versions" }).waitFor();
   await page.getByRole("button", { name: "Keep mine" }).click();
   await waitFor(() => window.writer.workspace.getSnapshot().records.get("chapters/event.md").snapshot.state === "saved", null, 10_000);
   assert.match(await editorText(), /Mine\./);

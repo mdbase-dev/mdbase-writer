@@ -33,6 +33,9 @@ builds outside the app too.
 3. Problems appear on the line that caused them, in plain language.
 4. Citations match Pandoc's citeproc, so PDF and Word agree.
 5. Records are never deleted or renamed by the writer; access stays narrow.
+6. Preview failures never prevent writing; unsaved work and conflicts have
+   explicit recovery paths, and chapter switching preserves editing context.
+7. Exports check completeness and explain format differences before download.
 
 ## Brand
 

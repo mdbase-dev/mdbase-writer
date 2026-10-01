@@ -12,7 +12,8 @@
   `match.where.type.contains: writer-manuscript` for collections that turn
   explicit type keys off. New manuscripts are created by the collection's
   implementing type (found through `describe()`), using that type's field
-  names and the collection's explicit type key; "Use as manuscript" adds the
+  names and the collection's explicit type key. Session fields are normalised
+  for settings and compilation and mapped back for writes; "Use as manuscript" adds the
   type to an existing note. How manuscripts are recognised is configured in
   the collection's type file, not in the app.
 - **Chapters** are any Markdown records, embedded by a line holding only
@@ -81,13 +82,30 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   message queue before each compile), pushes only changed Typst files, maps
   Typst diagnostics back to records, and queries block positions for
   click-to-source.
+- **Recovery** (`app/workspace`) opens chapters independently of the compiler.
+  Checked, time-bounded downloads, bounded asset retries and compiler/renderer
+  retry controls keep writing available after preview failures; stale pages are
+  labelled. Worker failures and timeouts settle outstanding export requests.
 - **The preview** (`app/preview/Preview.tsx`) keeps one typst.ts render
   session, sizes a placeholder per page, and draws only pages near the
   viewport (IntersectionObserver), so update cost follows what is on screen.
+  Sanitised renderer semantics overlay the canvas as positioned, selectable
+  text, available to assistive technology.
 - **The editor** (`app/editor`) uses the same lezer extensions as the
   translator. It never adopts an echo of its own earlier text from the session
   (that would undo keystrokes typed since). The cursor's block is scrolled into
-  view in the preview when it is off screen.
+  view in the preview when it is off screen. CodeMirror state, undo history,
+  selection and scroll position are cached per record within the workspace;
+  remote changes are excluded from local undo history.
+- **Saving** (`app/workspace/drafts.ts`) backs up unsent bodies and focused
+  setting drafts to localStorage by collection and record. Recovered drafts
+  require review; storage errors are visible. Navigation first flushes records,
+  then asks before leaving unsaved/conflicting text. Conflicts support comparison,
+  merged text and draft downloads. Browser backups are best-effort, not durable
+  collection saves.
+- **Home** lists manuscript metadata before reading bodies. Visible manuscripts
+  get bounded background counts with a shared body cache; refresh and retry
+  controls invalidate stale counts.
 - **Settings problems.** A diagnostic about the frontmatter carries its
   `field`; Typst errors in the generated main file are mapped to the setting
   written on that line, and errors in a template to `template`.
@@ -103,6 +121,13 @@ worker, started on the first export; it formats citations with its own
 citeproc from the same CSL and CSL-JSON, and takes Word styles from
 `public/docx/<template>.docx`. The Pandoc bundle uses `quarto` mode instead
 and leaves cross-references to Quarto.
+
+All formats run an independent preflight: recursively open embedded records,
+read needed files, assemble with frozen inputs and report missing dependencies.
+PDF exports compile the frozen Typst sources rather than the last preview.
+Word and bundles materialise the same captured records. Warnings are reviewed
+before download; incomplete output needs explicit consent. Cancellation prevents
+subsequent downloads, and Pandoc initialization/conversion failures are retryable.
 
 ## Measured
 

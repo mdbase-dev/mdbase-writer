@@ -1,6 +1,7 @@
 // The writer on a real collection through mdbase connect.
 import { PERSON_CONTRACT, type CollectionFileDescriptor, type JsonObject, type MdbaseConnection } from "@mdbase-dev/connect";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { errorMessage } from "../async.js";
 
 import {
   changeFields,
@@ -17,7 +18,7 @@ import {
   type People,
 } from "./comments.js";
 import {
-  bodySummary,
+  manuscriptBody,
   fail,
   libraryEntry,
   manuscriptSlug,
@@ -53,6 +54,7 @@ export class ConnectBackend implements WriterBackend {
   readonly kind = "connect";
   private readonly files = new Map<string, CollectionFileDescriptor>();
   private readonly listeners = new Set<(paths: readonly string[]) => void>();
+  private readonly staleFiles = new Set<string>();
   private readonly lifetime = new AbortController();
   private stopFollowing: (() => void) | undefined;
 
@@ -68,6 +70,14 @@ export class ConnectBackend implements WriterBackend {
     return this.connection.info()?.displayName ?? "Collection";
   }
 
+  get draftNamespace(): string {
+    return this.connection.info()?.collectionId ?? "unavailable";
+  }
+
+  manuscriptBindings() {
+    return this.implementingTypes(manuscriptContract.id, "manuscripts");
+  }
+
   get records() {
     return this.connection.records;
   }
@@ -79,7 +89,10 @@ export class ConnectBackend implements WriterBackend {
     watch.value.subscribe(
       (change) => {
         const path = (change.payload as { path?: string } | undefined)?.path;
-        if (path) for (const l of this.listeners) l([path]);
+        if (path) {
+          if (this.files.has(path)) this.staleFiles.add(path);
+          for (const l of this.listeners) l([path]);
+        }
       },
       () => {},
       () => {},
@@ -101,15 +114,8 @@ export class ConnectBackend implements WriterBackend {
         });
       }
     }
-    // A contract-view query cannot include bodies; read each manuscript for its
-    // word count (a manuscript that cannot be read is listed without one).
-    const summaries = await Promise.all(
-      out.map(async (m) => {
-        const read = await this.connection.read({ path: m.path });
-        return read.ok ? { ...m, ...bodySummary(read.value.body) } : m;
-      }),
-    );
-    return ok(summaries.sort((a, b) => a.title.localeCompare(b.title)));
+    // Titles are useful immediately. Home computes word counts in the background.
+    return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
   }
 
   /**
@@ -223,13 +229,15 @@ export class ConnectBackend implements WriterBackend {
     if (fields["template"]) frontmatter[fields["template"]] = input.template;
     if (fields["csl"]) frontmatter[fields["csl"]] = input.style;
     const slug = manuscriptSlug(input.title);
+    const sources = input.starter ? await this.library() : undefined;
+    const body = manuscriptBody(input.starter, sources?.ok ? sources.value[0]?.key : undefined);
     let last = "";
     for (let n = 1; n <= 20; n++) {
       const created = await this.connection.create({
         type: name,
         path: `manuscripts/${slug}${n > 1 ? `-${n}` : ""}.md`,
         frontmatter,
-        body: `# Introduction {#sec-intro}\n\n`,
+        body,
       });
       if (created.ok) return ok(created.value.path);
       last = problemMessage(created);
@@ -326,9 +334,13 @@ export class ConnectBackend implements WriterBackend {
     const file = this.files.get(path);
     if (!file) return fail(`No file at ${path}.`);
     try {
-      return ok(await this.connection.files.downloadBytes(file));
+      if (this.staleFiles.has(path)) {
+        for await (const updated of this.connection.files.list({ folder: path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "" })) this.files.set(updated.path, updated);
+        this.staleFiles.delete(path);
+      }
+      return ok(await this.connection.files.downloadBytes(this.files.get(path) ?? file));
     } catch (e) {
-      return fail(e instanceof Error ? e.message : String(e));
+      return fail(errorMessage(e));
     }
   }
 

@@ -89,7 +89,9 @@ export function Settings({
   const patch = (p: JsonObject) => workspace.patchFrontmatter(workspace.main, p);
   const str = (k: string) => (typeof fm[k] === "string" ? (fm[k] as string) : typeof fm[k] === "number" ? String(fm[k]) : "");
   const problemsFor = (field: MetaField) => problems.filter((d) => d.field === field);
-  const props = (field: MetaField) => ({ field, problems: problemsFor(field), focus });
+  const props = (field: MetaField) => ({ field, problems: problemsFor(field), focus,
+    onDraft: (draft: string) => workspace.stageFrontmatter(workspace.main, field === "authors" ? { [authorsKey]: parseAuthors(draft) } : { [field]: field === "title" ? draft : field === "lang" ? draft.trim() || null : draft || null }),
+  });
   const cslFiles = filePaths.filter((p) => /\.csl$/i.test(p)).sort();
   const typFiles = filePaths.filter((p) => /\.typ$/i.test(p)).sort();
   const style = str("csl") || "chicago-notes-bibliography";
@@ -111,7 +113,7 @@ export function Settings({
           <CloseIcon />
         </button>
       </header>
-      <div className="settings">
+      <fieldset className="settings" disabled={view.snapshot.state === "deleted" || workspace.getSnapshot().recoveredDrafts.has(workspace.main)}>
         <div className="span-2">
           <TextField label="Title" multiline={1} grow singleLine value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
         </div>
@@ -159,7 +161,7 @@ export function Settings({
           onCommit={(v) => patch({ lang: v.trim() || null })}
           {...props("lang")}
         />
-      </div>
+      </fieldset>
       <p className="muted small dialog-note">Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them.</p>
     </aside>
   );
@@ -177,6 +179,7 @@ interface FieldProps {
   hint?: string;
   problems: readonly WriterDiagnostic[];
   focus: SettingsFocus | null;
+  onDraft?(value: string): void;
 }
 
 function FieldFrame({ label, hint, problems, children, id }: FieldProps & { children: ReactNode; id: string }) {
@@ -218,7 +221,7 @@ function TextField(props: FieldProps & {
   placeholder?: string;
   list?: readonly (readonly [string, string])[];
 }) {
-  const { value, onCommit, multiline, grow, singleLine, placeholder, list, field, problems, focus } = props;
+  const { value, onCommit, onDraft, multiline, grow, singleLine, placeholder, list, field, problems, focus } = props;
   const [draft, setDraft] = useState(value);
   const editing = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -269,6 +272,7 @@ function TextField(props: FieldProps & {
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const next = singleLine ? e.target.value.replace(/\s*\n\s*/g, " ") : e.target.value;
       setDraft(next);
+      onDraft?.(next);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => commit(next), COMMIT_AFTER_MS);
     },

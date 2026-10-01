@@ -13,6 +13,8 @@ import { memo, useEffect, useRef, useState } from "react";
 
 import { markAt } from "../compile/marks.js";
 import type { BlockPosition, SourceMark } from "../compile/protocol.js";
+import { errorMessage, fetchChecked } from "../async.js";
+import { semanticLayer } from "./semantics.js";
 
 type Renderer = ReturnType<typeof createTypstRenderer>;
 interface PageBox {
@@ -24,27 +26,28 @@ let rendererPromise: Promise<Renderer> | undefined;
 function renderer(): Promise<Renderer> {
   rendererPromise ??= (async () => {
     const r = createTypstRenderer();
-    await r.init({ getModule: () => fetch(rendererWasm) });
+    await r.init({ getModule: () => fetchChecked(rendererWasm) });
     return r;
-  })();
+  })().catch((error: unknown) => { rendererPromise = undefined; throw error; });
   return rendererPromise;
 }
 
 /** A render session that lives as long as the preview (runWithSession scopes it to a callback). */
 async function openSession(): Promise<{ renderer: Renderer; session: RenderSession; close(): void }> {
   const r = await renderer();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     void r.runWithSession(
       (session) =>
         new Promise<void>((close) => {
           resolve({ renderer: r, session, close: () => close() });
         }),
-    );
+    ).catch(reject);
   });
 }
 
 export interface PreviewProps {
   artifact?: Uint8Array;
+  problem?: string | undefined;
   /** Compile revision of the artifact; recorded on the element once its visible pages are drawn. */
   revision?: number;
   positions: readonly BlockPosition[];
@@ -81,11 +84,15 @@ const SETTLE_MS = 250;
 const yieldToInput = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 const NO_MARKS: readonly SourceMark[] = [];
+const pageTop = (canvas: HTMLCanvasElement) => (canvas.parentElement?.offsetTop ?? 0) + canvas.offsetTop;
 
-export const Preview = memo(function Preview({ artifact, revision, positions, marks = NO_MARKS, stale, onJump, onSource, follow, zoom, onView, onTitleClick }: PreviewProps) {
+export const Preview = memo(function Preview({ artifact, problem, revision, positions, marks = NO_MARKS, stale, onJump, onSource, follow, zoom, onView, onTitleClick }: PreviewProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const pagesHost = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<readonly PageBox[]>([]);
+  const [renderProblem, setRenderProblem] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [sessionEpoch, setSessionEpoch] = useState(0);
   const pagesRef = useRef<readonly PageBox[]>([]);
   const session = useRef<Awaited<ReturnType<typeof openSession>> | null>(null);
   const version = useRef(0);
@@ -117,23 +124,29 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
     // The last block on a page runs to its bottom margin; a guess keeps the mark short.
     const height = Math.min(next ? next.y - at.y : 36, box.height * 0.4);
     el.hidden = false;
-    el.style.top = `${canvas.offsetTop + at.y * scale}px`;
+    el.style.top = `${pageTop(canvas) + at.y * scale}px`;
     el.style.height = `${Math.max(10, height * scale)}px`;
-    el.style.left = `${canvas.offsetLeft + Math.max(8, 24 * scale)}px`;
+    el.style.left = `${(canvas.parentElement?.offsetLeft ?? 0) + canvas.offsetLeft + Math.max(8, 24 * scale)}px`;
   };
 
   useEffect(() => {
     let live = true;
+    setRenderProblem(null);
     void openSession().then((s) => {
-      if (live) session.current = s;
+      if (live) { session.current = s; setSessionEpoch((epoch) => epoch + 1); }
       else s.close();
-    });
+    }).catch((error: unknown) => { if (live) setRenderProblem(errorMessage(error)); });
     return () => {
       live = false;
-      session.current?.close();
+      version.current++;
+      const old = session.current;
       session.current = null;
+      void drawing.current.finally(() => old?.close());
+      drawn.current.clear();
+      drawnKey.current.clear();
+      drawnWidth.current.clear();
     };
-  }, []);
+  }, [retry]);
 
   /** Draws every visible page that is behind the current document version. */
   const drawVisible = () => {
@@ -172,7 +185,7 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
         // Given the fingerprint of the bitmap on screen, the renderer draws
         // nothing when the page is unchanged and returns the same one.
         const shown = drawnWidth.current.get(index) === cssWidth ? drawnKey.current.get(index) : undefined;
-        const result = (await s.renderer.renderCanvas({ renderSession: s.session, canvas: ctx, pageOffset: index, backgroundColor: "#ffffff", pixelPerPt, ...(shown ? { cacheKey: shown } : {}) } as Parameters<Renderer["renderCanvas"]>[0])) as { cacheKey?: string } | undefined;
+        const result = await s.renderer.renderCanvas({ renderSession: s.session, canvas: ctx, pageOffset: index, backgroundColor: "#ffffff", pixelPerPt, ...(shown ? { cacheKey: shown } : {}) });
         if (version.current !== v) return; // a newer document arrived; its pass redraws
         const key = result?.cacheKey;
         if (!shown || key !== shown) {
@@ -180,6 +193,12 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
           canvas.width = next.width;
           canvas.height = next.height;
           canvas.getContext("2d")?.drawImage(next, 0, 0);
+        }
+        const layer = host.querySelector<HTMLElement>(`.text-layer[data-page="${index}"]`);
+        if (layer) {
+          layer.style.setProperty("--data-text-width", `${cssWidth / box.width}px`);
+          layer.style.setProperty("--data-text-height", `${canvas.clientHeight / box.height}px`);
+          if ((!shown || key !== shown) && result?.htmlSemantics?.[0]) layer.replaceChildren(semanticLayer(result.htmlSemantics[0]));
         }
         if (key) drawnKey.current.set(index, key);
         else drawnKey.current.delete(index);
@@ -189,7 +208,7 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
       }
       const r = latest.current.revision;
       if (r !== undefined && version.current === v) host.dataset["renderedRevision"] = String(r);
-    });
+    }).catch((error: unknown) => { if (pagesHost.current?.isConnected) setRenderProblem(errorMessage(error)); });
   };
 
   // A new document: load it into the session and redraw what is visible. The
@@ -197,14 +216,14 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
   // moment. (Drawing each as it comes slows typing, and so the next compile,
   // until drawing is all the page does.)
   useEffect(() => {
-    if (!artifact) return;
+    if (!artifact || !session.current) return;
     arrived.current++;
     let cancelled = false;
     const load = async () => {
-      while (!session.current && !cancelled) await new Promise((r) => setTimeout(r, 20));
       const s = session.current;
       if (!s || cancelled) return;
       await drawing.current;
+      if (cancelled || s !== session.current) return;
       s.renderer.manipulateData({ renderSession: s.session, action: "reset", data: artifact });
       const info = s.session.retrievePagesInfo().map((p) => ({ width: p.width, height: p.height }));
       version.current++;
@@ -212,14 +231,15 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
       setPages((prev) => (prev.length === info.length && prev.every((p, i) => p.width === info[i]?.width && p.height === info[i]?.height) ? prev : info));
       requestAnimationFrame(drawVisible);
     };
-    const timer = version.current === 0 ? undefined : setTimeout(() => void load(), SETTLE_MS);
-    if (!timer) void load();
+    const safeLoad = () => void load().catch((error: unknown) => { if (!cancelled) setRenderProblem(errorMessage(error)); });
+    const timer = pagesRef.current.length === 0 ? undefined : setTimeout(safeLoad, SETTLE_MS);
+    if (!timer) safeLoad();
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one load per artifact
-  }, [artifact]);
+  }, [artifact, sessionEpoch]);
 
   // Track which pages are near the viewport; draw pages as they come into view.
   useEffect(() => {
@@ -254,7 +274,7 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
       const line = root.scrollTop + root.clientHeight / 3;
       let page = 1;
       canvases.forEach((c, i) => {
-        if (c.offsetTop <= line) page = i + 1;
+        if (pageTop(c) <= line) page = i + 1;
       });
       latest.current.onView?.({ page, pages: canvases.length, scale: (canvases[0] as HTMLCanvasElement).clientWidth / (first.width * PX_PER_PT) });
     });
@@ -292,7 +312,7 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
     const box = follow ? pagesRef.current[follow.page - 1] : undefined;
     const canvas = follow ? pagesHost.current?.querySelector<HTMLCanvasElement>(`canvas[data-page="${follow.page - 1}"]`) : null;
     if (!root || !follow || !box || !canvas) return;
-    const top = canvas.offsetTop + (follow.y / box.height) * canvas.clientHeight;
+    const top = pageTop(canvas) + (follow.y / box.height) * canvas.clientHeight;
     const margin = root.clientHeight * 0.15;
     if (top >= root.scrollTop + margin && top <= root.scrollTop + root.clientHeight - margin) return;
     root.scrollTo({ top: Math.max(0, top - root.clientHeight / 3), behavior: "smooth" });
@@ -302,7 +322,8 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
 
   /** The page (1-based) and height on it, in pt, of a pointer event over a page. */
   const pointOf = (event: React.MouseEvent): { canvas: HTMLCanvasElement; page: number; y: number } | null => {
-    const canvas = (event.target as HTMLElement).closest<HTMLCanvasElement>("canvas[data-page]");
+    const pageElement = (event.target as HTMLElement).closest<HTMLElement>(".preview-page");
+    const canvas = pageElement?.querySelector<HTMLCanvasElement>("canvas[data-page]");
     if (!canvas) return null;
     const index = Number(canvas.dataset["page"]);
     const box = pagesRef.current[index];
@@ -323,6 +344,8 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
   };
 
   const onClick = (event: React.MouseEvent) => {
+    // Selecting/copying text and following a real link must not steal focus.
+    if (window.getSelection()?.toString() || (event.target as HTMLElement).closest("a")) return;
     const at = pointOf(event);
     if (!at) return;
     const { page, y } = at;
@@ -336,17 +359,16 @@ export const Preview = memo(function Preview({ artifact, revision, positions, ma
 
   return (
     <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} aria-label={`Typeset preview, ${pages.length} ${pages.length === 1 ? "page" : "pages"}`} onScroll={reportView}>
-      {!artifact && <p className="preview-empty">Typesetting…</p>}
+      {renderProblem && <div className="banner" role="alert"><span>Preview rendering failed: {renderProblem}. Your text is still available in the editor.</span><button type="button" className="mdbase-button" onClick={() => setRetry((value) => value + 1)}>Retry rendering</button></div>}
+      {!artifact && <p className="preview-empty">{problem ? "Preview unavailable. You can keep writing." : "Typesetting…"}</p>}
+      {stale && artifact && <p className="muted small" role="status">Showing the last successful preview; it may not match your latest text.</p>}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer shortcut; Problems and the outline offer the same navigation */}
       <div className="preview-pages" ref={pagesHost} onClick={onClick} onMouseMove={onMouseMove}>
         {pages.map((p, i) => (
-          <canvas
-            key={i}
-            data-page={i}
-            className="page"
-            style={{ aspectRatio: `${p.width} / ${p.height}`, ...(zoom === "fit" ? {} : { width: `${Math.round(p.width * PX_PER_PT * zoom)}px` }) }}
-            aria-label={`Page ${i + 1}`}
-          />
+          <div key={i} className="preview-page" style={{ aspectRatio: `${p.width} / ${p.height}`, ...(zoom === "fit" ? {} : { width: `${Math.round(p.width * PX_PER_PT * zoom)}px` }) }}>
+            <canvas data-page={i} className="page" aria-hidden="true" />
+            <div className="text-layer" data-page={i} role="region" aria-label={`Page ${i + 1}`} tabIndex={0} />
+          </div>
         ))}
         <div ref={marker} className="preview-cursor" aria-hidden="true" hidden />
       </div>

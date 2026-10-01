@@ -7,6 +7,8 @@
 import { createPandocInstance, type PandocInstance } from "pandoc-wasm/core";
 
 import type { FromPandoc, ToPandoc } from "./pandoc-protocol.js";
+import { pandocWarnings } from "./warnings.js";
+import { fetchChecked } from "../async.js";
 
 declare const self: DedicatedWorkerGlobalScope;
 declare const __PANDOC_WASM_VERSION__: string;
@@ -19,7 +21,7 @@ async function wasmUrl(baseUrl: string): Promise<string> {
 let pandoc: Promise<PandocInstance> | undefined;
 function instance(baseUrl: string): Promise<PandocInstance> {
   pandoc ??= (async () => {
-    const response = await fetch(await wasmUrl(baseUrl));
+    const response = await fetchChecked(await wasmUrl(baseUrl));
     if (!response.ok) throw new Error(`Pandoc could not be loaded (${response.status}).`);
     return createPandocInstance(await response.arrayBuffer());
   })();
@@ -53,7 +55,7 @@ self.onmessage = async (event: MessageEvent<ToPandoc>) => {
       return;
     }
     const bytes = new Uint8Array(await docx.arrayBuffer());
-    const warnings = result.warnings.map((w) => (typeof w === "string" ? w : String((w as { message?: string }).message ?? JSON.stringify(w))));
+    const warnings = pandocWarnings(result.warnings);
     post({ id, bytes, warnings }, [bytes.buffer]);
   } catch (e) {
     post({ id, error: e instanceof Error ? e.message : String(e) });
