@@ -55,8 +55,8 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     if (frontmatter["type"] === "person" && typeof frontmatter["name"] === "string") names.set(personKey(path), frontmatter["name"]);
   }
   // The demo is written by the manuscript's author.
-  const me = [...paths].find((p) => names.get(personKey(p)) === "Callum Alpass");
-  const people: People = { names, ...(me ? { me: { link: personLink(me), name: "Callum Alpass" }, signing: { kind: "linked" } } : { signing: { kind: "unlinked" } }) };
+  const me = [...paths].find((p) => names.get(personKey(p)) === "Jordan Ellis");
+  const people: People = { names, ...(me ? { me: { link: personLink(me), name: "Jordan Ellis" }, signing: { kind: "linked" } } : { signing: { kind: "unlinked" } }) };
   const readComment = async (path: string): Promise<CommentRecord | null> => {
     const opened = await authority.records.open(path, { autosave: false });
     if (!opened.ok) return null;

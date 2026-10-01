@@ -21,7 +21,7 @@ export interface QuotationCard {
   readonly quotation: true;
   readonly path: string;
   readonly quote: string;
-  /** Who and where, as the reader sees it ("Badiou, 2007, p. 178"); empty when the source is not in the library. */
+  /** Who and where, as the reader sees it ("Darwin, 1881, p. 313"); empty when the source is not in the library. */
   readonly cite: string;
   /** Opens the quoted passage in Reader, where there is one. */
   readonly href?: string;

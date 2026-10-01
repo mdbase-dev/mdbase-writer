@@ -1,7 +1,7 @@
 // Keystroke → painted preview in the real app (demo mode), one character at a time.
 import { chromium } from "playwright";
-const [manuscript = "manuscripts/potentiality.md", record = manuscript, needle = "which it occurs", n = "12"] = process.argv.slice(2);
-const browser = await chromium.launch({ executablePath: "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
+const [manuscript = "manuscripts/slow-change.md", record = manuscript, needle = "too slow to watch", n = "12"] = process.argv.slice(2);
+const browser = await chromium.launch({ executablePath: process.env.CHROME });
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
 const t0 = Date.now();
 await page.goto(`http://127.0.0.1:5320/?demo&manuscript=${encodeURIComponent(manuscript)}`);

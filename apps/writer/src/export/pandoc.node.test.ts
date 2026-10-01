@@ -14,15 +14,15 @@ describe("Word export", () => {
   it("converts a manuscript to DOCX with citations, cross-references and styles", { timeout: 120_000 }, async () => {
     const { createPandocInstance } = (await import(resolve(root, "node_modules/pandoc-wasm/src/core.js"))) as typeof import("pandoc-wasm/core");
     const pandoc = await createPandocInstance(readFileSync(resolve(root, "node_modules/pandoc-wasm/src/pandoc.wasm")).buffer as ArrayBuffer);
-    const text = readFileSync(resolve(root, "demo/manuscripts/potentiality.md"), "utf8");
-    const record: WriterRecord = { path: "manuscripts/potentiality.md", ...splitFrontmatter(text) };
+    const text = readFileSync(resolve(root, "demo/manuscripts/slow-change.md"), "utf8");
+    const record: WriterRecord = { path: "manuscripts/slow-change.md", ...splitFrontmatter(text) };
     const library = new Map((JSON.parse(readFileSync(resolve(root, "demo/library.json"), "utf8")) as CslItem[]).map((i) => [i.id, i]));
     const styles = new Map(STYLES.map((s) => [s.id, readFileSync(resolve(csl, `${s.id}.csl`), "utf8")]));
     const out = materialize({
       main: record.path,
       records: new Map([[record.path, record]]),
       recordPaths: new Set([record.path]),
-      filePaths: new Set(["manuscripts/figures/site.svg"]),
+      filePaths: new Set(["manuscripts/figures/reef-stages.svg"]),
       library,
       styles,
       crossReferences: "resolved",
@@ -43,7 +43,7 @@ describe("Word export", () => {
     expect(docx).toBeDefined();
     // Read it back to plain text with the same Pandoc.
     const plain = await pandoc.convert({ from: "docx", to: "plain", standalone: true, "input-files": ["m.docx"] }, null, { "m.docx": docx as Blob });
-    expect(plain.stdout).toContain("Potentiality and the Event");
+    expect(plain.stdout).toContain("Small Agents, Large Effects");
     expect(plain.stdout).toMatch(/Section \d/);
     expect(plain.stdout).not.toMatch(/\(sec-[\w-]+\?\)/);
     expect(plain.stdout).toContain("Bibliography");
