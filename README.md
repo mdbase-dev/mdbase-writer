@@ -6,7 +6,7 @@ Markdown in your mdbase collection.
 
 **[Open writer](https://writer.mdbase.dev)** ·
 [Try the demo](https://lab.mdbase-writer.pages.dev/?demo) ·
-[Open mdbase Reader](https://reader.mdbase.dev)
+[Report a problem](https://github.com/mdbase-dev/mdbase-writer/issues)
 
 Writer is prerelease software. Keep backups of important work and check the save status before
 closing or reloading. The demo uses sample data in a separate, in-memory collection; it is not
@@ -139,8 +139,9 @@ saving when you type; do not assume it has reached the collection until the save
 
 If a collection will not open, check its Connect access and, for a computer-backed collection,
 that its desktop app is online. Use **Reconnect** or choose another collection when prompted.
-When reporting a problem, include your browser, the steps to reproduce it, and any displayed
-error; remove private manuscript text, collection paths, and credentials.
+[Open an issue](https://github.com/mdbase-dev/mdbase-writer/issues) for bugs or feature requests.
+Include your browser, the steps to reproduce the problem, and any displayed error; remove
+private manuscript text, collection paths, and credentials.
 
 For local setup, tests, deployment, and implementation details, see the
 [development guide](docs/development.md) and [architecture notes](docs/architecture.md).
