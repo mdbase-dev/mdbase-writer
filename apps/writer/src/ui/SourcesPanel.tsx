@@ -4,11 +4,12 @@
 // cited, or insert a quotation you highlighted in Reader with its citation
 // and page already filled in (a long one is embedded, so it follows Reader).
 import { citationFor, inlineQuotation, isInlineQuote } from "@mdbase-writer/core/annotations";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import type { LibraryEntry, Result, SourceAnnotation } from "../backend/types.js";
-import { authorYear, searchLibrary } from "../editor/library-search.js";
+import { authorYear, searchLibrary, sortedLibrary } from "../editor/library-search.js";
 import { readerSourceHref } from "../apps.js";
+import { useRowWindow } from "./paging.js";
 import { ChevronLeft, ChevronRight, ExternalIcon, SearchIcon } from "./icons.js";
 
 /** Library sources listed before "Show all". */
@@ -40,8 +41,6 @@ export interface SourcesRequest {
   readonly nonce: number;
 }
 
-const byAuthorYear = (a: LibraryEntry, b: LibraryEntry) => authorYear(a).localeCompare(authorYear(b)) || a.title.localeCompare(b.title);
-
 export function SourcesPanel({
   library,
   cited,
@@ -54,7 +53,15 @@ export function SourcesPanel({
   request,
   annotationVersion = 0,
   loading = false,
+  problem: libraryProblem,
+  onRetry: retryLibrary,
+  notSetUp = false,
+  annotationsNotSetUp = false,
 }: {
+  annotationsNotSetUp?: boolean;
+  problem?: string | undefined;
+  onRetry?(): void;
+  notSetUp?: boolean;
   annotationVersion?: number;
   loading?: boolean;
   library: readonly LibraryEntry[];
@@ -73,18 +80,34 @@ export function SourcesPanel({
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
-  const [allLibrary, setAllLibrary] = useState(false);
+  const libraryWindow = useRowWindow(LIBRARY_PREVIEW);
+  const citedWindow = useRowWindow();
   const [highlights, setHighlights] = useState<{ path: string; version: number; value?: SourceAnnotation[]; problem?: string } | null>(null);
   const [retry, setRetry] = useState(0);
   const search = useRef<HTMLInputElement>(null);
   const panel = useRef<HTMLElement>(null);
+  const locators = useRef(new Map<string, string>());
 
   const byKey = useMemo(() => new Map(library.map((e) => [e.key, e])), [library]);
   const inManuscript = useMemo(() => [...cited.keys()].map((k) => byKey.get(k)).filter((e): e is LibraryEntry => Boolean(e)), [cited, byKey]);
-  const rest = useMemo(() => library.filter((e) => !cited.has(e.key)).sort(byAuthorYear), [library, cited]);
+  const sorted = useMemo(() => sortedLibrary(library), [library]);
+  const rest = useMemo(() => sorted.filter((e) => !cited.has(e.key)), [sorted, cited]);
   const results = useMemo(() => (query.trim() ? searchLibrary(library, query, 60) : []), [library, query]);
 
   const rowFor = (key: string) => panel.current?.querySelector<HTMLElement>(`.source-row[data-key="${CSS.escape(key)}"]`);
+
+  const logicalRows = query.trim() ? results : [...inManuscript, ...rest];
+  const reveal = (key: string, focus = false) => {
+    if (!query.trim()) {
+      const rank = inManuscript.findIndex((e) => e.key === key);
+      if (rank >= 0) citedWindow.reveal(rank);
+      else libraryWindow.reveal(rest.findIndex((e) => e.key === key));
+    }
+    const move = () => { const row = rowFor(key); row?.scrollIntoView({ block: "nearest" }); if (focus) row?.focus(); };
+    if (rowFor(key)) move(); else requestAnimationFrame(move);
+  };
+  const toggle = useCallback((key: string) => setOpen((o) => o === key ? null : key), []);
+  const retryHighlights = useCallback(() => setRetry((n) => n + 1), []);
 
   // Show the requested source (opened, in its group or as a search), or focus the search.
   useEffect(() => {
@@ -101,13 +124,14 @@ export function SourcesPanel({
     const key = request.key;
     setQuery(cited.has(key) ? "" : key);
     setOpen(key);
+    if (cited.has(key)) citedWindow.reveal(inManuscript.findIndex((e) => e.key === key));
     requestAnimationFrame(() => rowFor(key)?.focus());
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new request moves focus
   }, [request]);
 
   // The source under the cursor stays in view.
   useEffect(() => {
-    if (atCursor) rowFor(atCursor)?.scrollIntoView({ block: "nearest" });
+    if (atCursor && !query.trim()) reveal(atCursor);
   }, [atCursor]);
 
   const sourcePath = open ? byKey.get(open)?.path : undefined;
@@ -131,11 +155,10 @@ export function SourcesPanel({
   const onListKey = (e: KeyboardEvent<HTMLElement>) => {
     const row = (e.target as HTMLElement).closest<HTMLElement>(".source-row");
     if (!row) return;
-    const rows = [...(panel.current?.querySelectorAll<HTMLElement>(".source-row") ?? [])];
-    const at = rows.indexOf(row);
     const key = row.dataset["key"] ?? "";
-    if (e.key === "ArrowDown" || e.key === "j") rows[at + 1]?.focus();
-    else if (e.key === "ArrowUp" || e.key === "k") (rows[at - 1] ?? search.current)?.focus();
+    const at = logicalRows.findIndex((entry) => entry.key === key);
+    if (e.key === "ArrowDown" || e.key === "j") { const next = logicalRows[at + 1]; if (next) reveal(next.key, true); }
+    else if (e.key === "ArrowUp" || e.key === "k") { const previous = logicalRows[at - 1]; if (previous) reveal(previous.key, true); else search.current?.focus(); }
     else if (e.key === "ArrowRight") setOpen(key);
     else if (e.key === "ArrowLeft") setOpen((o) => (o === key ? null : o));
     else if (e.key === "Enter" && canInsert) onInsert(citationFor(key));
@@ -153,8 +176,8 @@ export function SourcesPanel({
     return (
       <section className="sources" aria-label="Sources">
         <p className="muted small">
-          {loading ? "Loading sources…" : "No sources in this collection yet."} Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.
-          {readerSourceHref() && <> <a href={readerSourceHref()} target="_blank" rel="noopener">Open Reader to add a source</a>.</>}
+          {loading ? "Loading sources…" : libraryProblem ? `Sources unavailable: ${libraryProblem}` : notSetUp ? "Sources are not set up in this collection." : "No sources in this collection yet."} {libraryProblem && retryLibrary && <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button>} {!loading && !libraryProblem && <>Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.</>}
+          {!loading && !libraryProblem && readerSourceHref() && <> <a href={readerSourceHref()} target="_blank" rel="noopener">Open Reader to add a source</a>.</>}
         </p>
       </section>
     );
@@ -164,20 +187,23 @@ export function SourcesPanel({
     <SourceRow
       key={entry.key}
       entry={entry}
+      locators={locators.current}
       uses={cited.get(entry.key) ?? 0}
       here={entry.key === atCursor}
       expanded={open === entry.key}
-      onToggle={() => setOpen(open === entry.key ? null : entry.key)}
-      annotations={annotations}
-      problem={problem}
-      onRetry={() => setRetry((n) => n + 1)}
+      onToggle={toggle}
+      annotations={open === entry.key ? annotations : null}
+      problem={open === entry.key ? problem : null}
+      onRetry={retryHighlights}
       canInsert={canInsert}
       onInsert={onInsert}
-      onStep={(direction) => onStepCitation(entry.key, direction)}
+      onStep={onStepCitation}
       href={sourceHref?.(entry)}
+      annotationsNotSetUp={annotationsNotSetUp}
     />
   );
-  const shownRest = allLibrary ? rest : rest.slice(0, LIBRARY_PREVIEW);
+  const shownRest = rest.slice(libraryWindow.from, libraryWindow.from + libraryWindow.size);
+  const shownCited = inManuscript.slice(citedWindow.from, citedWindow.from + citedWindow.size);
 
   return (
     <section ref={panel} className="sources" aria-label="Sources" onKeyDown={onListKey}>
@@ -188,13 +214,14 @@ export function SourcesPanel({
           className="mdbase-field"
           type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); libraryWindow.reset(); citedWindow.reset(); }}
           onKeyDown={onSearchKey}
           placeholder="Search by author, title, year or key"
           aria-label="Find a source"
           aria-describedby="sources-keys"
         />
       </div>
+      {libraryProblem && <p className="muted small" role="alert">Sources unavailable: {libraryProblem} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></p>}
       <span id="sources-keys" className="visually-hidden">Down arrow moves to the sources; Enter cites the first match.</span>
       {query.trim() ? (
         <div className="source-group">
@@ -207,17 +234,20 @@ export function SourcesPanel({
             <h3 className="sidebar-heading" id="sources-cited">
               In this manuscript <span className="heading-count">{inManuscript.length}</span>
             </h3>
-            {inManuscript.length ? <ul aria-labelledby="sources-cited">{inManuscript.map(row)}</ul> : <p className="muted small">Nothing cited yet. Cite a source below, or type <code>[@</code> in the editor.</p>}
+            {inManuscript.length ? <ul aria-labelledby="sources-cited">{shownCited.map(row)}</ul> : <p className="muted small">Nothing cited yet. Cite a source below, or type <code>[@</code> in the editor.</p>}
           </div>
+          {citedWindow.from > 0 && <button type="button" className="sidebar-more" onClick={citedWindow.previous}>Show previous 50 cited sources</button>}
+          {inManuscript.length > citedWindow.from + citedWindow.size && <button type="button" className="sidebar-more" onClick={citedWindow.more}>Show 50 more cited sources · {inManuscript.length}</button>}
           {rest.length > 0 && (
             <div className="source-group">
               <h3 className="sidebar-heading" id="sources-library">
                 Library <span className="heading-count">{rest.length}</span>
               </h3>
               <ul aria-labelledby="sources-library">{shownRest.map(row)}</ul>
-              {rest.length > shownRest.length && (
-                <button type="button" className="sidebar-more" onClick={() => setAllLibrary(true)}>
-                  Show all {rest.length}
+              {libraryWindow.from > 0 && <button type="button" className="sidebar-more" onClick={libraryWindow.previous}>Show previous 50 sources</button>}
+              {rest.length > libraryWindow.from + shownRest.length && (
+                <button type="button" className="sidebar-more" onClick={libraryWindow.more}>
+                  Show 50 more sources · {rest.length}
                 </button>
               )}
             </div>
@@ -228,7 +258,8 @@ export function SourcesPanel({
   );
 }
 
-function SourceRow({
+const SourceRow = memo(function SourceRow({
+  locators,
   entry,
   uses,
   here,
@@ -241,21 +272,27 @@ function SourceRow({
   onInsert,
   onStep,
   href,
+  annotationsNotSetUp,
 }: {
+  annotationsNotSetUp: boolean;
   entry: LibraryEntry;
+  locators: Map<string, string>;
   uses: number;
   here: boolean;
   expanded: boolean;
-  onToggle(): void;
+  onToggle(key: string): void;
   annotations: SourceAnnotation[] | null;
   problem: string | null;
   onRetry(): void;
   canInsert: boolean;
   onInsert(text: string): void;
-  onStep(direction: 1 | -1): void;
+  onStep(key: string, direction: 1 | -1): void;
   href: string | undefined;
 }) {
-  const [locator, setLocator] = useState("");
+  const highlightsWindow = useRowWindow();
+  useEffect(() => highlightsWindow.reset(), [annotations]);
+  const [locator, setLocator] = useState(() => locators.get(entry.key) ?? "");
+  useEffect(() => { locators.set(entry.key, locator); }, [locators, entry.key, locator]);
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -269,7 +306,7 @@ function SourceRow({
   return (
     <li className={[expanded && "is-open", here && "is-here"].filter(Boolean).join(" ") || undefined}>
       <div className="source-line">
-        <button type="button" className="source-row" data-key={entry.key} aria-expanded={expanded} aria-controls={expanded ? detail : undefined} onClick={onToggle} title={`${entry.title} · @${entry.key}`}>
+        <button type="button" className="source-row" data-key={entry.key} aria-expanded={expanded} aria-controls={expanded ? detail : undefined} onClick={() => onToggle(entry.key)} title={`${entry.title} · @${entry.key}`}>
           <span className="source-title">{entry.title}</span>
           <span className="source-meta">
             {authorYear(entry) || entry.key}
@@ -305,9 +342,9 @@ function SourceRow({
           <div className="source-facts">
             {uses > 0 ? (
               <span className="source-uses-nav">
-                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(-1)} aria-label="Previous citation" title="Previous citation"><ChevronLeft /></button>
+                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(entry.key, -1)} aria-label="Previous citation" title="Previous citation"><ChevronLeft /></button>
                 <span className="small">Cited {uses === 1 ? "once" : `${uses} times`}</span>
-                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(1)} aria-label="Next citation" title="Next citation"><ChevronRight /></button>
+                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(entry.key, 1)} aria-label="Next citation" title="Next citation"><ChevronRight /></button>
               </span>
             ) : (
               <span className="muted small">Not cited yet</span>
@@ -332,10 +369,10 @@ function SourceRow({
           </div>
           {annotations === null && !problem && <p className="muted small" role="status">Loading annotations…</p>}
           {problem && <p className="muted small" role="alert">Annotations unavailable: {problem} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></p>}
-          {annotations?.length === 0 && <p className="muted small">No annotations on this source.</p>}
+          {annotations?.length === 0 && <p className="muted small">{annotationsNotSetUp ? "Highlights are not set up in this collection." : "No annotations on this source."}</p>}
           {notes.length > 0 && (
             <ul className="annotations" aria-label="Highlights from Reader">
-              {notes.map((a) => (
+              {notes.slice(0, highlightsWindow.size).map((a) => (
                 <li key={a.path}>
                   {a.quote && <blockquote>{a.quote}</blockquote>}
                   {a.note && <p className="small">{a.note}</p>}
@@ -349,8 +386,9 @@ function SourceRow({
               ))}
             </ul>
           )}
+          {notes.length > highlightsWindow.size && <button type="button" className="sidebar-more" onClick={highlightsWindow.more}>Show 50 more highlights · {notes.length}</button>}
         </div>
       )}
     </li>
   );
-}
+});

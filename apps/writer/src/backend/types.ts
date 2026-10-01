@@ -81,6 +81,7 @@ export interface NewManuscript {
 }
 
 export interface WriterBackend {
+  readonly setupStatus?: { readonly sources: boolean; readonly annotations: boolean; readonly comments: boolean } | undefined;
   readonly kind: "connect" | "demo";
   readonly collectionName: string;
   /** Stable, non-secret collection identity for local draft isolation. */

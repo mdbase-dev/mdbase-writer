@@ -65,6 +65,7 @@ const problemMessage = (outcome: { ok: false; problem: { message?: string; code:
 
 export class ConnectBackend implements WriterBackend {
   readonly kind = "connect";
+  setupStatus: { sources: boolean; annotations: boolean; comments: boolean } | undefined;
   private readonly indexCache = new CollectionCache<CollectionIndex>();
   private readonly libraryCache = new CollectionCache<LibraryEntry[]>();
   private readonly manuscriptCache = new CollectionCache<ManuscriptSummary[]>();
@@ -116,6 +117,8 @@ export class ConnectBackend implements WriterBackend {
       if (this.description !== job) return out;
       if (!out.ok) this.description = undefined;
       else {
+        const has = (id: string, starter: string) => out.value.contracts.some((c) => c.id === id) || out.value.types.some((t) => t.name === starter);
+        this.setupStatus = { sources: has(sourceContract.id, "reader-source"), annotations: has(annotationContract.id, "reader-annotation"), comments: out.value.contracts.some((c) => c.id === commentContract.id && c.implementations.length > 0) };
         this.schemaPaths = new Set(["mdbase.yaml", ...out.value.types.flatMap((t) => t.path ? [t.path] : []), ...out.value.contracts.flatMap((c) => c.implementations.flatMap((i) => i.typePath ? [i.typePath] : []))]);
         const settings = out.value.configuration?.["settings"] as JsonObject | undefined;
         this.schemaFolders = [settings?.["types_folder"] ?? "_types", settings?.["contracts_folder"] ?? "_contracts"].filter((p): p is string => typeof p === "string" && !!p).map((p) => p.replace(/^\.\//, "").replace(/\/+$/, ""));
@@ -219,6 +222,9 @@ export class ConnectBackend implements WriterBackend {
 
   private async commentMetadata(): Promise<Result<Map<string, CommentMetadata>>> {
     return this.commentCache.load(async () => {
+      const described = await this.describe();
+      if (!described.ok) return fail(problemMessage(described));
+      if (this.setupStatus?.comments === false) return ok(new Map());
       const types = await this.implementingTypes(commentContract.id, "comments");
       if (!types.ok) return types;
       const out = new Map<string, CommentMetadata>();

@@ -159,7 +159,9 @@ function DemoRoot() {
     let live = true;
     let owned: WriterBackend | undefined;
     void import("./backend/demo.js").then(async ({ createDemoBackend }) => {
-      const b = await createDemoBackend();
+      const b = import.meta.env.DEV && params.get("demo") === "large"
+        ? await (await import("./backend/large-demo.js")).createLargeDemoBackend()
+        : await createDemoBackend();
       if (live) { owned = b; setBackend(b); }
       else b.dispose();
     }).catch((error: unknown) => { if (live) setProblem(error instanceof Error ? error.message : String(error)); });

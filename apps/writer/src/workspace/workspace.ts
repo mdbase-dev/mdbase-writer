@@ -180,6 +180,8 @@ export class ManuscriptWorkspace {
   }
 
   /** Whether this is a real collection or the demo. */
+  get setupStatus() { return this.backend.setupStatus; }
+
   get kind(): WriterBackend["kind"] {
     return this.backend.kind;
   }

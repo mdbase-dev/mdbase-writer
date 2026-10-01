@@ -36,6 +36,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   const [sources, setSources] = useState<number | null>(null);
   const [dialog, setDialog] = useState(false);
   const [filter, setFilter] = useState("");
+  const [limit, setLimit] = useState(50);
 
   useEffect(() => {
     let live = true;
@@ -122,7 +123,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     }, { rootMargin: "200px" });
     rows.current?.querySelectorAll("[data-path]").forEach((row) => observer.observe(row));
     return () => observer.disconnect();
-  }, [shown]);
+  }, [shown, limit]);
   const newButton = (
     <button type="button" className="mdbase-button is-primary" onClick={() => setDialog(true)}>
       <PlusIcon />
@@ -139,10 +140,12 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
             <p className="muted">
               In {collectionPicker ?? <strong>{backend.collectionName}</strong>}
               {sources !== null && sources > 0 && <> · {sources} {sources === 1 ? "source" : "sources"} to cite from mdbase Reader</>}
+              {sources === 0 && <> · {backend.setupStatus?.sources === false ? "Sources not set up" : "No sources yet"}</>}
             </p>
           </div>
           {manuscripts && manuscripts.length > 0 && newButton}
         </header>
+        {!backgroundProblem && (sources === null || recordPaths === null) && <p className="muted small" role="status">Loading collection data…</p>}
         {backgroundProblem && <p className="muted" role="alert">{backgroundProblem} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}>Retry background data</button></p>}
         {manuscripts === null && !problem && <p className="muted" role="status">Loading…</p>}
         {manuscripts?.length === 0 && (
@@ -171,12 +174,12 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
         {manuscripts && manuscripts.length >= SEARCH_FROM && (
           <label className="home-search">
             <SearchIcon />
-            <input className="mdbase-field" type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Find a manuscript" aria-label="Find a manuscript" />
+            <input className="mdbase-field" type="search" value={filter} onChange={(e) => { setFilter(e.target.value); setLimit(50); }} placeholder="Find a manuscript" aria-label="Find a manuscript" />
           </label>
         )}
         {manuscripts && manuscripts.length > 0 && (
           <ul className="manuscripts" ref={rows}>
-            {shown.map((m) => (
+            {shown.slice(0, limit).map((m) => (
               <li key={m.path}>
                 <button type="button" className="manuscript-row" data-path={m.path} onClick={() => onOpen(m.path)} title={m.path}>
                   <span className="manuscript-title">{m.title}</span>
@@ -196,6 +199,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
             ))}
           </ul>
         )}
+        {shown.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}>Show 50 more manuscripts · {shown.length}</button>}
         {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted">No manuscript matches “{filter}”.</p>}
         {problem && !dialog && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}>Retry loading</button></div>}
       </section>

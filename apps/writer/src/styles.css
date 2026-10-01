@@ -233,6 +233,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .heading-count { margin-left: 0.3rem; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .sidebar-more { display: inline-flex; align-items: center; gap: 0.4rem; justify-self: start; padding: 0.35rem 0.5rem; border: 0; border-radius: 5px; background: none; color: var(--muted); font-size: 12.5px; cursor: pointer; }
 .sidebar-more:hover { background: var(--subtle); color: var(--ink); }
+:is(.sidebar-more, .thread-anchor, .heading-row):focus-visible { outline: 1px solid var(--ink-soft); outline-offset: -1px; }
 .sidebar-more .icon { width: 14px; height: 14px; }
 .sidebar-empty { display: grid; gap: 0.25rem; padding: 0.75rem 0.5rem; color: var(--muted); }
 .sidebar-empty p { margin: 0; max-width: 17rem; line-height: 1.6; }

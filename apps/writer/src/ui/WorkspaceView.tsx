@@ -12,7 +12,7 @@ import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle, type RetainedEditor } from "../editor/Editor.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
 import { authorYear } from "../editor/library-search.js";
-import { ALT_LABEL, labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
+import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
@@ -42,7 +42,7 @@ import { CompareDialog, type Comparison } from "./CompareDialog.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
 import { anchorsFor, ThreadPlacement, type PlacedThread } from "./comments.js";
-import { CommentsPanel, openCount, type PendingComment } from "./CommentsPanel.js";
+import { CommentsPanel, openCount, type CommentDrafts, type PendingComment } from "./CommentsPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
@@ -51,6 +51,7 @@ import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { plural, recordTitle, STATE_LABEL, STATE_SHORT_LABEL, STATE_TONE } from "./records.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
+import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar, ThemeChoice } from "./topbar.js";
 
@@ -191,20 +192,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
 
   // Counts and lookups over every record's text trail typing slightly (deferred).
   const records = useDeferredValue(snap.records);
-  const stats = useMemo(() => {
-    let words = 0;
-    const labels = new Map<string, LabelTarget>();
-    const cited = new Map<string, number>();
-    const libraryKeys = new Set(snap.library.map((e) => e.key));
-    for (const path of order) {
-      const body = records.get(path)?.snapshot.body;
-      if (body === undefined) continue;
-      words += wordCount(body);
-      for (const [label, target] of labelTargets(path, body)) if (!labels.has(label)) labels.set(label, target);
-      for (const key of referenceKeys(body)) if (libraryKeys.has(key)) cited.set(key, (cited.get(key) ?? 0) + 1);
-    }
-    return { words, labels, cited };
-  }, [records, snap.library, order]);
+  const statsCache = useMemo(() => new ManuscriptStats(), [workspace]);
+  const stats = useMemo(() => statsCache.derive(order, records, snap.library), [statsCache, records, snap.library, order]);
   const completion = useMemo(
     () => ({ library: snap.library, labels: snap.result?.labels ?? [], recordPaths: snap.recordPaths, cited: stats.cited }),
     [snap.library, snap.result?.labels, snap.recordPaths, stats.cited],
@@ -364,7 +353,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   }, [jump, showSources]);
 
   // The next or previous citation of a source, in reading order from the cursor.
+  const citationNav = useRef({ order, snap, cursor, active });
+  citationNav.current = { order, snap, cursor, active };
   const stepCitation = useCallback((key: string, direction: 1 | -1) => {
+    const { order, snap, cursor, active } = citationNav.current;
     const uses = order.flatMap((record) => referenceOffsets(snap.records.get(record)?.snapshot.body ?? "", key).map((offset) => ({ record, offset })));
     if (!uses.length) return;
     const here = cursor ?? { record: active, offset: -1 };
@@ -375,7 +367,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         ? uses.find((u) => rank(u.record, u.offset) > at) ?? uses[0]
         : [...uses].reverse().find((u) => rank(u.record, u.offset) < at) ?? uses[uses.length - 1];
     if (next) jump(next.record, next.offset + 1);
-  }, [snap.records, order, cursor, active, jump]);
+  }, [jump]);
 
   // The cited source under the cursor, for the sources list.
   const citedAtCursor = useMemo(() => {
@@ -415,6 +407,22 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- isQuotation reads the annotations the snapshot holds
   }, [active, recordSet, records, byRecord, snap.library, snap.annotationPaths]);
+  const insertSource = useCallback((text: string) => {
+    setPane("write");
+    const at = editor.current?.selection();
+    const before = at && at.from === at.to ? at.text[at.from - 1] : undefined;
+    editor.current?.insert(text.startsWith("[@") && before && /[^\s([{]/.test(before) ? ` ${text}` : text);
+  }, []);
+  const replyToThread = useCallback((thread: Parameters<typeof workspace.reply>[0], text: string) => workspace.reply(thread, text), [workspace]);
+  const changeComment = useCallback((comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => workspace.changeComment(comment, change), [workspace]);
+  const acceptSuggestion = useCallback((p: PlacedThread) => workspace.acceptSuggestion(p.record, p.thread.root), [workspace]);
+  const commentDrafts = useRef<CommentDrafts>(new Map());
+  const sidebarPanel = useRef<HTMLDivElement>(null);
+  const sidebarScroll = useRef(new Map<SidebarTab, number>());
+  useEffect(() => {
+    const panel = sidebarPanel.current;
+    if (panel) panel.scrollTop = sidebarScroll.current.get(layout.tab) ?? 0;
+  }, [layout.tab]);
   const sourceHref = useMemo(() => (workspace.kind === "connect" ? (e: { path: string }) => readerSourceHref(e.path) : undefined), [workspace]);
 
   // Problems in reading order, for F8 / Shift-F8.
@@ -645,7 +653,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           comments={placed.filter((p) => p.thread.root.status === "open").length}
           commentsTitle={openCount(placed)}
         />
-        <div className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
+        <div ref={sidebarPanel} onScroll={(e) => sidebarScroll.current.set(layout.tab, e.currentTarget.scrollTop)} className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
           {layout.tab === "outline" ? (
             <>
               <ManuscriptSearch
@@ -682,9 +690,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               loading={snap.commentsLoad.phase === "loading" || snap.indexLoad.phase === "loading"}
               onRetry={() => void workspace.loadComments()}
               placed={placed}
+              drafts={commentDrafts.current}
               grouped={order.length > 1}
               people={snap.people}
               problem={snap.commentsProblem}
+              notSetUp={workspace.setupStatus?.comments === false}
               active={activeComment}
               pending={pendingComment}
               recordTitle={(path) => recordTitle(snap.records.get(path), path)}
@@ -699,9 +709,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
                 return created;
               }}
               onCancel={() => setPendingComment(null)}
-              onReply={(thread, text) => workspace.reply(thread, text)}
-              onChange={(comment, change) => workspace.changeComment(comment, change)}
-              onAccept={(p) => workspace.acceptSuggestion(p.record, p.thread.root)}
+              onReply={replyToThread}
+              onChange={changeComment}
+              onAccept={acceptSuggestion}
               onWholeRecord={() => {
                 setPendingComment({ kind: "comment", record: active });
                 setActiveComment(null);
@@ -709,7 +719,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               onCheckAccount={() => workspace.refreshPeople()}
               {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})}
             />
-          ) : (
+          ) : null}
+          <div hidden={layout.tab !== "sources"}>
             <SourcesPanel
               library={snap.library}
               cited={stats.cited}
@@ -717,18 +728,17 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               loadAnnotations={workspace.annotationsForSource}
               annotationVersion={snap.annotationVersion}
               loading={snap.libraryLoad.phase === "loading"}
+              problem={snap.libraryLoad.problem}
+              onRetry={() => void workspace.retryMetadata()}
+              notSetUp={workspace.setupStatus?.sources === false}
+              annotationsNotSetUp={workspace.setupStatus?.annotations === false}
               canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted" && !snap.recoveredDrafts.has(active))}
-              onInsert={(text) => {
-                setPane("write");
-                const at = editor.current?.selection();
-                const before = at && at.from === at.to ? at.text[at.from - 1] : undefined;
-                editor.current?.insert(text.startsWith("[@") && before && /[^\s([{]/.test(before) ? ` ${text}` : text);
-              }}
+              onInsert={insertSource}
               onStepCitation={stepCitation}
               {...(sourceHref ? { sourceHref } : {})}
               request={sourcesRequest}
             />
-          )}
+          </div>
         </div>
         <SidebarResizer width={layout.sidebarWidth} onChange={(sidebarWidth) => setLayout((l) => ({ ...l, sidebarWidth }))} />
       </aside>

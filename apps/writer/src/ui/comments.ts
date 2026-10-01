@@ -61,7 +61,12 @@ export class ThreadPlacement {
       if (body === undefined) continue;
       let known = this.placed.get(record);
       if (known?.body !== body) {
-        const value = threads.map((thread): PlacedThread => ({ thread, record, at: thread.root.target ? locate(body, thread.root.target) : "whole" })).sort((a, b) => position(a) - position(b));
+        const previous = new Map(known?.value.map((p) => [p.thread, p]));
+        const value = threads.map((thread): PlacedThread => {
+          const at = thread.root.target ? locate(body, thread.root.target) : "whole";
+          const old = previous.get(thread);
+          return old && JSON.stringify(old.at) === JSON.stringify(at) ? old : { thread, record, at };
+        }).sort((a, b) => position(a) - position(b));
         known = { body, value };
         this.placed.set(record, known);
       }

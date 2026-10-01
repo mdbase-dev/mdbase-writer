@@ -1,0 +1,56 @@
+// Imported only by the DEV ?demo=large branch. No account, daemon or production data.
+import type { CollectionDescription, JsonObject, MdbaseConnection, QueryInput, QueryRecord } from "@mdbase-dev/connect";
+import { connectSuccess } from "@mdbase-dev/connect/advanced";
+import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
+import { counts, generateCollection } from "../../scripts/perf/generator.js";
+import { annotationContract, commentContract, ConnectBackend, manuscriptContract, sourceContract } from "./connect.js";
+
+export async function createLargeDemoBackend() {
+  const authority = createRecordTestAuthority();
+  const rows = new Map<string, QueryRecord<JsonObject>>();
+  generateCollection((path, type, fields, body) => {
+    const frontmatter = { type, ...fields };
+    authority.seed(path, { frontmatter, body });
+    rows.set(path, { path, types: [type], frontmatter, body, file: { path } });
+  }, 300, true);
+  const contracts = [
+    [manuscriptContract, "writer-manuscript", ["title", "csl", "template"]],
+    [sourceContract, "reader-source", ["title", "csl"]],
+    [annotationContract, "reader-annotation", ["source", "locator"]],
+    [commentContract, "comment", ["document", "created_at", "status", "motivation", "target", "in_reply_to"]],
+  ] as const;
+  const description: CollectionDescription = { protocolVersion: 1, collectionId: "large-demo", displayName: "Large demo", specVersion: "0.3", operations: [], changeCursor: 0, types: [], contracts: contracts.map(([contract, typeName, fields]) => ({ ...contract, contractType: "record", digest: "demo", schema: {}, implementations: [{ typeName, typeVersion: 1, digest: "demo", fields: Object.fromEntries(fields.map((f) => [f, f])) }] })) };
+  const delay = () => new Promise<void>((resolve) => setTimeout(resolve, 20));
+  const stop = authority.watch.subscribe((change) => {
+    for (const path of [change.payload["path"], change.payload["from"], change.payload["to"]]) {
+      if (typeof path !== "string") continue;
+      const record = authority.get(path);
+      if (!record) rows.delete(path);
+      else rows.set(path, { ...record, types: [String(record.frontmatter["type"] ?? "note")] });
+    }
+  });
+  const connection = {
+    info: () => ({ collectionId: "large-demo", displayName: "Large demo" }),
+    describe: async () => { await delay(); return connectSuccess(description); },
+    async *queryPages(input: QueryInput = {}, options: { pageSize?: number } = {}) {
+      const type = input.contract ? contracts.find(([c]) => c.id === input.contract!.id)?.[1] : undefined;
+      const paths = input.where ? new Set<string>(JSON.parse(input.where.replace(/^file\.path in /, ""))) : undefined;
+      const selected = [...rows.values()].filter((r) => (!type || r.types.includes(type)) && (!input.types || input.types.some((t) => r.types.includes(t))) && (!paths || paths.has(r.path)));
+      const size = options.pageSize ?? 500;
+      for (let offset = 0; offset < Math.max(1, selected.length); offset += size) {
+        await delay();
+        const results = selected.slice(offset, offset + size).map(({ body, frontmatter, ...r }) => ({ ...r, ...(input.frontmatterMode !== "effective" ? { frontmatter } : {}), ...(input.frontmatterMode !== "persisted" ? { effectiveFrontmatter: frontmatter } : {}), ...(input.includeBody ? { body } : {}) }));
+        yield connectSuccess({ results, page: offset / size, offset, loaded: results.length, complete: offset + size >= selected.length });
+      }
+    },
+    records: authority.records,
+    read: async ({ path }: { path: string }) => { await delay(); const record = authority.get(path); if (!record) throw new Error(`Missing ${path}`); return connectSuccess(record); },
+    watch: async () => connectSuccess({ ...authority.watch, status: { state: "connected", cursor: 0, recovered: false }, problem: null }),
+    people: { directory: async () => connectSuccess({ people: [], account: {}, me: { status: "unlinked" } }) },
+    files: { async *list() { for (let i = 0; i < counts.files; i++) yield { path: `files/image-${i}.png`, fileId: String(i), revision: "1", contentDigest: "sha256:" + "0".repeat(64), size: 1, mediaType: "image/png", mediaClass: "image", modifiedAt: "2026-01-01T00:00:00Z" }; } },
+  };
+  const backend = new ConnectBackend(connection as unknown as MdbaseConnection<JsonObject>);
+  const dispose = backend.dispose.bind(backend);
+  backend.dispose = () => { dispose(); stop(); authority.watch.close(); };
+  return Object.assign(backend, { authority });
+}

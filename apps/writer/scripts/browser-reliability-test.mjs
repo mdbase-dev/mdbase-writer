@@ -33,6 +33,57 @@ const format = async (page, name) => {
   await page.getByRole("menuitem", { name, exact: true }).click();
 };
 try {
+  await scenario("large lists page and keyboard navigation reveals logical rows; Sources survives tab switches", async (page) => {
+    await page.goto(`${base}?demo=large`);
+    await page.locator(".manuscript-row").first().waitFor();
+    assert.equal(await page.locator(".manuscript-row").count(), 50);
+    await page.getByRole("button", { name: /^Show 50 more manuscripts/ }).click();
+    assert.equal(await page.locator(".manuscript-row").count(), 100);
+    await page.locator('.manuscript-row[data-path="manuscripts/main.md"]').click();
+    await painted(page);
+    await page.getByRole("tab", { name: /Sources/ }).click();
+    const cited = page.getByRole("list", { name: "In this manuscript" });
+    assert.equal(await cited.locator(".source-row").count(), 50);
+    await cited.locator(".source-row").last().focus(); await page.keyboard.press("ArrowDown");
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-key") === "source00050");
+    assert.equal(await cited.locator(".source-row").count(), 50);
+    await page.locator(".sources input[type=search]").fill("source00000");
+    await page.locator('.source-row[data-key="source00000"]').click();
+    await page.locator(".annotations > li").first().waitFor();
+    assert.equal(await page.locator(".annotations > li").count(), 50);
+    await page.getByRole("button", { name: /^Show 50 more highlights/ }).click();
+    assert.equal(await page.locator(".annotations > li").count(), 100);
+    await page.locator(".sidebar-panel").evaluate((el) => { el.scrollTop = 200; });
+    const scroll = await page.locator(".sidebar-panel").evaluate((el) => el.scrollTop);
+    await page.getByRole("tab", { name: /Comments/ }).click();
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().commentsLoad.phase === "ready");
+    assert.equal(await page.locator(".threads > .thread").count(), 50);
+    assert.equal(await page.locator(".comment.is-reply").count(), 50);
+    await page.getByRole("button", { name: /^Show 50 more replies/ }).click();
+    assert.equal(await page.locator(".comment.is-reply").count(), 100);
+    await page.locator(".threads > .thread").first().getByRole("button", { name: "Reply", exact: true }).click();
+    await page.getByRole("textbox", { name: "Reply", exact: true }).fill("A draft to keep while paging");
+    const nextThread = await page.evaluate(async () => {
+      const { placeThreads } = await import("/src/ui/comments.ts");
+      const w = window.writer.workspace, snap = w.getSnapshot();
+      return placeThreads(snap.comments, w.readingOrder(), (p) => snap.records.get(p)?.snapshot.body, snap.recordIndex).filter((p) => p.thread.root.status === "open")[50].thread.root.path;
+    });
+    await page.locator(".threads > .thread .thread-anchor").last().focus(); await page.keyboard.press("j");
+    await page.waitForFunction((path) => document.activeElement?.closest("[data-thread]")?.getAttribute("data-thread") === path, nextThread);
+    await page.getByRole("tab", { name: /Sources/ }).click();
+    assert.equal(await page.locator(".sources input[type=search]").inputValue(), "source00000");
+    assert.equal(await page.locator('.source-row[data-key="source00000"]').getAttribute("aria-expanded"), "true");
+    assert.equal(await page.locator(".annotations > li").count(), 100);
+    assert.ok(Math.abs(await page.locator(".sidebar-panel").evaluate((el) => el.scrollTop) - scroll) < 3);
+    await page.getByRole("tab", { name: /Comments/ }).click();
+    assert.equal(await page.getByRole("textbox", { name: "Reply", exact: true }).inputValue(), "A draft to keep while paging");
+    await page.getByRole("tab", { name: "Outline", exact: true }).click();
+    await page.locator(".heading-row").first().waitFor();
+    assert.equal(await page.locator(".heading-row").count(), 50);
+    await page.locator(".heading-row").last().focus(); await page.keyboard.press("ArrowDown");
+    await page.waitForFunction(() => document.activeElement?.textContent.includes("Section 49"));
+  });
+
   await scenario("editing opens before slow collection enumeration and export waits", async (page) => {
     await page.goto(`${base}?demo`);
     await page.locator(".manuscript-row").first().waitFor();

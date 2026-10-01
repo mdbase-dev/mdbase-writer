@@ -8,6 +8,7 @@ import type { Result } from "../backend/types.js";
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { wordCount } from "../words.js";
 import type { RecordView } from "../workspace/workspace.js";
+import { useRowWindow } from "./paging.js";
 import { GripIcon, PlusIcon } from "./icons.js";
 import { headingAt, headings, sectionWords, withoutTitle } from "./outline.js";
 import { formatCount, plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
@@ -48,7 +49,11 @@ export function OutlinePanel({
   const [announcement, setAnnouncement] = useState("");
   const refocus = useRef<string | null>(null);
   const list = useRef<HTMLOListElement>(null);
-  const rest = order.slice(1);
+  const rest = useMemo(() => order.slice(1), [order]);
+  const window = useRowWindow();
+  const recordRanks = useMemo(() => new Map(rest.map((path, i) => [path, i])), [rest]);
+  const ranks = useMemo(() => new Map(chapters.map((path, i) => [path, i] as const).reverse()), [chapters]);
+  useEffect(() => window.reveal(rest.indexOf(active)), [active, rest]);
 
   // A chapter moved with the keyboard keeps focus once the outline has its new order.
   useEffect(() => {
@@ -94,14 +99,18 @@ export function OutlinePanel({
       )}
       {rest.length > 0 && (
         <ol ref={list} className="records" aria-labelledby="outline-chapters" onDragOver={(e) => dragging !== null && e.preventDefault()} onDrop={onDrop}>
-          {rest.map((path) => {
+          {rest.slice(window.from, window.from + window.size).map((path) => {
             const view = records.get(path);
-            const index = chapters.indexOf(path);
+            const index = ranks.get(path) ?? -1;
             const direct = index >= 0;
             const onKeyDown = (e: KeyboardEvent) => {
-              if (!direct || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
-              e.preventDefault();
-              move(index, index + (e.key === "ArrowUp" ? -1 : 1));
+              const direction = e.key === "ArrowDown" || e.key === "j" ? 1 : e.key === "ArrowUp" || e.key === "k" ? -1 : 0;
+              if (!direction) return;
+              if (e.altKey) { if (direct) { e.preventDefault(); move(index, index + direction); } return; }
+              const rank = (recordRanks.get(path) ?? -1) + direction, next = rest[rank];
+              if (!next) return;
+              e.preventDefault(); window.reveal(rank);
+              requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`.record-row[data-path="${CSS.escape(next)}"]`)?.focus());
             };
             const onDragOver = (e: DragEvent<HTMLLIElement>) => {
               if (dragging === null || !direct) return;
@@ -151,6 +160,8 @@ export function OutlinePanel({
           })}
         </ol>
       )}
+      {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}>Show previous 50 chapters</button>}
+      {rest.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}>Show 50 more chapters · {rest.length}</button>}
       <AddChapter onAdd={onAdd} onAdded={onOpen} />
       <span className="visually-hidden" role="status">{announcement}</span>
     </div>
@@ -183,30 +194,46 @@ const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump
   const all = useMemo(() => (body ? headings(body) : []), [body]);
   const words = useMemo(() => (body ? sectionWords(body, all) : []), [body, all]);
   const list = useMemo(() => withoutTitle(all, title), [all, title]);
+  const window = useRowWindow();
+  const ranks = useMemo(() => new Map(all.map((h, i) => [h, i])), [all]);
   const here = cursor !== null ? headingAt(all, cursor) : undefined;
   const activeRow = useRef<HTMLButtonElement>(null);
+  const headingList = useRef<HTMLOListElement>(null);
+  const listRanks = useMemo(() => new Map(list.map((h, i) => [h.offset, i])), [list]);
+  useEffect(() => { window.reveal(here ? list.indexOf(here) : -1); }, [here?.offset, list]);
   useEffect(() => {
     activeRow.current?.scrollIntoView({ block: "nearest" });
-  }, [here?.offset]);
+  }, [here?.offset, window.from, window.size]);
   if (!list.length) return null;
   const top = Math.min(...list.map((h) => h.level));
   return (
-    <ol className="headings">
-      {list.map((h) => (
+    <><ol ref={headingList} className="headings">
+      {list.slice(window.from, window.from + window.size).map((h) => (
         <li key={h.offset} style={{ paddingLeft: `${(h.level - top) * 0.75}rem` }}>
           <button
             ref={h === here ? activeRow : undefined}
             type="button"
             className="heading-row"
+            data-heading={h.offset}
+            onKeyDown={(e) => {
+              const direction = e.key === "ArrowDown" || e.key === "j" ? 1 : e.key === "ArrowUp" || e.key === "k" ? -1 : 0;
+              const rank = (listRanks.get(h.offset) ?? -1) + direction, next = list[rank];
+              if (!direction || !next) return;
+              e.preventDefault(); window.reveal(rank);
+              requestAnimationFrame(() => headingList.current?.querySelector<HTMLElement>(`[data-heading="${next.offset}"]`)?.focus());
+            }}
             aria-current={h === here ? "location" : undefined}
             onClick={() => onJump(path, h.offset)}
           >
             <span className="heading-text">{h.text}</span>
-            <span className="heading-words" title={`${plural(words[all.indexOf(h)] ?? 0, "word")} in this section`}>{formatCount(words[all.indexOf(h)] ?? 0)}</span>
+            <span className="heading-words" title={`${plural(words[ranks.get(h)!] ?? 0, "word")} in this section`}>{formatCount(words[ranks.get(h)!] ?? 0)}</span>
           </button>
         </li>
       ))}
     </ol>
+    {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}>Show previous 50 headings</button>}
+    {list.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}>Show 50 more headings · {list.length}</button>}
+    </>
   );
 });
 

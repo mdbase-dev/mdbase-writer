@@ -2,13 +2,14 @@
 // replies, resolving, and suggested edits to accept or reject. A new comment
 // starts from a passage chosen in the editor (the draft).
 import type { CommentRecord, CommentThread } from "@mdbase-writer/core/comments";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { personName, type CommentChange, type People } from "../backend/comments.js";
 import type { Result } from "../backend/types.js";
 import { ALT_LABEL, MOD_LABEL } from "../editor/insight.js";
 import type { CommentDraft } from "../workspace/workspace.js";
 import { clipPassage, describeSuggestion, plainPassage, when, type PlacedThread } from "./comments.js";
+import { useRowWindow } from "./paging.js";
 import { PlusIcon } from "./icons.js";
 import { plural } from "./records.js";
 
@@ -19,6 +20,7 @@ export interface PendingComment {
   readonly draft?: CommentDraft;
 }
 
+export type CommentDrafts = Map<string, { reply: string; replying: boolean }>;
 type Filter = "open" | "resolved";
 
 export function CommentsPanel({
@@ -40,7 +42,11 @@ export function CommentsPanel({
   grouped = true,
   loading = false,
   onRetry,
+  notSetUp = false,
+  drafts: providedDrafts,
 }: {
+  drafts?: CommentDrafts;
+  notSetUp?: boolean;
   loading?: boolean;
   onRetry?(): void;
   placed: readonly PlacedThread[];
@@ -68,14 +74,29 @@ export function CommentsPanel({
 }) {
   const [filter, setFilter] = useState<Filter>("open");
   const panel = useRef<HTMLElement>(null);
-  const counts = { open: placed.filter((p) => p.thread.root.status === "open").length, resolved: placed.filter((p) => p.thread.root.status === "resolved").length };
-  const shown = placed.filter((p) => p.thread.root.status === filter);
+  const ownDrafts = useRef<CommentDrafts>(new Map());
+  const drafts = providedDrafts ?? ownDrafts.current;
+  const window = useRowWindow();
+  const groups = useMemo(() => ({ open: placed.filter((p) => p.thread.root.status === "open"), resolved: placed.filter((p) => p.thread.root.status === "resolved") }), [placed]);
+  const counts = { open: groups.open.length, resolved: groups.resolved.length };
+  const logical = groups[filter];
+  const shown = logical.slice(window.from, window.from + window.size);
+  const onListKey = (e: KeyboardEvent<HTMLElement>) => {
+    if (!(e.target as HTMLElement).matches(".thread-anchor")) return;
+    const path = (e.target as HTMLElement).closest<HTMLElement>("[data-thread]")?.dataset["thread"];
+    const rank = logical.findIndex((p) => p.thread.root.path === path);
+    const direction = e.key === "ArrowDown" || e.key === "j" ? 1 : e.key === "ArrowUp" || e.key === "k" ? -1 : 0;
+    const next = logical[rank + direction];
+    if (!direction || !next) return;
+    e.preventDefault(); window.reveal(rank + direction);
+    requestAnimationFrame(() => panel.current?.querySelector<HTMLElement>(`[data-thread="${CSS.escape(next.thread.root.path)}"] .thread-anchor`)?.focus());
+  };
 
   // A thread selected in the editor comes into view (and shows, even when resolved).
   useEffect(() => {
     if (!active) return;
     const hit = placed.find((p) => p.thread.root.path === active);
-    if (hit && hit.thread.root.status !== filter) setFilter(hit.thread.root.status);
+    if (hit) { setFilter(hit.thread.root.status); window.reveal(groups[hit.thread.root.status].indexOf(hit)); }
     requestAnimationFrame(() => panel.current?.querySelector(`[data-thread="${CSS.escape(active)}"]`)?.scrollIntoView({ block: "nearest" }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new selection moves the list
   }, [active]);
@@ -83,11 +104,11 @@ export function CommentsPanel({
   const signer = people.signing?.kind === "linked" ? people.me?.name : undefined;
   let lastRecord: string | null = null;
   return (
-    <section ref={panel} className="comments" aria-label="Comments">
+    <section ref={panel} className="comments" aria-label="Comments" onKeyDown={onListKey}>
       <div className="comments-bar">
         <div className="segmented small" role="group" aria-label="Show">
           {(["open", "resolved"] as const).map((f) => (
-            <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}>
+            <button key={f} type="button" aria-pressed={filter === f} onClick={() => { setFilter(f); window.reset(); }}>
               {f === "open" ? "Open" : "Resolved"} <span className="heading-count">{counts[f]}</span>
             </button>
           ))}
@@ -100,7 +121,8 @@ export function CommentsPanel({
       {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} signer={signer} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
       {loading && <p className="muted small" role="status">Loading comments…</p>}
       {problem && <p className="muted small">Comments unavailable: {problem} {onRetry && <button type="button" className="text-button" onClick={onRetry}>Retry comments</button>}</p>}
-      {!loading && !problem && !shown.length && !pending && (
+      {notSetUp && <p className="muted small">Comments are not set up in this collection.</p>}
+      {!loading && !problem && !notSetUp && !shown.length && !pending && (
         <div className="sidebar-empty">
           {filter === "open" ? (
             <>
@@ -128,16 +150,19 @@ export function CommentsPanel({
             <Thread
               key={p.thread.root.path}
               placed={p}
+              drafts={drafts}
               people={people}
               active={p.thread.root.path === active}
-              onSelect={() => onSelect(p)}
-              onReply={(text) => onReply(p.thread, text)}
+              onSelect={onSelect}
+              onReply={onReply}
               onChange={onChange}
-              onAccept={() => onAccept(p)}
+              onAccept={onAccept}
             />,
           ];
         })}
       </ul>
+      {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}>Show previous 50 comments</button>}
+      {logical.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}>Show 50 more comments · {logical.length}</button>}
     </section>
   );
 }
@@ -219,7 +244,8 @@ function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: { pendin
   );
 }
 
-function Thread({
+const Thread = memo(function Thread({
+  drafts,
   placed,
   people,
   active,
@@ -229,17 +255,20 @@ function Thread({
   onAccept,
 }: {
   placed: PlacedThread;
+  drafts: CommentDrafts;
   people: People;
   active: boolean;
-  onSelect(): void;
-  onReply(text: string): Promise<Result<unknown>>;
+  onSelect(placed: PlacedThread): void;
+  onReply(thread: CommentThread, text: string): Promise<Result<unknown>>;
   onChange(comment: CommentRecord, change: CommentChange): Promise<Result<unknown>>;
-  onAccept(): Promise<Result<unknown>>;
+  onAccept(placed: PlacedThread): Promise<Result<unknown>>;
 }) {
+  const repliesWindow = useRowWindow();
   const { thread, at } = placed;
   const { root } = thread;
-  const [reply, setReply] = useState("");
-  const [replying, setReplying] = useState(false);
+  const [reply, setReply] = useState(() => drafts.get(root.path)?.reply ?? "");
+  const [replying, setReplying] = useState(() => drafts.get(root.path)?.replying ?? false);
+  useEffect(() => { drafts.set(root.path, { reply, replying }); }, [drafts, root.path, reply, replying]);
   const { busy, error, run } = useAction();
   const suggestion = root.motivation === "editing" && root.suggestion ? root.suggestion : null;
   const open = root.status === "open";
@@ -250,12 +279,12 @@ function Thread({
 
   return (
     <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}`} data-thread={root.path}>
-      <button type="button" className="thread-anchor" onClick={onSelect} title={at === null ? "This passage is no longer in the text" : "Show in the editor"}>
+      <button type="button" className="thread-anchor" onClick={() => onSelect(placed)} title={at === null ? "This passage is no longer in the text" : "Show in the editor"}>
         {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{plainPassage(root.target.quote.exact) || "(a point in the text)"}</blockquote> : <span className="thread-whole small muted">On the whole record</span>}
         {at === null && <span className="thread-detached small">Detached: the text has changed</span>}
       </button>
       <Comment comment={root} people={people} />
-      {thread.replies.map((r) => (
+      {thread.replies.slice(0, repliesWindow.size).map((r) => (
         <Comment key={r.path} comment={r} people={people} reply>
           {!r.deletedAt && mine(r) && (
             <button type="button" className="text-button is-quiet" disabled={busy} onClick={() => void run(() => onChange(r, { kind: "withdraw" }))}>
@@ -264,6 +293,7 @@ function Thread({
           )}
         </Comment>
       ))}
+      {thread.replies.length > repliesWindow.size && <button type="button" className="sidebar-more" onClick={repliesWindow.more}>Show 50 more replies · {thread.replies.length}</button>}
       {resolvedNote && <p className="thread-resolved small muted">{resolvedNote}</p>}
       {error && <p className="small tone-danger" role="alert">{error}</p>}
       {replying ? (
@@ -271,7 +301,7 @@ function Thread({
           className="thread-reply"
           onSubmit={(e) => {
             e.preventDefault();
-            if (reply.trim()) void run(() => onReply(reply)).then((ok) => ok && (setReply(""), setReplying(false)));
+            if (reply.trim()) void run(() => onReply(thread, reply)).then((ok) => ok && (setReply(""), setReplying(false)));
           }}
           onKeyDown={(e) => {
             if (e.key === "Escape") setReplying(false);
@@ -291,7 +321,7 @@ function Thread({
         <div className="thread-actions">
           {open && suggestion && (
             <>
-              <button type="button" className="mdbase-button is-primary is-small" disabled={busy || at === null} onClick={() => void run(onAccept)} title={at === null ? "The suggested text is no longer there" : "Make this edit"}>
+              <button type="button" className="mdbase-button is-primary is-small" disabled={busy || at === null} onClick={() => void run(() => onAccept(placed))} title={at === null ? "The suggested text is no longer there" : "Make this edit"}>
                 Accept
               </button>
               <button type="button" className="mdbase-button is-small" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve", outcome: "rejected" }))}>
@@ -321,7 +351,7 @@ function Thread({
       )}
     </li>
   );
-}
+});
 
 /** A suggested edit as it will read: the text taken out, struck through, and the text put in. */
 function Suggestion({ root }: { root: CommentRecord }) {
