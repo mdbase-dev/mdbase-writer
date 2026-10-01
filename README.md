@@ -12,6 +12,21 @@ Writer is prerelease software. Keep backups of important work and check the save
 closing or reloading. The demo uses sample data in a separate, in-memory collection; it is not
 connected to your library and is not a place to keep writing.
 
+## See it in action
+
+**Write, cite and typeset a paper.** Citations complete from your Reader library, the typeset
+preview updates as you type, problems show on the line that caused them, and quotations come in
+from Reader highlights.
+
+https://github.com/user-attachments/assets/1d7e5564-8f69-4d2f-8194-a5fc8e789409
+
+**Build a book from chapter records.** A thesis-layout book whose chapters are separate records:
+write in one, reorder them, and add another.
+
+https://github.com/user-attachments/assets/525c2673-cd72-46fd-9dda-ef554029d63c
+
+These recordings use sample data, not a real collection.
+
 ## What you can do
 
 - Write in Markdown and see the typeset result as you type.
