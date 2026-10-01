@@ -1,125 +1,147 @@
 # mdbase writer
 
-Write in Markdown in your mdbase collection; get a typeset PDF, with
-citations from your mdbase Reader library.
+Write papers, theses, and books in Markdown, with a typeset preview and citations from your
+mdbase Reader library. Export a PDF or Word document while keeping the manuscript as ordinary
+Markdown in your mdbase collection.
 
-mdbase writer is an application on mdbase connect. A manuscript is an
-ordinary Markdown record. It cites sources with Pandoc syntax
-(`[@citekey, p. 12]`), labels and cross-references with Quarto syntax
-(`{#fig-results}`, `@fig-results`), and embeds other records on a line of
-their own (`![[chapters/one]]`), so a book is a manuscript whose body embeds
-its chapters. The preview is typeset by Typst in the browser as you type.
+**[Open writer](https://writer.mdbase.dev)** ·
+[Try the demo](https://lab.mdbase-writer.pages.dev/?demo) ·
+[Report a problem](https://github.com/mdbase-dev/mdbase-writer/issues)
 
-## What it does
+Writer is prerelease software. Keep backups of important work and check the save status before
+closing or reloading. The demo uses sample data in a separate, in-memory collection; it is not
+connected to your library and is not a place to keep writing.
 
-- **Typeset preview while typing.** Markdown is translated to Typst and
-  compiled in a Web Worker; only pages near the viewport are drawn.
-- **Citations from Reader.** Sources are the collection's records implementing
-  `dev.mdbase.reader.source`; each one's `csl` field is its CSL-JSON. Sources
-  complete as you type (`@`, `[@`) by citekey, author, title or year. The
-  Sources panel lists the sources the manuscript cites before the rest of the
-  library, marks the one under the cursor, steps through a source's
-  citations, and inserts a citation (with a page if you give one) or a
-  quotation highlighted in Reader with its page. Citations are formatted by citeproc-js (six bundled styles, or a
-  `.csl` file in the collection; the manuscript's `lang` picks the locale) and
-  match Pandoc's citeproc, including notes after punctuation, narrative
-  citations in note styles and ibid/short forms.
-- **Multi-record manuscripts.** Every embedded record gets its own record
-  session: autosave, conflict detection when something else edits it, exact
-  recovery of interrupted saves. The outline numbers the chapters (records
-  embedded on lines of their own); drag them, or press Alt-↑/↓, to reorder
-  them, and add a new chapter at the end. In the editor each chapter embed shows
-  as a card with its title, words and problems, and a button that opens it. Notes,
-  citations and cross-references run across records.
-- **Problems where they happen.** Unknown citekeys, missing labels, embeds or
-  images, unused footnotes, malformed LaTeX and Typst errors are reported on
-  the Markdown line that caused them; an unknown citekey or label offers the
-  ones it most likely meant. Clicking the preview jumps to the block it came
-  from, and the preview follows the cursor and marks its block. Problems with a setting
-  point at the setting.
-- **Writing aids.** Hover a citation for its bibliography entry, or a
-  cross-reference for what it labels; Ctrl/⌘-click goes there. Word counts
-  for the manuscript and each section, F8 for the next problem, and a layout
-  (sidebar, editor/preview split, zoom) that is remembered in the browser.
-- **Export.** The Export button makes the format used last; its menu offers
-  PDF; Word (DOCX), made in the browser by Pandoc's WebAssembly
-  build, with cross-references resolved and the layout's Word styles; and a
-  Pandoc/Quarto bundle (zip) to build other formats yourself.
-- **Layouts.** Article and thesis templates, or a Typst file in the collection
-  defining `template(title:, subtitle:, authors:, abstract:, date:, body)`.
+## What you can do
 
-## Layout
+- Write in Markdown and see the typeset result as you type.
+- Find and cite sources by author, title, year, or citekey, and insert quotations from Reader highlights.
+- Build a longer manuscript from separate chapter records.
+- Add headings, figures, footnotes, labels, and cross-references.
+- Leave comments and suggested edits alongside the text.
+- Choose an article or thesis layout and a citation style.
+- Export PDF, Word (DOCX), or a Pandoc/Quarto bundle for use outside Writer.
 
-| Path | What |
-|---|---|
-| `packages/core` | Markdown dialect (lezer), per-record Typst translation with source maps, incremental citeproc with a Typst output format, manuscript assembly, Pandoc materialisation. No DOM. |
-| `apps/writer` | The web app: Connect session, record-session workspace, compile worker, CodeMirror editor, canvas preview. |
-| `apps/writer/typst` | The Typst runtime: helper library and the `article` and `thesis` templates. |
-| `apps/writer/mdbase` | The type pack: the `dev.mdbase.writer.manuscript` contract and starter type, plus byte-identical copies of Reader's source contract and type. |
+## Get started
 
-See [docs/architecture.md](docs/architecture.md) for how the pieces fit.
+1. Open [writer](https://writer.mdbase.dev) and choose **Connect a collection**.
+2. Sign in through mdbase Connect, choose a collection, and review the access Writer requests.
+   Choose the collection containing your Reader library if you want to cite its sources.
+3. If prompted, review the proposed setup and choose **Set up collection**. Writer adds the
+   manuscript and source types it needs; setup is not applied without your approval.
+4. Choose **New manuscript**, enter a title, and select a layout and citation style.
+5. Start writing in the editor. The preview updates alongside your text. Use **Settings** to
+   change the title, authors, abstract, date, language, layout, or citation style.
 
-## Develop
+You can also choose **Use a note you already have…** when creating a manuscript. **Use as
+manuscript** adds the manuscript type to that note while retaining its other types, text, and location.
 
-```sh
-pnpm install
-pnpm dev                 # http://127.0.0.1:5320/?demo — a demo collection, no account needed
-pnpm check               # typecheck and tests (core, manifest)
-pnpm --filter @mdbase-writer/app test:browser   # end-to-end in Chromium; needs `pnpm dev` running
+Collections can be hosted through Connect or registered from your computer. For a
+computer-backed collection, keep the Connect desktop app running and the computer available.
+
+## Write and cite
+
+Writer uses familiar Markdown plus Pandoc citation and Quarto cross-reference syntax. You do
+not need to write Typst or LaTeX to use the bundled layouts.
+
+```markdown
+# Introduction {#sec-introduction}
+
+A claim supported by a source [@smith2024, p. 12].
+
+See @sec-introduction and @fig-results.
+
+![Results](figures/results.png){#fig-results}
+
+A sentence with a footnote.[^note]
+
+[^note]: A longer explanation.
 ```
 
-The `?demo` collection runs on the SDK's in-memory record authority
-(`@mdbase-dev/connect-testing`), so record sessions, autosave, conflicts and
-recovery behave as they do against a real collection. It exists only in
-development builds.
+Replace `smith2024` with a citekey from your library and the image path with a file in your collection.
 
-### Against a real collection
+### Sources and citations
 
-The hosted mdbase connect service accepts applications served over HTTPS
-only, so a `localhost` build cannot use it. Either run Connect's local
-environment (`pnpm dev:environment:up` in mdbase-connect, then open the app
-with `?server=<local connect URL>`), or deploy a build to an HTTPS origin and
-set `MDBASE_WRITER_ORIGIN` when writing the manifest:
+Open **Sources** to search your Reader library and insert a citation, optionally with a page
+number. Sources already cited in the manuscript appear first. You can also type `@` or `[@`
+to see completion suggestions by citekey, author, title, or year.
 
-```sh
-MDBASE_WRITER_ORIGIN=https://writer.example pnpm --filter @mdbase-writer/app build
+Each source needs citation metadata and a citekey. Manage those in [mdbase Reader](https://reader.mdbase.dev)
+in the same collection. Reader highlights can be inserted as quotations with their source citation
+and page information when available.
+
+Hover over a citation to see its bibliography entry. Choose the manuscript's citation style in
+**Settings**; bundled styles are available, or you can choose a `.csl` file stored in the collection.
+
+### Chapters and longer manuscripts
+
+To include another Markdown record, put its embed on a line of its own:
+
+```markdown
+![[chapters/introduction]]
+
+![[chapters/results]]
 ```
 
-`VITE_MDBASE_CONNECT_URL` and `VITE_MDBASE_CONNECT_LOOPBACK_URL` select the
-Connect service and local connector (defaults: production and 28485).
+Writer assembles these records in order. Citations, footnotes, and cross-references work across
+the manuscript. Chapter records do not need a special manuscript type.
 
-## Deploy
+Use **Outline** to open or add chapters. Drag chapters, or use **Alt+↑/↓**, to reorder them.
+Chapter cards in the editor show their title, word count, and problems, with a button to open them.
 
-Deployments are Cloudflare Pages branches of the `mdbase-writer` project
-(targets in `apps/writer/scripts/deployment-environment.mjs`), as for mdbase
-Reader:
+## Navigate and review
 
-```sh
-pnpm --filter @mdbase-writer/app deploy:lab       # https://lab.mdbase-writer.pages.dev, lab Connect, connector 28487
-pnpm --filter @mdbase-writer/app deploy:staging   # https://staging.mdbase-writer.pages.dev, staging Connect, connector 28486
-pnpm --filter @mdbase-writer/app deploy:prod      # https://writer.mdbase.dev, production Connect, connector 28485
-```
+Click a block in the preview to jump to the corresponding text. The preview also follows the
+editor's cursor. Use **Problems** to find unknown citekeys, missing labels, unavailable images
+or records, and typesetting errors. **F8** moves to the next problem.
 
-Staging and production refuse to deploy uncommitted changes
-(`MDBASE_WRITER_ALLOW_DIRTY=1` overrides). Only lab serves the demo collection
-at `?demo`.
+The sidebar, editor/preview split, and zoom are remembered in your browser. On a phone, switch
+between writing, preview, and outline views.
 
-The Typst compiler (28 MB) and Pandoc (58 MB) are over Pages' 25 MiB file
-limit, so they live in the R2 bucket `mdbase-writer-assets` and
-`functions/wasm/[name].ts` serves them on the same origin (brotli, immutable
-caching; about 9.8 and 16 MB transferred; Pandoc only on the first Word
-export). Upload new versions when typst.ts or pandoc-wasm is upgraded:
+Useful shortcuts (**⌘** on macOS, **Ctrl** elsewhere):
 
-```sh
-pnpm --filter @mdbase-writer/app upload:compiler
-```
+| Shortcut       | Action                   |
+| -------------- | ------------------------ |
+| Ctrl/⌘+K       | Open the command palette |
+| Ctrl/⌘+Shift+E | Find a source            |
+| Ctrl/⌘+,       | Open manuscript settings |
+| Ctrl/⌘+Shift+S | Choose an export format  |
+| F8             | Go to the next problem   |
 
-The Word styles are generated from Pandoc's default reference document
-(`node apps/writer/scripts/reference-docx.mjs`, needs a local pandoc).
+## Export your work
 
-## Status
+Use the menu beside **Export** to choose a format. The main button repeats the format you
+used last in this browser.
 
-First version, deployed to lab. The end-to-end browser test passes against
-the lab deployment (demo collection); it has not yet been run against a real
-Connect collection. See
-[docs/architecture.md](docs/architecture.md#known-limits) for known limits.
+- **PDF:** the typeset document, using the selected layout.
+- **Word (DOCX):** an editable document with formatted citations and resolved cross-references.
+  Word uses its own document styles, not the exact PDF layout. A custom Typst layout affects
+  PDF only; Word uses article styles for those layouts.
+- **Pandoc bundle (ZIP):** a materialised Markdown manuscript, references, citation style, and
+  supporting files for building with Pandoc or Quarto outside Writer.
+
+Exports are generated in your browser. The first Word export downloads about 16 MB of additional
+software, so it may take longer. Review export warnings and check the downloaded document before
+sharing or submitting it; missing inputs can result in incomplete output.
+
+## Your writing and saving
+
+Manuscripts and chapters remain Markdown records in your collection. Settings are stored in
+the manuscript's frontmatter, and citations refer to your Reader sources. Writer does not delete
+or rename records.
+
+Edits autosave through Connect. If a record changes elsewhere while you are editing, Writer
+shows a conflict: **Keep mine** retains your version, while **Use theirs** adopts the other version.
+Check both versions before choosing. If a save fails, the editor keeps the current text and retries
+saving when you type; do not assume it has reached the collection until the save status confirms it.
+
+## Help and development
+
+If a collection will not open, check its Connect access and, for a computer-backed collection,
+that its desktop app is online. Use **Reconnect** or choose another collection when prompted.
+[Open an issue](https://github.com/mdbase-dev/mdbase-writer/issues) for bugs or feature requests.
+Include your browser, the steps to reproduce the problem, and any displayed error; remove
+private manuscript text, collection paths, and credentials.
+
+For local setup, tests, deployment, and implementation details, see the
+[development guide](docs/development.md) and [architecture notes](docs/architecture.md).
