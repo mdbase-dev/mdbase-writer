@@ -1,10 +1,10 @@
 ---
 type: writer-manuscript
-title: Refusing the Possible
-subtitle: Potentiality, the Event and the Politics of the New
+title: Patient Observation
+subtitle: Darwin and the Science of Slow Change
 authors:
   - name: A. Candidate
-    affiliation: Department of Philosophy
+    affiliation: Department of History
 date: "2026"
 csl: chicago-notes-bibliography
 template: thesis
@@ -14,6 +14,6 @@ abstract: |
   them.
 ---
 
-![[chapters/potentiality]]
+![[chapters/reefs]]
 
-![[chapters/event]]
+![[chapters/worms]]
