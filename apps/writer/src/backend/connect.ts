@@ -1,8 +1,9 @@
 // The writer on a real collection through mdbase connect.
-import { PERSON_CONTRACT, type CollectionFileDescriptor, type JsonObject, type MdbaseConnection } from "@mdbase-dev/connect";
-import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { PERSON_CONTRACT, type CollectionFileDescriptor, type JsonObject, type QueryRecord, type MdbaseConnection } from "@mdbase-dev/connect";
+import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
 import { annotationSourceLink } from "@mdbase-writer/core/annotations";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
+import { CollectionCache } from "./cache.js";
 import { errorMessage } from "../async.js";
 
 import {
@@ -30,6 +31,7 @@ import {
   titleFromNote,
   withType,
   type CollectionIndex,
+  type CollectionDelta,
   type LibraryEntry,
   type ManuscriptSummary,
   type NewManuscript,
@@ -57,10 +59,29 @@ interface AnnotationMetadata {
   readonly fields: Readonly<Record<string, string>>;
 }
 
+interface CommentMetadata { readonly type: string; readonly fields: Readonly<Record<string, string>>; readonly comment: CommentRecord }
+const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const problemMessage = (outcome: { ok: false; problem: { message?: string; code: string } }) => outcome.problem.message ?? outcome.problem.code;
 
 export class ConnectBackend implements WriterBackend {
   readonly kind = "connect";
+  private readonly indexCache = new CollectionCache<CollectionIndex>();
+  private readonly libraryCache = new CollectionCache<LibraryEntry[]>();
+  private readonly manuscriptCache = new CollectionCache<ManuscriptSummary[]>();
+  private readonly commentCache = new CollectionCache<Map<string, CommentMetadata>>();
+  private readonly commentBodies = new Map<string, CommentRecord>();
+  private readonly bodyCache = new Map<string, Promise<Result<string>>>();
+  private recordSet = new Set<string>();
+  private noteSet = new Set<string>();
+  private readonly dataListeners = new Set<(delta: CollectionDelta) => void>();
+  private readonly changedPaths = new Set<string>();
+  private changeTimer: ReturnType<typeof setTimeout> | undefined;
+  private changeJob: Promise<Result<void>> | undefined;
+  private collectionGeneration = 0;
+  private reconcileJob: Promise<Result<void>> | undefined;
+  private resetRequested = false;
+  private disposed = false;
+  private commentPathsIndex: { paths: readonly string[]; index: PathIndex } | undefined;
   private readonly files = new Map<string, CollectionFileDescriptor>();
   private readonly listeners = new Set<(paths: readonly string[]) => void>();
   private readonly staleFiles = new Set<string>();
@@ -70,11 +91,8 @@ export class ConnectBackend implements WriterBackend {
   private schemaPaths: ReadonlySet<string> = new Set(["mdbase.yaml"]);
   private schemaFolders: readonly string[] = ["_types", "_contracts"];
   private annotationIndex: Promise<Result<Map<string, AnnotationMetadata>>> | undefined;
-  private annotationRefresh: Promise<Result<Map<string, AnnotationMetadata>>> | undefined;
-  private readonly dirtyAnnotations = new Set<string>();
   private annotationRows = new Map<string, AnnotationMetadata>();
   private annotationTypes: ImplementingType[] = [];
-  private readonly knownPaths = new Set<string>();
   private readonly annotationSources = new Map<string, Promise<Result<SourceAnnotation[]>>>();
   private sourcePaths = new PathIndex([]);
   private libraryGeneration = 0;
@@ -86,14 +104,16 @@ export class ConnectBackend implements WriterBackend {
 
   private invalidateAnnotations(): void {
     this.annotationIndex = undefined;
-    this.annotationRefresh = undefined;
-    this.dirtyAnnotations.clear();
+    this.annotationRows = new Map();
+    this.annotationTypes = [];
     this.annotationSources.clear();
     this.annotationGroups = undefined;
   }
 
   private describe(): ReturnType<MdbaseConnection<JsonObject>["describe"]> {
-    return this.description ??= this.connection.describe().then((out) => {
+    if (this.description) return this.description;
+    const job = this.connection.describe().then((out) => {
+      if (this.description !== job) return out;
       if (!out.ok) this.description = undefined;
       else {
         this.schemaPaths = new Set(["mdbase.yaml", ...out.value.types.flatMap((t) => t.path ? [t.path] : []), ...out.value.contracts.flatMap((c) => c.implementations.flatMap((i) => i.typePath ? [i.typePath] : []))]);
@@ -101,7 +121,9 @@ export class ConnectBackend implements WriterBackend {
         this.schemaFolders = [settings?.["types_folder"] ?? "_types", settings?.["contracts_folder"] ?? "_contracts"].filter((p): p is string => typeof p === "string" && !!p).map((p) => p.replace(/^\.\//, "").replace(/\/+$/, ""));
       }
       return out;
-    }).catch((error: unknown) => { this.description = undefined; throw error; });
+    }).catch((error: unknown) => { if (this.description === job) this.description = undefined; throw error; });
+    this.description = job;
+    return job;
   }
 
   constructor(
@@ -124,13 +146,7 @@ export class ConnectBackend implements WriterBackend {
     return this.implementingTypes(manuscriptContract.id, "manuscripts");
   }
 
-  get records() {
-    return { open: async (...args: Parameters<MdbaseConnection<JsonObject>["records"]["open"]>) => {
-      const opened = await this.connection.records.open(...args);
-      if (opened.ok) this.knownPaths.add(args[0]);
-      return opened;
-    } };
-  }
+  get records() { return this.connection.records; }
 
   private async startWatch(): Promise<void> {
     const watch = await this.connection.watch({ lifetimeSignal: this.lifetime.signal }, { timeoutMs: 30_000 });
@@ -140,31 +156,27 @@ export class ConnectBackend implements WriterBackend {
       (change) => {
         const paths = [...new Set([change.payload["path"], change.payload["from"], change.payload["to"]].filter((p): p is string => typeof p === "string"))];
         const schemaChanged = /type|contract|configuration/.test(change.type) || paths.some((p) => this.schemaPaths.has(p) || this.schemaFolders.some((folder) => p.startsWith(`${folder}/`)));
-        if (schemaChanged) this.description = undefined;
-        if (schemaChanged || paths.some((p) => !this.knownPaths.has(p) && !this.annotationRows.has(p))) this.invalidateAnnotations();
-        else for (const path of paths) {
-          const annotation = this.annotationRows.get(path);
-          if (!annotation) continue;
-          this.dirtyAnnotations.add(path);
-          const source = resolveLinkTarget(annotation.source, path, this.sourcePaths);
-          if (source) this.annotationSources.delete(source);
+        if (schemaChanged) void this.reconcile();
+        else {
+          for (const path of paths) { this.changedPaths.add(path); this.bodyCache.delete(path); }
+          clearTimeout(this.changeTimer);
+          this.changeTimer = setTimeout(() => void this.flushChanges(), 50);
         }
-        if (/deleted/.test(change.type)) for (const path of paths) this.knownPaths.delete(path);
-        if (/renamed/.test(change.type) && typeof change.payload["from"] === "string") this.knownPaths.delete(change.payload["from"]);
         for (const path of paths) if (this.files.has(path)) this.staleFiles.add(path);
         if (paths.length || schemaChanged) for (const l of this.listeners) l(schemaChanged ? [] : paths);
       },
       (status) => {
         if (status.state !== "reset_required") return;
-        this.description = undefined;
-        this.invalidateAnnotations();
+        void this.reconcile();
         for (const l of this.listeners) l([]);
       },
       () => {},
     );
   }
 
-  async listManuscripts(): Promise<Result<ManuscriptSummary[]>> {
+  listManuscripts(): Promise<Result<ManuscriptSummary[]>> { return this.manuscriptCache.load(() => this.loadManuscripts()); }
+
+  private async loadManuscripts(): Promise<Result<ManuscriptSummary[]>> {
     const out: ManuscriptSummary[] = [];
     for await (const page of this.connection.queryPages({ contract: manuscriptContract, frontmatterMode: "effective" }, { pageSize: 500 })) {
       if (!page.ok) return fail(problemMessage(page));
@@ -205,23 +217,69 @@ export class ConnectBackend implements WriterBackend {
     return ok(implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey })));
   }
 
-  async comments(): Promise<Result<CommentRecord[]>> {
-    const types = await this.implementingTypes(commentContract.id, "comments");
-    if (!types.ok) return types;
-    // A contract view cannot include bodies: query the implementing types and map their fields here.
-    const out: CommentRecord[] = [];
-    const byName = new Map(types.value.map((t) => [t.name, t]));
-    for await (const page of this.connection.queryPages({ types: [...byName.keys()], frontmatterMode: "persisted", includeBody: true }, { pageSize: 500 })) {
-      if (!page.ok) return fail(problemMessage(page));
-      for (const r of page.value.results) {
-        const type = r.types.map((t) => byName.get(t)).find(Boolean);
-        if (!type) continue;
-        this.knownPaths.add(r.path);
-        const comment = commentFromRecord(r.path, toContract(r.frontmatter ?? {}, type.fields), r.body ?? "");
-        if (comment) out.push(comment);
+  private async commentMetadata(): Promise<Result<Map<string, CommentMetadata>>> {
+    return this.commentCache.load(async () => {
+      const types = await this.implementingTypes(commentContract.id, "comments");
+      if (!types.ok) return types;
+      const out = new Map<string, CommentMetadata>();
+      for (const type of types.value) for await (const page of this.connection.queryPages({ types: [type.name], frontmatterMode: "persisted" }, { pageSize: 1_000 })) {
+        if (!page.ok) return fail(problemMessage(page));
+        for (const r of page.value.results) {
+          const comment = commentFromRecord(r.path, toContract(r.frontmatter ?? {}, type.fields), "");
+          if (comment) out.set(r.path, { type: type.name, fields: type.fields, comment });
+        }
+      }
+      return ok(out);
+    });
+  }
+
+  async comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>> {
+    const refreshed = await this.flushChanges();
+    if (!refreshed.ok) return refreshed;
+    const generation = this.collectionGeneration;
+    const metadata = await this.commentMetadata();
+    if (!metadata.ok) return metadata;
+    if (generation !== this.collectionGeneration) return this.comments(scope);
+    const selected = new Set<string>();
+    if (!scope) for (const path of metadata.value.keys()) selected.add(path);
+    else {
+      const index = await this.index();
+      if (!index.ok) return index;
+      if (this.commentPathsIndex?.paths !== index.value.recordPaths) this.commentPathsIndex = { paths: index.value.recordPaths, index: new PathIndex(index.value.recordPaths) };
+      const documents = new Set(scope), replies = new Map<string, string[]>();
+      const candidates = new PathIndex(metadata.value.keys());
+      for (const [path, { comment }] of metadata.value) {
+        const document = resolveLinkTarget(linkPath(comment.document), path, this.commentPathsIndex.index);
+        if (document && documents.has(document)) selected.add(path);
+        if (comment.inReplyTo) {
+          const root = resolveLinkTarget(linkPath(comment.inReplyTo), path, candidates);
+          if (root) { if (!replies.has(root)) replies.set(root, []); replies.get(root)!.push(path); }
+        }
+      }
+      for (const path of selected) for (const reply of replies.get(path) ?? []) selected.add(reply);
+    }
+    const wanted = new Map([...selected].map((path) => [path, metadata.value.get(path)]));
+    const byType = new Map<string, string[]>();
+    for (const path of selected) if (!this.commentBodies.has(path)) {
+      const type = metadata.value.get(path)!.type;
+      if (!byType.has(type)) byType.set(type, []);
+      byType.get(type)!.push(path);
+    }
+    for (const [type, paths] of byType) for (let offset = 0; offset < paths.length; offset += 500) {
+      for await (const page of this.connection.queryPages({ types: [type], where: `file.path in ${JSON.stringify(paths.slice(offset, offset + 500))}`, frontmatterMode: "persisted", includeBody: true }, { pageSize: 500 })) {
+        if (!page.ok) return fail(problemMessage(page));
+        for (const r of page.value.results) {
+          if (generation !== this.collectionGeneration) return this.comments(scope);
+          const entry = metadata.value.get(r.path);
+          if (!entry || entry !== wanted.get(r.path)) continue;
+          const fields = entry.fields;
+          const comment = fields && commentFromRecord(r.path, toContract(r.frontmatter ?? {}, fields), r.body ?? "");
+          if (comment) this.commentBodies.set(r.path, comment);
+        }
       }
     }
-    return ok(out);
+    if (generation !== this.collectionGeneration) return this.comments(scope);
+    return ok([...selected].flatMap((path) => { const comment = this.commentBodies.get(path); return comment ? [comment] : []; }));
   }
 
   async createComment(input: NewComment): Promise<Result<CommentRecord>> {
@@ -337,9 +395,12 @@ export class ConnectBackend implements WriterBackend {
     return fail(last);
   }
 
-  async index(): Promise<Result<CollectionIndex>> {
+  index(): Promise<Result<CollectionIndex>> { return this.indexCache.load(() => this.loadIndex()); }
+
+  private async loadIndex(): Promise<Result<CollectionIndex>> {
+    const generation = this.collectionGeneration;
     // Records of these contracts' types are not notes (Reader's starter annotation type is named as a fallback, when the contract is absent).
-    const notNotes = new Set(["reader-annotation"]);
+    const notNotes = new Set(["reader-annotation", "reader-source", "comment", "person"]);
     const described = await this.describe();
     const contracts = new Set<string>([commentContract.id, PERSON_CONTRACT.id, sourceContract.id, annotationContract.id]);
     if (described.ok) for (const c of described.value.contracts) if (contracts.has(c.id)) for (const i of c.implementations) notNotes.add(i.typeName);
@@ -349,20 +410,25 @@ export class ConnectBackend implements WriterBackend {
       if (!page.ok) return fail(problemMessage(page));
       for (const r of page.value.results) {
         recordPaths.push(r.path);
-        this.knownPaths.add(r.path);
         if (r.path.toLowerCase().endsWith(".md") && !r.types.some((t) => notNotes.has(t))) notePaths.push(r.path);
       }
     }
-    this.files.clear();
+    if (generation !== this.collectionGeneration) return fail("Collection discovery was superseded.");
+    const files = new Map<string, CollectionFileDescriptor>();
     try {
-      for await (const file of this.connection.files.list()) { this.files.set(file.path, file); this.knownPaths.add(file.path); }
-    } catch (e) {
-      return fail(e instanceof Error ? e.message : String(e));
-    }
-    return ok({ recordPaths, filePaths: [...this.files.keys()].filter((p) => !p.endsWith(".md")), notePaths });
+      for await (const file of this.connection.files.list()) files.set(file.path, file);
+    } catch (e) { return fail(errorMessage(e)); }
+    if (generation !== this.collectionGeneration) return fail("Collection discovery was superseded.");
+    this.recordSet = new Set(recordPaths);
+    this.noteSet = new Set(notePaths);
+    this.files.clear();
+    for (const [path, file] of files) this.files.set(path, file);
+    return ok({ recordPaths, filePaths: [...files.keys()].filter((p) => !/\.md$/i.test(p)), notePaths });
   }
 
-  async library(): Promise<Result<LibraryEntry[]>> {
+  library(): Promise<Result<LibraryEntry[]>> { return this.libraryCache.load(() => this.loadLibrary()); }
+
+  private async loadLibrary(): Promise<Result<LibraryEntry[]>> {
     const generation = ++this.libraryGeneration;
     const described = await this.describe();
     if (!described.ok) return fail(problemMessage(described));
@@ -380,7 +446,6 @@ export class ConnectBackend implements WriterBackend {
     for await (const page of this.connection.queryPages({ ...(contract ? { contract: sourceContract } : { types: ["reader-source"] }), frontmatterMode: "effective" },  { pageSize: 1_000 })) {
       if (!page.ok) return fail(problemMessage(page));
       for (const r of page.value.results) {
-        this.knownPaths.add(r.path);
         const entry = libraryEntry(r.path, r.effectiveFrontmatter ?? r.frontmatter);
         if (entry) entries.push(entry);
       }
@@ -401,21 +466,14 @@ export class ConnectBackend implements WriterBackend {
         if (this.annotationIndex !== job) return;
         if (out.ok) {
           this.annotationRows = out.value;
-          for (const path of out.value.keys()) this.knownPaths.add(path);
         } else this.annotationIndex = undefined;
       }, () => { if (this.annotationIndex === job) this.annotationIndex = undefined; });
     }
-    if (!this.dirtyAnnotations.size) return this.annotationRefresh ?? this.annotationIndex;
-    if (!this.annotationRefresh) {
-      const job = this.refreshAnnotationMetadata(this.annotationIndex);
-      this.annotationRefresh = job;
-      const clear = () => { if (this.annotationRefresh === job) this.annotationRefresh = undefined; };
-      void job.then(clear, clear);
-    }
-    return this.annotationRefresh;
+    return this.annotationIndex;
   }
 
   private async loadAnnotationMetadata(): Promise<Result<Map<string, AnnotationMetadata>>> {
+    const generation = this.collectionGeneration;
     const described = await this.describe();
     if (!described.ok) return fail(problemMessage(described));
     // Unknown types query as empty in the SDK, but don't issue a needless probe.
@@ -423,6 +481,7 @@ export class ConnectBackend implements WriterBackend {
     const starter = described.value.types.some((t) => t.name === "reader-annotation");
     const types = contract ? await this.implementingTypes(annotationContract.id, "annotations") : ok(starter ? [{ name: "reader-annotation", fields: { source: "source", locator: "locator" }, typeKey: "type" }] : []);
     if (!types.ok) return types;
+    if (generation !== this.collectionGeneration) return fail("Annotation discovery was superseded.");
     this.annotationTypes = types.value;
     return this.queryAnnotationMetadata();
   }
@@ -442,45 +501,16 @@ export class ConnectBackend implements WriterBackend {
     return ok(out);
   }
 
-  private async refreshAnnotationMetadata(base: Promise<Result<Map<string, AnnotationMetadata>>>): Promise<Result<Map<string, AnnotationMetadata>>> {
-    const index = await base;
-    if (!index.ok) return index;
-    while (this.dirtyAnnotations.size && base === this.annotationIndex) {
-      const paths = [...this.dirtyAnnotations].slice(0, 500);
-      for (const path of paths) this.dirtyAnnotations.delete(path);
-      let updated: Result<Map<string, AnnotationMetadata>>;
-      try { updated = await this.queryAnnotationMetadata(paths); }
-      catch (error) { for (const path of paths) this.dirtyAnnotations.add(path); throw error; }
-      if (!updated.ok) { for (const path of paths) this.dirtyAnnotations.add(path); return updated; }
-      if (base !== this.annotationIndex) break;
-      for (const path of paths) {
-        const previous = index.value.get(path), next = updated.value.get(path);
-        for (const [entry, remove] of [[previous, true], [next, false]] as const) {
-          if (!entry) continue;
-          const source = resolveLinkTarget(entry.source, path, this.sourcePaths);
-          if (!source) continue;
-          this.annotationSources.delete(source);
-          if (this.annotationGroups?.metadata !== index.value) continue;
-          const groups = this.annotationGroups.groups;
-          if (remove) groups.get(source)?.delete(path);
-          else {
-            if (!groups.has(source)) groups.set(source, new Map());
-            groups.get(source)!.set(path, entry);
-          }
-        }
-        if (next) index.value.set(path, next);
-        else index.value.delete(path);
-      }
-    }
-    return base === this.annotationIndex ? index : this.annotationMetadata();
-  }
-
   async annotationPaths(): Promise<Result<readonly string[]>> {
+    const refreshed = await this.flushChanges();
+    if (!refreshed.ok) return refreshed;
     const index = await this.annotationMetadata();
     return index.ok ? ok([...index.value.keys()]) : index;
   }
 
   async annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>> {
+    const refreshed = await this.flushChanges();
+    if (!refreshed.ok) return refreshed;
     const index = await this.annotationMetadata();
     if (!index.ok) return index;
     const known = this.annotationSources.get(path);
@@ -535,9 +565,13 @@ export class ConnectBackend implements WriterBackend {
     return ok([...out.values()]);
   }
 
-  async readBody(path: string): Promise<Result<string>> {
-    const read = await this.connection.read({ path });
-    return read.ok ? ok(read.value.body ?? "") : fail(problemMessage(read));
+  readBody(path: string): Promise<Result<string>> {
+    const cached = this.bodyCache.get(path);
+    if (cached) return cached;
+    const job = this.connection.read({ path }).then((read) => read.ok ? ok(read.value.body ?? "") : fail<string>(problemMessage(read)));
+    this.bodyCache.set(path, job);
+    void job.then((out) => { if (!out.ok && this.bodyCache.get(path) === job) this.bodyCache.delete(path); }, () => { if (this.bodyCache.get(path) === job) this.bodyCache.delete(path); });
+    return job;
   }
 
   async readFile(path: string): Promise<Result<Uint8Array>> {
@@ -554,14 +588,192 @@ export class ConnectBackend implements WriterBackend {
     }
   }
 
+  onCollectionChange(listener: (delta: CollectionDelta) => void): () => void {
+    this.dataListeners.add(listener);
+    return () => this.dataListeners.delete(listener);
+  }
+
+  private publish(delta: CollectionDelta): void {
+    if (!this.disposed) for (const listener of this.dataListeners) listener(delta);
+  }
+
+  flushChanges(): Promise<Result<void>> {
+    clearTimeout(this.changeTimer);
+    if (this.reconcileJob) return this.reconcileJob.then((out) => out.ok ? this.flushChanges() : out);
+    if (this.changeJob) return this.changeJob;
+    if (!this.changedPaths.size || this.disposed) return Promise.resolve(ok(undefined));
+    const job = this.drainChanges();
+    this.changeJob = job;
+    void job.then(() => { if (this.changeJob === job) this.changeJob = undefined; });
+    return job;
+  }
+
+  private async drainChanges(): Promise<Result<void>> {
+    try {
+      while (this.changedPaths.size && !this.disposed) {
+        const generation = this.collectionGeneration;
+        await Promise.all([this.indexCache.pending, this.libraryCache.pending, this.manuscriptCache.pending, this.commentCache.pending, this.annotationIndex]);
+        if (generation !== this.collectionGeneration) continue;
+        const paths = [...this.changedPaths].slice(0, 500);
+        for (const path of paths) this.changedPaths.delete(path);
+        try {
+          const described = await this.describe();
+          if (!described.ok) throw new Error(problemMessage(described));
+          const rows = new Map<string, QueryRecord<JsonObject>>();
+          for await (const page of this.connection.queryPages({ where: `file.path in ${JSON.stringify(paths)}`, frontmatterMode: "both" }, { pageSize: 500, signal: this.lifetime.signal })) {
+            if (!page.ok) throw new Error(problemMessage(page));
+            for (const row of page.value.results) rows.set(row.path, row);
+          }
+          if (generation !== this.collectionGeneration) continue;
+          const typeFor = (id: string, row: QueryRecord<JsonObject> | undefined, starter: string) => {
+            const implementation = described.value.contracts.find((c) => c.id === id)?.implementations.find((i) => row?.types.includes(i.typeName));
+            return implementation ? { name: implementation.typeName, fields: implementation.fields } : row?.types.includes(starter) ? { name: starter, fields: {} } : undefined;
+          };
+          let indexChanged = false, annotations = false, comments = false;
+          const library = this.libraryCache.value && new Map(this.libraryCache.value.map((e) => [e.path, e]));
+          const manuscripts = this.manuscriptCache.value && new Map(this.manuscriptCache.value.map((e) => [e.path, e]));
+          let libraryChanged = false, manuscriptsChanged = false;
+          for (const path of paths) {
+            const row = rows.get(path);
+            if (this.indexCache.value && /\.md$/i.test(path)) {
+              const note = !!row && ![sourceContract.id, annotationContract.id, commentContract.id, PERSON_CONTRACT.id].some((id) => typeFor(id, row, id === sourceContract.id ? "reader-source" : id === annotationContract.id ? "reader-annotation" : id === commentContract.id ? "comment" : "person"));
+              if (this.recordSet.has(path) !== !!row || this.noteSet.has(path) !== note) indexChanged = true;
+              if (row) this.recordSet.add(path); else this.recordSet.delete(path);
+              if (note) this.noteSet.add(path); else this.noteSet.delete(path);
+            }
+            const source = typeFor(sourceContract.id, row, "reader-source");
+            if (library) {
+              const next = source && row ? libraryEntry(path, Object.keys(source.fields).length ? toContract(row.effectiveFrontmatter ?? row.frontmatter ?? {}, source.fields) : row.effectiveFrontmatter ?? row.frontmatter) : null;
+              if (!equal(library.get(path) ?? null, next)) {
+                libraryChanged = true;
+                if (next) library.set(path, next); else library.delete(path);
+              }
+            }
+            const manuscript = typeFor(manuscriptContract.id, row, "writer-manuscript");
+            if (manuscripts) {
+              const fields = row && manuscript ? Object.keys(manuscript.fields).length ? toContract(row.effectiveFrontmatter ?? row.frontmatter ?? {}, manuscript.fields) : row.effectiveFrontmatter ?? row.frontmatter ?? {} : undefined;
+              const next: ManuscriptSummary | undefined = fields ? { path, title: typeof fields["title"] === "string" ? fields["title"] : path, ...(typeof fields["template"] === "string" ? { template: fields["template"] } : {}), ...(typeof fields["csl"] === "string" ? { style: fields["csl"] } : {}), ...(row?.file.mtime ? { modified: row.file.mtime } : {}) } : undefined;
+              if (!equal(manuscripts.get(path), next)) { manuscriptsChanged = true; if (next) manuscripts.set(path, next); else manuscripts.delete(path); }
+            }
+            const annotation = typeFor(annotationContract.id, row, "reader-annotation");
+            if (this.annotationIndex) {
+              const localFields = annotation?.fields && Object.keys(annotation.fields).length ? annotation.fields : { source: "source", locator: "locator" };
+              const target = row && annotation ? toContract(row.frontmatter ?? {}, localFields)["source"] : undefined;
+              const next = annotation && row ? { path, type: annotation.name, source: typeof target === "string" ? annotationSourceLink(target) ?? "" : "", fields: localFields } : undefined;
+              const previous = this.annotationRows.get(path);
+              if (previous || next) {
+                annotations = true;
+                for (const [entry, remove] of [[previous, true], [next, false]] as const) {
+                  if (!entry) continue;
+                  const sourcePath = resolveLinkTarget(entry.source, path, this.sourcePaths);
+                  if (!sourcePath) continue;
+                  this.annotationSources.delete(sourcePath);
+                  if (this.annotationGroups?.metadata !== this.annotationRows) continue;
+                  const groups = this.annotationGroups.groups;
+                  if (remove) groups.get(sourcePath)?.delete(path);
+                  else { if (!groups.has(sourcePath)) groups.set(sourcePath, new Map()); groups.get(sourcePath)!.set(path, entry); }
+                }
+                if (next) this.annotationRows.set(path, next); else this.annotationRows.delete(path);
+              }
+            }
+            const comment = typeFor(commentContract.id, row, "comment");
+            const commentRows = this.commentCache.value;
+            if (commentRows) {
+              const value = comment && row ? commentFromRecord(path, Object.keys(comment.fields).length ? toContract(row.frontmatter ?? {}, comment.fields) : row.frontmatter ?? {}, "") : null;
+              if (value || commentRows.has(path)) {
+                comments = true;
+                this.commentBodies.delete(path);
+                if (value && comment) commentRows.set(path, { type: comment.name, fields: comment.fields, comment: value }); else commentRows.delete(path);
+              }
+            }
+          }
+          // The SDK has no exact binary stat: refresh only affected folders, never all Markdown.
+          const folders = new Set(paths.filter((p) => !/\.md$/i.test(p)).map((p) => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : ""));
+          for (const folder of folders) {
+            const found = new Map<string, CollectionFileDescriptor>();
+            for await (const file of this.connection.files.list({ folder, signal: this.lifetime.signal })) if (paths.includes(file.path)) found.set(file.path, file);
+            for (const path of paths.filter((p) => (p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "") === folder && !/\.md$/i.test(p))) {
+              if (this.files.has(path) !== found.has(path)) indexChanged = true;
+              if (found.has(path)) this.files.set(path, found.get(path)!); else this.files.delete(path);
+            }
+          }
+          const delta: CollectionDelta = { paths, ...(annotations ? { annotations: true } : {}), ...(comments ? { comments: true } : {}) };
+          if (indexChanged && this.indexCache.value) {
+            const index = { recordPaths: [...this.recordSet], notePaths: [...this.noteSet], filePaths: [...this.files.keys()].filter((p) => !/\.md$/i.test(p)) };
+            this.indexCache.set(index);
+            Object.assign(delta, { index });
+          }
+          if (libraryChanged && library) {
+            const entries = [...library.values()];
+            this.libraryCache.set(entries);
+            if (entries.length !== this.sourcePaths.size || entries.some((e) => !this.sourcePaths.has(e.path))) {
+              this.sourcePaths = new PathIndex(entries.map((e) => e.path));
+              this.annotationGroups = undefined;
+              this.annotationSources.clear();
+            }
+            Object.assign(delta, { library: entries });
+          }
+          if (manuscriptsChanged && manuscripts) {
+            const entries = [...manuscripts.values()].sort((a, b) => a.title.localeCompare(b.title));
+            this.manuscriptCache.set(entries);
+            Object.assign(delta, { manuscripts: entries });
+          }
+          this.publish(delta);
+        } catch (error) { for (const path of paths) this.changedPaths.add(path); throw error; }
+      }
+      return ok(undefined);
+    } catch (error) {
+      const message = errorMessage(error);
+      this.publish({ paths: [], problem: message });
+      return fail(message);
+    }
+  }
+
+  reconcile(): Promise<Result<void>> {
+    this.resetRequested = true;
+    if (this.reconcileJob) return this.reconcileJob;
+    const job = (async (): Promise<Result<void>> => {
+      if (this.changeJob) await this.changeJob;
+      try {
+        let result: Result<void> = ok(undefined);
+        do { this.resetRequested = false; result = await this.fullReconcile(); } while (this.resetRequested && !this.disposed);
+        return result;
+      } catch (error) {
+        const message = errorMessage(error);
+        this.publish({ paths: [], reset: true, problem: message });
+        return fail(message);
+      }
+    })();
+    this.reconcileJob = job;
+    void job.then(() => { if (this.reconcileJob === job) this.reconcileJob = undefined; }, () => { if (this.reconcileJob === job) this.reconcileJob = undefined; });
+    return job;
+  }
+
+  private async fullReconcile(): Promise<Result<void>> {
+    if (this.disposed) return ok(undefined);
+    ++this.collectionGeneration;
+    clearTimeout(this.changeTimer);
+    this.description = undefined;
+    this.indexCache.clear(); this.libraryCache.clear(); this.manuscriptCache.clear(); this.commentCache.clear();
+    this.commentBodies.clear(); this.bodyCache.clear();
+    this.invalidateAnnotations();
+    const results = await Promise.all([this.index(), this.library(), this.listManuscripts(), this.annotationMetadata(), this.commentMetadata()]);
+    const problem = results.slice(0, 2).find((r) => !r.ok);
+    this.publish({ paths: [], reset: true, ...(problem && !problem.ok ? { problem: problem.message } : {}) });
+    return problem && !problem.ok ? fail(problem.message) : ok(undefined);
+  }
+
   onExternalChange(listener: (paths: readonly string[]) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
 
   dispose(): void {
+    this.disposed = true;
+    clearTimeout(this.changeTimer);
     this.stopFollowing?.();
     this.lifetime.abort();
+    this.dataListeners.clear();
     this.listeners.clear();
   }
 }

@@ -56,6 +56,17 @@ export interface CollectionIndex {
   readonly notePaths: readonly string[];
 }
 
+export interface CollectionDelta {
+  readonly paths: readonly string[];
+  readonly index?: CollectionIndex;
+  readonly library?: LibraryEntry[];
+  readonly manuscripts?: ManuscriptSummary[];
+  readonly annotations?: boolean;
+  readonly comments?: boolean;
+  readonly reset?: boolean;
+  readonly problem?: string;
+}
+
 export interface ManuscriptBinding {
   readonly name: string;
   readonly fields: Readonly<Record<string, string>>;
@@ -93,8 +104,8 @@ export interface WriterBackend {
   readFile(path: string): Promise<Result<Uint8Array>>;
   /** A Markdown record's body, read once (no record session). */
   readBody(path: string): Promise<Result<string>>;
-  /** Every comment in the collection (records implementing mdbase.comment), withdrawn ones included. */
-  comments(): Promise<Result<CommentRecord[]>>;
+  /** Metadata selects threads for these manuscript records; only their bodies are read. No scope means all. */
+  comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>>;
   /** Writes a new comment, reply or suggestion, signed by the signed-in account's person record when it has one. */
   createComment(input: NewComment): Promise<Result<CommentRecord>>;
   changeComment(comment: CommentRecord, change: CommentChange): Promise<Result<CommentRecord>>;
@@ -104,6 +115,12 @@ export interface WriterBackend {
   reviewIdentityAccess?(): Promise<Result<void>>;
   /** Changed paths; an empty list requests reconciliation after a watch gap or schema change. */
   onExternalChange(listener: (paths: readonly string[]) => void): () => void;
+  /** Applied, coalesced collection changes (after the shared caches are updated). */
+  onCollectionChange?(listener: (delta: CollectionDelta) => void): () => void;
+  /** Await queued path reads, e.g. before navigation or export. */
+  flushChanges?(): Promise<Result<void>>;
+  /** Explicit full reconciliation; ordinary changes never call this. */
+  reconcile?(): Promise<Result<void>>;
   dispose(): void;
 }
 

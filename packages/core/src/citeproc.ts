@@ -135,7 +135,8 @@ const itemSignature = (r: CitationRequest) => JSON.stringify(r.items);
 
 export class Citeproc {
   readonly isNoteStyle: boolean;
-  private readonly engine: CiteprocEngine;
+  private engine: CiteprocEngine;
+  private libraryChanged = false;
   private previous?: {
     signatures: string[];
     ids: string[];
@@ -143,6 +144,7 @@ export class Citeproc {
     strings: string[];
     bibliography: Bibliography;
     keys: string;
+    items: string;
   };
   private nextId = 0;
 
@@ -152,22 +154,37 @@ export class Citeproc {
    * (Pandoc's `lang`), otherwise the style's default-locale wins.
    */
   constructor(
-    styleXml: string,
-    locales: ReadonlyMap<string, string>,
-    private readonly library: ReadonlyMap<string, CslItem>,
-    lang = "en-US",
-    forceLang = false,
+    private readonly styleXml: string,
+    private readonly locales: ReadonlyMap<string, string>,
+    private library: ReadonlyMap<string, CslItem>,
+    private readonly lang = "en-US",
+    private readonly forceLang = false,
   ) {
+    this.engine = this.newEngine();
+    this.isNoteStyle = this.engine.opt.xclass === "note";
+  }
+
+  private newEngine(): CiteprocEngine {
     const sys = {
       // citeproc-js asks for the style's locale, its fallbacks and en-US; unknown ones fall back to en-US.
-      retrieveLocale: (tag: string) => locales.get(tag) ?? locales.get("en-US") ?? "",
-      retrieveItem: (id: string) => library.get(id),
+      retrieveLocale: (tag: string) => this.locales.get(tag) ?? this.locales.get("en-US") ?? "",
+      retrieveItem: (id: string) => this.library.get(id),
       wrapCitationEntry: (str: string, id: string) => `#link(<ref-${typstLabel(id)}>)[${str}];`,
     };
     const Engine = CSL.Engine as unknown as new (sys: unknown, style: string, lang: string, forceLang: boolean) => CiteprocEngine;
-    this.engine = new Engine(sys, styleXml, lang, forceLang);
-    this.engine.setOutputFormat("typst");
-    this.isNoteStyle = this.engine.opt.xclass === "note";
+    const engine = new Engine(sys, this.styleXml, this.lang, this.forceLang);
+    engine.setOutputFormat("typst");
+    return engine;
+  }
+
+  updateLibrary(library: ReadonlyMap<string, CslItem>): void {
+    if (library === this.library) return;
+    this.library = library;
+    this.libraryChanged = true;
+  }
+
+  private items(keys: string): string {
+    return JSON.stringify(keys ? keys.split("\u0000").map((key) => [key, this.library.get(key)]) : []);
   }
 
   has(key: string): boolean {
@@ -184,9 +201,16 @@ export class Citeproc {
     const started = performance.now();
     const signatures = requests.map(itemSignature);
     const notes = requests.map((r) => r.noteIndex);
+    if (this.previous && this.libraryChanged && this.previous.items !== this.items(this.previous.keys)) {
+      this.engine = this.newEngine();
+      delete this.previous;
+    }
+    this.libraryChanged = false;
     const prev = this.previous;
+    const keys = citedKeys(requests);
+    const items = prev?.keys === keys ? prev.items : this.items(keys);
     const done = (strings: string[], ids: string[], bibliography: Bibliography, mode: CiteprocMode): CitationResult => {
-      this.previous = { signatures, ids, notes, strings, bibliography, keys: citedKeys(requests) };
+      this.previous = { signatures, ids, notes, strings, bibliography, keys, items };
       return { strings, bibliography, mode, ms: performance.now() - started };
     };
 

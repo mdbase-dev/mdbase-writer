@@ -14,7 +14,7 @@ import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
-import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type Result, type WriterBackend } from "../backend/types.js";
+import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
 import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
@@ -134,6 +134,12 @@ export class ManuscriptWorkspace {
   private refreshTimer: ReturnType<typeof setTimeout> | undefined;
   private commentsTimer: ReturnType<typeof setTimeout> | undefined;
   private current: WorkspaceSnapshot;
+  private workerLibrary = new Map<string, LibraryEntry["item"]>();
+  private workerRecordPaths = new Set<string>();
+  private workerFilePaths = new Set<string>();
+  private workerAnnotationPaths = new Set<string>();
+  private workerSourceKeys = new Map<string, string>();
+  private commentsScope = "";
   private metadataJobs: Partial<Record<MetadataDomain, Promise<void>>> = {};
   private metadataGeneration = 0;
   private commentsGeneration = 0;
@@ -148,6 +154,7 @@ export class ManuscriptWorkspace {
     this.current = { main, phase: "loading", indexLoad: LOADING, libraryLoad: LOADING, annotationsLoad: LOADING, commentsLoad: LOADING, records: new Map(), library: [], recordPaths: [], filePaths: [], recordIndex: new PathIndex([]), fileIndex: new PathIndex([]), annotationPaths: new Set(), annotationVersion: 0, compiling: true, pendingSettings: false, comments: [], people: NO_PEOPLE, recoveredDrafts: new Map(), assetProblems: new Map(), recordProblems: new Map() };
     this.followCompiler();
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
+    if (backend.onCollectionChange) this.cleanups.push(backend.onCollectionChange((delta) => this.onCollectionChange(delta)));
     // Linking a person record happens in another tab (mdbase Editor): look again on return.
     if (typeof window !== "undefined") {
       const onFocus = () => {
@@ -248,8 +255,8 @@ export class ManuscriptWorkspace {
       const index = await this.backend.index();
       if (generation !== this.metadataGeneration || this.disposed) return;
       if (!index.ok) throw new Error(index.message);
-      this.update({ recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths], indexLoad: READY });
-      if (this.previewInitialized) this.compile.send({ type: "collection", recordPaths: this.current.recordPaths, filePaths: this.current.filePaths });
+      this.update({ ...(index.value.recordPaths !== this.current.recordPaths ? { recordPaths: index.value.recordPaths } : {}), ...(index.value.filePaths !== this.current.filePaths ? { filePaths: index.value.filePaths } : {}), indexLoad: READY });
+      this.sendCollection();
       for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);
     } catch (error) { if (generation === this.metadataGeneration) this.update({ indexLoad: { phase: "failed", problem: errorMessage(error) } }); }
   }
@@ -260,7 +267,7 @@ export class ManuscriptWorkspace {
       if (generation !== this.metadataGeneration || this.disposed) return;
       if (!library.ok) throw new Error(library.message);
       this.update({ library: library.value, libraryLoad: READY });
-      if (this.previewInitialized) this.compile.send({ type: "library", library: library.value.map((e) => e.item) });
+      this.sendLibrary();
       this.sendQuotations();
     } catch (error) { if (generation === this.metadataGeneration) this.update({ libraryLoad: { phase: "failed", problem: errorMessage(error) } }); }
   }
@@ -281,6 +288,7 @@ export class ManuscriptWorkspace {
   }
 
   async retryMetadata(): Promise<void> {
+    await this.backend.reconcile?.();
     this.loadMetadata(true);
     await this.metadata();
     if (this.current.previewProblem) await this.retryPreview();
@@ -295,6 +303,10 @@ export class ManuscriptWorkspace {
       if (this.disposed || client !== this.compile) return;
       client.send({ type: "init", library: this.current.library.map((e) => e.item), styles: [...csl.styles], locales: [...csl.locales], baseUrl: import.meta.env.BASE_URL });
       this.previewInitialized = true;
+      this.workerLibrary = new Map(this.current.library.map((e) => [e.key, e.item]));
+      this.workerRecordPaths = new Set(this.current.recordPaths);
+      this.workerFilePaths = new Set(this.current.filePaths);
+      this.workerAnnotationPaths.clear(); this.workerSourceKeys.clear();
       client.send({ type: "collection", recordPaths: this.current.recordPaths, filePaths: this.current.filePaths });
       client.send({ type: "main", path: this.main });
       client.send({ type: "records", upsert: this.writerRecords() });
@@ -363,17 +375,41 @@ export class ManuscriptWorkspace {
     }
   }
 
+  private sendCollection(): void {
+    if (!this.previewInitialized) return;
+    const records = new Set(this.current.recordPaths), files = new Set(this.current.filePaths);
+    const recordUpsert = [...records].filter((p) => !this.workerRecordPaths.has(p)), recordRemove = [...this.workerRecordPaths].filter((p) => !records.has(p));
+    const fileUpsert = [...files].filter((p) => !this.workerFilePaths.has(p)), fileRemove = [...this.workerFilePaths].filter((p) => !files.has(p));
+    if (recordUpsert.length || recordRemove.length || fileUpsert.length || fileRemove.length) this.compile.send({ type: "collection-delta", recordUpsert, recordRemove, fileUpsert, fileRemove });
+    this.workerRecordPaths = records; this.workerFilePaths = files;
+  }
+
+  private sendLibrary(): void {
+    if (!this.previewInitialized) return;
+    const library = new Map(this.current.library.map((e) => [e.key, e.item]));
+    const upsert = [...library].filter(([key, item]) => this.workerLibrary.get(key) !== item && JSON.stringify(this.workerLibrary.get(key)) !== JSON.stringify(item)).map(([, item]) => item);
+    const remove = [...this.workerLibrary.keys()].filter((key) => !library.has(key));
+    if (upsert.length || remove.length) this.compile.send({ type: "library-delta", upsert, remove });
+    this.workerLibrary = library;
+  }
+
   private sendQuotations(): void {
     if (!this.previewInitialized) return;
-    this.compile.send({ type: "quotations", annotationPaths: [...this.current.annotationPaths], sourceKeys: [...sourceKeys(this.current.library)] });
+    const annotations = this.current.annotationPaths, keys = sourceKeys(this.current.library);
+    const annotationUpsert = [...annotations].filter((p) => !this.workerAnnotationPaths.has(p)), annotationRemove = [...this.workerAnnotationPaths].filter((p) => !annotations.has(p));
+    const sourceUpsert = [...keys].filter(([path, key]) => this.workerSourceKeys.get(path) !== key), sourceRemove = [...this.workerSourceKeys.keys()].filter((p) => !keys.has(p));
+    if (annotationUpsert.length || annotationRemove.length || sourceUpsert.length || sourceRemove.length) this.compile.send({ type: "quotations-delta", annotationUpsert, annotationRemove, sourceUpsert, sourceRemove });
+    this.workerAnnotationPaths = new Set(annotations); this.workerSourceKeys = new Map(keys);
   }
 
   async loadComments(): Promise<void> {
     const generation = ++this.commentsGeneration;
+    const scope = this.readingOrder();
+    this.commentsScope = scope.join("\u0000");
     this.update({ commentsLoad: LOADING });
     this.peopleCheckedAt = Date.now();
     try {
-      const [comments, people] = await Promise.all([this.backend.comments(), this.backend.people()]);
+      const [comments, people] = await Promise.all([this.backend.comments(scope), this.backend.people()]);
       if (this.disposed || generation !== this.commentsGeneration) return;
       this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, commentsLoad: READY, people } : { commentsProblem: comments.message, commentsLoad: { phase: "failed", problem: comments.message }, people });
     } catch (error) { if (generation === this.commentsGeneration) this.update({ commentsProblem: errorMessage(error), commentsLoad: { phase: "failed", problem: errorMessage(error) } }); }
@@ -446,6 +482,10 @@ export class ManuscriptWorkspace {
     if (annotation.annotationPaths) this.sendQuotations();
     // Opening chapters must not depend on a healthy compiler or renderer.
     this.openEmbeds(path, snapshot.body);
+    if (this.current.phase === "ready" && this.commentsScope !== this.readingOrder().join("\u0000")) {
+      clearTimeout(this.commentsTimer);
+      this.commentsTimer = setTimeout(() => void this.loadComments(), 50);
+    }
   }
 
   private openEmbeds(path: string, body: string): void {
@@ -576,7 +616,32 @@ export class ManuscriptWorkspace {
     return diagnostics;
   }
 
+  private onCollectionChange(delta: CollectionDelta): void {
+    if (delta.problem) { this.update({ indexLoad: { phase: "failed", problem: delta.problem } }); return; }
+    if (delta.reset) { void this.refreshCollection(); return; }
+    const indexChanged = delta.index && (delta.index.recordPaths !== this.current.recordPaths || delta.index.filePaths !== this.current.filePaths);
+    this.update({ ...(delta.index ? { ...(indexChanged ? { recordPaths: delta.index.recordPaths, filePaths: delta.index.filePaths } : {}), indexLoad: READY } : {}), ...(delta.library ? { library: delta.library, libraryLoad: READY } : {}) });
+    if (indexChanged) {
+      this.sendCollection();
+      for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);
+    }
+    if (delta.library) { this.sendLibrary(); this.sendQuotations(); }
+    if (delta.annotations) {
+      this.update({ annotationVersion: this.current.annotationVersion + 1 });
+      this.metadataJobs.annotationsLoad = this.loadAnnotationPaths(this.metadataGeneration);
+    }
+    if (delta.comments || indexChanged) {
+      clearTimeout(this.commentsTimer);
+      this.commentsTimer = setTimeout(() => void this.loadComments(), 50);
+    }
+  }
+
   private onExternalChange(paths: readonly string[]): void {
+    if (this.backend.onCollectionChange) {
+      const assets = paths.filter((p) => this.requestedAssets.has(p));
+      if (assets.length) void this.loadAssets(assets);
+      return;
+    }
     if (!paths.length) {
       this.update({ annotationVersion: this.current.annotationVersion + 1 });
       void this.refreshCollection();
@@ -797,6 +862,8 @@ export class ManuscriptWorkspace {
     };
     check();
     this.commitSettings();
+    const changes = await this.backend.flushChanges?.();
+    if (changes && !changes.ok) throw new Error(changes.message);
     await this.metadata();
     check();
     const { styles, locales } = await loadStyles();

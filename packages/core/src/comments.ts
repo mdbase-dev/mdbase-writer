@@ -5,6 +5,8 @@
 // Offsets in a stored text_position are Unicode code points of the body;
 // everything else here (and CodeMirror) uses UTF-16 offsets.
 
+import { PathIndex, resolveLinkTarget } from "./records.js";
+
 export interface CommentQuote {
   readonly exact: string;
   readonly prefix?: string;
@@ -126,7 +128,13 @@ export const recordLink = (path: string) => `[[${path.replace(/\.md$/i, "")}]]`;
  */
 export function commentThreads(comments: readonly CommentRecord[]): CommentThread[] {
   const byPath = new Map(comments.map((c) => [c.path.replace(/\.md$/i, "").toLowerCase(), c]));
-  const rootOf = (c: CommentRecord) => (c.inReplyTo ? byPath.get(linkPath(c.inReplyTo).replace(/\.md$/i, "").toLowerCase()) : undefined);
+  const paths = new PathIndex(comments.map((c) => c.path));
+  const rootOf = (c: CommentRecord) => {
+    if (!c.inReplyTo) return undefined;
+    const target = linkPath(c.inReplyTo);
+    const resolved = resolveLinkTarget(target, c.path, paths);
+    return byPath.get(target.replace(/\.md$/i, "").toLowerCase()) ?? (resolved ? byPath.get(resolved.replace(/\.md$/i, "").toLowerCase()) : undefined);
+  };
   const replies = new Map<CommentRecord, CommentRecord[]>();
   const roots: CommentRecord[] = [];
   for (const c of comments) {

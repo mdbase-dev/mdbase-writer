@@ -41,7 +41,10 @@ export interface SourceMark {
 export type ToWorker =
   | { readonly type: "init"; readonly library: readonly CslItem[]; readonly styles: readonly [string, string][]; readonly locales: readonly [string, string][]; readonly baseUrl: string }
   | { readonly type: "library"; readonly library: readonly CslItem[] }
+  | { readonly type: "library-delta"; readonly upsert: readonly CslItem[]; readonly remove: readonly string[] }
   | { readonly type: "collection"; readonly recordPaths: readonly string[]; readonly filePaths: readonly string[] }
+  | { readonly type: "collection-delta"; readonly recordUpsert: readonly string[]; readonly recordRemove: readonly string[]; readonly fileUpsert: readonly string[]; readonly fileRemove: readonly string[] }
+  | { readonly type: "quotations-delta"; readonly annotationUpsert: readonly string[]; readonly annotationRemove: readonly string[]; readonly sourceUpsert: readonly [string, string][]; readonly sourceRemove: readonly string[] }
   /** For quoting embedded annotations: the records that are annotations, and each source record's citekey. */
   | { readonly type: "quotations"; readonly annotationPaths: readonly string[]; readonly sourceKeys: readonly [string, string][] }
   | { readonly type: "records"; readonly upsert: readonly WriterRecord[]; readonly remove?: readonly string[] }

@@ -8,7 +8,7 @@ import type { CollectionDescription, CollectionFileDescriptor, JsonObject, Mdbas
 import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess } from "@mdbase-dev/connect/advanced";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
-import { commentThreads } from "@mdbase-writer/core/comments";
+import { commentFromRecord, commentThreads } from "@mdbase-writer/core/comments";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { expect, it, vi } from "vitest";
@@ -124,10 +124,10 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
       const limit = input.limit ?? 200;
       const results = matching.slice(offset, offset + limit).map((r) => ({
         path: r.path, types: r.types, file: r.file,
-        ...(input.frontmatterMode === "effective" ? { effectiveFrontmatter: r.frontmatter! } : { frontmatter: r.frontmatter! }),
+        ...(input.frontmatterMode === "effective" ? { effectiveFrontmatter: r.frontmatter! } : input.frontmatterMode === "both" ? { frontmatter: r.frontmatter!, effectiveFrontmatter: r.frontmatter! } : { frontmatter: r.frontmatter! }),
         ...(input.includeBody ? { body: r.body } : {}),
       }));
-      const label = type ?? input.types?.join(",") ?? "all-records";
+      const label = type ?? input.types?.join(",") ?? (input.where ? "changed-paths" : "all-records");
       const value = { results, meta: { hasMore: offset + limit < matching.length, totalCount: matching.length } };
       return connectSuccess(account(`query:${label}`, value, results.length, results.reduce((n, r) => n + Buffer.byteLength(r.body ?? ""), 0)) as typeof value);
     }
@@ -166,7 +166,7 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
   };
   // Deliberately narrow facade: unsupported connection methods cannot be used silently.
   const backend = new ConnectBackend(connection as unknown as MdbaseConnection<JsonObject>);
-  return { authority, backend, rows, transfers, body };
+  return { authority, backend, rows, transfers, body, seed };
 }
 
 function totals(events: Transfer[]) {
@@ -235,7 +235,7 @@ it("large collection baseline (opt-in)", async () => {
         searchLibrary(library, "research", 60);
         const sourcesUsableMs = performance.now() - start;
         const sourcesFirstSearchMs = performance.now() - sourceStart;
-        await until(workspace, () => workspace!.getSnapshot().comments.length === counts.comments);
+        await until(workspace, () => workspace!.getSnapshot().comments.length === counts.comments / 10);
         const commentsUsableMs = milestones.comments!;
         await until(workspace, () => workspace!.getSnapshot().annotationPaths.size === counts.annotations);
         const annotationIndexMs = milestones.annotationIndex!;
@@ -248,10 +248,17 @@ it("large collection baseline (opt-in)", async () => {
         await vi.waitFor(() => expect(compiler.initAt).toBeGreaterThan(start), { timeout: 120_000 });
         const previewInitializedMs = compiler.initAt - start;
         stopMarking();
+        const commentTransfers = totals(f.transfers.filter((e) => e.operation === "query:comment"));
         const workspaceTransfers = totals(f.transfers.splice(0));
+        const returnHomeStart = performance.now();
+        await Promise.all([f.backend.index(), f.backend.library(), f.backend.listManuscripts()]);
+        const returnHomeMs = performance.now() - returnHomeStart;
+        const returnHomeTransfers = totals(f.transfers.splice(0));
+        const navigationTransfers = { requests: homeTransfers.requests + workspaceTransfers.requests + returnHomeTransfers.requests, jsonBytes: homeTransfers.jsonBytes + workspaceTransfers.jsonBytes + returnHomeTransfers.jsonBytes };
         const snap = workspace.getSnapshot();
         const cited = new Map<string, number>(Array.from({ length: 100 }, (_, i) => [`source${pad(i)}`, 1] as const));
-        const fullPathPlacement = () => placeThreads(snap.comments, [main], (p) => p === main ? f.body : undefined, snap.recordIndex);
+        const allComments = f.rows.filter((r) => r.types.includes("comment")).map((r) => commentFromRecord(r.path, r.frontmatter, r.body ?? "")!).filter(Boolean);
+        const fullPathPlacement = () => placeThreads(allComments, [main], (p) => p === main ? f.body : undefined, snap.recordIndex);
         const placed = fullPathPlacement();
         expect(placed.length).toBe(300);
         const noop = () => {};
@@ -284,23 +291,33 @@ it("large collection baseline (opt-in)", async () => {
             for (let i = 0; i < 100; i++) { wordCount(f.body); labelTargets(main, f.body); referenceKeys(f.body).filter((key) => libraryKeys.has(key)); }
           }),
           place3000CommentsFullPaths: measure(fullPathPlacement),
-          place3000CommentsBareNames: measure(() => placeThreads(snap.comments.map((c) => ({ ...c, document: `[[${c.document.split("/").at(-1)}` })), [main], (p) => p === main ? f.body : undefined, snap.recordIndex), 1),
-          oneThread3000Replies: measure(() => commentThreads([snap.comments[0]!, ...snap.comments.slice(1).map((c) => ({ ...c, inReplyTo: `[[${snap.comments[0]!.path}]]` }))])),
+          place3000CommentsBareNames: measure(() => placeThreads(allComments.map((c) => ({ ...c, document: `[[${c.document.split("/").at(-1)}` })), [main], (p) => p === main ? f.body : undefined, snap.recordIndex), 1),
+          oneThread3000Replies: measure(() => commentThreads([allComments[0]!, ...allComments.slice(1).map((c) => ({ ...c, inReplyTo: `[[${allComments[0]!.path}]]` }))])),
           sourcePanelSSR: measure(() => renderToString(createElement(SourcesPanel, { library, cited, loadAnnotations: () => Promise.resolve(annotations), onInsert: noop, onStepCitation: noop, canInsert: true })), 3),
           commentsPanelSSR: measure(() => renderToString(createElement(CommentsPanel, { placed, people: snap.people, active: null, pending: null, recordTitle: (p) => p, onSelect: noop, onSubmit: ok, onCancel: noop, onReply: ok, onChange: ok, onAccept: ok, onWholeRecord: noop, onCheckAccount: ok })), 3),
           annotationFilter6: measure(() => annotations.ok ? annotations.value.filter((a) => a.source === library[0]!.path || library[0]!.path.endsWith(`/${a.source}`)) : []),
           cloneLibrary5000: measure(() => structuredClone({ type: "library", library: library.map((e) => e.item) })),
         };
-        const previousComments = snap.comments;
+        const previousRecords = workspace.getSnapshot().recordPaths;
+        const refreshMessagesStart = compiler.messages.length;
         const refreshStart = performance.now();
         f.authority.editElsewhere("notes/note-00000.md", { body: "Changed in another app" });
         await until(workspace, () => {
           const current = workspace!.getSnapshot();
-          return current.comments !== previousComments && current.indexLoad.phase === "ready" && current.libraryLoad.phase === "ready" && current.annotationsLoad.phase === "ready";
+          return current.indexLoad.phase === "ready" && current.libraryLoad.phase === "ready" && current.annotationsLoad.phase === "ready" && (current.recordPaths !== previousRecords || f.transfers.some((t) => t.operation === "query:changed-paths"));
         });
         const externalRefreshMs = performance.now() - refreshStart;
         const externalTransfers = totals(f.transfers.splice(0));
-        output.push({ run: run + 1, seedMs, homeListMs, homeBackgroundMs, readyMs, sourcesUsableMs, sourcesFirstSearchMs, commentsUsableMs, annotationIndexMs, sourceAnnotationsMs, annotationsUsableMs, previewInitializedMs, externalRefreshMs, homeTransfers, readyTransfers, workspaceTransfers, externalTransfers, computations, workerMessages: [...compiler.messages] });
+        const noteWorkerMessages = compiler.messages.slice(refreshMessagesStart);
+        f.seed("sources/new-source.md", "reader-source", { csl: { id: "newsource", type: "book", title: "A newly imported source" } }, "New source");
+        const sourceChangeStart = performance.now();
+        const sourceMessagesStart = compiler.messages.length;
+        f.authority.editElsewhere("sources/new-source.md", { body: "Updated source" });
+        await until(workspace, () => workspace!.getSnapshot().library.some((e) => e.key === "newsource"));
+        const newSourceMs = performance.now() - sourceChangeStart;
+        const newSourceTransfers = totals(f.transfers.splice(0));
+        const sourceWorkerMessages = compiler.messages.slice(sourceMessagesStart);
+        output.push({ run: run + 1, seedMs, homeListMs, homeBackgroundMs, readyMs, sourcesUsableMs, sourcesFirstSearchMs, commentsUsableMs, annotationIndexMs, sourceAnnotationsMs, annotationsUsableMs, previewInitializedMs, externalRefreshMs, newSourceMs, newSourceTransfers, commentTransfers, returnHomeMs, returnHomeTransfers, navigationTransfers, noteWorkerMessages, sourceWorkerMessages, homeTransfers, readyTransfers, workspaceTransfers, externalTransfers, computations, workerMessages: [...compiler.messages] });
       } finally { await workspace?.dispose(); f.backend.dispose(); f.authority.watch.close(); }
       // Same collection size, redistributed highlights: one book has 300, not six.
       // Only its no-body annotation discovery pages are 6x slower, exposing preview gating.

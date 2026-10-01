@@ -116,6 +116,38 @@ try {
     assert.equal(await page.locator(".annotations blockquote", { hasText: "To be potential means" }).count(), 0);
   });
 
+  await scenario("Home keeps manuscript errors separate from background sources and retries", async (page) => {
+    await page.goto(`${base}?demo`);
+    await page.locator(".manuscript-row").first().waitFor();
+    await page.evaluate(() => {
+      const backend = window.writer.backend;
+      window.originalLibrary = backend.library.bind(backend);
+      backend.library = async () => ({ ok: false, message: "Temporary background source failure" });
+      window.dispatchEvent(new Event("focus"));
+    });
+    await page.getByRole("alert").filter({ hasText: "Temporary background source failure" }).waitFor();
+    assert.ok(await page.locator(".manuscript-row").count() > 0);
+    await page.evaluate(() => { window.writer.backend.library = window.originalLibrary; });
+    await page.getByRole("button", { name: "Retry background data" }).click();
+    await page.waitForFunction(() => !document.body.textContent.includes("Temporary background source failure"));
+  });
+
+  await scenario("source deltas update cited preview output without a manuscript edit", async (page) => {
+    await open(page); await painted(page);
+    const before = await body(page, main);
+    await page.evaluate(() => {
+      const backend = window.writer.backend;
+      const source = window.writer.workspace.getSnapshot().library.find((entry) => entry.key === "badiouBeing07");
+      // Demo CSL entries can be virtual (library.json); give this one a real record.
+      if (!backend.authority.get(source.path)) backend.authority.seed(source.path, { frontmatter: { type: "reader-source", csl: source.item }, body: "Source record" });
+      const record = backend.authority.get(source.path);
+      backend.authority.editElsewhere(source.path, { patch: { ...record.frontmatter, csl: { ...source.item, title: "Revised cited source title" } } });
+    });
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().result?.references.some((ref) => ref.key === "badiouBeing07" && ref.text.toLowerCase().includes("revised cited source title")));
+    await painted(page);
+    assert.equal(await body(page, main), before);
+  });
+
   await scenario("chapter switching retains undo redo selection and scroll", async (page) => {
     await open(page); await painted(page);
     const chapter = "chapters/event.md";

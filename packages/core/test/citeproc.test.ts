@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { Citeproc, parseCiteItem, type CitationRequest, type CiteItem } from "../src/index.js";
+import { ManuscriptAssembler, PathIndex, Citeproc, parseCiteItem, type CitationRequest, type CiteItem } from "../src/index.js";
 import { loadLibrary, loadStyles, locales } from "./helpers.js";
 
 const styles = loadStyles();
@@ -51,6 +51,27 @@ describe.each(["chicago-notes-bibliography", "apa", "ieee"])("incremental citepr
     }
     expect(modes).toContain("incremental");
   }, 60_000);
+});
+
+describe("citeproc library updates", () => {
+  it("keeps assembler engines for unrelated library content and refreshes cited content", () => {
+    const assembler = new ManuscriptAssembler();
+    const main = "main.md";
+    const input = { main, records: new Map([[main, { path: main, frontmatter: { csl: "apa" }, body: `A claim [@${KEYS[0]}].` }]]), recordPaths: new PathIndex([main]), filePaths: new Set<string>(), library, styles, locales };
+    const first = assembler.assemble(input);
+    expect(first.citations.mode).toBe("rebuild");
+    const unrelated = new Map(library);
+    unrelated.set(KEYS[1]!, { ...library.get(KEYS[1]!)!, title: "Unrelated changed title" });
+    const second = assembler.assemble({ ...input, library: unrelated });
+    expect(second.citations.mode).toBe("cached");
+    expect(second.debug).toEqual(first.debug);
+    const changed = new Map(unrelated);
+    changed.set(KEYS[0]!, { ...library.get(KEYS[0]!)!, title: "Changed cited title" });
+    const third = assembler.assemble({ ...input, library: changed });
+    expect(third.citations.mode).toBe("rebuild");
+    expect(third.debug.bibliography).not.toEqual(first.debug.bibliography);
+    expect(third.debug.bibliography[0]?.text).toContain("Changed cited title");
+  });
 });
 
 describe("citeproc performance", () => {

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fail, ok, type WriterBackend } from "../backend/types.js";
+import { fail, ok, type CollectionDelta, type WriterBackend } from "../backend/types.js";
 import { NO_PEOPLE } from "../backend/comments.js";
 import { DraftStore, type LocalDraft } from "./drafts.js";
 import { discoveredDiagnostics, ManuscriptWorkspace } from "./workspace.js";
@@ -67,6 +67,46 @@ function fixture() {
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
 
 describe("workspace reliability", () => {
+  it("sends only worker deltas and no unchanged collection data for unrelated edits", async () => {
+    const { backend, open } = fixture();
+    const known = { key: "known", path: "sources/known.md", title: "Known", item: { id: "known", type: "book", title: "Known" } };
+    backend.library = async () => ok([known]);
+    let listener!: (delta: CollectionDelta) => void;
+    backend.onCollectionChange = (next) => { listener = next; return () => {}; };
+    const workspace = open(); await ready(workspace);
+    await vi.waitFor(() => expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "init" })));
+    await workspace.exportBundle();
+    const send = vi.mocked(workspace["compile"].send);
+    send.mockClear();
+    const index = workspace.getSnapshot().recordIndex;
+    listener({ paths: ["notes/unrelated.md"] });
+    expect(workspace.getSnapshot().recordIndex).toBe(index);
+    expect(send).not.toHaveBeenCalled();
+    const added = { key: "added", path: "sources/added.md", title: "Added", item: { id: "added", type: "book", title: "Added" } };
+    const previous = workspace.getSnapshot();
+    listener({ paths: [added.path], library: [known, added], index: { recordPaths: [...previous.recordPaths, added.path], filePaths: previous.filePaths, notePaths: [] } });
+    expect(send).toHaveBeenCalledWith({ type: "library-delta", upsert: [added.item], remove: [] });
+    expect(send).toHaveBeenCalledWith({ type: "collection-delta", recordUpsert: [added.path], recordRemove: [], fileUpsert: [], fileRemove: [] });
+    expect(send.mock.calls.some(([m]) => ["library", "collection", "quotations"].includes(m.type))).toBe(false);
+    send.mockClear();
+    listener({ paths: [added.path], library: [known], index: { recordPaths: previous.recordPaths, filePaths: previous.filePaths, notePaths: [] } });
+    expect(send).toHaveBeenCalledWith({ type: "library-delta", upsert: [], remove: ["added"] });
+    expect(send).toHaveBeenCalledWith({ type: "collection-delta", recordUpsert: [], recordRemove: [added.path], fileUpsert: [], fileRemove: [] });
+  });
+
+  it("expands comment scope when a late nested chapter opens", async () => {
+    const { backend, authority, open } = fixture();
+    const index = backend.index;
+    backend.index = async () => { const result = await index(); return result.ok ? ok({ ...result.value, recordPaths: [...result.value.recordPaths, "chapters/late.md"] }) : result; };
+    authority.seed("chapters/late.md", { body: "New chapter" });
+    const comments = vi.fn(async (_scope?: readonly string[]) => ok([]));
+    backend.comments = comments;
+    const workspace = open(); await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().records.has("chapters/two.md")).toBe(true));
+    workspace.setBody("chapters/two.md", "![[late]]\n");
+    await vi.waitFor(() => expect(comments.mock.calls.some(([scope]) => scope?.includes("chapters/late.md"))).toBe(true));
+  });
+
   it("does not report missing collection data as definitive while discovery is pending or failed", () => {
     const base = { record: "main.md", from: 0, to: 1, origin: "writer" as const, severity: "error" as const };
     const diagnostics = [{ ...base, metadata: "index" as const, message: "Missing embed" }, { ...base, metadata: "library" as const, message: "Unknown citekey" }, { ...base, message: "Invalid Markdown" }];
@@ -128,7 +168,7 @@ describe("workspace reliability", () => {
     expect(exported).toBe(false);
     finish();
     await job;
-    expect(workspace["compile"].send).toHaveBeenCalledWith({ type: "quotations", annotationPaths: ["annotations/later.md"], sourceKeys: [] });
+    expect(workspace["compile"].send).toHaveBeenCalledWith({ type: "quotations-delta", annotationUpsert: ["annotations/later.md"], annotationRemove: [], sourceUpsert: [], sourceRemove: [] });
   });
 
   it("exports a collection without annotations, and keeps transient discovery failures non-blocking", async () => {

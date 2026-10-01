@@ -7,7 +7,7 @@ import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess 
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { ManuscriptWorkspace } from "../workspace/workspace.js";
 import { describe, expect, it, vi } from "vitest";
-import { annotationContract, ConnectBackend, manuscriptContract } from "./connect.js";
+import { annotationContract, ConnectBackend, manuscriptContract, sourceContract, commentContract } from "./connect.js";
 
 vi.mock("../compile/client.js", () => ({ CompileClient: class {
   ready = Promise.resolve(0);
@@ -52,11 +52,16 @@ function fixture(contracts: CollectionDescription["contracts"] = [annotation], t
   const original = connection.queryPages;
   const sourceNames = ["a", "b"];
   connection.queryPages = vi.fn(async function* (input: QueryInput) {
-    if (input.contract || input.types?.includes("reader-source")) {
-      yield connectSuccess({ results: sourceNames.map((key) => ({ path: `sources/${key}.md`, types: ["reader-source"], effectiveFrontmatter: { csl: { id: key, title: key } }, file: {} })), page: 0, offset: 0, loaded: 2, complete: true });
+    const sources = sourceNames.map((key) => ({ path: `sources/${key}.md`, types: ["reader-source"], frontmatter: { csl: { id: key, title: key } }, effectiveFrontmatter: { csl: { id: key, title: key } }, file: {} }));
+    if (input.contract?.id === sourceContract.id || input.types?.includes("reader-source")) {
+      yield connectSuccess({ results: [...sources, ...rows.filter((r) => r.types.includes("reader-source"))], page: 0, offset: 0, loaded: sources.length, complete: true });
+    } else if (input.where && !input.types) {
+      const paths = JSON.parse(input.where.replace(/^file\.path in /, "")) as string[];
+      const results = [...sources, ...rows.map((r) => ({ ...r, effectiveFrontmatter: r.frontmatter, file: {} }))].filter((r) => paths.includes(r.path));
+      yield connectSuccess({ results, page: 0, offset: 0, loaded: results.length, complete: true });
     } else yield* original(input);
   }) as typeof original;
-  return { backend, connection, description, authority, rows, read, sourceNames, bodyQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.includeBody).map(([q]) => q), metadataQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.types?.some((t) => t === "highlight" || t === "reader-annotation") && !q.includeBody).map(([q]) => q), notify: (path: string) => notify({ type: "mdbase.record.modified", payload: { path } }), rename: (from: string, to: string) => notify({ type: "mdbase.record.renamed", payload: { from, to } }), reset: () => resetWatch() };
+  return { backend, connection, description, authority, rows, read, sourceNames, bodyQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.includeBody).map(([q]) => q), changedQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.where && !q.types).map(([q]) => q), metadataQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.types?.some((t) => t === "highlight" || t === "reader-annotation") && !q.includeBody).map(([q]) => q), notify: (path: string) => notify({ type: "mdbase.record.modified", payload: { path } }), rename: (from: string, to: string) => notify({ type: "mdbase.record.renamed", payload: { from, to } }), reset: () => resetWatch() };
 }
 
 describe("annotation loading", () => {
@@ -77,8 +82,8 @@ describe("annotation loading", () => {
     f.notify("annotations/a.md");
     expect(await f.backend.annotationsForSource("sources/a.md")).toMatchObject({ ok: true, value: [{ quote: "New quote" }, { quote: "Another A" }] });
     expect(f.bodyQueries()).toHaveLength(3);
-    expect(f.metadataQueries()).toHaveLength(2);
-    expect(f.metadataQueries()[1]?.where).toBe('file.path in ["annotations/a.md"]');
+    expect(f.metadataQueries()).toHaveLength(1);
+    expect(f.changedQueries()[0]?.where).toBe('file.path in ["annotations/a.md"]');
     expect(await f.backend.annotationsForSource("sources/b.md")).toBe(b);
     expect(f.bodyQueries()).toHaveLength(3);
     f.backend.dispose();
@@ -177,7 +182,8 @@ describe("annotation loading", () => {
     for (const path of ["sources/a.md", "comments/known.md", "notes/known.md"]) f.notify(path);
     expect(await f.backend.annotationPaths()).toMatchObject({ ok: true });
     expect(await f.backend.annotationsForSource("sources/a.md")).toBe(cached);
-    expect(f.connection.queryPages).toHaveBeenCalledTimes(queries);
+    expect(f.connection.queryPages).toHaveBeenCalledTimes(queries + 1);
+    expect(f.changedQueries()).toHaveLength(1);
     f.backend.dispose();
   });
 
@@ -190,8 +196,8 @@ describe("annotation loading", () => {
     f.notify("annotations/a.md");
     expect(await f.backend.annotationsForSource("sources/b.md")).toMatchObject({ ok: true, value: [{ path: "annotations/a.md" }, { path: "annotations/b.md" }] });
     expect(await f.backend.annotationsForSource("sources/a.md")).toMatchObject({ ok: true, value: [{ path: "annotations/c.md" }] });
-    expect(f.metadataQueries()).toHaveLength(2);
-    expect(f.metadataQueries()[1]?.where).toBe('file.path in ["annotations/a.md"]');
+    expect(f.metadataQueries()).toHaveLength(1);
+    expect(f.changedQueries()[0]?.where).toBe('file.path in ["annotations/a.md"]');
     f.backend.dispose();
   });
 
@@ -205,7 +211,7 @@ describe("annotation loading", () => {
     expect(await f.backend.annotationPaths()).toEqual({ ok: true, value: ["annotations/b.md", "annotations/c.md"] });
     expect(await f.backend.annotationsForSource("sources/a.md")).toMatchObject({ ok: true, value: [{ path: "annotations/c.md" }] });
     expect(await f.backend.annotationsForSource("sources/b.md")).toBe(b);
-    expect(f.metadataQueries()).toHaveLength(2);
+    expect(f.metadataQueries()).toHaveLength(1);
     f.backend.dispose();
   });
 
@@ -229,7 +235,8 @@ describe("annotation loading", () => {
       }
       await new Promise((resolve) => setTimeout(resolve, 2_100));
       expect(await f.backend.annotationsForSource("sources/a.md")).toBe(cached);
-      expect(f.connection.queryPages).toHaveBeenCalledTimes(queries);
+      expect(f.connection.queryPages).toHaveBeenCalledTimes(queries + 1);
+      expect(f.metadataQueries()).toHaveLength(1);
       expect(workspace.getSnapshot().annotationVersion).toBe(version);
     } finally { await workspace.dispose(); f.backend.dispose(); f.authority.watch.close(); vi.unstubAllGlobals(); }
   });
@@ -245,6 +252,129 @@ describe("annotation loading", () => {
     f.connection.queryPages.mockImplementationOnce(async function* () { yield connectFailure<"access_denied">(connectProblem<"access_denied">("access_denied", "Temporary body query failure")); });
     expect(await f.backend.annotationsForSource("sources/b.md")).toMatchObject({ ok: false, message: "Temporary body query failure" });
     expect((await f.backend.annotationsForSource("sources/b.md")).ok).toBe(true);
+    f.backend.dispose();
+  });
+
+  it("shares successful collection reads and retries failed cache loads", async () => {
+    const f = fixture();
+    const [a, b] = await Promise.all([f.backend.index(), f.backend.index()]);
+    expect(a).toBe(b);
+    await f.backend.library();
+    await f.backend.listManuscripts();
+    const count = f.connection.queryPages.mock.calls.length;
+    await Promise.all([f.backend.index(), f.backend.library(), f.backend.listManuscripts()]);
+    expect(f.connection.queryPages).toHaveBeenCalledTimes(count);
+    f.backend.dispose();
+  });
+
+  it("incrementally creates, renames and deletes notes, sources, annotations and mapped comments", async () => {
+    const source = { ...sourceContract, contractType: "record" as const, digest: "test", schema: {}, implementations: [implementation("reader-source", { csl: "csl" })] };
+    const comments = { ...commentContract, contractType: "record" as const, digest: "test", schema: {}, implementations: [implementation("feedback", { document: "about", created_at: "date", in_reply_to: "parent" })] };
+    const f = fixture([annotation, source, comments]);
+    f.rows.push({ path: "manuscripts/main.md", types: ["note"], frontmatter: {}, body: "Main" });
+    await Promise.all([f.backend.index(), f.backend.library(), f.backend.annotationPaths(), f.backend.comments(["manuscripts/main.md"])]);
+    const deltas: unknown[] = [];
+    f.backend.onCollectionChange((delta) => deltas.push(delta));
+    for (const [kind, type, fm] of [
+      ["note", "note", {}],
+      ["source", "reader-source", { csl: { id: "added", title: "Added" } }],
+      ["annotation", "highlight", { reading: "[[sources/a]]" }],
+      ["comment", "feedback", { about: "[[main]]", date: "2026-01-01" }],
+    ] as const) {
+      const row = { path: `records/${kind}.md`, types: [type] as string[], frontmatter: fm as JsonObject, body: "> Body" };
+      f.rows.push(row);
+      f.notify(row.path);
+      expect((await f.backend.flushChanges()).ok).toBe(true);
+      expect(await f.backend.index()).toMatchObject({ ok: true, value: { recordPaths: expect.arrayContaining([row.path]) } });
+      if (kind === "source") expect(await f.backend.library()).toMatchObject({ ok: true, value: expect.arrayContaining([expect.objectContaining({ key: "added", path: row.path })]) });
+      if (kind === "annotation") expect(await f.backend.annotationPaths()).toMatchObject({ ok: true, value: expect.arrayContaining([row.path]) });
+      if (kind === "comment") expect(await f.backend.comments(["manuscripts/main.md"])).toMatchObject({ ok: true, value: [expect.objectContaining({ path: row.path, text: "> Body" })] });
+      const old = row.path;
+      row.path = `records/${kind}-renamed.md`;
+      f.rename(old, row.path);
+      await f.backend.flushChanges();
+      const index = await f.backend.index();
+      expect(index.ok && index.value.recordPaths.includes(old)).toBe(false);
+      expect(index.ok && index.value.recordPaths.includes(row.path)).toBe(true);
+      if (kind === "source") expect(await f.backend.library()).toMatchObject({ ok: true, value: expect.arrayContaining([expect.objectContaining({ path: row.path })]) });
+      if (kind === "annotation") expect(await f.backend.annotationPaths()).toMatchObject({ ok: true, value: expect.arrayContaining([row.path]) });
+      if (kind === "comment") expect(await f.backend.comments(["manuscripts/main.md"])).toMatchObject({ ok: true, value: [expect.objectContaining({ path: row.path })] });
+      f.rows.splice(f.rows.indexOf(row), 1);
+      f.notify(row.path);
+      await f.backend.flushChanges();
+      const removed = await f.backend.index();
+      expect(removed.ok && removed.value.recordPaths.includes(row.path)).toBe(false);
+      if (kind === "source") { const result = await f.backend.library(); expect(result.ok && result.value.some((s) => s.key === "added")).toBe(false); }
+      if (kind === "annotation") { const result = await f.backend.annotationPaths(); expect(result.ok && result.value.includes(row.path)).toBe(false); }
+      if (kind === "comment") expect(await f.backend.comments(["manuscripts/main.md"])).toEqual({ ok: true, value: [] });
+    }
+    expect(f.changedQueries()).toHaveLength(12);
+    expect(deltas).toHaveLength(12);
+    const before = f.connection.queryPages.mock.calls.length;
+    await f.backend.reconcile();
+    expect(f.connection.queryPages.mock.calls.length).toBeGreaterThan(before);
+    expect(deltas.at(-1)).toMatchObject({ reset: true });
+    f.backend.dispose();
+  });
+
+  it("selects scoped comment bodies with relative/bare documents and replies, then adds a chapter", async () => {
+    const c = { ...commentContract, contractType: "record" as const, digest: "test", schema: {}, implementations: [implementation("feedback", { document: "about", created_at: "date", in_reply_to: "parent" })] };
+    const f = fixture([annotation, c]);
+    f.rows.push(
+      { path: "manuscripts/main.md", types: ["note"], frontmatter: {}, body: "Main" },
+      { path: "chapters/next.md", types: ["note"], frontmatter: {}, body: "Next" },
+      { path: "notes/elsewhere.md", types: ["note"], frontmatter: {}, body: "Other" },
+      { path: "comments/root.md", types: ["feedback"], frontmatter: { about: "[[../manuscripts/main]]", date: "2026-01-01" }, body: "Root body" },
+      { path: "comments/reply.md", types: ["feedback"], frontmatter: { about: "[[elsewhere]]", parent: "[[root]]", date: "2026-01-02" }, body: "Reply body" },
+      { path: "comments/chapter.md", types: ["feedback"], frontmatter: { about: "[[next]]", date: "2026-01-01" }, body: "Chapter body" },
+      { path: "comments/other.md", types: ["feedback"], frontmatter: { about: "[[elsewhere]]", date: "2026-01-01" }, body: "Other body" },
+    );
+    expect(await f.backend.comments(["manuscripts/main.md"])).toMatchObject({ ok: true, value: [expect.objectContaining({ path: "comments/root.md" }), expect.objectContaining({ path: "comments/reply.md" })] });
+    expect(f.bodyQueries().map((q) => q.where)).toEqual(['file.path in ["comments/root.md","comments/reply.md"]']);
+    const more = await f.backend.comments(["manuscripts/main.md", "chapters/next.md"]);
+    expect(more.ok && more.value.length).toBe(3);
+    expect(f.bodyQueries()[1]?.where).toBe('file.path in ["comments/chapter.md"]');
+    f.backend.dispose();
+  });
+
+  it("loads all scoped comments in bounded batches and handles a known note type transition", async () => {
+    const c = { ...commentContract, contractType: "record" as const, digest: "test", schema: {}, implementations: [implementation("feedback", { document: "about", created_at: "date" })] };
+    const f = fixture([annotation, c]);
+    const note = { path: "main.md", types: ["note"], frontmatter: {} as JsonObject, body: "Main" };
+    f.rows.push(note, ...Array.from({ length: 702 }, (_, i) => ({ path: `comments/${i}.md`, types: ["feedback"], frontmatter: { about: "[[main]]", date: "2026-01-01" }, body: `Comment ${i}` })));
+    const loaded = await f.backend.comments(["main.md"]);
+    expect(loaded.ok && loaded.value.length).toBe(702);
+    expect(f.bodyQueries()).toHaveLength(2);
+    expect(f.bodyQueries().every((q) => (JSON.parse(q.where!.replace(/^file\.path in /, "")) as string[]).length <= 500)).toBe(true);
+    await f.backend.annotationPaths();
+    note.types = ["highlight"]; note.frontmatter = { reading: "[[sources/a]]" };
+    f.notify(note.path); await f.backend.flushChanges();
+    expect(await f.backend.annotationPaths()).toMatchObject({ ok: true, value: expect.arrayContaining(["main.md"]) });
+    const index = await f.backend.index();
+    expect(index.ok && index.value.notePaths.includes("main.md")).toBe(false);
+    f.backend.dispose();
+  });
+
+  it("coalesces bursts, queues one follow-up and retains failed paths for retry", async () => {
+    const f = fixture();
+    await f.backend.index();
+    const original = f.connection.queryPages.getMockImplementation()!;
+    let release!: () => void;
+    let started!: () => void;
+    const entered = new Promise<void>((resolve) => { started = resolve; });
+    f.connection.queryPages.mockImplementationOnce(async function* (input) { started(); await new Promise<void>((resolve) => { release = resolve; }); yield* original(input); });
+    f.notify("annotations/a.md"); f.notify("annotations/b.md");
+    const first = f.backend.flushChanges();
+    await entered;
+    f.notify("annotations/c.md");
+    expect(f.backend.flushChanges()).toBe(first);
+    release();
+    await first;
+    expect(f.changedQueries()).toHaveLength(2);
+    f.connection.queryPages.mockImplementationOnce(async function* () { throw new Error("Transient metadata failure"); });
+    f.notify("annotations/a.md");
+    expect(await f.backend.flushChanges()).toMatchObject({ ok: false });
+    expect(await f.backend.flushChanges()).toMatchObject({ ok: true });
     f.backend.dispose();
   });
 
@@ -290,5 +420,13 @@ it("installed authority/SDK: unknown types are empty and typed path filters batc
     }
     expect(pages.map((r) => r.path).sort()).toEqual(paths.sort());
     expect(pages.map((r) => r.body)).toEqual([expect.stringContaining("Body not requested"), expect.stringContaining("Quoted filename")]);
+    const changed = await client.query({ where: `file.path in ${JSON.stringify(paths)}`, frontmatterMode: "both" });
+    expect(changed.ok).toBe(true);
+    if (changed.ok) {
+      expect(changed.value.results.map((r) => r.path).sort()).toEqual(paths.sort());
+      expect(changed.value.results[0]).toHaveProperty("frontmatter");
+      expect(changed.value.results[0]).toHaveProperty("effectiveFrontmatter");
+      expect(changed.value.results[0]).not.toHaveProperty("body");
+    }
   } finally { await collection?.close(); await rm(root, { recursive: true, force: true }); }
 });

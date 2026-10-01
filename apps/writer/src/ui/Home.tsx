@@ -24,6 +24,7 @@ const STYLE_OPTIONS = STYLES.map((s) => ({ value: s.id, label: s.title }));
 export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode }) {
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [backgroundProblem, setBackgroundProblem] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   const [recordPaths, setRecordPaths] = useState<readonly string[] | null>(null);
   const [summaries, setSummaries] = useState<ReadonlyMap<string, Pick<ManuscriptSummary, "words" | "embeds" | "chapters">>>(new Map());
@@ -39,21 +40,24 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   useEffect(() => {
     let live = true;
     setProblem(null);
-    void backend.listManuscripts().then((r) => {
+    setBackgroundProblem(null);
+    const pending = backend.flushChanges?.() ?? Promise.resolve();
+    void pending.then(() => backend.listManuscripts()).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
       else setProblem(r.message);
     }).catch((error: unknown) => { if (live) setProblem(errorMessage(error)); });
-    void backend.library().then((r) => {
+    void pending.then(() => backend.library()).then((r) => {
       if (!live) return;
       if (r.ok) setSources(r.value.length);
-      else setProblem(`Sources could not be loaded: ${r.message}`);
-    }).catch((error: unknown) => { if (live) setProblem(errorMessage(error)); });
-    void backend.index().then((r) => {
-      if (!live || !r.ok) return;
+      else setBackgroundProblem(`Sources could not be loaded: ${r.message}`);
+    }).catch((error: unknown) => { if (live) setBackgroundProblem(errorMessage(error)); });
+    void pending.then(() => backend.index()).then((r) => {
+      if (!live) return;
+      if (!r.ok) { setBackgroundProblem(`Index could not be loaded: ${r.message}`); return; }
       setNotes([...r.value.notePaths].sort());
       setRecordPaths(r.value.recordPaths);
-    }).catch((error: unknown) => { if (live) setProblem(errorMessage(error)); });
+    }).catch((error: unknown) => { if (live) setBackgroundProblem(errorMessage(error)); });
     return () => {
       live = false;
     };
@@ -61,17 +65,21 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const refresh = () => {
+    const refresh = (paths: readonly string[] = []) => {
+      for (const path of paths) bodyCache.current.delete(path);
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        bodyCache.current.clear();
-        setSummaries(new Map());
-        setReload((value) => value + 1);
-      }, 300);
+      timer = setTimeout(() => { setReload((value) => value + 1); }, 50);
     };
-    const stop = backend.onExternalChange(refresh);
-    window.addEventListener("focus", refresh);
-    return () => { stop(); clearTimeout(timer); window.removeEventListener("focus", refresh); };
+    const stop = backend.onCollectionChange
+      ? backend.onCollectionChange((delta) => {
+        if (delta.problem) { setBackgroundProblem(delta.problem); return; }
+        if (delta.reset) { bodyCache.current.clear(); setSummaries(new Map()); }
+        refresh(delta.paths);
+      })
+      : backend.onExternalChange(refresh);
+    const focus = () => { void backend.flushChanges?.().then(() => refresh()); };
+    window.addEventListener("focus", focus);
+    return () => { stop(); clearTimeout(timer); window.removeEventListener("focus", focus); };
   }, [backend]);
 
   const recordIndex = useMemo(() => new PathIndex(recordPaths ?? []), [recordPaths]);
@@ -96,7 +104,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       if (live) setSummaries((known) => new Map(known).set(m.path, { ...summary, words }));
     }).catch(() => { /* Counts are optional; failed body reads never hide a title. */ });
     return () => { live = false; };
-  }, [backend, manuscripts, recordPaths, recordIndex, visiblePaths, limitReads]);
+  }, [backend, manuscripts, recordPaths, recordIndex, visiblePaths, limitReads, reload]);
 
   const candidates = useMemo(() => {
     const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
@@ -135,6 +143,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
           </div>
           {manuscripts && manuscripts.length > 0 && newButton}
         </header>
+        {backgroundProblem && <p className="muted" role="alert">{backgroundProblem} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}>Retry background data</button></p>}
         {manuscripts === null && !problem && <p className="muted" role="status">Loading…</p>}
         {manuscripts?.length === 0 && (
           <div className="first-run">

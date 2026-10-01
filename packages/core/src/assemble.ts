@@ -105,7 +105,6 @@ interface Rendered {
 export class ManuscriptAssembler {
   private readonly translations = new Map<string, { body: string; at?: number; tr: TranslatedRecord }>();
   private readonly engines = new Map<string, Citeproc>();
-  private engineLibrary?: ReadonlyMap<string, CslItem>;
 
   /** Translates a record's body, or (with `at`) Markdown standing in for an embed at that offset. */
   private translate(path: string, body: string, at?: number): TranslatedRecord {
@@ -117,10 +116,6 @@ export class ManuscriptAssembler {
   }
 
   private engine(input: AssemblyInput, meta: ManuscriptMeta): Citeproc {
-    if (this.engineLibrary !== input.library) {
-      this.engines.clear();
-      this.engineLibrary = input.library;
-    }
     const styleXml = input.styles.get(meta.style) ?? input.texts?.get(meta.style) ?? "";
     const key = `${meta.style}\u0000${meta.locale}\u0000${meta.forceLocale}\u0000${styleXml.length}`;
     let engine = this.engines.get(key);
@@ -128,6 +123,7 @@ export class ManuscriptAssembler {
       engine = new Citeproc(styleXml, input.locales, input.library, meta.locale, meta.forceLocale);
       this.engines.set(key, engine);
     }
+    engine.updateLibrary(input.library);
     return engine;
   }
 

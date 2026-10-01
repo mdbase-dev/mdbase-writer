@@ -290,6 +290,27 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
     case "library":
       library = new Map(message.library.map((i) => [i.id, i]));
       break;
+    case "library-delta":
+      library = new Map(library);
+      for (const key of message.remove) library.delete(key);
+      for (const item of message.upsert) library.set(item.id, item);
+      break;
+    case "collection-delta": {
+      const records = new Set(recordPaths), files = new Set(filePaths);
+      for (const path of message.recordRemove) records.delete(path);
+      for (const path of message.recordUpsert) records.add(path);
+      for (const path of message.fileRemove) files.delete(path);
+      for (const path of message.fileUpsert) files.add(path);
+      recordPaths = new PathIndex(records); filePaths = new PathIndex(files);
+      break;
+    }
+    case "quotations-delta":
+      for (const path of message.annotationRemove) annotationPaths.delete(path);
+      for (const path of message.annotationUpsert) annotationPaths.add(path);
+      sourceKeys = new Map(sourceKeys);
+      for (const path of message.sourceRemove) sourceKeys.delete(path);
+      for (const [path, key] of message.sourceUpsert) sourceKeys.set(path, key);
+      break;
     case "collection":
       recordPaths = new PathIndex(message.recordPaths);
       filePaths = new PathIndex(message.filePaths);

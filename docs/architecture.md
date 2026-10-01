@@ -80,11 +80,13 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   output format. When one cluster is inserted or changed it uses
   `processCitationCluster` instead of re-running the document; a property test
   checks this equals a full rebuild after every edit. Unchanged sequences are
-  cached, so typing never touches citeproc.
+  cached, so typing never touches citeproc. Library deltas retain style engines;
+  only a change to previously cited CSL items rebuilds the affected engine.
 - **The worker** (`app/compile/worker.ts`) coalesces edits (it yields to the
   message queue before each compile), pushes only changed Typst files, maps
   Typst diagnostics back to records, and queries block positions for
-  click-to-source.
+  click-to-source. Initial library/path snapshots are followed by upsert/remove
+  deltas (including quotation identities/source keys), not repeated unchanged lists.
 - **Recovery** (`app/workspace`) opens chapters independently of the compiler.
   Checked, time-bounded downloads, bounded asset retries and compiler/renderer
   retry controls keep writing available after preview failures; stale pages are
@@ -116,14 +118,22 @@ canvas preview  ◀──── artifact ────────  raw-block iso
 - **Path resolution** uses immutable collection-generation indexes: exact paths,
   then relative paths, then a unique case-insensitive basename. Comment membership
   is cached by comments/index identity; only changed manuscript bodies are
-  re-anchored. Source annotations are cached per source. Watch changes to known
-  annotations refresh only those entries and their old/new source buckets; known
-  non-annotation changes/autosave echoes leave the cache intact. Unknown paths,
-  schema changes and watch gaps reconcile conservatively. Metadata grouping
-  handles relative, bare and aliased source links.
+  re-anchored. Comment metadata resolves manuscript targets against the complete
+  collection index; only relevant bodies/replies are fetched in bounded typed
+  path-list queries. Scope expands as nested chapters open. Source annotations
+  remain cached per source. Watch paths (including both rename endpoints) coalesce
+  for 50 ms into bounded no-body queries, update cached index/library/manuscript/
+  annotation/comment entries and publish changed domains. One incremental job runs
+  at a time, draining queued follow-ups. Annotation changes invalidate their old/new
+  source buckets; non-annotation changes preserve those caches. Only explicit retry,
+  schema/type changes and reset/gap events reconcile the full collection. Binary
+  events enumerate affected folders because the SDK has no exact file-stat API.
 - **Home** lists manuscript metadata before reading bodies. Visible manuscripts
-  get bounded background counts with a shared body cache; refresh and retry
-  controls invalidate stale counts.
+  get bounded background counts. The backend's lazy collection-scoped cache shares
+  discovery and body reads across Home/workspace/navigation/focus, evicts failures
+  and invalidates changed entries. Background index/source errors do not replace
+  manuscript-list errors; a separate retry reconciles background data. Watch updates
+  invalidate only affected cached bodies and recompute visible counts.
 - **Settings problems.** A diagnostic about the frontmatter carries its
   `field`; Typst errors in the generated main file are mapped to the setting
   written on that line, and errors in a template to `template`.
