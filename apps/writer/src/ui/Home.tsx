@@ -239,7 +239,7 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
                 setTitle(e.target.value);
                 setUntitled(false);
               }}
-              placeholder="On the limits of the possible"
+              placeholder="On the formation of coral reefs"
               aria-invalid={untitled || undefined}
               aria-describedby={untitled ? "new-title-problem" : undefined}
               autoFocus

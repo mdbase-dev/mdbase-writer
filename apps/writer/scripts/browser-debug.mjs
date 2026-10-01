@@ -1,7 +1,7 @@
 // Opens a writer URL in headless Chromium, prints console output and takes a screenshot.
 import { chromium } from "playwright";
 const [url = "http://127.0.0.1:5320/?demo", shot = "out/debug.png", wait = "8000"] = process.argv.slice(2);
-const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
+const browser = await chromium.launch({ executablePath: process.env.CHROME });
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
 page.on("console", (m) => { if (!/vite|React DevTools|deprecated/.test(m.text())) console.log("console", m.type(), m.text().slice(0, 300)); });
 page.on("pageerror", (e) => console.log("pageerror", String(e).slice(0, 600)));

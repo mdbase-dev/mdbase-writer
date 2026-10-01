@@ -34,7 +34,7 @@ export function yearOf(entry: LibraryEntry): string | undefined {
   return year === undefined ? undefined : String(year);
 }
 
-/** The title up to its subtitle, shortened to about `max` characters: "Potentialities". */
+/** The title up to its subtitle, shortened to about `max` characters: "Charles Darwin". */
 export function shortTitle(title: string, max = 40): string {
   const main = title.split(/[:.?!]\s/)[0]?.trim() ?? title;
   if (main.length <= max) return main;
@@ -42,7 +42,7 @@ export function shortTitle(title: string, max = 40): string {
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max / 2)).replace(/[\s,;]+$/, "")}…`;
 }
 
-/** "Agamben, 1999" or "Agamben et al., 1999". */
+/** "Darwin, 1881" or "Darwin et al., 1881". */
 export function authorYear(entry: LibraryEntry): string {
   const author = (entry.item["author"] ?? entry.item["editor"]) as { family?: string; literal?: string }[] | undefined;
   const first = author?.[0];
@@ -52,13 +52,13 @@ export function authorYear(entry: LibraryEntry): string {
 
 /**
  * Sources matching every word of the query (in the key, names, title,
- * container or year), citekey prefixes first. "agamben 1999", "bartleby",
- * "badiouBe" all work. Among equally good matches, `preferred` keys (the
+ * container or year), citekey prefixes first. "darwin 1881", "selborne",
+ * "darwinFo" all work. Among equally good matches, `preferred` keys (the
  * sources a manuscript already cites) come first.
  */
 export function searchLibrary(library: readonly LibraryEntry[], query: string, limit = 50, preferred?: { has(key: string): boolean }): LibraryEntry[] {
   const prefer = (e: LibraryEntry) => (preferred?.has(e.key) ? 1 : 0);
-  // A citekey-shaped query also splits where letters meet digits ("agamben99").
+  // A citekey-shaped query also splits where letters meet digits ("darwin81").
   const words = fold(query)
     .split(/[\s,;]+|(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u)
     .filter(Boolean);

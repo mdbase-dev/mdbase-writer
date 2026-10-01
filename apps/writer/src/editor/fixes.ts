@@ -46,7 +46,7 @@ export function suggestionsFor(unknown: NonNullable<WriterDiagnostic["unknown"]>
     return [...close.filter((l) => l.startsWith(`${prefix}-`)), ...close.filter((l) => !l.startsWith(`${prefix}-`))].slice(0, MAX_SUGGESTIONS);
   }
   const library = [...insight.library.values()];
-  // A misspelt key, or one that finds a source by author, year or title ("agamben99").
+  // A misspelt key, or one that finds a source by author, year or title ("darwin81").
   const found = [...nearest(unknown.key, insight.library.keys()), ...searchLibrary(library, unknown.key, MAX_SUGGESTIONS).map((e) => e.key)];
   return [...new Set(found)].slice(0, MAX_SUGGESTIONS);
 }

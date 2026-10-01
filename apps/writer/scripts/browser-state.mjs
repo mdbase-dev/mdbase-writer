@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 const [url, wait = "10000"] = process.argv.slice(2);
-const browser = await chromium.launch({ executablePath: "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
+const browser = await chromium.launch({ executablePath: process.env.CHROME });
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
 page.on("pageerror", (e) => console.log("pageerror", String(e).slice(0, 600)));
 page.on("requestfailed", (r) => console.log("requestfailed", r.url(), r.failure()?.errorText));
