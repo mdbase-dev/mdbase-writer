@@ -131,8 +131,11 @@ export function commentThreads(comments: readonly CommentRecord[]): CommentThrea
   const roots: CommentRecord[] = [];
   for (const c of comments) {
     const root = rootOf(c);
-    if (root && !root.inReplyTo) replies.set(root, [...(replies.get(root) ?? []), c]);
-    else roots.push(c);
+    if (root && !root.inReplyTo) {
+      let thread = replies.get(root);
+      if (!thread) { thread = []; replies.set(root, thread); }
+      thread.push(c);
+    } else roots.push(c);
   }
   const byTime = (a: CommentRecord, b: CommentRecord) => a.createdAt.localeCompare(b.createdAt) || a.path.localeCompare(b.path);
   return roots.sort(byTime).map((root) => ({ root, replies: (replies.get(root) ?? []).sort(byTime) }));

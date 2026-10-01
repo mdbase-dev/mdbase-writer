@@ -33,6 +33,89 @@ const format = async (page, name) => {
   await page.getByRole("menuitem", { name, exact: true }).click();
 };
 try {
+  await scenario("editing opens before slow collection enumeration and export waits", async (page) => {
+    await page.goto(`${base}?demo`);
+    await page.locator(".manuscript-row").first().waitFor();
+    await page.evaluate(async () => {
+      const backend = window.writer.backend;
+      const [index, library] = await Promise.all([backend.index(), backend.library()]);
+      backend.index = () => new Promise((resolve) => { window.finishIndex = () => resolve(index); });
+      backend.library = () => new Promise((resolve) => { window.finishLibrary = () => resolve(library); });
+    });
+    await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
+    await page.locator(".cm-content").waitFor();
+    await page.getByText("Dependencies not checked").waitFor();
+    const loading = await page.evaluate(() => {
+      const w = window.writer.workspace, snap = w.getSnapshot();
+      w.setBody(w.main, snap.records.get(w.main).snapshot.body + "\n\nWriting while discovery waits.");
+      window.exportSettled = false;
+      window.exportJob = w.exportBundle().then(() => { window.exportSettled = true; });
+      return [snap.indexLoad.phase, snap.libraryLoad.phase, w.dependencyDiagnostics()];
+    });
+    assert.deepEqual(loading, ["loading", "loading", []]);
+    await page.waitForTimeout(100);
+    assert.equal(await page.evaluate(() => window.exportSettled), false);
+    assert.match(await body(page, main), /Writing while discovery waits/);
+    await page.evaluate(() => { window.finishIndex(); window.finishLibrary(); });
+    await page.evaluate(() => window.exportJob);
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.has("chapters/event.md"));
+  });
+
+  await scenario("preview starts while annotation discovery is held", async (page) => {
+    await page.goto(`${base}?demo`);
+    await page.locator(".manuscript-row").first().waitFor();
+    await page.evaluate(() => {
+      const backend = window.writer.backend, original = backend.annotationPaths.bind(backend);
+      backend.annotationPaths = () => new Promise((resolve) => { window.finishAnnotations = () => original().then(resolve); });
+    });
+    await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
+    await painted(page);
+    assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().annotationsLoad.phase), "loading");
+    await page.evaluate(() => window.finishAnnotations());
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().annotationsLoad.phase === "ready");
+  });
+
+  await scenario("annotation discovery failures leave preview and warned exports available", async (page) => {
+    await page.goto(`${base}?demo`);
+    await page.locator(".manuscript-row").first().waitFor();
+    await page.evaluate(() => {
+      const backend = window.writer.backend, original = backend.annotationPaths.bind(backend);
+      let attempts = 0;
+      backend.annotationPaths = () => attempts++ === 0 ? Promise.reject(new Error("Temporary annotation discovery failure")) : original();
+    });
+    await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
+    await painted(page);
+    assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().annotationsLoad.phase), "failed");
+    const problems = await page.evaluate(async () => (await window.writer.workspace.exportBundle()).problems);
+    assert.ok(problems.some((p) => p.includes("Temporary annotation discovery failure")));
+    await page.getByRole("button", { name: "Retry loading" }).click();
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().annotationsLoad.phase === "ready");
+  });
+
+  await scenario("source annotations reject visibly, retry and invalidate while expanded", async (page) => {
+    await open(page); await painted(page);
+    await page.evaluate(() => {
+      const backend = window.writer.backend, original = backend.annotationsForSource.bind(backend);
+      let attempts = 0;
+      backend.annotationsForSource = async (path) => {
+        if (attempts++ === 0) throw new Error("Temporary highlight read failure");
+        return original(path);
+      };
+    });
+    await page.getByRole("tab", { name: /Sources/ }).click();
+    await page.locator(".sources input[type=search]").fill("potentialities");
+    await page.locator(".source-row", { hasText: "Potentialities" }).click();
+    await page.getByRole("button", { name: "Retry annotations" }).waitFor();
+    await page.getByRole("button", { name: "Retry annotations" }).click();
+    await page.locator(".annotations blockquote", { hasText: "To be potential means" }).waitFor();
+    await page.evaluate(() => window.writer.backend.authority.editElsewhere("annotations/agamben-potentiality-lack.md", { body: "> Changed Reader quotation\n" }));
+    await page.locator(".annotations blockquote", { hasText: "Changed Reader quotation" }).waitFor();
+    assert.equal(await page.locator(".annotations blockquote", { hasText: "To be potential means" }).count(), 0);
+  });
+
   await scenario("chapter switching retains undo redo selection and scroll", async (page) => {
     await open(page); await painted(page);
     const chapter = "chapters/event.md";

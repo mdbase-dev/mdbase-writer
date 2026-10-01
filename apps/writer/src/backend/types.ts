@@ -84,8 +84,12 @@ export interface WriterBackend {
   createRecord(path: string, body: string): Promise<Result<string>>;
   index(): Promise<Result<CollectionIndex>>;
   library(): Promise<Result<LibraryEntry[]>>;
-  /** Reader annotations in the collection (records implementing dev.mdbase.reader.annotation). */
-  annotations(): Promise<Result<SourceAnnotation[]>>;
+  /** Annotation identity discovery, without reading any bodies. */
+  annotationPaths(): Promise<Result<readonly string[]>>;
+  /** Discovered mappings for embedded annotation sessions (whose bodies stay lazy). */
+  annotationFields?(path: string, types?: readonly string[]): Readonly<Record<string, string>>;
+  /** Only this source's Reader annotations (including relative and bare source links). */
+  annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>>;
   readFile(path: string): Promise<Result<Uint8Array>>;
   /** A Markdown record's body, read once (no record session). */
   readBody(path: string): Promise<Result<string>>;
@@ -98,7 +102,7 @@ export interface WriterBackend {
   people(options?: { fresh?: boolean }): Promise<People>;
   /** Asks Connect to approve Writer again, so the account can allow its identity to be seen. */
   reviewIdentityAccess?(): Promise<Result<void>>;
-  /** Paths changed by other applications or views (for refreshing the index and library). */
+  /** Changed paths; an empty list requests reconciliation after a watch gap or schema change. */
   onExternalChange(listener: (paths: readonly string[]) => void): () => void;
   dispose(): void;
 }

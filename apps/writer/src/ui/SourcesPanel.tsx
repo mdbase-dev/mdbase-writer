@@ -52,13 +52,17 @@ export function SourcesPanel({
   sourceHref,
   canInsert,
   request,
+  annotationVersion = 0,
+  loading = false,
 }: {
+  annotationVersion?: number;
+  loading?: boolean;
   library: readonly LibraryEntry[];
   /** How often the manuscript cites each source, in the order of first citation. */
   cited: ReadonlyMap<string, number>;
   /** The source cited under the editor's cursor. */
   atCursor?: string | null;
-  loadAnnotations(): Promise<Result<SourceAnnotation[]>>;
+  loadAnnotations(path: string): Promise<Result<SourceAnnotation[]>>;
   onInsert(text: string): void;
   /** Moves the editor to the next (1) or previous (-1) citation of a source. */
   onStepCitation(key: string, direction: 1 | -1): void;
@@ -70,8 +74,8 @@ export function SourcesPanel({
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [allLibrary, setAllLibrary] = useState(false);
-  const [annotations, setAnnotations] = useState<SourceAnnotation[] | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
+  const [highlights, setHighlights] = useState<{ path: string; version: number; value?: SourceAnnotation[]; problem?: string } | null>(null);
+  const [retry, setRetry] = useState(0);
   const search = useRef<HTMLInputElement>(null);
   const panel = useRef<HTMLElement>(null);
 
@@ -106,22 +110,22 @@ export function SourcesPanel({
     if (atCursor) rowFor(atCursor)?.scrollIntoView({ block: "nearest" });
   }, [atCursor]);
 
-  // Annotations load the first time a source is opened.
+  const sourcePath = open ? byKey.get(open)?.path : undefined;
+  const currentHighlights = highlights && highlights.path === sourcePath && highlights.version === annotationVersion ? highlights : null;
+  const annotations = currentHighlights?.value ?? null;
+  const problem = currentHighlights?.problem ?? null;
+  // Only the expanded source needs bodies. A late response cannot replace another source.
   useEffect(() => {
-    if (!open || annotations) return;
+    if (!sourcePath) return;
     let live = true;
-    void loadAnnotations().then((r) => {
-      if (!live) return;
-      if (r.ok) setAnnotations(r.value);
-      else {
-        setAnnotations([]);
-        setProblem(r.message);
-      }
+    setHighlights(null);
+    void loadAnnotations(sourcePath).then((r) => {
+      if (live) setHighlights({ path: sourcePath, version: annotationVersion, ...(r.ok ? { value: r.value } : { problem: r.message }) });
+    }).catch((error: unknown) => {
+      if (live) setHighlights({ path: sourcePath, version: annotationVersion, problem: error instanceof Error ? error.message : String(error) });
     });
-    return () => {
-      live = false;
-    };
-  }, [open, annotations, loadAnnotations]);
+    return () => { live = false; };
+  }, [sourcePath, annotationVersion, retry, loadAnnotations]);
 
   // Arrow keys (and j/k) move between sources; Enter cites; → and ← open and close.
   const onListKey = (e: KeyboardEvent<HTMLElement>) => {
@@ -149,7 +153,7 @@ export function SourcesPanel({
     return (
       <section className="sources" aria-label="Sources">
         <p className="muted small">
-          No sources in this collection yet. Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.
+          {loading ? "Loading sources…" : "No sources in this collection yet."} Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.
           {readerSourceHref() && <> <a href={readerSourceHref()} target="_blank" rel="noopener">Open Reader to add a source</a>.</>}
         </p>
       </section>
@@ -166,6 +170,7 @@ export function SourcesPanel({
       onToggle={() => setOpen(open === entry.key ? null : entry.key)}
       annotations={annotations}
       problem={problem}
+      onRetry={() => setRetry((n) => n + 1)}
       canInsert={canInsert}
       onInsert={onInsert}
       onStep={(direction) => onStepCitation(entry.key, direction)}
@@ -231,6 +236,7 @@ function SourceRow({
   onToggle,
   annotations,
   problem,
+  onRetry,
   canInsert,
   onInsert,
   onStep,
@@ -243,6 +249,7 @@ function SourceRow({
   onToggle(): void;
   annotations: SourceAnnotation[] | null;
   problem: string | null;
+  onRetry(): void;
   canInsert: boolean;
   onInsert(text: string): void;
   onStep(direction: 1 | -1): void;
@@ -256,7 +263,7 @@ function SourceRow({
     return () => clearTimeout(t);
   }, [copied]);
   // Reader links a source by its path; a bare file name also matches.
-  const notes = expanded ? (annotations ?? []).filter((a) => a.source === entry.path || entry.path.endsWith(`/${a.source}`)) : [];
+  const notes = expanded ? annotations ?? [] : [];
   const detail = `source-${entry.key}`;
 
   return (
@@ -323,8 +330,9 @@ function SourceRow({
               )}
             </span>
           </div>
-          {annotations === null && <p className="muted small" role="status">Loading annotations…</p>}
-          {problem && <p className="muted small">Annotations unavailable: {problem}</p>}
+          {annotations === null && !problem && <p className="muted small" role="status">Loading annotations…</p>}
+          {problem && <p className="muted small" role="alert">Annotations unavailable: {problem} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></p>}
+          {annotations?.length === 0 && <p className="muted small">No annotations on this source.</p>}
           {notes.length > 0 && (
             <ul className="annotations" aria-label="Highlights from Reader">
               {notes.map((a) => (

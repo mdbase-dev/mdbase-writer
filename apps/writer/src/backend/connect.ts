@@ -1,6 +1,8 @@
 // The writer on a real collection through mdbase connect.
 import { PERSON_CONTRACT, type CollectionFileDescriptor, type JsonObject, type MdbaseConnection } from "@mdbase-dev/connect";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { annotationSourceLink } from "@mdbase-writer/core/annotations";
+import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { errorMessage } from "../async.js";
 
 import {
@@ -48,6 +50,13 @@ interface ImplementingType {
   readonly typeKey: string;
 }
 
+interface AnnotationMetadata {
+  readonly path: string;
+  readonly type: string;
+  readonly source: string;
+  readonly fields: Readonly<Record<string, string>>;
+}
+
 const problemMessage = (outcome: { ok: false; problem: { message?: string; code: string } }) => outcome.problem.message ?? outcome.problem.code;
 
 export class ConnectBackend implements WriterBackend {
@@ -57,6 +66,43 @@ export class ConnectBackend implements WriterBackend {
   private readonly staleFiles = new Set<string>();
   private readonly lifetime = new AbortController();
   private stopFollowing: (() => void) | undefined;
+  private description: ReturnType<MdbaseConnection<JsonObject>["describe"]> | undefined;
+  private schemaPaths: ReadonlySet<string> = new Set(["mdbase.yaml"]);
+  private schemaFolders: readonly string[] = ["_types", "_contracts"];
+  private annotationIndex: Promise<Result<Map<string, AnnotationMetadata>>> | undefined;
+  private annotationRefresh: Promise<Result<Map<string, AnnotationMetadata>>> | undefined;
+  private readonly dirtyAnnotations = new Set<string>();
+  private annotationRows = new Map<string, AnnotationMetadata>();
+  private annotationTypes: ImplementingType[] = [];
+  private readonly knownPaths = new Set<string>();
+  private readonly annotationSources = new Map<string, Promise<Result<SourceAnnotation[]>>>();
+  private sourcePaths = new PathIndex([]);
+  private libraryGeneration = 0;
+  private annotationGroups: { metadata: Map<string, AnnotationMetadata>; sources: PathIndex; groups: Map<string, Map<string, AnnotationMetadata>> } | undefined;
+
+  annotationFields(path: string, types: readonly string[] = []): Readonly<Record<string, string>> {
+    return this.annotationRows.get(path)?.fields ?? this.annotationTypes.find((t) => types.includes(t.name))?.fields ?? {};
+  }
+
+  private invalidateAnnotations(): void {
+    this.annotationIndex = undefined;
+    this.annotationRefresh = undefined;
+    this.dirtyAnnotations.clear();
+    this.annotationSources.clear();
+    this.annotationGroups = undefined;
+  }
+
+  private describe(): ReturnType<MdbaseConnection<JsonObject>["describe"]> {
+    return this.description ??= this.connection.describe().then((out) => {
+      if (!out.ok) this.description = undefined;
+      else {
+        this.schemaPaths = new Set(["mdbase.yaml", ...out.value.types.flatMap((t) => t.path ? [t.path] : []), ...out.value.contracts.flatMap((c) => c.implementations.flatMap((i) => i.typePath ? [i.typePath] : []))]);
+        const settings = out.value.configuration?.["settings"] as JsonObject | undefined;
+        this.schemaFolders = [settings?.["types_folder"] ?? "_types", settings?.["contracts_folder"] ?? "_contracts"].filter((p): p is string => typeof p === "string" && !!p).map((p) => p.replace(/^\.\//, "").replace(/\/+$/, ""));
+      }
+      return out;
+    }).catch((error: unknown) => { this.description = undefined; throw error; });
+  }
 
   constructor(
     private readonly connection: MdbaseConnection<JsonObject>,
@@ -79,7 +125,11 @@ export class ConnectBackend implements WriterBackend {
   }
 
   get records() {
-    return this.connection.records;
+    return { open: async (...args: Parameters<MdbaseConnection<JsonObject>["records"]["open"]>) => {
+      const opened = await this.connection.records.open(...args);
+      if (opened.ok) this.knownPaths.add(args[0]);
+      return opened;
+    } };
   }
 
   private async startWatch(): Promise<void> {
@@ -88,13 +138,28 @@ export class ConnectBackend implements WriterBackend {
     this.stopFollowing = this.connection.records.follow(watch.value);
     watch.value.subscribe(
       (change) => {
-        const path = (change.payload as { path?: string } | undefined)?.path;
-        if (path) {
-          if (this.files.has(path)) this.staleFiles.add(path);
-          for (const l of this.listeners) l([path]);
+        const paths = [...new Set([change.payload["path"], change.payload["from"], change.payload["to"]].filter((p): p is string => typeof p === "string"))];
+        const schemaChanged = /type|contract|configuration/.test(change.type) || paths.some((p) => this.schemaPaths.has(p) || this.schemaFolders.some((folder) => p.startsWith(`${folder}/`)));
+        if (schemaChanged) this.description = undefined;
+        if (schemaChanged || paths.some((p) => !this.knownPaths.has(p) && !this.annotationRows.has(p))) this.invalidateAnnotations();
+        else for (const path of paths) {
+          const annotation = this.annotationRows.get(path);
+          if (!annotation) continue;
+          this.dirtyAnnotations.add(path);
+          const source = resolveLinkTarget(annotation.source, path, this.sourcePaths);
+          if (source) this.annotationSources.delete(source);
         }
+        if (/deleted/.test(change.type)) for (const path of paths) this.knownPaths.delete(path);
+        if (/renamed/.test(change.type) && typeof change.payload["from"] === "string") this.knownPaths.delete(change.payload["from"]);
+        for (const path of paths) if (this.files.has(path)) this.staleFiles.add(path);
+        if (paths.length || schemaChanged) for (const l of this.listeners) l(schemaChanged ? [] : paths);
       },
-      () => {},
+      (status) => {
+        if (status.state !== "reset_required") return;
+        this.description = undefined;
+        this.invalidateAnnotations();
+        for (const l of this.listeners) l([]);
+      },
       () => {},
     );
   }
@@ -129,7 +194,7 @@ export class ConnectBackend implements WriterBackend {
 
   /** The collection's types implementing a contract (the first is the one to create with). */
   private async implementingTypes(contractId: string, what: string): Promise<Result<ImplementingType[]>> {
-    const described = await this.connection.describe();
+    const described = await this.describe();
     if (!described.ok) return fail(problemMessage(described));
     const implementations = described.value.contracts.find((c) => c.id === contractId)?.implementations ?? [];
     if (!implementations.length) return fail(`This collection has no type for ${what}. Set it up again from mdbase connect.`);
@@ -151,6 +216,7 @@ export class ConnectBackend implements WriterBackend {
       for (const r of page.value.results) {
         const type = r.types.map((t) => byName.get(t)).find(Boolean);
         if (!type) continue;
+        this.knownPaths.add(r.path);
         const comment = commentFromRecord(r.path, toContract(r.frontmatter ?? {}, type.fields), r.body ?? "");
         if (comment) out.push(comment);
       }
@@ -272,9 +338,9 @@ export class ConnectBackend implements WriterBackend {
   }
 
   async index(): Promise<Result<CollectionIndex>> {
-    // Records of these contracts' types are not notes (Reader's starter annotation type is named as a fallback, as in annotations()).
+    // Records of these contracts' types are not notes (Reader's starter annotation type is named as a fallback, when the contract is absent).
     const notNotes = new Set(["reader-annotation"]);
-    const described = await this.connection.describe();
+    const described = await this.describe();
     const contracts = new Set<string>([commentContract.id, PERSON_CONTRACT.id, sourceContract.id, annotationContract.id]);
     if (described.ok) for (const c of described.value.contracts) if (contracts.has(c.id)) for (const i of c.implementations) notNotes.add(i.typeName);
     const recordPaths: string[] = [];
@@ -283,12 +349,13 @@ export class ConnectBackend implements WriterBackend {
       if (!page.ok) return fail(problemMessage(page));
       for (const r of page.value.results) {
         recordPaths.push(r.path);
+        this.knownPaths.add(r.path);
         if (r.path.toLowerCase().endsWith(".md") && !r.types.some((t) => notNotes.has(t))) notePaths.push(r.path);
       }
     }
     this.files.clear();
     try {
-      for await (const file of this.connection.files.list()) this.files.set(file.path, file);
+      for await (const file of this.connection.files.list()) { this.files.set(file.path, file); this.knownPaths.add(file.path); }
     } catch (e) {
       return fail(e instanceof Error ? e.message : String(e));
     }
@@ -296,33 +363,176 @@ export class ConnectBackend implements WriterBackend {
   }
 
   async library(): Promise<Result<LibraryEntry[]>> {
+    const generation = ++this.libraryGeneration;
+    const described = await this.describe();
+    if (!described.ok) return fail(problemMessage(described));
+    const contract = described.value.contracts.some((c) => c.id === sourceContract.id);
+    const starter = described.value.types.some((t) => t.name === "reader-source");
+    if (!contract && !starter) {
+      if (generation === this.libraryGeneration && this.sourcePaths.size) {
+        this.sourcePaths = new PathIndex([]);
+        this.annotationGroups = undefined;
+        this.annotationSources.clear();
+      }
+      return ok([]);
+    }
     const entries: LibraryEntry[] = [];
-    for await (const page of this.connection.queryPages({ contract: sourceContract, frontmatterMode: "effective" }, { pageSize: 1_000 })) {
+    for await (const page of this.connection.queryPages({ ...(contract ? { contract: sourceContract } : { types: ["reader-source"] }), frontmatterMode: "effective" },  { pageSize: 1_000 })) {
       if (!page.ok) return fail(problemMessage(page));
       for (const r of page.value.results) {
+        this.knownPaths.add(r.path);
         const entry = libraryEntry(r.path, r.effectiveFrontmatter ?? r.frontmatter);
         if (entry) entries.push(entry);
       }
     }
+    if (generation === this.libraryGeneration && (entries.length !== this.sourcePaths.size || entries.some((e) => !this.sourcePaths.has(e.path)))) {
+      this.sourcePaths = new PathIndex(entries.map((e) => e.path));
+      this.annotationGroups = undefined;
+      this.annotationSources.clear();
+    }
     return ok(entries);
   }
 
-  async annotations(): Promise<Result<SourceAnnotation[]>> {
-    // The writer does not provision Reader's annotation contract; where Reader
-    // has, query through it, else by Reader's starter type name.
-    const collect = async (query: Parameters<MdbaseConnection<JsonObject>["queryPages"]>[0]): Promise<Result<SourceAnnotation[]>> => {
-      const out: SourceAnnotation[] = [];
-      for await (const page of this.connection.queryPages(query, { pageSize: 500 })) {
+  private annotationMetadata(): Promise<Result<Map<string, AnnotationMetadata>>> {
+    if (!this.annotationIndex) {
+      const job = this.loadAnnotationMetadata();
+      this.annotationIndex = job;
+      void job.then((out) => {
+        if (this.annotationIndex !== job) return;
+        if (out.ok) {
+          this.annotationRows = out.value;
+          for (const path of out.value.keys()) this.knownPaths.add(path);
+        } else this.annotationIndex = undefined;
+      }, () => { if (this.annotationIndex === job) this.annotationIndex = undefined; });
+    }
+    if (!this.dirtyAnnotations.size) return this.annotationRefresh ?? this.annotationIndex;
+    if (!this.annotationRefresh) {
+      const job = this.refreshAnnotationMetadata(this.annotationIndex);
+      this.annotationRefresh = job;
+      const clear = () => { if (this.annotationRefresh === job) this.annotationRefresh = undefined; };
+      void job.then(clear, clear);
+    }
+    return this.annotationRefresh;
+  }
+
+  private async loadAnnotationMetadata(): Promise<Result<Map<string, AnnotationMetadata>>> {
+    const described = await this.describe();
+    if (!described.ok) return fail(problemMessage(described));
+    // Unknown types query as empty in the SDK, but don't issue a needless probe.
+    const contract = described.value.contracts.find((c) => c.id === annotationContract.id);
+    const starter = described.value.types.some((t) => t.name === "reader-annotation");
+    const types = contract ? await this.implementingTypes(annotationContract.id, "annotations") : ok(starter ? [{ name: "reader-annotation", fields: { source: "source", locator: "locator" }, typeKey: "type" }] : []);
+    if (!types.ok) return types;
+    this.annotationTypes = types.value;
+    return this.queryAnnotationMetadata();
+  }
+
+  private async queryAnnotationMetadata(paths?: readonly string[]): Promise<Result<Map<string, AnnotationMetadata>>> {
+    const out = new Map<string, AnnotationMetadata>();
+    for (const type of this.annotationTypes) {
+      // select is additive (values), not a projection of frontmatter in the SDK/authority.
+      for await (const page of this.connection.queryPages({ types: [type.name], frontmatterMode: "persisted", ...(paths ? { where: `file.path in ${JSON.stringify(paths)}` } : {}) }, { pageSize: 1_000 })) {
         if (!page.ok) return fail(problemMessage(page));
         for (const r of page.value.results) {
-          const a = sourceAnnotation(r.path, r.effectiveFrontmatter ?? r.frontmatter, r.body ?? "");
-          if (a) out.push(a);
+          const source = toContract(r.frontmatter ?? {}, type.fields)["source"];
+          if (!out.has(r.path)) out.set(r.path, { path: r.path, type: type.name, source: typeof source === "string" ? annotationSourceLink(source) ?? "" : "", fields: type.fields });
         }
       }
-      return ok(out);
-    };
-    const byContract = await collect({ contract: annotationContract, frontmatterMode: "effective", includeBody: true });
-    return byContract.ok ? byContract : collect({ types: ["reader-annotation"], frontmatterMode: "persisted", includeBody: true });
+    }
+    return ok(out);
+  }
+
+  private async refreshAnnotationMetadata(base: Promise<Result<Map<string, AnnotationMetadata>>>): Promise<Result<Map<string, AnnotationMetadata>>> {
+    const index = await base;
+    if (!index.ok) return index;
+    while (this.dirtyAnnotations.size && base === this.annotationIndex) {
+      const paths = [...this.dirtyAnnotations].slice(0, 500);
+      for (const path of paths) this.dirtyAnnotations.delete(path);
+      let updated: Result<Map<string, AnnotationMetadata>>;
+      try { updated = await this.queryAnnotationMetadata(paths); }
+      catch (error) { for (const path of paths) this.dirtyAnnotations.add(path); throw error; }
+      if (!updated.ok) { for (const path of paths) this.dirtyAnnotations.add(path); return updated; }
+      if (base !== this.annotationIndex) break;
+      for (const path of paths) {
+        const previous = index.value.get(path), next = updated.value.get(path);
+        for (const [entry, remove] of [[previous, true], [next, false]] as const) {
+          if (!entry) continue;
+          const source = resolveLinkTarget(entry.source, path, this.sourcePaths);
+          if (!source) continue;
+          this.annotationSources.delete(source);
+          if (this.annotationGroups?.metadata !== index.value) continue;
+          const groups = this.annotationGroups.groups;
+          if (remove) groups.get(source)?.delete(path);
+          else {
+            if (!groups.has(source)) groups.set(source, new Map());
+            groups.get(source)!.set(path, entry);
+          }
+        }
+        if (next) index.value.set(path, next);
+        else index.value.delete(path);
+      }
+    }
+    return base === this.annotationIndex ? index : this.annotationMetadata();
+  }
+
+  async annotationPaths(): Promise<Result<readonly string[]>> {
+    const index = await this.annotationMetadata();
+    return index.ok ? ok([...index.value.keys()]) : index;
+  }
+
+  async annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>> {
+    const index = await this.annotationMetadata();
+    if (!index.ok) return index;
+    const known = this.annotationSources.get(path);
+    if (known) return known;
+    if (index.value.size && !this.sourcePaths.has(path)) {
+      const library = await this.library();
+      if (!library.ok) return library;
+      const loaded = this.annotationSources.get(path);
+      if (loaded) return loaded;
+    }
+    const job = this.loadAnnotationsForSource(path, index.value);
+    this.annotationSources.set(path, job);
+    void job.then((out) => {
+      if (!out.ok && this.annotationSources.get(path) === job) this.annotationSources.delete(path);
+    }, () => { if (this.annotationSources.get(path) === job) this.annotationSources.delete(path); });
+    return job;
+  }
+
+  private async loadAnnotationsForSource(path: string, index: Map<string, AnnotationMetadata>): Promise<Result<SourceAnnotation[]>> {
+    if (!index.size) return ok([]);
+    // Metadata resolves aliased/relative/bare links safely; source equality filters would omit them.
+    if (this.annotationGroups?.metadata !== index || this.annotationGroups.sources !== this.sourcePaths) {
+      const groups = new Map<string, Map<string, AnnotationMetadata>>();
+      for (const a of index.values()) {
+        const source = a.source ? resolveLinkTarget(a.source, a.path, this.sourcePaths) : null;
+        if (!source) continue;
+        if (!groups.has(source)) groups.set(source, new Map());
+        groups.get(source)!.set(a.path, a);
+      }
+      this.annotationGroups = { metadata: index, sources: this.sourcePaths, groups };
+    }
+    const selected = this.annotationGroups.groups.get(path) ?? new Map<string, AnnotationMetadata>();
+    const byType = new Map<string, string[]>();
+    for (const a of selected.values()) {
+      if (!byType.has(a.type)) byType.set(a.type, []);
+      byType.get(a.type)!.push(a.path);
+    }
+    const out = new Map<string, SourceAnnotation>();
+    for (const [type, paths] of byType) for (let offset = 0; offset < paths.length; offset += 500) {
+      // Bounded CEL path lists; queryPages limit is page size, never a total-result cap.
+      const where = `file.path in ${JSON.stringify(paths.slice(offset, offset + 500))}`;
+      for await (const page of this.connection.queryPages({ types: [type], where, frontmatterMode: "persisted", includeBody: true }, { pageSize: 500 })) {
+        if (!page.ok) return fail(problemMessage(page));
+        for (const r of page.value.results) {
+          const a = selected.get(r.path);
+          if (!a) continue;
+          const annotation = sourceAnnotation(r.path, toContract(r.frontmatter ?? {}, a.fields), r.body ?? "");
+          if (annotation) out.set(r.path, annotation);
+        }
+      }
+    }
+    return ok([...out.values()]);
   }
 
   async readBody(path: string): Promise<Result<string>> {

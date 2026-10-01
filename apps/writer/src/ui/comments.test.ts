@@ -2,7 +2,8 @@ import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comme
 import { describe, expect, it } from "vitest";
 
 import { changeFields, newCommentFields, peopleFromDirectory, personName, signingFromProblem, toContract, toLocal } from "../backend/comments.js";
-import { anchorsFor, describeSuggestion, placeThreads, plainPassage } from "./comments.js";
+import { PathIndex } from "@mdbase-writer/core/records";
+import { anchorsFor, describeSuggestion, placeThreads, plainPassage, ThreadPlacement } from "./comments.js";
 
 const body = "# Method\n\nThe evidence suggests strongly that it works.\n";
 const comment = (path: string, fields: Record<string, unknown>) =>
@@ -31,6 +32,27 @@ describe("placing threads", () => {
     expect(anchors.map((a) => a.id)).toEqual(["comments/a.md", "comments/f.md"]);
     expect(anchors[1]?.replacement).toBe("");
     expect(anchorsFor(placed, "manuscripts/paper.md")).toEqual([]);
+  });
+
+  it("reuses placement on save-state changes and re-anchors only changed manuscript bodies", () => {
+    const comments = [onPassage, comment("comments/main.md", { document: "[[manuscripts/paper]]", target: { quote: { exact: "main" } } }), elsewhere];
+    const index = new PathIndex(recordPaths);
+    const cache = new ThreadPlacement();
+    const order = ["manuscripts/paper.md", "chapters/method.md"];
+    const bodies = new Map([[order[0]!, "main"], [order[1]!, body]]);
+    const read = (path: string) => { expect(path).not.toBe("notes/other.md"); return bodies.get(path); };
+    const before = cache.place(comments, order, read, index);
+    expect(cache.place(comments, order, read, index)).toBe(before);
+    bodies.set(order[1]!, `New prefix\n${body}`);
+    const after = cache.place(comments, order, read, index);
+    expect(after[0]).toBe(before[0]);
+    expect(after[1]).not.toBe(before[1]);
+    expect(after[1]?.at).toMatchObject({ from: body.indexOf("suggests strongly") + 11 });
+    expect(cache.place(comments, [order[0]!], read, index)).toEqual([before[0]]);
+    // A new generation introduces basename ambiguity; membership is resolved again.
+    const bare = [{ ...onPassage, document: "[[method]]" }];
+    expect(cache.place(bare, order, read, index)).toHaveLength(1);
+    expect(cache.place(bare, order, read, new PathIndex([...recordPaths, "other/method.md"]))).toEqual([]);
   });
 
   it("describes suggestions", () => {

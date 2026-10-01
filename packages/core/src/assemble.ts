@@ -31,6 +31,8 @@ export interface AssemblyDiagnostic extends Diagnostic {
   readonly record: string;
   /** Set when the problem is in a manuscript setting (frontmatter) rather than the body. */
   readonly field?: MetaField;
+  /** Missing collection data is not definitive until this discovery domain is ready. */
+  readonly metadata?: "index" | "library" | "annotations";
   /** Set when a citation names a citekey or label that does not exist, for suggesting others. */
   readonly unknown?: { readonly kind: "citekey" | "label"; readonly key: string };
 }
@@ -172,7 +174,7 @@ export class ManuscriptAssembler {
       const targets = tr.includes.map((inc) => {
         const resolved = resolveLinkTarget(inc.target, path, input.recordPaths);
         if (!resolved) {
-          diagnostics.push({ record: path, from: inc.from, to: inc.to, severity: "error", message: `No record matches the embed ![[${inc.target}]].` });
+          diagnostics.push({ record: path, from: inc.from, to: inc.to, severity: "error", metadata: "index", message: `No record matches the embed ![[${inc.target}]].` });
           return null;
         }
         if (resolved === path || stack.includes(resolved)) {
@@ -240,6 +242,7 @@ export class ManuscriptAssembler {
             severity: "error",
             message: looksLikeXref ? `Nothing is labelled ${m.key}.` : `No source in the library has the citekey ${m.key}.`,
             unknown: { kind: looksLikeXref ? "label" : "citekey", key: m.key },
+            ...(looksLikeXref ? {} : { metadata: "library" as const }),
           });
         }
         const items = cl.items.filter((i) => cp.has(i.key));
@@ -310,6 +313,7 @@ export class ManuscriptAssembler {
           from: ref.from,
           to: ref.to,
           severity: "error",
+          ...(remote ? {} : { metadata: "index" as const }),
           message: remote ? `Images must be files in the collection (${ref.target}).` : `No file in the collection matches the image ${ref.target}.`,
         });
         return `missing-image(${typstString(ref.target)})`;

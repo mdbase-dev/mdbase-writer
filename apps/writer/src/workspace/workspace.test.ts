@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fail, ok, type WriterBackend } from "../backend/types.js";
 import { NO_PEOPLE } from "../backend/comments.js";
 import { DraftStore, type LocalDraft } from "./drafts.js";
-import { ManuscriptWorkspace } from "./workspace.js";
+import { discoveredDiagnostics, ManuscriptWorkspace } from "./workspace.js";
 
 vi.mock("../compile/client.js", () => ({ CompileClient: class {
   ready = Promise.resolve(0);
@@ -56,7 +56,7 @@ function fixture() {
     manuscriptBindings: async () => ok([{ name: "custom", fields: { title: "local_title", csl: "local_style", authors: "local_authors" } }]),
     listManuscripts: async () => ok([]), createManuscript: async () => fail("unused"), adoptManuscript: async () => fail("unused"), createRecord: async () => fail("unused"),
     index: async () => ok({ recordPaths: ["main.md", "chapters/one.md", "chapters/two.md"], filePaths: ["chapters/image.svg"], notePaths: [] }),
-    library: async () => ok([]), annotations: async () => ok([]), readBody: async (path) => ok(authority.get(path)?.body ?? ""),
+    library: async () => ok([]), annotationPaths: async () => ok([]), annotationsForSource: async () => ok([]), readBody: async (path) => ok(authority.get(path)?.body ?? ""),
     readFile: vi.fn(async () => ok(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/>'))),
     comments: async () => ok([]), people: async () => NO_PEOPLE, createComment: async () => fail("unused"), changeComment: async () => fail("unused"),
     onExternalChange: () => () => {}, dispose() {},
@@ -67,6 +67,146 @@ function fixture() {
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
 
 describe("workspace reliability", () => {
+  it("does not report missing collection data as definitive while discovery is pending or failed", () => {
+    const base = { record: "main.md", from: 0, to: 1, origin: "writer" as const, severity: "error" as const };
+    const diagnostics = [{ ...base, metadata: "index" as const, message: "Missing embed" }, { ...base, metadata: "library" as const, message: "Unknown citekey" }, { ...base, message: "Invalid Markdown" }];
+    const pending = { indexLoad: { phase: "loading" as const }, libraryLoad: { phase: "failed" as const, problem: "Denied" }, annotationsLoad: { phase: "ready" as const } };
+    expect(discoveredDiagnostics(diagnostics, pending)).toEqual([diagnostics[2]]);
+    expect(discoveredDiagnostics(diagnostics, { indexLoad: { phase: "ready" }, libraryLoad: { phase: "ready" }, annotationsLoad: { phase: "ready" } })).toEqual(diagnostics);
+  });
+  it("reports library, annotation and comment failures without disabling writing", async () => {
+    const { backend, open } = fixture();
+    backend.library = async () => fail("Sources denied");
+    backend.annotationPaths = async () => fail("Annotation metadata unavailable");
+    backend.comments = async () => fail("Comments unavailable");
+    const workspace = open();
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().commentsLoad.phase).toBe("failed"));
+    expect(workspace.getSnapshot()).toMatchObject({ phase: "ready", libraryLoad: { phase: "failed", problem: "Sources denied" }, annotationsLoad: { phase: "failed", problem: "Annotation metadata unavailable" }, commentsLoad: { phase: "failed", problem: "Comments unavailable" } });
+    workspace.setBody("main.md", "Writing still works");
+    expect(workspace.getSnapshot().records.get("main.md")?.snapshot.body).toBe("Writing still works");
+    await expect(workspace.exportBundle()).rejects.toThrow("Sources denied");
+  });
+
+  it("opens mapped text and recovers drafts before slow metadata, then retries embeds", async () => {
+    const { backend, open } = fixture();
+    const index = backend.index;
+    let finishIndex!: () => void;
+    backend.index = () => new Promise((resolve) => { finishIndex = () => { void index().then(resolve); }; });
+    let finishLibrary!: () => void;
+    backend.library = () => new Promise((resolve) => { finishLibrary = () => resolve(ok([])); });
+    const workspace = open();
+    await ready(workspace);
+    expect(workspace.getSnapshot().records.get("main.md")?.snapshot.frontmatter["title"]).toBe("Mapped title");
+    expect(workspace.getSnapshot().indexLoad.phase).toBe("loading");
+    expect(workspace.getSnapshot().libraryLoad.phase).toBe("loading");
+    expect(workspace.getSnapshot().records.has("chapters/one.md")).toBe(false);
+    expect(workspace.dependencyDiagnostics()).toEqual([]);
+    expect(workspace["compile"].send).not.toHaveBeenCalled();
+    let exported = false;
+    const exportJob = workspace.exportBundle().then(() => { exported = true; });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(exported).toBe(false);
+    finishIndex();
+    await vi.waitFor(() => expect(workspace.getSnapshot().records.has("chapters/two.md")).toBe(true));
+    expect(workspace.getSnapshot().libraryLoad.phase).toBe("loading");
+    finishLibrary();
+    await exportJob;
+  });
+  it("initializes preview before annotation discovery, then sends late quotation paths", async () => {
+    const { backend, open } = fixture();
+    let finish!: () => void;
+    backend.annotationPaths = () => new Promise((resolve) => { finish = () => resolve(ok(["annotations/later.md"])); });
+    const workspace = open();
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "init" })));
+    expect(workspace.getSnapshot().annotationsLoad.phase).toBe("loading");
+    expect(workspace.getSnapshot().previewProblem).toBeUndefined();
+    let exported = false;
+    const job = workspace.exportBundle().then(() => { exported = true; });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(exported).toBe(false);
+    finish();
+    await job;
+    expect(workspace["compile"].send).toHaveBeenCalledWith({ type: "quotations", annotationPaths: ["annotations/later.md"], sourceKeys: [] });
+  });
+
+  it("exports a collection without annotations, and keeps transient discovery failures non-blocking", async () => {
+    const { backend, open } = fixture();
+    const paths = vi.fn(async () => ok([] as string[]));
+    backend.annotationPaths = paths;
+    const workspace = open();
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "init" })));
+    expect(workspace.getSnapshot().annotationsLoad.phase).toBe("ready");
+    expect((await workspace.exportBundle()).problems).toEqual([]);
+    paths.mockImplementationOnce(async () => fail("Temporary annotation failure"));
+    await workspace.retryMetadata();
+    expect(workspace.getSnapshot().annotationsLoad).toEqual({ phase: "failed", problem: "Temporary annotation failure" });
+    expect(workspace.getSnapshot().previewProblem).toBeUndefined();
+    expect((await workspace.exportBundle()).problems.join("\n")).toContain("Temporary annotation failure");
+    await workspace.retryMetadata();
+    expect(workspace.getSnapshot().annotationsLoad.phase).toBe("ready");
+    expect((await workspace.exportBundle()).problems).toEqual([]);
+  });
+
+  it("normalizes custom embedded annotations without loading unrelated bodies", async () => {
+    const { backend, authority, open } = fixture();
+    authority.seed("quotes/custom.md", { frontmatter: { type: "highlight", reading: "[[sources/book]]", page: { label: "p. 12" } }, body: "> Quoted evidence.\n\nPrivate annotation note.\n" });
+    authority.editElsewhere("main.md", { body: "# Main\n\n![[quotes/custom]]\n" });
+    const index = backend.index;
+    backend.index = async () => {
+      const result = await index();
+      return result.ok ? ok({ ...result.value, recordPaths: [...result.value.recordPaths, "quotes/custom.md"] }) : result;
+    };
+    backend.annotationPaths = async () => ok(["quotes/custom.md"]);
+    backend.annotationFields = (path) => path === "quotes/custom.md" ? { source: "reading", locator: "page" } : {};
+    backend.annotationsForSource = vi.fn(async () => ok([]));
+    backend.library = async () => ok([{ key: "book", path: "sources/book.md", title: "Book", item: { id: "book", type: "book", title: "Book" } }]);
+    const workspace = open();
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().records.get("quotes/custom.md")?.snapshot.frontmatter["source"]).toBe("[[sources/book]]"));
+    expect(workspace.readingOrder()).toEqual(["main.md"]);
+    const bundle = new TextDecoder().decode((await workspace.exportBundle()).bytes);
+    expect(bundle).toContain("Quoted evidence.");
+    expect(bundle).not.toContain("Private annotation note");
+    expect(backend.annotationsForSource).not.toHaveBeenCalled();
+  });
+
+  it("does not export a deleted annotation session's retained backup body", async () => {
+    const { backend, authority, open } = fixture();
+    authority.seed("quotes/deleted.md", { frontmatter: { type: "reader-annotation", source: "[[sources/book]]" }, body: "> Old quotation.\n\nPrivate note.\n" });
+    authority.editElsewhere("main.md", { body: "# Main\n\n![[quotes/deleted]]\n" });
+    backend.index = async () => ok({ recordPaths: ["main.md", "quotes/deleted.md"], filePaths: [], notePaths: [] });
+    backend.annotationPaths = async () => ok(["quotes/deleted.md"]);
+    backend.library = async () => ok([{ key: "book", path: "sources/book.md", title: "Book", item: { id: "book", type: "book", title: "Book" } }]);
+    const workspace = open();
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().records.has("quotes/deleted.md")).toBe(true));
+    authority.deleteElsewhere("quotes/deleted.md");
+    await vi.waitFor(() => expect(workspace.getSnapshot().records.get("quotes/deleted.md")?.snapshot.state).toBe("deleted"));
+    const result = await workspace.exportBundle();
+    expect(new TextDecoder().decode(result.bytes)).not.toContain("Old quotation");
+    expect(result.problems.join("\n")).toContain("Not loaded");
+  });
+
+  it("keeps mapped embedded quotations private when annotation discovery fails", async () => {
+    const { backend, authority, open } = fixture();
+    authority.seed("quotes/custom.md", { frontmatter: { type: "highlight", reading: "[[sources/book]]" }, body: "> Public quotation.\n\nPrivate reading note.\n" });
+    authority.editElsewhere("main.md", { body: "# Main\n\n![[quotes/custom]]\n" });
+    backend.index = async () => ok({ recordPaths: ["main.md", "quotes/custom.md"], filePaths: [], notePaths: [] });
+    backend.annotationPaths = async () => fail("Discovery temporarily unavailable");
+    backend.annotationFields = (_path, types) => types?.includes("highlight") ? { source: "reading" } : {};
+    backend.library = async () => ok([{ key: "book", path: "sources/book.md", title: "Book", item: { id: "book", type: "book", title: "Book" } }]);
+    const workspace = open();
+    await ready(workspace);
+    const result = await workspace.exportBundle();
+    const text = new TextDecoder().decode(result.bytes);
+    expect(text).toContain("Public quotation");
+    expect(text).not.toContain("Private reading note");
+    expect(result.problems.join("\n")).toContain("Discovery temporarily unavailable");
+  });
+
   it("normalizes custom fields for the editor and compiler and maps settings back", async () => {
     const { authority, open } = fixture();
     const workspace = open();
@@ -177,19 +317,25 @@ describe("workspace reliability", () => {
     new DraftStore(backend.draftNamespace!).write("main.md", { version: 1, body: "Missing collection draft", frontmatter: {}, baseBody: "", baseFrontmatter: {}, revision: "old", updated: new Date().toISOString() });
     backend.index = async () => { throw new Error("Collection temporarily unavailable"); };
     const workspace = open();
-    await vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("failed"));
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad.phase).toBe("failed"));
     expect(workspace.getSnapshot().recoveredDrafts.has("main.md")).toBe(true);
     expect(workspace.localDrafts()[0]).toEqual(["main.md", "---\n{}\n---\n\nMissing collection draft"]);
   });
-  it("handles thrown startup failures and retries opening", async () => {
+  it("keeps writing after a metadata failure and retries discovery", async () => {
     const { backend, open } = fixture();
     const index = backend.index;
     backend.index = async () => { throw new Error("Index temporarily unavailable"); };
     const workspace = open();
-    await vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("failed"));
-    expect(workspace.getSnapshot().problem).toContain("temporarily unavailable");
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad.phase).toBe("failed"));
+    expect(workspace.getSnapshot().indexLoad.problem).toContain("temporarily unavailable");
+    expect(workspace.getSnapshot().problem).toBeUndefined();
+    workspace.setBody("main.md", "Still editable");
+    expect(workspace.getSnapshot().records.get("main.md")?.snapshot.body).toBe("Still editable");
+    await expect(workspace.exportBundle()).rejects.toThrow("temporarily unavailable");
     backend.index = index;
-    await workspace.retryOpen();
-    expect(workspace.getSnapshot().phase).toBe("ready");
+    await workspace.retryMetadata();
+    expect(workspace.getSnapshot().indexLoad.phase).toBe("ready");
   });
 });

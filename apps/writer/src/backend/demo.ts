@@ -5,7 +5,8 @@ import type { JsonObject } from "@mdbase-dev/connect";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import type { CslItem } from "@mdbase-writer/core";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
-import { splitFrontmatter } from "@mdbase-writer/core/records";
+import { annotationSourceLink } from "@mdbase-writer/core/annotations";
+import { PathIndex, resolveLinkTarget, splitFrontmatter } from "@mdbase-writer/core/records";
 
 import { changeFields, commentPath, newCommentFields, personKey, personLink, type People } from "./comments.js";
 import { manuscriptBody, bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
@@ -31,6 +32,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     title: typeof item["title"] === "string" ? item["title"] : item.id,
     path: `sources/${item.id}.md`,
   }));
+  const sourcePaths = new PathIndex(entries.map((e) => e.path));
   const files = new Map(Object.entries(assets).map(([key, url]) => [relative(key), url]));
   const listeners = new Set<(paths: readonly string[]) => void>();
   const stopWatch = authority.watch.subscribe((change) => {
@@ -151,12 +153,18 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     async library() {
       return ok(entries);
     },
-    async annotations() {
+    async annotationPaths() {
+      return ok([...paths].filter((path) => splitFrontmatter(markdown[`../../demo/${path}`] ?? "").frontmatter["type"] === "reader-annotation"));
+    },
+    async annotationsForSource(source) {
       const out = [];
+      const candidates = sourcePaths;
       for (const path of paths) {
-        const { body, frontmatter } = splitFrontmatter(markdown[`../../demo/${path}`] ?? "");
-        if (frontmatter["type"] !== "reader-annotation") continue;
-        const a = sourceAnnotation(path, frontmatter as JsonObject, body);
+        const fm = splitFrontmatter(markdown[`../../demo/${path}`] ?? "").frontmatter;
+        if (fm["type"] !== "reader-annotation") continue;
+        const record = authority.get(path);
+        if (!record || typeof record.frontmatter["source"] !== "string" || resolveLinkTarget(annotationSourceLink(record.frontmatter["source"]) ?? "", path, candidates) !== source) continue;
+        const a = sourceAnnotation(path, record.frontmatter, record.body ?? "");
         if (a) out.push(a);
       }
       return ok(out);

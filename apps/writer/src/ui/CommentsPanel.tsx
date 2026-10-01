@@ -38,7 +38,11 @@ export function CommentsPanel({
   onCheckAccount,
   onReviewAccess,
   grouped = true,
+  loading = false,
+  onRetry,
 }: {
+  loading?: boolean;
+  onRetry?(): void;
   placed: readonly PlacedThread[];
   /** Threads are headed by their record's title (not for a manuscript of one record, whose title the top bar shows). */
   grouped?: boolean;
@@ -94,8 +98,9 @@ export function CommentsPanel({
       </div>
       <Signing people={people} onCheck={onCheckAccount} {...(onReviewAccess ? { onReviewAccess } : {})} />
       {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} signer={signer} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
-      {problem && <p className="muted small">Comments unavailable: {problem}</p>}
-      {!problem && !shown.length && !pending && (
+      {loading && <p className="muted small" role="status">Loading comments…</p>}
+      {problem && <p className="muted small">Comments unavailable: {problem} {onRetry && <button type="button" className="text-button" onClick={onRetry}>Retry comments</button>}</p>}
+      {!loading && !problem && !shown.length && !pending && (
         <div className="sidebar-empty">
           {filter === "open" ? (
             <>

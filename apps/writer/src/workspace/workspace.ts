@@ -6,11 +6,11 @@
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
 import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
-import { ManuscriptAssembler, translateRecord, type CslItem, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
+import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";
-import { resolveLinkTarget } from "@mdbase-writer/core/records";
+import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
@@ -44,7 +44,12 @@ function loadStyles() {
 }
 
 /** Source record path → citekey. */
-export const sourceKeys = (library: readonly LibraryEntry[]) => new Map(library.map((e) => [e.path, e.key]));
+const librarySourceKeys = new WeakMap<readonly LibraryEntry[], ReadonlyMap<string, string>>();
+export function sourceKeys(library: readonly LibraryEntry[]): ReadonlyMap<string, string> {
+  let keys = librarySourceKeys.get(library);
+  if (!keys) { keys = new Map(library.map((e) => [e.path, e.key])); librarySourceKeys.set(library, keys); }
+  return keys;
+}
 
 export type SessionSnapshot = MdbaseRecordSessionSnapshot<RecordDocument<JsonObject>>;
 
@@ -53,9 +58,18 @@ export interface RecordView {
   readonly snapshot: SessionSnapshot;
 }
 
+export type LoadState = { readonly phase: "loading" | "ready" | "failed"; readonly problem?: string };
+const LOADING: LoadState = { phase: "loading" };
+const READY: LoadState = { phase: "ready" };
+type MetadataDomain = "indexLoad" | "libraryLoad" | "annotationsLoad";
+
 export interface WorkspaceSnapshot {
   readonly main: string;
   readonly phase: "loading" | "ready" | "failed";
+  readonly indexLoad: LoadState;
+  readonly libraryLoad: LoadState;
+  readonly annotationsLoad: LoadState;
+  readonly commentsLoad: LoadState;
   readonly problem?: string | undefined;
   readonly previewProblem?: string | undefined;
   readonly draftProblem?: string | undefined;
@@ -70,8 +84,11 @@ export interface WorkspaceSnapshot {
   readonly library: readonly LibraryEntry[];
   readonly recordPaths: readonly string[];
   readonly filePaths: readonly string[];
+  readonly recordIndex: PathIndex;
+  readonly fileIndex: PathIndex;
   /** Records the collection lists as Reader annotations (an embedded one is a quotation). */
   readonly annotationPaths: ReadonlySet<string>;
+  readonly annotationVersion: number;
   readonly compiling: boolean;
   readonly pendingSettings: boolean;
   /** Every comment in the collection; the UI keeps those on this manuscript's records. */
@@ -79,6 +96,10 @@ export interface WorkspaceSnapshot {
   /** Why comments could not be loaded (a collection not set up for them, say). */
   readonly commentsProblem?: string | undefined;
   readonly people: People;
+}
+
+export function discoveredDiagnostics(diagnostics: readonly WriterDiagnostic[], snapshot: Pick<WorkspaceSnapshot, "indexLoad" | "libraryLoad" | "annotationsLoad">): readonly WriterDiagnostic[] {
+  return diagnostics.filter((d) => !d.metadata || snapshot[`${d.metadata}Load`].phase === "ready");
 }
 
 /** A passage chosen to comment on: the body it was chosen in and its UTF-16 range. */
@@ -91,6 +112,7 @@ export interface CommentDraft {
 
 export class ManuscriptWorkspace {
   private compile = new CompileClient();
+  private previewInitialized = false;
   private compileCleanups: (() => void)[] = [];
   private bindings: readonly ManuscriptBinding[] = [];
   private readonly drafts: DraftStore;
@@ -112,6 +134,10 @@ export class ManuscriptWorkspace {
   private refreshTimer: ReturnType<typeof setTimeout> | undefined;
   private commentsTimer: ReturnType<typeof setTimeout> | undefined;
   private current: WorkspaceSnapshot;
+  private metadataJobs: Partial<Record<MetadataDomain, Promise<void>>> = {};
+  private metadataGeneration = 0;
+  private commentsGeneration = 0;
+  private annotationGeneration = 0;
   private disposed = false;
 
   constructor(
@@ -119,7 +145,7 @@ export class ManuscriptWorkspace {
     readonly main: string,
   ) {
     this.drafts = new DraftStore(backend.draftNamespace ?? `${backend.kind}:${backend.collectionName}`);
-    this.current = { main, phase: "loading", records: new Map(), library: [], recordPaths: [], filePaths: [], annotationPaths: new Set(), compiling: true, pendingSettings: false, comments: [], people: NO_PEOPLE, recoveredDrafts: new Map(), assetProblems: new Map(), recordProblems: new Map() };
+    this.current = { main, phase: "loading", indexLoad: LOADING, libraryLoad: LOADING, annotationsLoad: LOADING, commentsLoad: LOADING, records: new Map(), library: [], recordPaths: [], filePaths: [], recordIndex: new PathIndex([]), fileIndex: new PathIndex([]), annotationPaths: new Set(), annotationVersion: 0, compiling: true, pendingSettings: false, comments: [], people: NO_PEOPLE, recoveredDrafts: new Map(), assetProblems: new Map(), recordProblems: new Map() };
     this.followCompiler();
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
     // Linking a person record happens in another tab (mdbase Editor): look again on return.
@@ -160,6 +186,8 @@ export class ManuscriptWorkspace {
 
   private update(patch: Partial<WorkspaceSnapshot>): void {
     if (this.disposed) return;
+    if (patch.recordPaths) patch = { ...patch, recordIndex: new PathIndex(patch.recordPaths) };
+    if (patch.filePaths) patch = { ...patch, fileIndex: new PathIndex(patch.filePaths) };
     this.current = { ...this.current, ...patch };
     for (const l of this.listeners) l();
   }
@@ -177,19 +205,16 @@ export class ManuscriptWorkspace {
       if (recovered) this.update({ recoveredDrafts: new Map(this.current.recoveredDrafts).set(this.main, recovered) });
     }
     try {
-      const [index, library, bindings] = await Promise.all([this.backend.index(), this.backend.library(), this.backend.manuscriptBindings?.()]);
-      if (!index.ok) throw new Error(index.message);
-      if (!library.ok) throw new Error(library.message);
+      this.loadMetadata();
+      const bindings = await this.backend.manuscriptBindings?.();
       if (bindings && !bindings.ok) throw new Error(bindings.message);
       if (this.disposed) return;
       this.bindings = bindings?.ok ? bindings.value : [];
-      this.update({ library: library.value, recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
       const opened = await this.open(this.main);
       this.update({ phase: opened ? "ready" : "failed", compiling: opened });
       if (!opened) return;
       // Fonts/styles/renderer availability must not prevent writing or saving.
       void this.initializePreview();
-      void this.loadAnnotationPaths();
       void this.loadComments();
     } catch (error) {
       this.update({ phase: "failed", problem: errorMessage(error), compiling: false });
@@ -201,12 +226,75 @@ export class ManuscriptWorkspace {
     await this.start();
   }
 
+  private loadMetadata(fresh = false): void {
+    if (!fresh && Object.keys(this.metadataJobs).length) return;
+    const generation = ++this.metadataGeneration;
+    const jobs: Record<MetadataDomain, () => Promise<void>> = {
+      indexLoad: () => this.loadIndex(generation),
+      libraryLoad: () => this.loadLibrary(generation),
+      annotationsLoad: () => this.loadAnnotationPaths(generation),
+    };
+    for (const domain of Object.keys(jobs) as MetadataDomain[]) {
+      if (!fresh && this.metadataJobs[domain]) continue;
+      this.update({ [domain]: LOADING });
+      // A superseded load must not overwrite a newer snapshot.
+      const job = jobs[domain]();
+      this.metadataJobs[domain] = job;
+    }
+  }
+
+  private async loadIndex(generation: number): Promise<void> {
+    try {
+      const index = await this.backend.index();
+      if (generation !== this.metadataGeneration || this.disposed) return;
+      if (!index.ok) throw new Error(index.message);
+      this.update({ recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths], indexLoad: READY });
+      if (this.previewInitialized) this.compile.send({ type: "collection", recordPaths: this.current.recordPaths, filePaths: this.current.filePaths });
+      for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);
+    } catch (error) { if (generation === this.metadataGeneration) this.update({ indexLoad: { phase: "failed", problem: errorMessage(error) } }); }
+  }
+
+  private async loadLibrary(generation: number): Promise<void> {
+    try {
+      const library = await this.backend.library();
+      if (generation !== this.metadataGeneration || this.disposed) return;
+      if (!library.ok) throw new Error(library.message);
+      this.update({ library: library.value, libraryLoad: READY });
+      if (this.previewInitialized) this.compile.send({ type: "library", library: library.value.map((e) => e.item) });
+      this.sendQuotations();
+    } catch (error) { if (generation === this.metadataGeneration) this.update({ libraryLoad: { phase: "failed", problem: errorMessage(error) } }); }
+  }
+
+  private async metadata(annotations = true): Promise<void> {
+    this.loadMetadata();
+    for (;;) {
+      const generation = this.metadataGeneration;
+      await Promise.all(annotations ? Object.values(this.metadataJobs) : [this.metadataJobs.indexLoad, this.metadataJobs.libraryLoad]);
+      if (this.disposed || generation === this.metadataGeneration) break;
+    }
+    if (this.disposed) throw new Error("The manuscript was closed.");
+    // Annotation discovery is optional: a real failure is visible, not a preview/export gate.
+    for (const domain of ["indexLoad", "libraryLoad"] as const) {
+      const state = this.current[domain];
+      if (state.phase !== "ready") throw new Error(state.problem ?? "Collection metadata is still loading.");
+    }
+  }
+
+  async retryMetadata(): Promise<void> {
+    this.loadMetadata(true);
+    await this.metadata();
+    if (this.current.previewProblem) await this.retryPreview();
+  }
+
   private async initializePreview(): Promise<void> {
     const client = this.compile;
     try {
+      // Annotation identities follow through sendQuotations; their diagnostics remain gated.
+      await this.metadata(false);
       const csl = await loadStyles();
       if (this.disposed || client !== this.compile) return;
       client.send({ type: "init", library: this.current.library.map((e) => e.item), styles: [...csl.styles], locales: [...csl.locales], baseUrl: import.meta.env.BASE_URL });
+      this.previewInitialized = true;
       client.send({ type: "collection", recordPaths: this.current.recordPaths, filePaths: this.current.filePaths });
       client.send({ type: "main", path: this.main });
       client.send({ type: "records", upsert: this.writerRecords() });
@@ -221,6 +309,7 @@ export class ManuscriptWorkspace {
     for (const cleanup of this.compileCleanups) cleanup();
     this.compile.terminate();
     this.compile = new CompileClient();
+    this.previewInitialized = false;
     this.followCompiler();
     this.update({ previewProblem: undefined, compiling: true });
     await this.initializePreview();
@@ -236,7 +325,7 @@ export class ManuscriptWorkspace {
   }
 
   private writerRecords(): WriterRecord[] {
-    return [...this.current.records].map(([path, view]) => ({ path, body: view.snapshot.body, frontmatter: view.snapshot.frontmatter }));
+    return [...this.current.records].filter(([, view]) => view.snapshot.state !== "deleted").map(([path, view]) => ({ path, body: view.snapshot.body, frontmatter: view.snapshot.frontmatter }));
   }
 
   private peopleCheckedAt = 0;
@@ -256,25 +345,38 @@ export class ManuscriptWorkspace {
   }
 
   /** Learns which records are annotations, and tells the worker how to cite them. */
-  private async loadAnnotationPaths(): Promise<void> {
+  private async loadAnnotationPaths(generation: number): Promise<void> {
+    const annotationGeneration = ++this.annotationGeneration;
     try {
-      const annotations = await this.annotations();
-      if (this.disposed) return;
-      if (annotations.ok) this.update({ annotationPaths: new Set(annotations.value.map((a) => a.path)) });
+      const annotations = await this.backend.annotationPaths();
+      if (this.disposed || generation !== this.metadataGeneration || annotationGeneration !== this.annotationGeneration) return;
+      if (!annotations.ok) throw new Error(annotations.message);
+      const paths = new Set(annotations.value);
+      const changed = paths.size !== this.current.annotationPaths.size || [...paths].some((p) => !this.current.annotationPaths.has(p));
+      this.update({ annotationPaths: paths, annotationVersion: this.current.annotationVersion + Number(changed), annotationsLoad: READY });
+      // Custom annotation sessions need the same canonical fields as per-source reads.
+      for (const [path, { lease }] of this.leases) this.onSession(path, lease.session.getSnapshot());
       this.sendQuotations();
-    } catch { this.annotationsPromise = undefined; }
+    } catch (error) {
+      if (generation !== this.metadataGeneration || annotationGeneration !== this.annotationGeneration) return;
+      this.update({ annotationsLoad: { phase: "failed", problem: errorMessage(error) } });
+    }
   }
 
   private sendQuotations(): void {
+    if (!this.previewInitialized) return;
     this.compile.send({ type: "quotations", annotationPaths: [...this.current.annotationPaths], sourceKeys: [...sourceKeys(this.current.library)] });
   }
 
-  private async loadComments(): Promise<void> {
+  async loadComments(): Promise<void> {
+    const generation = ++this.commentsGeneration;
+    this.update({ commentsLoad: LOADING });
     this.peopleCheckedAt = Date.now();
     try {
       const [comments, people] = await Promise.all([this.backend.comments(), this.backend.people()]);
-      this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, people } : { commentsProblem: comments.message, people });
-    } catch (error) { this.update({ commentsProblem: errorMessage(error) }); }
+      if (this.disposed || generation !== this.commentsGeneration) return;
+      this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, commentsLoad: READY, people } : { commentsProblem: comments.message, commentsLoad: { phase: "failed", problem: comments.message }, people });
+    } catch (error) { if (generation === this.commentsGeneration) this.update({ commentsProblem: errorMessage(error), commentsLoad: { phase: "failed", problem: errorMessage(error) } }); }
   }
 
   /** Opens (once) and follows the session for a record. */
@@ -317,25 +419,38 @@ export class ManuscriptWorkspace {
     await mapConcurrent([...this.current.recordProblems.keys()], 4, (path) => this.open(path));
   }
 
+  private annotationFields(path: string, raw: SessionSnapshot): Readonly<Record<string, string>> {
+    const type = raw.frontmatter["type"];
+    return this.backend.annotationFields?.(path, [...raw.record.types, ...(typeof type === "string" ? [type] : [])]) ?? {};
+  }
+
   private onSession(path: string, raw: SessionSnapshot): void {
     if (this.disposed) return;
     this.persistDraft(path, raw);
-    const snapshot = { ...raw, frontmatter: this.canonicalFields(raw.frontmatter, raw.record.types) };
+    const annotationFields = this.annotationFields(path, raw);
+    const annotation = raw.state !== "deleted" && annotationFields["source"] && !this.current.annotationPaths.has(path) ? { annotationPaths: new Set([...this.current.annotationPaths, path]) } : {};
+    const snapshot = { ...raw, frontmatter: manuscriptFrontmatter(raw.frontmatter, { ...annotationFields, ...this.fieldsFor(raw.record.types) }) };
     const records = new Map(this.current.records);
     records.set(path, { path, snapshot });
     // Forward only content changes; save-state transitions don't need a compile.
-    const key = `${snapshot.body}\u0000${JSON.stringify(snapshot.frontmatter)}`;
+    const key = `${snapshot.body}\u0000${JSON.stringify(snapshot.frontmatter)}\u0000${snapshot.state === "deleted"}`;
     if (this.sent.get(path) === key) {
-      this.update({ records });
+      this.update({ records, ...annotation });
+      if (annotation.annotationPaths) this.sendQuotations();
       return;
     }
     this.sent.set(path, key);
     // One update per edit: each re-renders the whole workspace.
-    this.update({ records, compiling: !this.current.previewProblem });
-    this.compile.send({ type: "records", upsert: [{ path, body: snapshot.body, frontmatter: snapshot.frontmatter }] });
+    this.update({ records, ...annotation, compiling: !this.current.previewProblem });
+    if (this.previewInitialized) this.compile.send(snapshot.state === "deleted" ? { type: "records", upsert: [], remove: [path] } : { type: "records", upsert: [{ path, body: snapshot.body, frontmatter: snapshot.frontmatter }] });
+    if (annotation.annotationPaths) this.sendQuotations();
     // Opening chapters must not depend on a healthy compiler or renderer.
-    const candidates = new Set(this.current.recordPaths);
-    for (const embed of this.translated(path, snapshot.body).includes) {
+    this.openEmbeds(path, snapshot.body);
+  }
+
+  private openEmbeds(path: string, body: string): void {
+    const candidates = this.current.recordIndex;
+    for (const embed of this.translated(path, body).includes) {
       const target = resolveLinkTarget(embed.target, path, candidates);
       if (target && !this.current.recordProblems.has(target)) void this.open(target);
     }
@@ -352,7 +467,7 @@ export class ManuscriptWorkspace {
   readingOrder(): readonly string[] {
     const order: string[] = [];
     const seen = new Set<string>();
-    const candidates = new Set(this.current.recordPaths);
+    const candidates = this.current.recordIndex;
     const visit = (path: string) => {
       if (seen.has(path)) return;
       seen.add(path);
@@ -387,6 +502,8 @@ export class ManuscriptWorkspace {
   }
 
   private sendAssets(files: readonly [string, Uint8Array][]): void {
+    // Initialization sends the latest snapshots; don't start a compiler timeout while discovery waits.
+    if (!this.previewInitialized) return;
     // Retain original bytes for preview retries and frozen exports.
     const copies: [string, Uint8Array][] = files.map(([path, bytes]) => [path, bytes.slice()]);
     if (copies.length) this.compile.send({ type: "assets", files: copies }, copies.map(([, bytes]) => bytes.buffer));
@@ -440,8 +557,9 @@ export class ManuscriptWorkspace {
   /** Failures belong to the same Markdown ranges as the missing dependency. */
   dependencyDiagnostics(): WriterDiagnostic[] {
     const diagnostics: WriterDiagnostic[] = [];
-    const candidates = new Set(this.current.filePaths);
-    const recordPaths = new Set(this.current.recordPaths);
+    if (this.current.indexLoad.phase !== "ready") return diagnostics;
+    const candidates = this.current.fileIndex;
+    const recordPaths = this.current.recordIndex;
     for (const [path, view] of this.current.records) {
       const translated = this.translated(path, view.snapshot.body);
       for (const image of translated.images) {
@@ -459,6 +577,16 @@ export class ManuscriptWorkspace {
   }
 
   private onExternalChange(paths: readonly string[]): void {
+    if (!paths.length) {
+      this.update({ annotationVersion: this.current.annotationVersion + 1 });
+      void this.refreshCollection();
+      return;
+    }
+    const annotations = new Set(paths.filter((path) => this.current.annotationPaths.has(path)));
+    if (annotations.size) {
+      this.update({ annotationVersion: this.current.annotationVersion + 1, annotationsLoad: LOADING });
+      this.metadataJobs.annotationsLoad = this.loadAnnotationPaths(this.metadataGeneration);
+    }
     // An image, style or template the document uses changed: send its new bytes.
     const assets = paths.filter((p) => this.requestedAssets.has(p));
     if (assets.length) void this.loadAssets(assets);
@@ -469,26 +597,14 @@ export class ManuscriptWorkspace {
       this.commentsTimer = setTimeout(() => void this.loadComments(), 300);
     }
     // Record sessions follow their own records (including ones still opening).
-    if (paths.every((p) => this.leases.has(p) || this.opening.has(p) || this.requestedAssets.has(p) || comments.has(p))) return;
+    if (paths.every((p) => this.leases.has(p) || this.opening.has(p) || this.requestedAssets.has(p) || comments.has(p) || annotations.has(p))) return;
     clearTimeout(this.refreshTimer);
-    this.refreshTimer = setTimeout(() => void this.refreshCollection().catch((error: unknown) => this.update({ problem: errorMessage(error) })), 2_000);
+    this.refreshTimer = setTimeout(() => void this.refreshCollection(), 2_000);
   }
 
   private async refreshCollection(): Promise<void> {
-    const [index, library] = await Promise.all([this.backend.index(), this.backend.library()]);
-    if (index.ok) {
-      this.compile.send({ type: "collection", recordPaths: index.value.recordPaths, filePaths: index.value.filePaths });
-      this.update({ recordPaths: [...index.value.recordPaths], filePaths: [...index.value.filePaths] });
-    }
-    if (library.ok) {
-      this.compile.send({ type: "library", library: library.value.map((e) => e.item) as CslItem[] });
-      this.update({ library: library.value });
-    }
-    // A new record may be a new annotation.
-    this.annotationsPromise = undefined;
-    await this.loadAnnotationPaths();
-    // A path we did not know may be someone's new comment.
-    await this.loadComments();
+    this.loadMetadata(true);
+    await Promise.all([...Object.values(this.metadataJobs), this.loadComments()]);
   }
 
   setBody(path: string, body: string): void {
@@ -504,14 +620,14 @@ export class ManuscriptWorkspace {
 
   /** Whether an embed in the manuscript is a chapter (not a quotation). */
   private isChapter = (target: string): boolean => {
-    const path = resolveLinkTarget(target, this.main, new Set(this.current.recordPaths));
+    const path = resolveLinkTarget(target, this.main, this.current.recordIndex);
     return !path || !this.isQuotation(path);
   };
 
   /** The record each of the manuscript's chapter embeds resolves to (null when none does), in order. */
   chapterPaths(): (string | null)[] {
     const body = this.current.records.get(this.main)?.snapshot.body ?? "";
-    const candidates = new Set(this.current.recordPaths);
+    const candidates = this.current.recordIndex;
     return chapterEmbeds(body, this.isChapter).map((e) => resolveLinkTarget(e.target, this.main, candidates));
   }
 
@@ -594,7 +710,7 @@ export class ManuscriptWorkspace {
 
   async reply(thread: CommentThread, text: string): Promise<Result<CommentRecord>> {
     // A reply repeats its thread's document.
-    const document = resolveLinkTarget(linkPath(thread.root.document), thread.root.path, new Set(this.current.recordPaths)) ?? linkPath(thread.root.document);
+    const document = resolveLinkTarget(linkPath(thread.root.document), thread.root.path, this.current.recordIndex) ?? linkPath(thread.root.document);
     const created = await this.backend.createComment({ document, text, thread: thread.root });
     if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
     return created;
@@ -670,12 +786,7 @@ export class ManuscriptWorkspace {
     });
   }
 
-  private annotationsPromise: ReturnType<WriterBackend["annotations"]> | undefined;
-  /** Reader annotations, loaded once per open manuscript (on first use). */
-  annotations = (): ReturnType<WriterBackend["annotations"]> => {
-    this.annotationsPromise ??= this.backend.annotations();
-    return this.annotationsPromise;
-  };
+  annotationsForSource = (path: string): ReturnType<WriterBackend["annotationsForSource"]> => this.backend.annotationsForSource(path);
 
   /** Independent of preview timing: discover and await all embeds, styles and images. */
   private async preflight(signal?: AbortSignal) {
@@ -686,8 +797,9 @@ export class ManuscriptWorkspace {
     };
     check();
     this.commitSettings();
+    await this.metadata();
+    check();
     const { styles, locales } = await loadStyles();
-    await this.loadAnnotationPaths();
     const assembler = new ManuscriptAssembler();
     const attemptedRecords = new Set<string>();
     const attemptedAssets = new Set<string>();
@@ -696,15 +808,16 @@ export class ManuscriptWorkspace {
       const snap = this.current;
       const input: AssemblyInput = {
         main: this.main, records: new Map(this.writerRecords().map((record) => [record.path, record])),
-        recordPaths: new Set(snap.recordPaths), filePaths: new Set(snap.filePaths),
+        recordPaths: snap.recordIndex, filePaths: snap.fileIndex,
         library: new Map(snap.library.map((entry) => [entry.key, entry.item])), styles, locales,
-        texts: new Map(this.texts), annotationPaths: new Set(snap.annotationPaths), sourceKeys: sourceKeys(snap.library),
+        texts: new Map(this.texts), annotationPaths: snap.annotationPaths, sourceKeys: sourceKeys(snap.library),
       };
       const assembly = assembler.assemble(input);
       const records = assembly.unloaded.filter((path) => !attemptedRecords.has(path));
       const assets = assembly.assets.filter((path) => !attemptedAssets.has(path));
       if (!records.length && !assets.length) {
         const problems = [...new Set([
+          ...(snap.annotationsLoad.phase === "failed" ? [`Annotation discovery unavailable: ${snap.annotationsLoad.problem}. Quotation metadata may be incomplete.`] : []),
           ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnostic.message}`),
           ...assembly.unloaded.map((path) => `${path}: ${snap.recordProblems.get(path) ?? "Not loaded; it will be left out."}`),
           ...assembly.assets.flatMap((path) => snap.assetProblems.has(path) ? [`${path}: ${snap.assetProblems.get(path)}`] : []),

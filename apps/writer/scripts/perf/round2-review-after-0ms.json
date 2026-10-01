@@ -1,0 +1,235 @@
+{
+  "environment": {
+    "node": "v22.22.0",
+    "cpu": "AMD Ryzen 9 7940HS w/ Radeon 780M Graphics",
+    "platform": "linux"
+  },
+  "counts": {
+    "sources": 5000,
+    "annotations": 30000,
+    "comments": 3000,
+    "notes": 20000,
+    "manuscripts": 100,
+    "files": 5000
+  },
+  "latencyMs": 0,
+  "filePageSize": 500,
+  "strictContracts": true,
+  "runs": 1,
+  "results": [
+    {
+      "run": 1,
+      "seedMs": 335.33115799999996,
+      "homeListMs": 12.34943700000008,
+      "homeBackgroundMs": 170.02235200000007,
+      "readyMs": 51.88560600000005,
+      "sourcesUsableMs": 110.62462300000016,
+      "sourcesFirstSearchMs": 16.72628099999997,
+      "commentsUsableMs": 137.02718500000015,
+      "annotationIndexMs": 250.6273470000001,
+      "sourceAnnotationsMs": 51.71148900000003,
+      "annotationsUsableMs": 302.42577400000005,
+      "previewInitializedMs": 385.434833,
+      "externalRefreshMs": 2230.035566,
+      "homeTransfers": {
+        "requests": 76,
+        "records": 68200,
+        "bodyBytes": 0,
+        "jsonBytes": 26587086,
+        "byOperation": {
+          "describe": 1,
+          "query:writer-manuscript": 1,
+          "query:all-records": 59,
+          "query:reader-source": 5,
+          "files:list": 10
+        }
+      },
+      "readyTransfers": {
+        "requests": 11,
+        "records": 9001,
+        "bodyBytes": 7700,
+        "jsonBytes": 7862304,
+        "byOperation": {
+          "query:all-records": 3,
+          "query:reader-source": 3,
+          "query:reader-annotation": 3,
+          "record:open": 1,
+          "people": 1
+        }
+      },
+      "workspaceTransfers": {
+        "requests": 113,
+        "records": 101107,
+        "bodyBytes": 1646018,
+        "jsonBytes": 37373747,
+        "byOperation": {
+          "query:all-records": 59,
+          "query:reader-source": 5,
+          "query:reader-annotation": 31,
+          "record:open": 1,
+          "people": 1,
+          "query:comment": 6,
+          "files:list": 10
+        }
+      },
+      "externalTransfers": {
+        "requests": 80,
+        "records": 71100,
+        "bodyBytes": 1632000,
+        "jsonBytes": 29236578,
+        "byOperation": {
+          "query:all-records": 59,
+          "query:reader-source": 5,
+          "query:comment": 6,
+          "files:list": 10
+        }
+      },
+      "computations": {
+        "pathIndexBuild58100": {
+          "p50Ms": 12.055800999999974,
+          "maxMs": 15.990238999999974,
+          "samples": 7
+        },
+        "placeCachedComments": {
+          "p50Ms": 0.020307000000002517,
+          "maxMs": 0.09902000000010958,
+          "samples": 7
+        },
+        "sourceSort5000": {
+          "p50Ms": 4.359662999999955,
+          "maxMs": 11.893033999999943,
+          "samples": 7
+        },
+        "searchCold5000": {
+          "p50Ms": 12.827718999999888,
+          "maxMs": 27.208291000000145,
+          "samples": 7
+        },
+        "searchWarm5000": {
+          "p50Ms": 4.150321000000076,
+          "maxMs": 7.844128999999839,
+          "samples": 7
+        },
+        "completion58100": {
+          "p50Ms": 9.717436000000134,
+          "maxMs": 11.785738999999921,
+          "samples": 7
+        },
+        "set58100": {
+          "p50Ms": 3.0680070000000796,
+          "maxMs": 6.353810000000067,
+          "samples": 7
+        },
+        "readingOrder": {
+          "p50Ms": 0.001703000000134125,
+          "maxMs": 0.1474590000000262,
+          "samples": 7
+        },
+        "chapterPaths100Embeds": {
+          "p50Ms": 0.18324399999983143,
+          "maxMs": 0.2429829999998674,
+          "samples": 3
+        },
+        "stats100Records": {
+          "p50Ms": 12.21303799999987,
+          "maxMs": 17.73203599999988,
+          "samples": 7
+        },
+        "place3000CommentsFullPaths": {
+          "p50Ms": 5.6715650000001006,
+          "maxMs": 7.289837999999918,
+          "samples": 7
+        },
+        "place3000CommentsBareNames": {
+          "p50Ms": 12.165672000000086,
+          "maxMs": 12.165672000000086,
+          "samples": 1
+        },
+        "oneThread3000Replies": {
+          "p50Ms": 2.265873000000056,
+          "maxMs": 3.1741400000000795,
+          "samples": 7
+        },
+        "sourcePanelSSR": {
+          "p50Ms": 19.018442999999934,
+          "maxMs": 24.988131000000067,
+          "samples": 3
+        },
+        "commentsPanelSSR": {
+          "p50Ms": 36.54645500000015,
+          "maxMs": 44.298987000000125,
+          "samples": 3
+        },
+        "annotationFilter6": {
+          "p50Ms": 0.0005510000000867876,
+          "maxMs": 0.07467599999972663,
+          "samples": 7
+        },
+        "cloneLibrary5000": {
+          "p50Ms": 11.732290999999805,
+          "maxMs": 16.065346000000318,
+          "samples": 7
+        }
+      },
+      "workerMessages": [
+        {
+          "type": "init",
+          "cloneMs": 12.091035000000147,
+          "bytes": 4814292
+        },
+        {
+          "type": "collection",
+          "cloneMs": 5.24372500000004,
+          "bytes": 1761944
+        },
+        {
+          "type": "main",
+          "cloneMs": 0.01686100000006263,
+          "bytes": 44
+        },
+        {
+          "type": "records",
+          "cloneMs": 0.019135000000005675,
+          "bytes": 8070
+        },
+        {
+          "type": "quotations",
+          "cloneMs": 2.236761000000115,
+          "bytes": 1195056
+        },
+        {
+          "type": "quotations",
+          "cloneMs": 1.87762500000008,
+          "bytes": 1195056
+        },
+        {
+          "type": "library",
+          "cloneMs": 13.623470999999881,
+          "bytes": 4813920
+        },
+        {
+          "type": "quotations",
+          "cloneMs": 2.505841000000146,
+          "bytes": 1195056
+        },
+        {
+          "type": "collection",
+          "cloneMs": 2.02493400000003,
+          "bytes": 1761944
+        }
+      ],
+      "slowAnnotationPreviewMs": 300.3616890000003,
+      "slowAnnotationIndexMs": 333.1956829999999,
+      "annotations300Ms": 41.603871000000254,
+      "annotations300Transfers": {
+        "requests": 1,
+        "records": 300,
+        "bodyBytes": 315900,
+        "jsonBytes": 401047,
+        "byOperation": {
+          "query:reader-annotation": 1
+        }
+      }
+    }
+  ]
+}

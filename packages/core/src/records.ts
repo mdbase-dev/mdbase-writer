@@ -43,6 +43,32 @@ export function joinPath(dir: string, rel: string): string {
   return out.join("/");
 }
 
+/** Immutable collection-generation index. Null means the basename is ambiguous. */
+export class PathIndex implements ReadonlySet<string> {
+  private readonly paths: Set<string>;
+  private readonly basenames = new Map<string, string | null>();
+  readonly [Symbol.toStringTag] = "PathIndex";
+
+  constructor(paths: Iterable<string>) {
+    this.paths = new Set(paths);
+    for (const path of this.paths) {
+      const name = path.slice(path.lastIndexOf("/") + 1).toLowerCase();
+      this.basenames.set(name, this.basenames.has(name) ? null : path);
+    }
+  }
+
+  get size(): number { return this.paths.size; }
+  has(path: string): boolean { return this.paths.has(path); }
+  uniqueBasename(name: string): string | null { return this.basenames.get(name) ?? null; }
+  entries() { return this.paths.entries(); }
+  keys() { return this.paths.keys(); }
+  values() { return this.paths.values(); }
+  [Symbol.iterator]() { return this.paths[Symbol.iterator](); }
+  forEach(callback: (value: string, key: string, set: ReadonlySet<string>) => void, thisArg?: unknown): void {
+    for (const path of this.paths) callback.call(thisArg, path, path, this);
+  }
+}
+
 /**
  * Resolves an embed or link target the way Obsidian-style collections expect:
  * exact collection path, then relative to the linking record, then a unique
@@ -60,6 +86,8 @@ export function resolveLinkTarget(
   for (const t of tries) if (candidates.has(t)) return t;
   if (!clean.includes("/")) {
     const name = withExt(clean).toLowerCase();
+    if (candidates instanceof PathIndex && !name.includes("/")) return candidates.uniqueBasename(name);
+    // Compatibility for callers with mutable Sets; indexed callers never scan here.
     const matches = [...candidates].filter((c) => c.toLowerCase() === name || c.toLowerCase().endsWith(`/${name}`));
     if (matches.length === 1) return matches[0] ?? null;
   }

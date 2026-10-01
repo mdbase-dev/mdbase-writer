@@ -17,6 +17,7 @@ import {
   type WriterRecord,
 } from "@mdbase-writer/core";
 
+import { PathIndex } from "@mdbase-writer/core/records";
 import { sourceMarks, type RawMark } from "./marks.js";
 import { fetchChecked } from "../async.js";
 import type { BlockPosition, CompileResult, FromWorker, ToWorker, SourceMark, WriterDiagnostic } from "./protocol.js";
@@ -49,8 +50,8 @@ let locales = new Map<string, string>();
 /** Collection text files the settings name (a .csl style, a .typ template), decoded. */
 const texts = new Map<string, string>();
 const records = new Map<string, WriterRecord>();
-let recordPaths = new Set<string>();
-let filePaths = new Set<string>();
+let recordPaths = new PathIndex([]);
+let filePaths = new PathIndex([]);
 let annotationPaths = new Set<string>();
 let sourceKeys = new Map<string, string>();
 let main = "";
@@ -290,8 +291,8 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
       library = new Map(message.library.map((i) => [i.id, i]));
       break;
     case "collection":
-      recordPaths = new Set(message.recordPaths);
-      filePaths = new Set(message.filePaths);
+      recordPaths = new PathIndex(message.recordPaths);
+      filePaths = new PathIndex(message.filePaths);
       break;
     case "quotations":
       annotationPaths = new Set(message.annotationPaths);

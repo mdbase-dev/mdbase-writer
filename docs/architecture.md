@@ -24,10 +24,13 @@
   makes it Reader-compatible, and doing so where Reader already runs is a
   no-op. `apps/writer/scripts/manifest.test.mjs` checks the copies still match
   Reader's.
-- **Annotations** are Reader's `dev.mdbase.reader.annotation` records (queried
-  through the contract where the collection has it, else by Reader's type
-  name). The first blockquote of the body is the quotation; `locator.label`
-  ("p. 12") becomes the citation's locator.
+- **Annotations** are Reader's `dev.mdbase.reader.annotation` records. Metadata
+  discovery queries implementing types and maps their fields; only an absent
+  contract falls back to Reader's starter type, if that type exists; collections
+  without Reader have an empty, ready set. Bodies for expanded sources use paged
+  implementing-type queries restricted to bounded path lists; embedded annotation
+  sessions open normally. The first blockquote is
+  the quotation; `locator.label` ("p. 12") becomes the citation's locator.
 - **Comments** are records implementing `mdbase.comment` (from mdbase
   contracts, whose published pack the writer's manifest embeds unchanged).
   A thread's first comment carries its anchor, a quote of the record's body
@@ -103,6 +106,21 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   then asks before leaving unsaved/conflicting text. Conflicts support comparison,
   merged text and draft downloads. Browser backups are best-effort, not durable
   collection saves.
+- **Collection discovery** runs independently of the main record: writing
+  waits only for manuscript bindings and its session. Index, library, annotation
+  identities and comments have separate loading/error states. Index arrival
+  retries embeds. Preview initialization waits for index/library, with annotation
+  identities supplied later. Export also awaits annotation discovery settling;
+  real annotation failures are non-blocking problems/warnings, not preview/export
+  gates. Missing-dependency diagnostics remain gated by their discovery domain.
+- **Path resolution** uses immutable collection-generation indexes: exact paths,
+  then relative paths, then a unique case-insensitive basename. Comment membership
+  is cached by comments/index identity; only changed manuscript bodies are
+  re-anchored. Source annotations are cached per source. Watch changes to known
+  annotations refresh only those entries and their old/new source buckets; known
+  non-annotation changes/autosave echoes leave the cache intact. Unknown paths,
+  schema changes and watch gaps reconcile conservatively. Metadata grouping
+  handles relative, bare and aliased source links.
 - **Home** lists manuscript metadata before reading bodies. Visible manuscripts
   get bounded background counts with a shared body cache; refresh and retry
   controls invalidate stale counts.

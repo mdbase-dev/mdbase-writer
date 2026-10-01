@@ -27,7 +27,7 @@ describe("embeddedQuotation", () => {
   it("warns when the source is not in the library, and quotes it uncited", () => {
     expect(embeddedQuotation(annotation, new Map())).toEqual({
       markdown: blockQuotation(null, { quote: "The event is *supernumerary*.\n\nIt belongs to the situation." }),
-      problem: { severity: "warning", message: "No source in the library matches sources/badiou-being.md, so the quotation from annotations/being-1.md is not cited." },
+      problem: { severity: "warning", metadata: "library", message: "No source in the library matches sources/badiou-being.md, so the quotation from annotations/being-1.md is not cited." },
     });
   });
 

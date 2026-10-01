@@ -1,6 +1,6 @@
 // The collection's manuscripts, and creating a new one.
 import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
-import { resolveLinkTarget } from "@mdbase-writer/core/records";
+import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
 import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
@@ -74,6 +74,8 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     return () => { stop(); clearTimeout(timer); window.removeEventListener("focus", refresh); };
   }, [backend]);
 
+  const recordIndex = useMemo(() => new PathIndex(recordPaths ?? []), [recordPaths]);
+
   // Bodies are only read for visible rows, at most four concurrent manuscript traversals.
   useEffect(() => {
     if (!manuscripts || !recordPaths) return;
@@ -84,7 +86,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       if (!cached) { cached = limitReads(() => backend.readBody(path)); bodyCache.current.set(path, cached); }
       return cached;
     };
-    const candidates = new Set(recordPaths);
+    const candidates = recordIndex;
     void mapConcurrent(manuscripts.filter((m) => visiblePaths.has(m.path)), 4, async (m) => {
       if (!live) return;
       const body = await read(m.path);
@@ -94,7 +96,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       if (live) setSummaries((known) => new Map(known).set(m.path, { ...summary, words }));
     }).catch(() => { /* Counts are optional; failed body reads never hide a title. */ });
     return () => { live = false; };
-  }, [backend, manuscripts, recordPaths, visiblePaths, limitReads]);
+  }, [backend, manuscripts, recordPaths, recordIndex, visiblePaths, limitReads]);
 
   const candidates = useMemo(() => {
     const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));

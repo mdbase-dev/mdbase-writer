@@ -2,7 +2,7 @@
 // one as a quotation. `![[annotation]]` renders only the quotation, cited from
 // the annotation's source and locator; the note stays private.
 import { parseCiteItem } from "./cite-items.js";
-import { resolveLinkTarget, type Frontmatter, type WriterRecord } from "./records.js";
+import { PathIndex, resolveLinkTarget, type Frontmatter, type WriterRecord } from "./records.js";
 
 /** A Reader annotation: a quotation and/or note on a source, with where it is in the source. */
 export interface SourceAnnotation {
@@ -18,6 +18,12 @@ export interface SourceAnnotation {
 /** Reader's starter type for annotations (collections may implement the contract with others). */
 export const ANNOTATION_TYPE = "reader-annotation";
 
+/** The source link under Reader's rules, shared by metadata discovery and body parsing. */
+export function annotationSourceLink(link: string): string | null {
+  const target = /^\[\[([^\]|#]+)/.exec(link.trim())?.[1]?.trim() ?? link.trim();
+  return target ? /\.md$/i.test(target) ? target : `${target}.md` : null;
+}
+
 /**
  * A Reader annotation record as the writer uses it. Reader links the source
  * as `[[path|title]]`; the first blockquote of the body is the quotation and
@@ -25,9 +31,8 @@ export const ANNOTATION_TYPE = "reader-annotation";
  */
 export function sourceAnnotation(path: string, frontmatter: Frontmatter | undefined, body: string): SourceAnnotation | null {
   const link = typeof frontmatter?.["source"] === "string" ? frontmatter["source"] : "";
-  const target = /^\[\[([^\]|#]+)/.exec(link.trim())?.[1]?.trim() ?? link.trim();
-  if (!target) return null;
-  const source = /\.md$/i.test(target) ? target : `${target}.md`;
+  const source = annotationSourceLink(link);
+  if (!source) return null;
   const locator = frontmatter?.["locator"];
   const rawLabel = locator && typeof locator === "object" && !Array.isArray(locator) ? (locator as Frontmatter)["label"] : undefined;
   const label = typeof rawLabel === "string" && rawLabel.trim() ? rawLabel.trim() : undefined;
@@ -74,9 +79,13 @@ export function blockQuotation(key: string | null, annotation: Pick<SourceAnnota
   return quoted.join("\n");
 }
 
+const sourceIndexes = new WeakMap<ReadonlyMap<string, string>, PathIndex>();
+
 /** The collection path of an annotation's source, from source record paths → citekeys. */
 export function annotationSourcePath(annotation: Pick<SourceAnnotation, "path" | "source">, sourceKeys: ReadonlyMap<string, string>): string | null {
-  return resolveLinkTarget(annotation.source, annotation.path, new Set(sourceKeys.keys()));
+  let index = sourceIndexes.get(sourceKeys);
+  if (!index) { index = new PathIndex(sourceKeys.keys()); sourceIndexes.set(sourceKeys, index); }
+  return resolveLinkTarget(annotation.source, annotation.path, index);
 }
 
 /** The citekey of an annotation's source, from source record paths → citekeys. */
@@ -90,15 +99,15 @@ export interface EmbeddedQuotation {
   readonly markdown: string;
   /** The citekey it is cited with. */
   readonly key?: string;
-  readonly problem?: { readonly severity: "error" | "warning"; readonly message: string };
+  readonly problem?: { readonly severity: "error" | "warning"; readonly message: string; readonly metadata?: "library" | "annotations" };
 }
 
 /** What an embedded annotation renders as: its quotation as a block quote, cited. */
 export function embeddedQuotation(record: WriterRecord, sourceKeys: ReadonlyMap<string, string>): EmbeddedQuotation {
   const annotation = sourceAnnotation(record.path, record.frontmatter, record.body);
-  if (!annotation?.quote) return { markdown: "", problem: { severity: "error", message: `The annotation ${record.path} has no quotation to embed.` } };
+  if (!annotation?.quote) return { markdown: "", problem: { severity: "error", metadata: "annotations", message: `The annotation ${record.path} has no quotation to embed.` } };
   const key = annotationKey(annotation, sourceKeys);
   const markdown = blockQuotation(key, annotation);
   if (key) return { markdown, key };
-  return { markdown, problem: { severity: "warning", message: `No source in the library matches ${annotation.source}, so the quotation from ${record.path} is not cited.` } };
+  return { markdown, problem: { severity: "warning", metadata: "library", message: `No source in the library matches ${annotation.source}, so the quotation from ${record.path} is not cited.` } };
 }

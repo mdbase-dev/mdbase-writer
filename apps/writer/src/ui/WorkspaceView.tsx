@@ -15,7 +15,7 @@ import { authorYear } from "../editor/library-search.js";
 import { ALT_LABEL, labelTargets, MOD_LABEL, referenceAtOffset, referenceKeys, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
-import { sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
+import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import {
   AlertIcon,
@@ -41,7 +41,7 @@ import { zip } from "../export/zip.js";
 import { CompareDialog, type Comparison } from "./CompareDialog.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
-import { anchorsFor, placeThreads, type PlacedThread } from "./comments.js";
+import { anchorsFor, ThreadPlacement, type PlacedThread } from "./comments.js";
 import { CommentsPanel, openCount, type PendingComment } from "./CommentsPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
@@ -167,7 +167,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const order = useMemo(() => workspace.readingOrder(), [workspace, snap.records, snap.recordPaths, snap.annotationPaths]);
   const activeView = snap.records.get(active);
   const dependencyDiagnostics = useMemo(() => workspace.dependencyDiagnostics(), [workspace, snap.assetProblems, snap.recordProblems, snap.records]);
-  const allDiagnostics = useMemo(() => [...(snap.result?.diagnostics ?? NO_DIAGNOSTICS), ...dependencyDiagnostics], [snap.result?.diagnostics, dependencyDiagnostics]);
+  const allDiagnostics = useMemo(() => [...discoveredDiagnostics(snap.result?.diagnostics ?? NO_DIAGNOSTICS, snap), ...dependencyDiagnostics], [snap.result?.diagnostics, snap.indexLoad, snap.libraryLoad, snap.annotationsLoad, dependencyDiagnostics]);
   // A citation or label half typed is not a problem yet: problems on the line
   // being typed wait until typing pauses or the cursor leaves the line.
   const diagnostics = useMemo(() => {
@@ -219,9 +219,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   );
 
   // Threads on the manuscript's records, placed in their (slightly deferred) text.
+  const threadPlacement = useMemo(() => new ThreadPlacement(), [workspace]);
   const placed = useMemo(
-    () => placeThreads(snap.comments, order, (path) => records.get(path)?.snapshot.body, snap.recordPaths),
-    [snap.comments, records, snap.recordPaths, order],
+    () => threadPlacement.place(snap.comments, order, (path) => records.get(path)?.snapshot.body, snap.recordIndex),
+    [threadPlacement, snap.comments, records, snap.recordIndex, order],
   );
   // Threads are placed again after every edit, but the editor's anchors follow
   // edits themselves: it is only given new ones when they change.
@@ -386,7 +387,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const mainBody = snap.records.get(workspace.main)?.snapshot.body;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- recomputed when the manuscript's body, the index or the annotations change
   const chapters = useMemo(() => workspace.chapterPaths(), [workspace, mainBody, snap.recordPaths, snap.annotationPaths, records]);
-  const recordSet = useMemo(() => new Set(snap.recordPaths), [snap.recordPaths]);
+  const recordSet = snap.recordIndex;
   const cards = useMemo<ChapterCards>(() => {
     const keys = sourceKeys(snap.library);
     const entries = new Map(snap.library.map((e) => [e.key, e]));
@@ -581,6 +582,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             {plural(stats.words, "word")}
           </span>
           <ProblemsButton
+            pending={snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready"}
             diagnostics={diagnostics}
             open={problemsOpen}
             setOpen={setProblemsOpen}
@@ -677,6 +679,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             </>
           ) : layout.tab === "comments" ? (
             <CommentsPanel
+              loading={snap.commentsLoad.phase === "loading" || snap.indexLoad.phase === "loading"}
+              onRetry={() => void workspace.loadComments()}
               placed={placed}
               grouped={order.length > 1}
               people={snap.people}
@@ -710,7 +714,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               library={snap.library}
               cited={stats.cited}
               atCursor={citedAtCursor}
-              loadAnnotations={workspace.annotations}
+              loadAnnotations={workspace.annotationsForSource}
+              annotationVersion={snap.annotationVersion}
+              loading={snap.libraryLoad.phase === "loading"}
               canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted" && !snap.recoveredDrafts.has(active))}
               onInsert={(text) => {
                 setPane("write");
@@ -737,6 +743,14 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             <code className="pane-path">{active}</code>
           </header>
         )}
+        {(["indexLoad", "libraryLoad", "annotationsLoad"] as const).map((domain) => {
+          const state = snap[domain];
+          const name = domain === "indexLoad" ? "Collection index" : domain === "libraryLoad" ? "Sources" : "Annotation index";
+          return state.phase === "ready" ? null : <div key={domain} className="banner" role={state.phase === "failed" ? "alert" : "status"}>
+            <span>{state.phase === "loading" ? `${name} loading; you can keep writing.` : `${name} unavailable: ${state.problem}`}</span>
+            {state.phase === "failed" && <button type="button" className="mdbase-button" onClick={() => void workspace.retryMetadata().catch(() => {})}>Retry loading</button>}
+          </div>;
+        })}
         {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button></div>}
         {snap.recoveredDrafts.size > 0 && <div className="banner" role="alert">
           <span>{snap.recoveredDrafts.size} recovered local draft(s) need review before writing in those records.</span>
@@ -844,7 +858,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           marks={snap.result?.marks ?? NO_MARKS}
           onSource={onPreviewSource}
           problem={snap.previewProblem}
-          stale={Boolean(snap.previewProblem || snap.result && !snap.result.artifact)}
+          stale={Boolean(snap.previewProblem || snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready" || snap.result && !snap.result.artifact)}
           onJump={onPreviewJump}
           follow={follow}
           zoom={layout.zoom}
@@ -991,14 +1005,14 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle }: { tab: Si
   );
 }
 
-function ProblemsButton({ diagnostics, open, setOpen, onPick }: { diagnostics: readonly WriterDiagnostic[]; open: boolean; setOpen(open: boolean): void; onPick(d: WriterDiagnostic): void }) {
+function ProblemsButton({ diagnostics, pending, open, setOpen, onPick }: { diagnostics: readonly WriterDiagnostic[]; pending: boolean; open: boolean; setOpen(open: boolean): void; onPick(d: WriterDiagnostic): void }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
   if (!diagnostics.length) {
     return (
-      <span className="bar-problems is-clear" title="No problems">
-        <CheckIcon />
-        <span className="button-label">No problems</span>
+      <span className="bar-problems is-clear" title={pending ? "Collection dependencies have not been checked yet" : "No problems"}>
+        {pending ? <span className="spinner" aria-hidden="true" /> : <CheckIcon />}
+        <span className="button-label">{pending ? "Dependencies not checked" : "No problems"}</span>
       </span>
     );
   }
