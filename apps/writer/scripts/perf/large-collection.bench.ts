@@ -85,11 +85,20 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
   // Inherit SDK queryPages: real page-size/offset logic and independent page budgets.
   // Only the authority query evaluator is synthetic (not a full mdbase type engine).
   class SyntheticClient extends MdbaseCollectionClient<JsonObject> {
-    constructor() { super({ operation: async () => { throw new Error("Unexpected raw operation"); } }); }
-    override async describe() {
+    constructor() { super({ async operation<Result>(operation: string): Promise<Result> {
+      if (operation !== "describe") throw new Error("Unexpected raw operation");
       await delay();
-      return connectSuccess(account("describe", description) as CollectionDescription);
-    }
+      // Exercise SDK description caching, not a synthetic describe override.
+      account("describe", description);
+      return {
+        protocol_version: description.protocolVersion, collection_id: description.collectionId,
+        display_name: description.displayName, spec_version: description.specVersion,
+        operations: description.operations, change_cursor: description.changeCursor, types: description.types,
+        contracts: description.contracts.map((c) => ({ ...c, contract_type: c.contractType,
+          implementations: c.implementations.map((i) => ({ ...i, type_name: i.typeName, type_version: i.typeVersion })),
+        })),
+      } as Result;
+    } }); }
     override async query(input: QueryInput = {}) {
       for (let n = 0; n < (input.types?.includes("reader-annotation") && !input.includeBody ? annotationLatencyFactor : 1); n++) await delay();
       if (strictContracts && input.contract && (input.includeBody || input.where || input.select)) {
@@ -127,7 +136,7 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
   const watch = { ...authority.watch, status: { state: "connected" as const, cursor: 0, recovered: false }, problem: null };
   const connection = {
     info: () => ({ displayName: "Synthetic benchmark", collectionId: "synthetic-perf" }),
-    describe: client.describe.bind(client), queryPages: client.queryPages.bind(client),
+    describe: client.describe.bind(client), queryPages: client.queryPages.bind(client), readMany: client.readMany.bind(client),
     read: async ({ path }: { path: string }) => {
       await delay();
       const record = authority.get(path);
