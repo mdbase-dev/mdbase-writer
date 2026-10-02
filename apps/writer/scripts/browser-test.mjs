@@ -5,7 +5,7 @@ import { mkdirSync } from "node:fs";
 
 import { chromium } from "playwright";
 
-const base = process.argv[2] ?? "http://127.0.0.1:5320/";
+const base = process.argv[2] ?? process.env.BASE ?? "http://127.0.0.1:5320/";
 const executablePath = process.env.CHROME;
 mkdirSync("out", { recursive: true });
 
