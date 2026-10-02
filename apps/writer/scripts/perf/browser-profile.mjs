@@ -2,7 +2,7 @@
 import { chromium } from "playwright";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
+const browser = await chromium.launch({ executablePath: process.env.CHROME });
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
 const errors = []; page.on("pageerror", (e) => errors.push(e.message));
 await page.addInitScript(() => {

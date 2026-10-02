@@ -14,7 +14,17 @@ export default defineConfig({
   plugins: [react()],
   worker: { format: "es" },
   define: { __PANDOC_WASM_VERSION__: JSON.stringify(pandocVersion) },
-  optimizeDeps: { exclude: ["@myriaddreamin/typst-ts-web-compiler", "@myriaddreamin/typst-ts-renderer"] },
+  optimizeDeps: {
+    // Deferred compiler/export worker imports are missed by the initial crawl.
+    // Discovering these mid-session reloads the page and resets the demo collection.
+    include: [
+      "@myriaddreamin/typst.ts/compiler",
+      "@myriaddreamin/typst.ts/options.init",
+      "@myriaddreamin/typst.ts/renderer",
+      "pandoc-wasm/core",
+    ],
+    exclude: ["@myriaddreamin/typst-ts-web-compiler", "@myriaddreamin/typst-ts-renderer"],
+  },
   resolve: {
     alias: [
       { find: /^pandoc-wasm\/core$/, replacement: resolve(pandocWasm, "src", "core.js") },

@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { cpus } from "node:os";
 import { performance } from "node:perf_hooks";
-import type { CollectionDescription, CollectionFileDescriptor, JsonObject, MdbaseConnection, QueryInput, QueryRecord } from "@mdbase-dev/connect";
+import type { CollectionDescription, CollectionFileDescriptor, JsonObject, MdbaseConnection, QueryInput, QueryMetadataInput, QueryMetadataResult, QueryRecord, QueryResult, ConnectOutcome, CollectionQueryProblemCode } from "@mdbase-dev/connect";
 import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess } from "@mdbase-dev/connect/advanced";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
@@ -46,6 +46,8 @@ const latencyMs = Number(process.env["PERF_LATENCY_MS"] ?? 20);
 const runs = Number(process.env["PERF_RUNS"] ?? 3);
 const filePageSize = Number(process.env["PERF_FILE_PAGE_SIZE"] ?? 500);
 const strictContracts = process.env["PERF_STRICT_CONTRACTS"] !== "0";
+const authorityFeatures = process.env["PERF_AUTHORITY_FEATURES"] !== "0";
+const supports = async (id: string) => connectSuccess(authorityFeatures && ["query-metadata-v1", "read-many-documents-v1"].includes(id));
 for (const [name, value] of Object.entries({ latencyMs, runs, filePageSize })) {
   if (!Number.isFinite(value) || value < (name === "latencyMs" ? 0 : 1)) throw new Error(`Invalid ${name}`);
 }
@@ -56,13 +58,15 @@ type Transfer = { operation: string; records: number; bodyBytes: number; jsonByt
 function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
   const authority = createRecordTestAuthority();
   const rows: QueryRecord<JsonObject>[] = [];
+  const byPath = new Map<string, QueryRecord<JsonObject>>();
   const byType = new Map<string, QueryRecord<JsonObject>[]>();
   const transfers: Transfer[] = [];
   const seed = (path: string, type: string, frontmatter: JsonObject, body: string) => {
     const fm = { type, ...frontmatter };
     authority.seed(path, { frontmatter: fm, body });
-    const row = { path, types: [type], frontmatter: fm, body, file: { path, mtime: "2026-01-01T00:00:00Z", size: Buffer.byteLength(body) } };
+    const row = { path, types: [type], revision: authority.get(path)!.revision, frontmatter: fm, body, file: { path, mtime: "2026-01-01T00:00:00Z", size: Buffer.byteLength(body) } };
     rows.push(row);
+    byPath.set(path, row);
     if (!byType.has(type)) byType.set(type, []);
     byType.get(type)!.push(row);
   };
@@ -74,6 +78,7 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
     [commentContract, "comment", ["document", "created_at", "status", "motivation", "target"]],
   ] as const;
   const description: CollectionDescription = {
+    authorityCapabilities: authorityFeatures ? ["query-metadata-v1", "read-many-documents-v1", "query-record-revisions-v1"] : [],
     protocolVersion: 1, collectionId: "synthetic-perf", displayName: "Synthetic benchmark", specVersion: "0.3", operations: [], changeCursor: 0, types: [],
     contracts: contracts.map(([contract, typeName, fields]) => ({ ...contract, contractType: "record", digest: "test", schema: {}, implementations: [{ typeName, typeVersion: 1, digest: "test", fields: Object.fromEntries(fields.map((f) => [f, f])) }] })),
   };
@@ -85,12 +90,29 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
   // Inherit SDK queryPages: real page-size/offset logic and independent page budgets.
   // Only the authority query evaluator is synthetic (not a full mdbase type engine).
   class SyntheticClient extends MdbaseCollectionClient<JsonObject> {
-    constructor() { super({ async operation<Result>(operation: string): Promise<Result> {
-      if (operation !== "describe") throw new Error("Unexpected raw operation");
+    constructor() { super({ async operation<Result>(operation: string, payload: JsonObject): Promise<Result> {
       await delay();
+      if (operation === "read") {
+        if (!authorityFeatures || !Array.isArray(payload["paths"])) throw new Error("Unexpected document batch");
+        const paths = payload["paths"] as string[];
+        const items = paths.map((path) => {
+          const r = byPath.get(path);
+          if (!r) return { path, status: "missing" };
+          return { path, status: "found", record: {
+            path, types: r.types, revision: authority.get(path)!.revision,
+            frontmatter: r.frontmatter, effective_frontmatter: r.frontmatter, file: r.file,
+            ...(payload["include_body"] ? { body: r.body } : {}),
+          } };
+        });
+        const bodyBytes = items.reduce((n, item) => n + Buffer.byteLength(item.record?.body ?? ""), 0);
+        const type = byPath.get(paths[0]!)?.types[0] ?? "documents";
+        return account(`read:${type}`, { valid: true, result: { items } }, items.length, bodyBytes) as Result;
+      }
+      if (operation !== "describe") throw new Error("Unexpected raw operation");
       // Exercise SDK description caching, not a synthetic describe override.
       account("describe", description);
       return {
+        authority_capabilities: description.authorityCapabilities,
         protocol_version: description.protocolVersion, collection_id: description.collectionId,
         display_name: description.displayName, spec_version: description.specVersion,
         operations: description.operations, change_cursor: description.changeCursor, types: description.types,
@@ -98,8 +120,12 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
           implementations: c.implementations.map((i) => ({ ...i, type_name: i.typeName, type_version: i.typeVersion })),
         })),
       } as Result;
-    } }); }
-    override async query(input: QueryInput = {}) {
+    } }, undefined, supports); }
+    override query(input: QueryMetadataInput): Promise<ConnectOutcome<QueryMetadataResult, CollectionQueryProblemCode>>;
+    override query(input?: QueryInput): Promise<ConnectOutcome<QueryResult<JsonObject>, CollectionQueryProblemCode>>;
+    override query(input: QueryInput | QueryMetadataInput): Promise<ConnectOutcome<QueryResult<JsonObject> | QueryMetadataResult, CollectionQueryProblemCode>>;
+    override async query(input: QueryInput | QueryMetadataInput = {}): Promise<ConnectOutcome<QueryResult<JsonObject> | QueryMetadataResult, CollectionQueryProblemCode>> {
+      if (input.output === "metadata" && !authorityFeatures) throw new Error("Unsupported metadata request");
       for (let n = 0; n < (input.types?.includes("reader-annotation") && !input.includeBody ? annotationLatencyFactor : 1); n++) await delay();
       if (strictContracts && input.contract && (input.includeBody || input.where || input.select)) {
         const problem = connectProblem<"operation_invalid">("operation_invalid", "Contract views cannot include bodies, filters or selections.", { details: { diagnostics: [] } });
@@ -115,7 +141,7 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
         if (!Array.isArray(parsed) || !parsed.every((p) => typeof p === "string")) throw new Error("Expected an exact path list");
         paths = new Set(parsed);
       }
-      if (input.select || input.cursor || input.groupBy || input.orderBy || input.summaryFunctions || input.summaries) throw new Error("Extend synthetic evaluator for the new query shape before comparing results.");
+      if (input.cursor || input.groupBy || input.orderBy || input.summaryFunctions || input.summaries) throw new Error("Extend synthetic evaluator for the new query shape before comparing results.");
       const type = input.contract ? contracts.find(([c]) => c.id === input.contract!.id)?.[1] : undefined;
       const candidates = type ? byType.get(type)! : input.types ? input.types.flatMap((t) => byType.get(t) ?? []) : rows;
       const matching = paths ? candidates.filter((r) => paths.has(r.path)) : candidates;
@@ -123,11 +149,29 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
       const limit = input.limit ?? 200;
       const results = matching.slice(offset, offset + limit).map((r) => ({
         path: r.path, types: r.types, file: r.file,
+        ...(authorityFeatures ? { revision: r.revision! } : {}),
         ...(input.frontmatterMode === "effective" ? { effectiveFrontmatter: r.frontmatter! } : input.frontmatterMode === "both" ? { frontmatter: r.frontmatter!, effectiveFrontmatter: r.frontmatter! } : { frontmatter: r.frontmatter! }),
         ...(input.includeBody ? { body: r.body } : {}),
       }));
-      const label = type ?? input.types?.join(",") ?? (input.where ? "changed-paths" : "all-records");
-      const value = { results, meta: { hasMore: offset + limit < matching.length, totalCount: matching.length } };
+      const label = (type ?? input.types?.join(",") ?? (input.where ? "changed-paths" : "all-records"))
+        + (input.where && input.select ? ":selection" : "");
+      const meta = { hasMore: offset + limit < matching.length, totalCount: matching.length };
+      const values = (r: QueryRecord<JsonObject>) => Object.fromEntries((input.select ?? []).flatMap((s) => {
+        const expression = typeof s === "string" ? s : s.expression;
+        const name = typeof s === "string" ? s : s.name;
+        const field = /^record\[(.*)\]$/.exec(expression)?.[1];
+        const value = field ? r.frontmatter?.[JSON.parse(field) as string]
+          : expression === "file.path" ? r.path : expression === "file.mtime" ? r.file.mtime : undefined;
+        if (!field && expression !== "file.path" && expression !== "file.mtime") throw new Error(`Unsupported synthetic select: ${expression}`);
+        return value === undefined ? [] : [[name, value]];
+      })) as JsonObject;
+      if (input.output === "metadata") {
+        const value: QueryMetadataResult = { output: "metadata", results: results.map((r) => ({
+          path: r.path, types: r.types, revision: r.revision!, values: values(r),
+        })), meta };
+        return connectSuccess(account(`query:${label}`, value, results.length) as typeof value);
+      }
+      const value = { results: input.select ? results.map((r) => ({ ...r, values: values(r) })) : results, meta };
       return connectSuccess(account(`query:${label}`, value, results.length, results.reduce((n, r) => n + Buffer.byteLength(r.body ?? ""), 0)) as typeof value);
     }
   }
@@ -136,7 +180,8 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
   const watch = { ...authority.watch, status: { state: "connected" as const, cursor: 0, recovered: false }, problem: null };
   const connection = {
     info: () => ({ displayName: "Synthetic benchmark", collectionId: "synthetic-perf" }),
-    describe: client.describe.bind(client), queryPages: client.queryPages.bind(client), readMany: client.readMany.bind(client),
+    describe: client.describe.bind(client), queryPages: client.queryPages.bind(client), queryAll: client.queryAll.bind(client), readMany: client.readMany.bind(client),
+    supportsAuthorityFeature: supports,
     read: async ({ path }: { path: string }) => {
       await delay();
       const record = authority.get(path);
@@ -247,7 +292,8 @@ it("large collection baseline (opt-in)", async () => {
         await vi.waitFor(() => expect(compiler.initAt).toBeGreaterThan(start), { timeout: 120_000 });
         const previewInitializedMs = compiler.initAt - start;
         stopMarking();
-        const commentTransfers = totals(f.transfers.filter((e) => e.operation === "query:comment"));
+        const commentTransfers = totals(f.transfers.filter((e) => e.operation === "query:comment" || e.operation === "read:comment" || e.operation === "query:comment:selection"));
+        const annotationIdentityTransfers = totals(f.transfers.filter((e) => e.operation === "query:reader-annotation" && !e.bodyBytes));
         const workspaceTransfers = totals(f.transfers.splice(0));
         const returnHomeStart = performance.now();
         await Promise.all([f.backend.index(), f.backend.library(), f.backend.listManuscripts()]);
@@ -303,7 +349,7 @@ it("large collection baseline (opt-in)", async () => {
         f.authority.editElsewhere("notes/note-00000.md", { body: "Changed in another app" });
         await until(workspace, () => {
           const current = workspace!.getSnapshot();
-          return current.indexLoad.phase === "ready" && current.libraryLoad.phase === "ready" && current.annotationsLoad.phase === "ready" && (current.recordPaths !== previousRecords || f.transfers.some((t) => t.operation === "query:changed-paths"));
+          return current.indexLoad.phase === "ready" && current.libraryLoad.phase === "ready" && current.annotationsLoad.phase === "ready" && (current.recordPaths !== previousRecords || f.transfers.some((t) => t.operation === "query:changed-paths" || t.operation === "read:note"));
         });
         const externalRefreshMs = performance.now() - refreshStart;
         const externalTransfers = totals(f.transfers.splice(0));
@@ -316,7 +362,7 @@ it("large collection baseline (opt-in)", async () => {
         const newSourceMs = performance.now() - sourceChangeStart;
         const newSourceTransfers = totals(f.transfers.splice(0));
         const sourceWorkerMessages = compiler.messages.slice(sourceMessagesStart);
-        output.push({ run: run + 1, seedMs, homeListMs, homeBackgroundMs, readyMs, sourcesUsableMs, sourcesFirstSearchMs, commentsUsableMs, annotationIndexMs, sourceAnnotationsMs, annotationsUsableMs, previewInitializedMs, externalRefreshMs, newSourceMs, newSourceTransfers, commentTransfers, returnHomeMs, returnHomeTransfers, navigationTransfers, noteWorkerMessages, sourceWorkerMessages, homeTransfers, readyTransfers, workspaceTransfers, externalTransfers, computations, workerMessages: [...compiler.messages] });
+        output.push({ run: run + 1, seedMs, homeListMs, homeBackgroundMs, readyMs, sourcesUsableMs, sourcesFirstSearchMs, commentsUsableMs, annotationIndexMs, sourceAnnotationsMs, annotationsUsableMs, previewInitializedMs, externalRefreshMs, newSourceMs, newSourceTransfers, commentTransfers, annotationIdentityTransfers, returnHomeMs, returnHomeTransfers, navigationTransfers, noteWorkerMessages, sourceWorkerMessages, homeTransfers, readyTransfers, workspaceTransfers, externalTransfers, computations, workerMessages: [...compiler.messages] });
       } finally { await workspace?.dispose(); f.backend.dispose(); f.authority.watch.close(); }
       // Same collection size, redistributed highlights: one book has 300, not six.
       // Only its no-body annotation discovery pages are 6x slower, exposing preview gating.
@@ -340,7 +386,7 @@ it("large collection baseline (opt-in)", async () => {
         Object.assign(output.at(-1)!, { slowAnnotationPreviewMs, slowAnnotationIndexMs, annotations300Ms, annotations300Transfers: totals(book.transfers) });
       } finally { await bookWorkspace?.dispose(); book.backend.dispose(); book.authority.watch.close(); }
     }
-    const report = { environment: { node: process.version, cpu: cpus()[0]?.model, platform: process.platform }, counts, latencyMs, filePageSize, strictContracts, runs, results: output };
+    const report = { environment: { node: process.version, cpu: cpus()[0]?.model, platform: process.platform }, counts, latencyMs, filePageSize, strictContracts, authorityFeatures, runs, results: output };
     const json = JSON.stringify(report, null, 2);
     const destination = process.env["PERF_OUTPUT"] ?? "out/perf/large-collection.json";
     mkdirSync(dirname(destination), { recursive: true });
