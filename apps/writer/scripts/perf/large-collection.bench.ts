@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { cpus } from "node:os";
 import { performance } from "node:perf_hooks";
-import type { CollectionDescription, CollectionFileDescriptor, JsonObject, MdbaseConnection, QueryInput, QueryRecord } from "@mdbase-dev/connect";
+import type { CollectionDescription, CollectionFileDescriptor, JsonObject, MdbaseConnection, QueryInput, QueryMetadataInput, QueryRecord, QueryResult, ConnectOutcome, CollectionQueryProblemCode } from "@mdbase-dev/connect";
 import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess } from "@mdbase-dev/connect/advanced";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
@@ -99,7 +99,11 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
         })),
       } as Result;
     } }); }
-    override async query(input: QueryInput = {}) {
+    override query(input: QueryMetadataInput): Promise<never>;
+    override query(input?: QueryInput): Promise<ConnectOutcome<QueryResult<JsonObject>, CollectionQueryProblemCode>>;
+    override query(input: QueryInput | QueryMetadataInput): Promise<ConnectOutcome<QueryResult<JsonObject>, CollectionQueryProblemCode>>;
+    override async query(input: QueryInput | QueryMetadataInput = {}) {
+      if (input.output === "metadata") throw new Error("Legacy benchmark does not support metadata output");
       for (let n = 0; n < (input.types?.includes("reader-annotation") && !input.includeBody ? annotationLatencyFactor : 1); n++) await delay();
       if (strictContracts && input.contract && (input.includeBody || input.where || input.select)) {
         const problem = connectProblem<"operation_invalid">("operation_invalid", "Contract views cannot include bodies, filters or selections.", { details: { diagnostics: [] } });

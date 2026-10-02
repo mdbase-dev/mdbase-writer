@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Collection } from "@callumalpass/mdbase";
-import { normalizeCollectionChange, type CollectionChange, type CollectionDescription, type JsonObject, type MdbaseConnection, type QueryInput, type QueryPagesOptions } from "@mdbase-dev/connect";
+import { normalizeCollectionChange, type CollectionChange, type CollectionDescription, type JsonObject, type MdbaseConnection, type QueryInput, type QueryMetadataInput, type QueryPagesOptions } from "@mdbase-dev/connect";
 import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess } from "@mdbase-dev/connect/advanced";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { ManuscriptWorkspace } from "../workspace/workspace.js";
@@ -76,7 +76,13 @@ function fixture(contracts: CollectionDescription["contracts"] = [annotation], t
       yield connectSuccess({ results, page: 0, offset: 0, loaded: results.length, complete: true });
     } else yield* original(input);
   }) as typeof original;
-  client.queryPages = (input = {}, options) => connection.queryPages(input, options);
+  function pages(input: QueryMetadataInput, options?: { pageSize?: number }): AsyncGenerator<never>;
+  function pages(input?: QueryInput, options?: QueryPagesOptions<JsonObject>): ReturnType<typeof connection.queryPages>;
+  function pages(input: QueryInput | QueryMetadataInput = {}, options?: QueryPagesOptions<JsonObject>) {
+    if (input.output === "metadata") throw new Error("Legacy fixture does not support metadata output");
+    return connection.queryPages(input, options);
+  }
+  client.queryPages = pages;
   return { backend, connection, description, describeRequests, emit, authority, rows, read, sourceNames, bodyQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.includeBody).map(([q]) => q), changedQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.where && !q.types).map(([q]) => q), metadataQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.types?.some((t) => t === "highlight" || t === "reader-annotation") && !q.includeBody).map(([q]) => q), notify: (path: string) => emit("mdbase.record.modified", { path }), rename: (from: string, to: string) => emit("mdbase.record.renamed", { from, to }), reset: () => resetWatch() };
 }
 
