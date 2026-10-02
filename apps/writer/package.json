@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "icons": "node scripts/write-pwa-icons.mjs",
     "build": "pnpm manifest && pnpm manifest:validate && vite build",
     "dev": "pnpm manifest && vite --host 127.0.0.1",
     "manifest": "node scripts/write-manifest.mjs",
