@@ -46,6 +46,7 @@ export async function createLargeDemoBackend() {
   const connection = {
     info: () => ({ collectionId: "large-demo", displayName: "Large demo" }),
     describe: client.describe.bind(client), readMany: client.readMany.bind(client),
+    supportsAuthorityFeature: async () => connectSuccess(false),
     async *queryPages(input: QueryInput = {}, options: { pageSize?: number } = {}) {
       const type = input.contract ? contracts.find(([c]) => c.id === input.contract!.id)?.[1] : undefined;
       const paths = input.where ? new Set<string>(JSON.parse(input.where.replace(/^file\.path in /, ""))) : undefined;

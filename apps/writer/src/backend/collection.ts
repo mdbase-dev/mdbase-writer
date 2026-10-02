@@ -1,5 +1,5 @@
 // Collection semantics, independent of queries, watches and record sessions.
-import type { CollectionDescription, JsonObject } from "@mdbase-dev/connect";
+import type { CollectionDescription, JsonObject, QuerySelectionExpression } from "@mdbase-dev/connect";
 import { annotationSourceLink } from "@mdbase-writer/core/annotations";
 import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
@@ -36,10 +36,12 @@ export interface CollectionRow {
   readonly types: readonly string[];
   readonly frontmatter?: JsonObject;
   readonly effectiveFrontmatter?: JsonObject;
-  readonly file: { readonly mtime?: string };
+  /** Narrow query values are partial metadata, never a full record/frontmatter. */
+  readonly values?: JsonObject;
+  readonly file?: { readonly mtime?: string };
 }
 export interface AnnotationMetadata { readonly path: string; readonly type: string; readonly source: string; readonly fields: Readonly<Record<string, string>> }
-export interface CommentMetadata { readonly type: string; readonly fields: Readonly<Record<string, string>>; readonly comment: CommentRecord }
+export interface CommentMetadata { readonly type: string; readonly fields: Readonly<Record<string, string>>; readonly comment: Pick<CommentRecord, "document" | "inReplyTo"> }
 export interface StoreDelta extends CollectionDelta {
   /** Null means source membership changed: previously ambiguous links may now resolve. */
   readonly annotationSources?: readonly string[] | null;
@@ -103,6 +105,24 @@ export class CollectionSchema {
     this.roleCache.set(key, roles);
     return roles;
   }
+  /** Classification fields across bindings: query types do not exclude co-typed roles. */
+  discoverySelect(): QuerySelectionExpression[] {
+    const needed: Record<Domain, readonly string[]> = {
+      source: ["csl", "title"], manuscript: ["title", "template", "csl"],
+      annotation: ["source"], comment: ["document", "created_at", "in_reply_to"], person: ["name"],
+    };
+    const fields = new Set<string>();
+    let modified = false;
+    for (const role of this.byType.values()) for (const [domain, binding] of role) {
+      if (!binding.active) continue;
+      modified ||= domain === "manuscript";
+      for (const field of needed[domain]) fields.add(binding.fields[field] ?? field);
+    }
+    return [
+      ...[...fields].map((field) => ({ name: field, expression: `record[${JSON.stringify(field)}]` })),
+      ...(modified ? [{ name: "file.mtime", expression: "file.mtime" }] : fields.size ? [] : [{ name: "file.path", expression: "file.path" }]),
+    ];
+  }
   annotationFields(types: readonly string[]): Readonly<Record<string, string>> {
     const binding = this.roles(types).get("annotation");
     return binding?.fields ?? {};
@@ -140,7 +160,7 @@ export class CollectionStore {
   get recordIndex(): PathIndex { return this.recordIndexValue ??= new PathIndex(this.records.keys()); }
 
   private classify(row: CollectionRow, previous: Classified | undefined, discovery: boolean): Classified {
-    const fm = row.frontmatter ?? row.effectiveFrontmatter ?? {};
+    const fm = row.values ?? row.frontmatter ?? row.effectiveFrontmatter ?? {};
     const effective = row.effectiveFrontmatter ?? fm;
     // Independent discovery queries can finish in any order. Persisted index rows
     // must not overwrite defaults already learned from effective domain queries.
@@ -157,11 +177,12 @@ export class CollectionStore {
         }
         case "manuscript": {
           const fields = fieldsOf(effective, binding);
+          const modified = row.values?.["file.mtime"] ?? row.file?.mtime;
           const manuscript = retainEffective && previous.manuscript ? previous.manuscript : {
             path: row.path, title: typeof fields["title"] === "string" ? fields["title"] : row.path,
             ...(typeof fields["template"] === "string" ? { template: fields["template"] } : {}),
             ...(typeof fields["csl"] === "string" ? { style: fields["csl"] } : {}),
-            ...(row.file.mtime ? { modified: row.file.mtime } : {}),
+            ...(typeof modified === "string" ? { modified } : {}),
           };
           next.manuscript = equal(previous?.manuscript, manuscript) ? previous!.manuscript! : manuscript;
           break;
@@ -174,7 +195,8 @@ export class CollectionStore {
         case "comment": {
           const comment = commentFromRecord(row.path, fieldsOf(fm, binding), "");
           if (comment) {
-            const metadata = { type: binding.name, fields: binding.fields, comment };
+            const metadata = { type: binding.name, fields: binding.fields,
+              comment: { document: comment.document, ...(comment.inReplyTo ? { inReplyTo: comment.inReplyTo } : {}) } };
             next.comment = discovery && previous?.comment && equal(previous.comment, metadata) ? previous.comment : metadata;
           }
           break;

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Collection } from "@callumalpass/mdbase";
-import { normalizeCollectionChange, type CollectionChange, type CollectionDescription, type JsonObject, type MdbaseConnection, type QueryInput, type QueryMetadataInput, type QueryPagesOptions } from "@mdbase-dev/connect";
+import { normalizeCollectionChange, type CollectionChange, type CollectionDescription, type JsonObject, type MdbaseConnection, type QueryInput, type QueryMetadataInput, type QueryMetadataRecord, type QueryRecord, type QueryPage, type ConnectOutcome } from "@mdbase-dev/connect";
 import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess } from "@mdbase-dev/connect/advanced";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { ManuscriptWorkspace } from "../workspace/workspace.js";
@@ -38,16 +38,37 @@ function fixture(contracts: CollectionDescription["contracts"] = [annotation], t
       implementations: c.implementations.map((i) => ({ ...i, type_name: i.typeName, type_version: i.typeVersion })),
     })),
   }));
-  const client = new MdbaseCollectionClient<JsonObject>({ async operation<Result>(operation: string): Promise<Result> {
+  const supports = async (id: string): Promise<ConnectOutcome<boolean>> => connectSuccess(description.authorityCapabilities?.includes(id) ?? false);
+  const readRequests = vi.fn((payload: JsonObject) => ({ valid: true, result: { items: (payload["paths"] as string[]).map((path) => {
+    const row = rows.find((r) => r.path === path);
+    return row ? { path, status: "found", record: { ...row, revision: "hydrated", effective_frontmatter: row.frontmatter, file: {},
+      body: payload["include_body"] ? row.body : undefined } } : { path, status: "missing" };
+  }) } }));
+  const client = new MdbaseCollectionClient<JsonObject>({ async operation<Result>(operation: string, payload: JsonObject): Promise<Result> {
+    if (operation === "read") return readRequests(payload) as Result;
     if (operation !== "describe") throw new Error(`Unexpected operation ${operation}`);
     return await describeRequests() as Result;
-  } });
+  } }, undefined, supports);
   const emit = (type: string, payload: JsonObject = {}) => notify(normalizeCollectionChange({ type, payload, cursor: 1, occurred_at: "2026-01-01T00:00:00Z" }));
   let resetWatch = () => {};
-  const queryPages = vi.fn<(input: QueryInput, options?: QueryPagesOptions<JsonObject>) => ReturnType<MdbaseConnection<JsonObject>["queryPages"]>>(async function* (input: QueryInput) {
+  const sourceNames = ["a", "b"];
+  const queryPages = vi.fn(async function* (input: QueryInput | QueryMetadataInput): AsyncGenerator<ConnectOutcome<QueryPage<JsonObject, QueryRecord<JsonObject> | QueryMetadataRecord>>> {
     const paths: string[] | undefined = input.where ? JSON.parse(input.where.replace(/^file\.path in /, "")) as string[] : undefined;
-    const results = rows.filter((r) => (!input.types || input.types.some((t) => r.types.includes(t))) && (!paths || paths.includes(r.path))).map(({ body, ...row }) => ({ ...row, ...(input.includeBody ? { body } : {}), file: {} }));
-    yield connectSuccess({ results, page: 0, offset: 0, loaded: results.length, complete: true });
+    const sources = sourceNames.map((key) => ({ path: `sources/${key}.md`, types: ["reader-source"], frontmatter: { csl: { id: key, title: key } }, body: "" }));
+    const results = [...sources, ...rows].filter((r) => (!input.types || input.types.some((t) => r.types.includes(t))) && (!paths || paths.includes(r.path))).map(({ body, ...row }) => ({ ...row,
+      ...(input.frontmatterMode !== "persisted" ? { effectiveFrontmatter: row.frontmatter } : {}),
+      ...(input.includeBody ? { body } : {}), file: {} }));
+    if (input.output === "metadata") {
+      const narrow = results.map((r) => ({ path: r.path, types: r.types, revision: "discovery-only",
+        values: Object.fromEntries((input.select ?? []).flatMap((s) => {
+          if (typeof s === "string") throw new Error("Expected explicit named field selections");
+          const field = /^record\[(.*)\]$/.exec(s.expression)?.[1];
+          const value = field ? (r.frontmatter as JsonObject)[JSON.parse(field) as string] : undefined;
+          return value === undefined ? [] : [[s.name, value]];
+        })) as JsonObject,
+      }));
+      yield connectSuccess({ output: "metadata" as const, results: narrow, page: 0, offset: 0, loaded: narrow.length, complete: true });
+    } else yield connectSuccess({ results, page: 0, offset: 0, loaded: results.length, complete: true });
   });
   const read = vi.fn(async ({ path }: { path: string }) => {
     const row = rows.find((r) => r.path === path)!;
@@ -55,6 +76,7 @@ function fixture(contracts: CollectionDescription["contracts"] = [annotation], t
   });
   const connection = {
     describe: vi.fn(client.describe.bind(client)),
+    supportsAuthorityFeature: vi.fn(supports),
     readMany: client.readMany.bind(client),
     queryPages, read,
     watch: async () => connectSuccess({ subscribe: (listener: typeof notify, onStatus?: (status: { state: string }) => void) => { notify = listener; resetWatch = () => onStatus?.({ state: "reset_required" }); }, close() {} }),
@@ -63,30 +85,94 @@ function fixture(contracts: CollectionDescription["contracts"] = [annotation], t
     files: { async *list() {} },
   };
   const backend = new ConnectBackend(connection as unknown as MdbaseConnection<JsonObject>);
-  // Library normally supplies these source paths; use a contract query as it does in production.
-  const original = connection.queryPages;
-  const sourceNames = ["a", "b"];
-  connection.queryPages = vi.fn(async function* (input: QueryInput) {
-    const sources = sourceNames.map((key) => ({ path: `sources/${key}.md`, types: ["reader-source"], frontmatter: { csl: { id: key, title: key } }, effectiveFrontmatter: { csl: { id: key, title: key } }, file: {} }));
-    if (input.contract?.id === sourceContract.id || input.types?.includes("reader-source")) {
-      yield connectSuccess({ results: [...sources, ...rows.filter((r) => r.types.includes("reader-source"))], page: 0, offset: 0, loaded: sources.length, complete: true });
-    } else if (input.where && !input.types) {
-      const paths = JSON.parse(input.where.replace(/^file\.path in /, "")) as string[];
-      const results = [...sources, ...rows.map((r) => ({ ...r, effectiveFrontmatter: r.frontmatter, file: {} }))].filter((r) => paths.includes(r.path));
-      yield connectSuccess({ results, page: 0, offset: 0, loaded: results.length, complete: true });
-    } else yield* original(input);
-  }) as typeof original;
-  function pages(input: QueryMetadataInput, options?: { pageSize?: number }): AsyncGenerator<never>;
-  function pages(input?: QueryInput, options?: QueryPagesOptions<JsonObject>): ReturnType<typeof connection.queryPages>;
-  function pages(input: QueryInput | QueryMetadataInput = {}, options?: QueryPagesOptions<JsonObject>) {
-    if (input.output === "metadata") throw new Error("Legacy fixture does not support metadata output");
-    return connection.queryPages(input, options);
-  }
-  client.queryPages = pages;
-  return { backend, connection, description, describeRequests, emit, authority, rows, read, sourceNames, bodyQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.includeBody).map(([q]) => q), changedQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.where && !q.types).map(([q]) => q), metadataQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.types?.some((t) => t === "highlight" || t === "reader-annotation") && !q.includeBody).map(([q]) => q), notify: (path: string) => emit("mdbase.record.modified", { path }), rename: (from: string, to: string) => emit("mdbase.record.renamed", { from, to }), reset: () => resetWatch() };
+  // The mock implements both output shapes; expose the SDK's discriminated overloads.
+  client.queryPages = connection.queryPages as MdbaseConnection<JsonObject>["queryPages"];
+  return { backend, connection, description, describeRequests, readRequests, emit, authority, rows, read, sourceNames, bodyQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.includeBody).map(([q]) => q), changedQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.where && !q.types).map(([q]) => q), metadataQueries: () => connection.queryPages.mock.calls.filter(([q]) => q.types?.some((t) => t === "highlight" || t === "reader-annotation") && !q.includeBody).map(([q]) => q), notify: (path: string) => emit("mdbase.record.modified", { path }), rename: (from: string, to: string) => emit("mdbase.record.renamed", { from, to }), reset: () => resetWatch() };
 }
 
 describe("annotation loading", () => {
+  it("uses negotiated narrow identities and revision-bearing body batches, not point reads", async () => {
+    const f = fixture();
+    f.description.authorityCapabilities = ["query-metadata-v1", "read-many-documents-v1"];
+    f.rows[0]!.frontmatter["unrelated"] = "Not part of discovery";
+    expect(await f.backend.annotationPaths()).toEqual({ ok: true, value: f.rows.map((r) => r.path) });
+    expect(f.metadataQueries()).toEqual([{ types: ["highlight"], frontmatterMode: "persisted", output: "metadata",
+      select: [{ name: "csl", expression: 'record["csl"]' }, { name: "title", expression: 'record["title"]' },
+        { name: "reading", expression: 'record["reading"]' }] }]);
+    const annotations = await f.backend.annotationsForSource("sources/a.md");
+    expect(annotations).toMatchObject({ ok: true, value: [{ quote: "Quote A", locator: "p. 12" }, { quote: "Another A" }] });
+    expect(f.bodyQueries()).toEqual([]);
+    expect(f.readRequests).toHaveBeenCalledExactlyOnceWith({ paths: ["annotations/a.md", "annotations/c.md"], include_body: true, include_document: false });
+    expect(f.read).not.toHaveBeenCalled();
+    f.backend.dispose();
+  });
+
+  it("selects every binding needed by co-typed records, not just the query's type", async () => {
+    const f = fixture([{ ...annotation, implementations: [annotationType, implementation("other-highlight", { source: "ref", locator: "location" })] }]);
+    f.description.authorityCapabilities = ["query-metadata-v1"];
+    f.rows[0]!.types.push("other-highlight");
+    f.rows[0]!.frontmatter["ref"] = "[[b]]";
+    // Both type queries return the row; its first role still uses reading, not ref.
+    expect(await f.backend.annotationsForSource("sources/a.md")).toMatchObject({ ok: true, value: [{ path: "annotations/a.md" }, { path: "annotations/c.md" }] });
+    const second = f.connection.queryPages.mock.calls.find(([q]) => q.output === "metadata" && q.types?.includes("other-highlight"))?.[0];
+    expect(second?.select).toEqual(expect.arrayContaining([
+      { name: "reading", expression: 'record["reading"]' }, { name: "ref", expression: 'record["ref"]' },
+    ]));
+    f.backend.dispose();
+  });
+
+  it.each([false, true])("keeps source-scoped ambiguity rejection with metadata support=%s", async (metadata) => {
+    const f = fixture();
+    f.description.authorityCapabilities = metadata ? ["query-metadata-v1"] : [];
+    f.rows.push({ path: "other/a.md", types: ["reader-source"], frontmatter: { csl: { id: "other-a" } }, body: "" });
+    // The explicit relative link still resolves; the bare [[a]] is ambiguous.
+    expect(await f.backend.annotationsForSource("sources/a.md")).toMatchObject({ ok: true, value: [{ path: "annotations/a.md" }] });
+    expect(await f.backend.annotationsForSource("other/a.md")).toEqual({ ok: true, value: [] });
+    expect(f.connection.queryPages.mock.calls.some(([q]) => q.where?.includes("asFile"))).toBe(false);
+    f.backend.dispose();
+  });
+
+  it("uses narrow comment documents/replies without losing mapped scoped bodies", async () => {
+    const contract = { ...commentContract, contractType: "record" as const, digest: "test", schema: {},
+      implementations: [implementation("feedback", { document: "about", created_at: "date", in_reply_to: "parent", target: "anchor" })] };
+    const f = fixture([contract]);
+    f.description.authorityCapabilities = ["query-metadata-v1", "read-many-documents-v1"];
+    f.rows.splice(0, f.rows.length,
+      { path: "comments/a.md", types: ["feedback"], frontmatter: { about: "[[sources/a]]", date: "2026-01-01", anchor: { quote: { exact: "Quote" } } }, body: "Root body" },
+      { path: "comments/reply.md", types: ["feedback"], frontmatter: { about: "[[elsewhere]]", date: "2026-01-02", parent: "[[a]]" }, body: "Reply body" },
+      { path: "comments/other.md", types: ["feedback"], frontmatter: { about: "[[sources/b]]", date: "2026-01-02" }, body: "Unselected body" },
+    );
+    expect(await f.backend.comments(["sources/a.md"])).toMatchObject({ ok: true, value: [
+      { path: "comments/a.md", text: "Root body", target: { quote: { exact: "Quote" } } },
+      { path: "comments/reply.md", text: "Reply body", inReplyTo: "[[a]]" },
+    ] });
+    const discovery = f.connection.queryPages.mock.calls.map(([q]) => q).find((q) => q.types?.includes("feedback") && q.output === "metadata");
+    expect(discovery?.select).toEqual([
+      { name: "csl", expression: 'record["csl"]' }, { name: "title", expression: 'record["title"]' },
+      { name: "about", expression: 'record["about"]' }, { name: "date", expression: 'record["date"]' }, { name: "parent", expression: 'record["parent"]' },
+    ]);
+    expect(f.readRequests.mock.calls[0]?.[0]["paths"]).toEqual(["comments/a.md", "comments/reply.md"]);
+    expect(f.read).not.toHaveBeenCalled();
+    f.backend.dispose();
+  });
+
+  it("surfaces discovery denial without probing or downgrading", async () => {
+    const f = fixture();
+    f.connection.supportsAuthorityFeature.mockResolvedValueOnce(connectFailure(connectProblem<"access_denied">("access_denied", "Denied discovery")));
+    expect(await f.backend.annotationPaths()).toEqual({ ok: false, message: "Denied discovery" });
+    expect(f.connection.queryPages).not.toHaveBeenCalled();
+    f.backend.dispose();
+  });
+
+  it("does not downgrade a failed advertised metadata query", async () => {
+    const f = fixture();
+    f.description.authorityCapabilities = ["query-metadata-v1"];
+    f.connection.queryPages.mockImplementationOnce(async function* () { yield connectFailure(connectProblem("operation_invalid", "Broken advertised output", { details: { diagnostics: [] } })); });
+    expect(await f.backend.annotationPaths()).toEqual({ ok: false, message: "Broken advertised output" });
+    expect(f.connection.queryPages).toHaveBeenCalledTimes(1);
+    expect(f.connection.queryPages.mock.calls[0]?.[0].output).toBe("metadata");
+    f.backend.dispose();
+  });
   it("discovers all identities without bodies, then reads only the selected source with mapped fields", async () => {
     const f = fixture();
     await f.backend.library();
@@ -95,6 +181,8 @@ describe("annotation loading", () => {
     const result = await f.backend.annotationsForSource("sources/a.md");
     expect(result).toMatchObject({ ok: true, value: [{ path: "annotations/a.md", quote: "Quote A", note: "Private note.", locator: "p. 12" }, { path: "annotations/c.md", quote: "Another A" }] });
     expect(f.read).not.toHaveBeenCalled();
+    expect(f.readRequests).not.toHaveBeenCalled();
+    expect(f.connection.queryPages.mock.calls.some(([q]) => q.output === "metadata")).toBe(false);
     expect(f.bodyQueries()).toEqual([{ types: ["highlight"], where: 'file.path in ["annotations/a.md","annotations/c.md"]', frontmatterMode: "persisted", includeBody: true }]);
     await f.backend.annotationsForSource("sources/b.md");
     const b = await f.backend.annotationsForSource("sources/b.md");
@@ -439,7 +527,7 @@ describe("annotation loading", () => {
     for (let i = 0; i < 501; i++) f.notify(`notes/${i}.md`);
     expect(await f.backend.flushChanges()).toEqual({ ok: false, message: "Batch failed" });
     const index = await f.backend.index();
-    expect(index.ok && index.value.recordPaths.length).toBe(504);
+    expect(index.ok && index.value.recordPaths.length).toBe(506);
     expect(await f.backend.flushChanges()).toEqual({ ok: true, value: undefined });
     expect(f.changedQueries()).toHaveLength(4);
     f.backend.dispose();
