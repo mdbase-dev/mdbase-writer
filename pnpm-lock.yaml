@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@mdbase-dev/connect@0.1.0-beta.123': 17ef7459d87276a5b4ddef4e2a993c4dcf06a05ffd885a6401de3a54abb23238
+
 importers:
 
   .:
@@ -52,7 +55,7 @@ importers:
         version: 1.7.2
       '@mdbase-dev/connect':
         specifier: 0.1.0-beta.123
-        version: 0.1.0-beta.123
+        version: 0.1.0-beta.123(patch_hash=17ef7459d87276a5b4ddef4e2a993c4dcf06a05ffd885a6401de3a54abb23238)
       '@mdbase-dev/ui':
         specifier: 0.1.0-beta.123
         version: 0.1.0-beta.123(@codemirror/view@6.43.13)(react@19.3.0)
@@ -1299,7 +1302,7 @@ snapshots:
 
   '@mdbase-dev/connect-dev@0.1.0-beta.123':
     dependencies:
-      '@mdbase-dev/connect': 0.1.0-beta.123
+      '@mdbase-dev/connect': 0.1.0-beta.123(patch_hash=17ef7459d87276a5b4ddef4e2a993c4dcf06a05ffd885a6401de3a54abb23238)
       '@mdbase-dev/connect-protocol': 0.1.0-beta.123
       ajv: 8.20.0
       yaml: 2.9.1
@@ -1311,10 +1314,10 @@ snapshots:
 
   '@mdbase-dev/connect-testing@0.1.0-beta.123':
     dependencies:
-      '@mdbase-dev/connect': 0.1.0-beta.123
+      '@mdbase-dev/connect': 0.1.0-beta.123(patch_hash=17ef7459d87276a5b4ddef4e2a993c4dcf06a05ffd885a6401de3a54abb23238)
       '@mdbase-dev/connect-protocol': 0.1.0-beta.123
 
-  '@mdbase-dev/connect@0.1.0-beta.123':
+  '@mdbase-dev/connect@0.1.0-beta.123(patch_hash=17ef7459d87276a5b4ddef4e2a993c4dcf06a05ffd885a6401de3a54abb23238)':
     dependencies:
       '@mdbase-dev/connect-protocol': 0.1.0-beta.123
 

@@ -11,3 +11,8 @@ minimumReleaseAgeExclude:
 
 onlyBuiltDependencies:
   - esbuild
+
+# Temporary: fixes superseded startup assessment cancellation in beta.123
+# (mdbase-dev/mdbase-connect#557). Remove when upgrading past beta.123.
+patchedDependencies:
+  '@mdbase-dev/connect@0.1.0-beta.123': patches/@mdbase-dev__connect@0.1.0-beta.123.patch
