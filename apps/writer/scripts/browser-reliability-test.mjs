@@ -8,7 +8,7 @@ const base = process.argv[2] ?? "http://127.0.0.1:5320/";
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
 mkdirSync("out", { recursive: true });
 let failures = 0;
-const main = "manuscripts/refusing-the-possible.md";
+const main = "manuscripts/patient-observation.md";
 async function scenario(name, run) {
   const context = await browser.newContext({ viewport: { width: 1500, height: 950 }, acceptDownloads: true });
   const page = await context.newPage();
@@ -93,7 +93,7 @@ try {
       backend.index = () => new Promise((resolve) => { window.finishIndex = () => resolve(index); });
       backend.library = () => new Promise((resolve) => { window.finishLibrary = () => resolve(library); });
     });
-    await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
+    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
     await page.locator(".cm-content").waitFor();
     await page.getByText("Dependencies not checked").waitFor();
@@ -110,7 +110,7 @@ try {
     assert.match(await body(page, main), /Writing while discovery waits/);
     await page.evaluate(() => { window.finishIndex(); window.finishLibrary(); });
     await page.evaluate(() => window.exportJob);
-    await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.has("chapters/event.md"));
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.has("chapters/worms.md"));
   });
 
   await scenario("preview starts while annotation discovery is held", async (page) => {
@@ -120,7 +120,7 @@ try {
       const backend = window.writer.backend, original = backend.annotationPaths.bind(backend);
       backend.annotationPaths = () => new Promise((resolve) => { window.finishAnnotations = () => original().then(resolve); });
     });
-    await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
+    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
     await painted(page);
     assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().annotationsLoad.phase), "loading");
@@ -136,7 +136,7 @@ try {
       let attempts = 0;
       backend.annotationPaths = () => attempts++ === 0 ? Promise.reject(new Error("Temporary annotation discovery failure")) : original();
     });
-    await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
+    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
     await painted(page);
     assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().annotationsLoad.phase), "failed");
@@ -157,14 +157,14 @@ try {
       };
     });
     await page.getByRole("tab", { name: /Sources/ }).click();
-    await page.locator(".sources input[type=search]").fill("potentialities");
-    await page.locator(".source-row", { hasText: "Potentialities" }).click();
+    await page.locator(".sources input[type=search]").fill("vegetable mould");
+    await page.locator('.source-row[data-key="darwinFormation81"]').click();
     await page.getByRole("button", { name: "Retry annotations" }).waitFor();
     await page.getByRole("button", { name: "Retry annotations" }).click();
-    await page.locator(".annotations blockquote", { hasText: "To be potential means" }).waitFor();
-    await page.evaluate(() => window.writer.backend.authority.editElsewhere("annotations/agamben-potentiality-lack.md", { body: "> Changed Reader quotation\n" }));
+    await page.locator(".annotations blockquote", { hasText: "It may be doubted" }).waitFor();
+    await page.evaluate(() => window.writer.backend.authority.editElsewhere("annotations/darwin-worms-history.md", { body: "> Changed Reader quotation\n" }));
     await page.locator(".annotations blockquote", { hasText: "Changed Reader quotation" }).waitFor();
-    assert.equal(await page.locator(".annotations blockquote", { hasText: "To be potential means" }).count(), 0);
+    assert.equal(await page.locator(".annotations blockquote", { hasText: "It may be doubted" }).count(), 0);
   });
 
   await scenario("Home keeps manuscript errors separate from background sources and retries", async (page) => {
@@ -188,20 +188,20 @@ try {
     const before = await body(page, main);
     await page.evaluate(() => {
       const backend = window.writer.backend;
-      const source = window.writer.workspace.getSnapshot().library.find((entry) => entry.key === "badiouBeing07");
+      const source = window.writer.workspace.getSnapshot().library.find((entry) => entry.key === "darwinFormation81");
       // Demo CSL entries can be virtual (library.json); give this one a real record.
       if (!backend.authority.get(source.path)) backend.authority.seed(source.path, { frontmatter: { type: "reader-source", csl: source.item }, body: "Source record" });
       const record = backend.authority.get(source.path);
       backend.authority.editElsewhere(source.path, { patch: { ...record.frontmatter, csl: { ...source.item, title: "Revised cited source title" } } });
     });
-    await page.waitForFunction(() => window.writer.workspace.getSnapshot().result?.references.some((ref) => ref.key === "badiouBeing07" && ref.text.toLowerCase().includes("revised cited source title")));
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().result?.references.some((ref) => ref.key === "darwinFormation81" && ref.text.toLowerCase().includes("revised cited source title")));
     await painted(page);
     assert.equal(await body(page, main), before);
   });
 
   await scenario("chapter switching retains undo redo selection and scroll", async (page) => {
     await open(page); await painted(page);
-    const chapter = "chapters/event.md";
+    const chapter = "chapters/worms.md";
     await page.locator(`.record-row[data-path="${chapter}"]`).click();
     await page.evaluate((chapter) => { const workspace = window.writer.workspace; workspace.setBody(chapter, workspace.getSnapshot().records.get(chapter).snapshot.body + Array.from({ length: 100 }, (_, i) => `\n\nParagraph ${i + 1} for scroll continuity.`).join("")); }, chapter);
     const before = await body(page, chapter);
@@ -217,7 +217,7 @@ try {
       return { text: line.textContent, y: line.getBoundingClientRect().top - top };
     });
     const anchor = await visibleAnchor();
-    await page.locator('.record-row[data-path="chapters/potentiality.md"]').click();
+    await page.locator('.record-row[data-path="chapters/reefs.md"]').click();
     await page.locator(`.record-row[data-path="${chapter}"]`).click();
     await page.waitForTimeout(100);
     const restored = await visibleAnchor();
@@ -236,7 +236,7 @@ try {
 
   await scenario("preview has positioned selectable accessible text and sanitizes active markup", async (page) => {
     await open(page); await painted(page);
-    await page.waitForFunction(() => document.querySelector(".typst-content-text")?.textContent?.includes("Refusing"));
+    await page.waitForFunction(() => document.querySelector(".typst-content-text")?.textContent?.includes("Patient"));
     const result = await page.evaluate(async () => {
       const span = document.querySelector(".typst-content-text");
       const canvas = span.closest(".preview-page").querySelector("canvas");
@@ -247,7 +247,7 @@ try {
       const safe = semanticLayer('<span onclick="alert(1)">safe</span><script>alert(1)</script><a href="javascript:alert(1)">link</a>');
       return { selected: selection.toString(), positioned: a.left > b.left && a.top > b.top && a.bottom <= b.bottom, safe: !safe.querySelector("script,[onclick],[href]") };
     });
-    assert.equal(result.selected, "Refusing the Possible");
+    assert.equal(result.selected, "Patient Observation");
     assert.equal(result.positioned, true);
     assert.equal(result.safe, true);
     await page.getByRole("region", { name: "Page 1", exact: true }).focus();
@@ -268,7 +268,7 @@ try {
     });
     await open(page);
     await page.getByRole("button", { name: retryName, exact: true }).waitFor();
-    const chapter = "chapters/event.md";
+    const chapter = "chapters/worms.md";
     await page.waitForFunction((chapter) => window.writer.workspace.getSnapshot().records.has(chapter), chapter);
     await page.locator(`.record-row[data-path="${chapter}"]`).click();
     await page.locator(".cm-content").focus();
@@ -340,7 +340,7 @@ try {
       new DraftStore("demo").write(workspace.main, { version: 1, body: "# Recovered draft\n", frontmatter: snap.frontmatter, baseBody: snap.body, baseFrontmatter: snap.record.frontmatter, revision: snap.record.revision, updated: new Date().toISOString() });
     });
     await page.reload();
-    await page.getByRole("button", { name: "Review Refusing the Possible", exact: true }).click();
+    await page.getByRole("button", { name: "Review Patient Observation", exact: true }).click();
     assert.notEqual(await body(page, main), "# Recovered draft\n");
     await page.getByRole("button", { name: "Restore local draft" }).click();
     assert.equal(await body(page, main), "# Recovered draft\n");
@@ -355,14 +355,14 @@ try {
     assert.equal(backedUp, "[test] Unsent setting title");
     page.on("dialog", (dialog) => dialog.accept());
     await page.reload();
-    await page.getByRole("button", { name: "Review Refusing the Possible", exact: true }).click();
+    await page.getByRole("button", { name: "Review Patient Observation", exact: true }).click();
     await page.getByRole("button", { name: "Restore local draft" }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot.frontmatter.title === "[test] Unsent setting title");
   });
 
   await scenario("leaving a conflict is guarded and merged text is saved", async (page) => {
     await page.goto(`${base}?demo`);
-    await page.locator(".manuscript-row", { hasText: "Refusing the Possible" }).click();
+    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
     await painted(page);
     await page.evaluate(() => {
       const { workspace, backend } = window.writer;
@@ -377,7 +377,7 @@ try {
     await page.goBack();
     await page.getByRole("dialog", { name: "Some changes are not saved" }).waitFor();
     await page.getByRole("button", { name: "Keep writing" }).click();
-    await page.waitForFunction(() => new URL(location.href).searchParams.get("manuscript") === "manuscripts/refusing-the-possible.md");
+    await page.waitForFunction(() => new URL(location.href).searchParams.get("manuscript") === "manuscripts/patient-observation.md");
     await page.getByRole("button", { name: "Compare versions" }).click();
     await page.getByLabel("Merged Markdown").fill("# Merged\n\nLocal and remote changes preserved.\n");
     await page.getByRole("button", { name: "Save merged version" }).click();

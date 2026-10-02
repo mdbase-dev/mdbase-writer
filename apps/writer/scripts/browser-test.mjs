@@ -116,7 +116,7 @@ await step("an existing note becomes a manuscript, keeping its type and fields",
   assert.deepEqual(fm.tags, ["draft"]);
   assert.equal(fm.title, "On worm stones");
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-  await page.locator(".manuscript-title", { hasText: "On inoperativity" }).waitFor();
+  await page.locator(".manuscript-title", { hasText: "On worm stones" }).waitFor();
   const titles = await page.locator(".manuscript-title").allTextContents();
   assert.ok(titles.includes("On worm stones"), titles.join(", "));
 });
