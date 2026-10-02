@@ -5,7 +5,7 @@ import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? process.env.BASE ?? "http://127.0.0.1:5320/";
-const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
+const browser = await chromium.launch({ executablePath: process.env.CHROME });
 mkdirSync("out", { recursive: true });
 let failures = 0;
 const main = "manuscripts/patient-observation.md";

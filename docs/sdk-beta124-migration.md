@@ -63,4 +63,21 @@ Wave-B commit:
 - Both browser suites: 52 scenarios passed.
 - Added narrow/full classification parity, multi-role/co-typed metadata/mtime, literal field escaping, negotiated bodies, mapped comment scope/replies, no-probe fallback/failure, and old/new ambiguity tests.
 
+## Separate consumer-canary environment fix (#562)
+
+Cold Vite logs before the fix showed late optimization of `@myriaddreamin/typst.ts/compiler` and `@myriaddreamin/typst.ts/options.init`, followed by `optimized dependencies changed. reloading`. That reload reset the in-memory demo during manuscript adoption. The same audit passed warm.
+
+`vite.config.ts` now explicitly pre-optimizes the Typst compiler, initialization options and renderer entrypoints, plus the deferred `pandoc-wasm/core` export loader. The WASM implementation packages remain excluded as before. This fixes dependency discovery at startup rather than warming the cache or retrying the adoption test. Both the reliability suite and performance browser profiler now use `process.env.CHROME` or Playwright's package-managed browser, with no machine-specific executable fallback.
+
+Verification, with the development server stopped before deleting caches:
+
+```sh
+rm -rf apps/writer/node_modules/.vite node_modules/.vite
+pnpm -C apps/writer dev --port 5327
+# In another terminal; intentionally no CHROME override:
+env -u CHROME BASE=http://127.0.0.1:5327/ pnpm -C apps/writer test:browser
+```
+
+Both suites passed **52 scenarios from a cold cache**, including manuscript adoption, typesetting and Word export. Repeated the cold-cache audit after final code/checks: again 52 passed, and the fresh Vite log contained no late dependency-discovery/reload events. The cache metadata includes all four declared entrypoints. `pnpm check` (65 core / 161 Writer tests, 12 script passes / 2 gated skips), performance TypeScript checking and manifest validation also passed. These runs used installed beta.124; the coordinator's candidate-tarball canary itself was not run here.
+
 No LAB, production collection, release, deployment or canonical checkout was changed.
