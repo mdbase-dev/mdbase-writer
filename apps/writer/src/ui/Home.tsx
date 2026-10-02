@@ -2,6 +2,7 @@
 import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
+import { signalMdbaseMark } from "@mdbase-dev/ui/mark-activity";
 import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -246,9 +247,13 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
     try {
       const created = await backend.createManuscript({ title: title.trim(), template, style, starter });
       if (created.ok) onOpen(created.value);
-      else setProblem(created.message);
+      else {
+        setProblem(created.message);
+        signalMdbaseMark("error");
+      }
     } catch (error) {
       setProblem(error instanceof Error ? error.message : "Could not create the manuscript. Please try again.");
+      signalMdbaseMark("error");
     } finally {
       setCreating(false);
     }
@@ -263,9 +268,13 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
     try {
       const adopted = await backend.adoptManuscript(path);
       if (adopted.ok) onOpen(adopted.value);
-      else setProblem(adopted.message);
+      else {
+        setProblem(adopted.message);
+        signalMdbaseMark("error");
+      }
     } catch (error) {
       setProblem(error instanceof Error ? error.message : "Could not use the note as a manuscript. Please try again.");
+      signalMdbaseMark("error");
     } finally {
       setAdopting(false);
     }
