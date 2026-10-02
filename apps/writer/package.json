@@ -12,6 +12,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "pnpm manifest && node --test scripts/*.test.mjs && vitest run",
     "test:browser": "node scripts/browser-test.mjs && node scripts/browser-reliability-test.mjs",
+    "test:feedback": "node scripts/feedback-browser-test.mjs",
     "test:browser:reliability": "node scripts/browser-reliability-test.mjs",
     "typecheck": "pnpm manifest && tsc -p tsconfig.json",
     "deploy:lab": "MDBASE_ENV=lab node scripts/deploy-pages.mjs",

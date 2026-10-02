@@ -16,6 +16,8 @@ const PAGES_FILE_LIMIT = 25 * 1024 * 1024;
 await run("pnpm", ["build"], {
   ...process.env,
   MDBASE_WRITER_ORIGIN: deployment.origin,
+  VITE_MDBASE_ENV: target,
+  VITE_MDBASE_WRITER_BUILD_ID: commit,
   VITE_MDBASE_CONNECT_URL: deployment.connectUrl,
   VITE_MDBASE_CONNECT_LOOPBACK_URL: deployment.loopbackUrl,
   ...(deployment.demo ? { VITE_WRITER_DEMO: "1" } : {}),

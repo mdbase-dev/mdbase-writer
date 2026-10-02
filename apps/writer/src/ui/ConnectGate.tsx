@@ -2,7 +2,8 @@
 // authorizing a collection, and reviewing the setup the writer needs.
 import type { MdbaseApplicationSessionSnapshot } from "@mdbase-dev/connect";
 import { ConnectLayout, OpeningScreen } from "@mdbase-dev/ui/screens";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 
 import type { WriterSession } from "../connect/session.js";
 
@@ -19,18 +20,37 @@ const RESOURCE_ACTION: Record<string, string> = {
 };
 
 function Centered({ title, children }: { title: string; children: ReactNode }) {
-  return <ConnectLayout app="writer" title={title}>{children}</ConnectLayout>;
+  return <ConnectLayout app="writer" title={title}>{children}<FeedbackButton /></ConnectLayout>;
 }
 
 export function ConnectGate({ session, snapshot }: { session: WriterSession; snapshot: MdbaseApplicationSessionSnapshot }) {
+  const { reportError } = useFeedback();
+  const reportedInitialFailure = useRef(false);
+  useEffect(() => {
+    if (snapshot.status === "start_failed" && !reportedInitialFailure.current && !/cancel|abort|supersed/u.test(snapshot.problem.code)) {
+      reportedInitialFailure.current = true;
+      reportError({ code: "unknown_error" });
+    }
+  }, [snapshot, reportError]);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const run = async (action: () => Promise<{ ok: boolean; problem?: { message?: string; code: string } }>) => {
     setBusy(true);
     setProblem(null);
-    const outcome = await action();
-    setBusy(false);
-    if (!outcome.ok) setProblem(outcome.problem?.message ?? outcome.problem?.code ?? "Something went wrong.");
+    try {
+      const outcome = await action();
+      if (!outcome.ok && !/cancel|abort|supersed/u.test(outcome.problem?.code ?? "")) {
+        setProblem(outcome.problem?.message ?? outcome.problem?.code ?? "Something went wrong.");
+        reportError({ code: "unknown_error" });
+      }
+    } catch (reason) {
+      if (!(reason instanceof DOMException && reason.name === "AbortError")) {
+        setProblem("This action could not be completed. Please try again.");
+        reportError({ code: "unknown_error" });
+      }
+    } finally {
+      setBusy(false);
+    }
   };
   const authorize = (target: "choose" | "selected") =>
     run(() => session.authorize(target, { presentation: "popup", timeoutMs: 10 * 60_000 }) as Promise<{ ok: boolean; problem?: { message?: string; code: string } }>);

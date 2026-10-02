@@ -49,6 +49,7 @@ import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
+import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { plural, recordTitle, STATE_LABEL, STATE_SHORT_LABEL, STATE_TONE } from "./records.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
@@ -115,6 +116,19 @@ function useSustained(flag: boolean, delay: number): boolean {
 
 export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWorkspace; onClose(force?: boolean): void }) {
   const snap = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot);
+  const { reportError } = useFeedback();
+  const failedSaves = useRef(new Set<string>());
+  useEffect(() => {
+    if (snap.phase === "failed") reportError({ code: "source_open_failed" });
+  }, [snap.phase, reportError]);
+  useEffect(() => {
+    if (snap.previewProblem) reportError({ code: "preview_failed" });
+  }, [snap.previewProblem, reportError]);
+  useEffect(() => {
+    const failed = new Set([...snap.records].filter(([, view]) => view.snapshot.state === "error" && !/cancel|abort|supersed/u.test(view.snapshot.problem?.code ?? "")).map(([path]) => path));
+    if ([...failed].some((path) => !failedSaves.current.has(path))) reportError({ code: "save_failed" });
+    failedSaves.current = failed;
+  }, [snap.records, reportError]);
   // Most typesets finish between keystrokes; saying so each time only flickers.
   const slowCompile = useSustained(snap.compiling, 600);
   const [active, setActive] = useState(workspace.main);
@@ -481,7 +495,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           exported(EXPORT_NAME[format], []);
         }
       } catch (error) {
-        if (!controller.signal.aborted) setExportStatus({ tone: "problem", text: errorMessage(error) });
+        if (!controller.signal.aborted) {
+          reportError({ code: "unknown_error" });
+          setExportStatus({ tone: "problem", text: errorMessage(error) });
+        }
       } finally {
         if (exportJob.current === controller) exportJob.current = null;
       }
@@ -526,6 +543,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   // Keyboard shortcuts (listed in the shortcuts dialog).
   const shortcuts = useRef<(e: KeyboardEvent) => void>(() => {});
   shortcuts.current = (e: KeyboardEvent) => {
+    if (e.target instanceof Element && e.target.closest("dialog[open]")) return;
     if (document.querySelector("dialog[open]") && e.key !== "F8") return;
     const mod = isMod(e);
     let handled = true;
@@ -557,6 +575,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   if (snap.phase === "failed") {
     return (
       <ConnectLayout app="writer" title="This manuscript could not be opened" error={snap.problem}>
+        <FeedbackButton topic="problem" />
         <button className="mdbase-connect-action" type="button" onClick={() => void workspace.retryOpen()}>Retry opening</button>
         {snap.recoveredDrafts.size > 0 && <><p>A local draft is still available in this browser.</p><button type="button" className="mdbase-connect-action" onClick={downloadDrafts}>Download local drafts</button></>}
         <button className="mdbase-connect-action" type="button" onClick={() => onClose()}>
