@@ -1,366 +1,192 @@
 [
  {
-  "author": [
-   {
-    "family": "Agamben",
-    "given": "Giorgio"
-   }
-  ],
-  "collection-title": "Meridian: crossing aesthetics",
-  "container-title": "Potentialities",
-  "id": "agambenBartleby99",
-  "issued": {
-   "date-parts": [
-    [
-     1999
-    ]
-   ]
-  },
-  "language": "en",
-  "publisher": "Stanford University Press",
-  "publisher-place": "Stanford, California",
-  "title": "Bartleby, or on contingency",
-  "translator": [
-   {
-    "family": "Heller-Roazen",
-    "given": "Daniel"
-   }
-  ],
-  "type": "chapter"
- },
- {
-  "ISBN": "978-0-8047-3277-2 978-0-8047-3278-9",
-  "author": [
-   {
-    "family": "Agamben",
-    "given": "Giorgio"
-   }
-  ],
-  "call-number": "BH201 .A395 1999",
-  "collection-title": "Meridian: crossing aesthetics",
-  "id": "agambenPotentialities99",
-  "issued": {
-   "date-parts": [
-    [
-     1999
-    ]
-   ]
-  },
-  "language": "en",
-  "number-of-pages": "307",
-  "publisher": "Stanford University Press",
-  "publisher-place": "Stanford, California",
-  "source": "Library of Congress ISBN",
-  "title": "Potentialities: collected essays in philosophy",
-  "title-short": "Potentialities",
-  "translator": [
-   {
-    "family": "Heller-Roazen",
-    "given": "Daniel"
-   }
-  ],
-  "type": "book"
- },
- {
-  "ISBN": "0-8166-2235-3",
-  "author": [
-   {
-    "family": "Agamben",
-    "given": "Giorgio"
-   }
-  ],
-  "id": "agambencoming93",
-  "issued": {
-   "date-parts": [
-    [
-     1993
-    ]
-   ]
-  },
-  "language": "en",
-  "publisher": "University of Minnesota Press",
-  "title": "The coming community",
+  "id": "darwinOrigin59",
   "type": "book",
-  "volume": "1"
- },
- {
-  "DOI": "10.1080/09672550210121432",
-  "URL": "https://www.tandfonline.com/doi/abs/10.1080/09672550210121432",
-  "accessed": {
+  "author": [
+   {
+    "family": "Darwin",
+    "given": "Charles"
+   }
+  ],
+  "title": "On the origin of species by means of natural selection, or the preservation of favoured races in the struggle for life",
+  "publisher": "John Murray",
+  "publisher-place": "London",
+  "issued": {
    "date-parts": [
     [
-     "2023",
-     2,
-     16
+     1859
     ]
    ]
   },
-  "archive_location": "world",
+  "language": "en"
+ },
+ {
+  "id": "darwinFormation81",
+  "type": "book",
   "author": [
    {
-    "family": "Allen",
+    "family": "Darwin",
+    "given": "Charles"
+   }
+  ],
+  "title": "The formation of vegetable mould, through the action of worms, with observations on their habits",
+  "publisher": "John Murray",
+  "publisher-place": "London",
+  "issued": {
+   "date-parts": [
+    [
+     1881
+    ]
+   ]
+  },
+  "language": "en"
+ },
+ {
+  "id": "darwinStructure42",
+  "type": "book",
+  "author": [
+   {
+    "family": "Darwin",
+    "given": "Charles"
+   }
+  ],
+  "title": "The structure and distribution of coral reefs",
+  "publisher": "Smith, Elder and Co.",
+  "publisher-place": "London",
+  "issued": {
+   "date-parts": [
+    [
+     1842
+    ]
+   ]
+  },
+  "language": "en"
+ },
+ {
+  "id": "darwinJournal39",
+  "type": "book",
+  "author": [
+   {
+    "family": "Darwin",
+    "given": "Charles"
+   }
+  ],
+  "title": "Journal of researches into the geology and natural history of the various countries visited by H.M.S. Beagle",
+  "publisher": "Henry Colburn",
+  "publisher-place": "London",
+  "issued": {
+   "date-parts": [
+    [
+     1839
+    ]
+   ]
+  },
+  "language": "en"
+ },
+ {
+  "id": "lyellPrinciples30",
+  "type": "book",
+  "author": [
+   {
+    "family": "Lyell",
+    "given": "Charles"
+   }
+  ],
+  "title": "Principles of geology",
+  "volume": "1",
+  "publisher": "John Murray",
+  "publisher-place": "London",
+  "issued": {
+   "date-parts": [
+    [
+     1830
+    ]
+   ]
+  },
+  "language": "en"
+ },
+ {
+  "id": "whiteNatural89",
+  "type": "book",
+  "author": [
+   {
+    "family": "White",
+    "given": "Gilbert"
+   }
+  ],
+  "title": "The natural history and antiquities of Selborne",
+  "publisher": "B. White and Son",
+  "publisher-place": "London",
+  "issued": {
+   "date-parts": [
+    [
+     1789
+    ]
+   ]
+  },
+  "language": "en"
+ },
+ {
+  "id": "browneCharles95",
+  "type": "book",
+  "author": [
+   {
+    "family": "Browne",
+    "given": "Janet"
+   }
+  ],
+  "title": "Charles Darwin: voyaging",
+  "publisher": "Alfred A. Knopf",
+  "publisher-place": "New York",
+  "issued": {
+   "date-parts": [
+    [
+     1995
+    ]
+   ]
+  },
+  "language": "en"
+ },
+ {
+  "id": "browneCharles02",
+  "type": "book",
+  "author": [
+   {
+    "family": "Browne",
+    "given": "Janet"
+   }
+  ],
+  "title": "Charles Darwin: the power of place",
+  "publisher": "Alfred A. Knopf",
+  "publisher-place": "New York",
+  "issued": {
+   "date-parts": [
+    [
+     2002
+    ]
+   ]
+  },
+  "language": "en"
+ },
+ {
+  "id": "stewartEarth04",
+  "type": "book",
+  "author": [
+   {
+    "family": "Stewart",
     "given": "Amy"
    }
   ],
-  "container-title": "International Journal of Philosophical Studies",
-  "id": "allenPower10",
+  "title": "The earth moved: on the remarkable achievements of earthworms",
+  "publisher": "Algonquin Books",
+  "publisher-place": "Chapel Hill",
   "issued": {
    "date-parts": [
     [
-     2010,
-     12,
-     8
+     2004
     ]
    ]
   },
-  "language": "en",
-  "source": "www.tandfonline.com",
-  "title": "Power, Subjectivity, and Agency: Between Arendt and Foucault",
-  "title-short": "Power, Subjectivity, and Agency",
-  "type": "article-journal"
- },
- {
-  "ISBN": "978-1-4443-3448-7 978-1-118-45439-8",
-  "author": [
-   {
-    "family": "Allen",
-    "given": "Danielle S."
-   }
-  ],
-  "call-number": "B395 .A53 2010",
-  "collection-number": "1",
-  "collection-title": "Blackwell-Bristol lectures on Greece, Rome and the classical tradition",
-  "id": "allenWhy10",
-  "issued": {
-   "date-parts": [
-    [
-     2010
-    ]
-   ]
-  },
-  "number-of-pages": "232",
-  "publisher": "Wiley-Blackwell",
-  "publisher-place": "Malden, MA",
-  "source": "Library of Congress ISBN",
-  "title": "Why Plato wrote",
-  "type": "book"
- },
- {
-  "author": [
-   {
-    "family": "Badiou",
-    "given": "Alain"
-   }
-  ],
-  "id": "badiouBeing07",
-  "issued": {
-   "date-parts": [
-    [
-     2007
-    ]
-   ]
-  },
-  "language": "en",
-  "note": "Originally published in French as L’ˆetre et l’´ev´enement, Editions du Seuil, 1988",
-  "publisher": "Continuum",
-  "publisher-place": "London; New York",
-  "title": "Being and Event",
-  "translator": [
-   {
-    "family": "Feltham",
-    "given": "Oliver"
-   }
-  ],
-  "type": "book"
- },
- {
-  "ISBN": "978-0-8264-9827-4",
-  "author": [
-   {
-    "family": "Badiou",
-    "given": "Alain"
-   }
-  ],
-  "call-number": "B2430 .B27113 2008",
-  "id": "badiouConditions08",
-  "issued": {
-   "date-parts": [
-    [
-     2008
-    ]
-   ]
-  },
-  "language": "en",
-  "note": "OCLC: 226308112",
-  "number-of-pages": "314",
-  "publisher": "Continuum",
-  "publisher-place": "London ; New York",
-  "source": "Library of Congress ISBN",
-  "title": "Conditions",
-  "translator": [
-   {
-    "family": "Corcoran",
-    "given": "Steven"
-   }
-  ],
-  "type": "book"
- },
- {
-  "ISBN": "978-1-85984-297-3",
-  "author": [
-   {
-    "family": "Badiou",
-    "given": "Alain"
-   }
-  ],
-  "call-number": "BJ1402 .B3313 2001",
-  "id": "badiouEthics01",
-  "issued": {
-   "date-parts": [
-    [
-     2001
-    ]
-   ]
-  },
-  "language": "en",
-  "number-of-pages": "166",
-  "publisher": "Verso",
-  "publisher-place": "London ; New York",
-  "source": "Library of Congress ISBN",
-  "title": "Ethics: an essay on the understanding of evil",
-  "title-short": "Ethics",
-  "translator": [
-   {
-    "family": "Hallward",
-    "given": "Peter"
-   }
-  ],
-  "type": "book"
- },
- {
-  "ISBN": "978-1-84467-035-2",
-  "author": [
-   {
-    "family": "Badiou",
-    "given": "Alain"
-   }
-  ],
-  "call-number": "JA71 .B25513 2005",
-  "id": "badiouMetapolitics05",
-  "issued": {
-   "date-parts": [
-    [
-     2005
-    ]
-   ]
-  },
-  "language": "en",
-  "number-of-pages": "159",
-  "publisher": "Verso",
-  "publisher-place": "London ; New York",
-  "source": "Library of Congress ISBN",
-  "title": "Metapolitics",
-  "translator": [
-   {
-    "family": "Barker",
-    "given": "Jason"
-   }
-  ],
-  "type": "book"
- },
- {
-  "ISBN": "978-0-7456-3631-3 978-0-7456-3632-0",
-  "author": [
-   {
-    "family": "Badiou",
-    "given": "Alain"
-   }
-  ],
-  "call-number": "CB425 .B2413 2007",
-  "id": "badioucentury07",
-  "issued": {
-   "date-parts": [
-    [
-     2007
-    ]
-   ]
-  },
-  "language": "en",
-  "note": "OCLC: ocm71239009",
-  "number-of-pages": "233",
-  "publisher": "Polity Press",
-  "publisher-place": "Cambridge ; Malden, MA",
-  "source": "Library of Congress ISBN",
-  "title": "The century",
-  "translator": [
-   {
-    "family": "Toscano",
-    "given": "Alberto"
-   }
-  ],
-  "type": "book",
-  "volume": "1"
- },
- {
-  "ISBN": "978-1-84465-229-7 978-1-84465-230-3",
-  "collection-title": "Key concepts",
-  "editor": [
-   {
-    "family": "Bartlett",
-    "given": "A. J."
-   },
-   {
-    "family": "Clemens",
-    "given": "Justin"
-   }
-  ],
-  "id": "bartlettAlain10",
-  "issued": {
-   "date-parts": [
-    [
-     2010
-    ]
-   ]
-  },
-  "language": "en",
-  "number-of-pages": "207",
-  "publisher": "Acumen",
-  "publisher-place": "Durham",
-  "source": "K10plus ISBN",
-  "title": "Alain Badiou: key concepts",
-  "title-short": "Alain Badiou",
-  "type": "book"
- },
- {
-  "ISBN": "978-0-19-937018-4 978-0-19-517918-7 978-0-19-936378-0 978-0-19-936379-7",
-  "call-number": "BL1112.52 .E53 2014",
-  "collection-title": "South Asia research",
-  "id": "jamisonRigveda14",
-  "issued": {
-   "date-parts": [
-    [
-     2014
-    ]
-   ]
-  },
-  "language": "en",
-  "number-of-volumes": "3",
-  "publisher": "Oxford University Press",
-  "publisher-place": "New York",
-  "source": "Library of Congress ISBN",
-  "title": "The Rigveda: the earliest religious poetry of India",
-  "title-short": "The Rigveda",
-  "translator": [
-   {
-    "family": "Jamison",
-    "given": "Stephanie W."
-   },
-   {
-    "family": "Brereton",
-    "given": "Joel P."
-   }
-  ],
-  "type": "book",
-  "volume": "1-3"
+  "language": "en"
  }
 ]

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://127.0.0.1:5320/";
-const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
+const browser = await chromium.launch({ executablePath: process.env.CHROME });
 try {
   const page = await browser.newPage();
   const errors = [];

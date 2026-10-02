@@ -159,7 +159,13 @@ If a collection will not open, check its Connect access and, for a computer-back
 that its desktop app is online. Use **Reconnect** or choose another collection when prompted.
 [Open an issue](https://github.com/mdbase-dev/mdbase-writer/issues) for bugs or feature requests.
 Include your browser, the steps to reproduce the problem, and any displayed error; remove
-private manuscript text, collection paths, and credentials.
+private manuscript text, collection paths, and credentials. Report suspected vulnerabilities
+privately as described in the [security policy](SECURITY.md).
 
 For local setup, tests, deployment, and implementation details, see the
 [development guide](docs/development.md) and [architecture notes](docs/architecture.md).
+
+## License
+
+mdbase writer is available under the [MIT License](LICENSE). Bundled fonts, Typst packages, and
+citation styles keep their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
