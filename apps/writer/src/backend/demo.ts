@@ -4,12 +4,12 @@
 import type { JsonObject } from "@mdbase-dev/connect";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import type { CslItem } from "@mdbase-writer/core";
-import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
-import { annotationSourceLink } from "@mdbase-writer/core/annotations";
-import { PathIndex, resolveLinkTarget, splitFrontmatter } from "@mdbase-writer/core/records";
+import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { splitFrontmatter } from "@mdbase-writer/core/records";
+import { CollectionStore, starterSchema, type CollectionRow } from "./collection.js";
 
 import { changeFields, commentPath, newCommentFields, personKey, personLink, type People } from "./comments.js";
-import { manuscriptBody, bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, libraryEntry, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import { manuscriptBody, bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionDelta, type CollectionIndex, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -26,20 +26,27 @@ export async function createDemoBackend(): Promise<WriterBackend> {
   const stopFollowing = authority.records.follow(authority.watch);
   // Only the sources the demo manuscripts cite (the demo ships with public builds).
   const library = (await import("../../demo/library.json")).default as CslItem[];
-  let entries: LibraryEntry[] = library.map((item) => ({
-    key: item.id,
-    item,
-    title: typeof item["title"] === "string" ? item["title"] : item.id,
-    path: `sources/${item.id}.md`,
-  }));
-  let sourcePaths = new PathIndex(entries.map((e) => e.path));
+  const store = new CollectionStore(starterSchema());
+  // Give the demo's CSL-only sources ordinary rows, like the large/Connect demo.
+  for (const item of library) {
+    const path = `sources/${item.id}.md`, existing = authority.get(path);
+    authority.seed(path, { body: existing?.body ?? "", frontmatter: { ...existing?.frontmatter, type: "reader-source", csl: item as JsonObject } });
+    paths.add(path);
+  }
+  const rowAt = (path: string): CollectionRow | undefined => {
+    const record = authority.get(path);
+    if (!record) return undefined;
+    const type = record.frontmatter["type"];
+    const types = Array.isArray(type) ? type.filter((t): t is string => typeof t === "string") : typeof type === "string" ? [type] : [];
+    return { ...record, types };
+  };
+  store.upsert([...paths].map((p) => rowAt(p)!));
   const files = new Map(Object.entries(assets).map(([key, url]) => [relative(key), url]));
   const listeners = new Set<(paths: readonly string[]) => void>();
   const dataListeners = new Set<(delta: CollectionDelta) => void>();
   const changed = new Set<string>();
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let indexValue: CollectionIndex | undefined;
-  const hasType = (value: unknown, type: string) => value === type || Array.isArray(value) && value.includes(type);
+  store.files([...files.keys()]);
   const queue = (at: readonly string[]) => {
     for (const path of at) changed.add(path);
     clearTimeout(timer);
@@ -49,24 +56,13 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     clearTimeout(timer);
     if (!changed.size) return ok(undefined);
     const at = [...changed]; changed.clear();
-    let annotations = false, comments = false, libraryChanged = false;
-    const sources = new Map(entries.map((e) => [e.path, e]));
+    const rows: CollectionRow[] = [], missing: string[] = [];
     for (const path of at) {
-      const record = authority.get(path);
-      if (record) paths.add(path); else paths.delete(path);
-      const fm = record?.frontmatter;
-      if (fm && hasType(fm["type"], "writer-manuscript")) manuscripts.set(path, { path, title: typeof fm["title"] === "string" ? fm["title"] : path });
-      else manuscripts.delete(path);
-      annotations ||= hasType(fm?.["type"], "reader-annotation") || path.startsWith("annotations/");
-      comments ||= hasType(fm?.["type"], "comment") || commentPaths.has(path);
-      if (hasType(fm?.["type"], "comment")) commentPaths.add(path); else commentPaths.delete(path);
-      const source = fm && libraryEntry(path, fm);
-      if (source && JSON.stringify(source) !== JSON.stringify(sources.get(path))) { sources.set(path, source); libraryChanged = true; }
-      if (!record && sources.delete(path)) libraryChanged = true;
+      const row = rowAt(path);
+      if (row) { paths.add(path); rows.push(row); } else { paths.delete(path); missing.push(path); }
     }
-    if (libraryChanged) { entries = [...sources.values()]; sourcePaths = new PathIndex(entries.map((e) => e.path)); }
-    const index = await backend.index();
-    for (const listener of dataListeners) listener({ paths: at, ...(index.ok ? { index: index.value } : {}), ...(libraryChanged ? { library: entries } : {}), annotations, comments });
+    const upsert = store.upsert(rows), removed = store.remove(missing);
+    for (const listener of dataListeners) listener({ ...upsert, ...removed, paths: at });
     return ok(undefined);
   };
   const stopWatch = authority.watch.subscribe((change) => {
@@ -74,27 +70,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     for (const listener of listeners) listener(at);
     queue(at);
   });
-  const manuscripts = new Map<string, ManuscriptSummary>();
-  for (const path of paths) {
-    const { frontmatter } = splitFrontmatter(markdown[`../../demo/${path}`] ?? "");
-    if (frontmatter["type"] === "writer-manuscript") {
-      manuscripts.set(path, {
-        path,
-        title: String(frontmatter["title"] ?? path),
-        template: String(frontmatter["template"] ?? "article"),
-        ...(typeof frontmatter["csl"] === "string" ? { style: frontmatter["csl"] } : {}),
-      });
-    }
-  }
-
-  // The demo's comments and people are records of the starter types, whose
-  // fields are the contracts' own names.
-  const commentPaths = new Set([...paths].filter((p) => splitFrontmatter(markdown[`../../demo/${p}`] ?? "").frontmatter["type"] === "comment"));
-  const names = new Map<string, string>();
-  for (const path of paths) {
-    const { frontmatter } = splitFrontmatter(markdown[`../../demo/${path}`] ?? "");
-    if (frontmatter["type"] === "person" && typeof frontmatter["name"] === "string") names.set(personKey(path), frontmatter["name"]);
-  }
+  const names = store.people;
   // The demo is written by the manuscript's author.
   const me = [...paths].find((p) => names.get(personKey(p)) === "Callum Alpass");
   const people: People = { names, ...(me ? { me: { link: personLink(me), name: "Callum Alpass" }, signing: { kind: "linked" } } : { signing: { kind: "unlinked" } }) };
@@ -121,7 +97,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     records: authority.records,
     async listManuscripts() {
       const out: ManuscriptSummary[] = [];
-      for (const m of manuscripts.values()) {
+      for (const m of store.manuscripts) {
         // The body as it is now, edits in this demo included.
         const opened = await authority.records.open(m.path, { autosave: false });
         if (!opened.ok) {
@@ -142,13 +118,13 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     async createManuscript(input: NewManuscript): Promise<Result<string>> {
       let path = `manuscripts/${manuscriptSlug(input.title)}.md`;
       for (let n = 2; paths.has(path); n++) path = `manuscripts/${manuscriptSlug(input.title)}-${n}.md`;
-      const body = manuscriptBody(input.starter, entries[0]?.key);
+      const body = manuscriptBody(input.starter, store.library[0]?.key);
       authority.seed(path, {
         body,
         frontmatter: { type: "writer-manuscript", title: input.title, template: input.template, csl: input.style },
       });
       paths.add(path);
-      manuscripts.set(path, { path, title: input.title, template: input.template, style: input.style });
+      store.upsert([rowAt(path)!]);
       lastWritten.set(path, { body, modified: new Date().toISOString() });
       return ok(path);
     },
@@ -162,7 +138,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       const flushed = await session.flush();
       release();
       if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
-      manuscripts.set(path, { path, title });
+      store.upsert([rowAt(path)!]);
       lastWritten.set(path, { body, modified: new Date().toISOString() });
       return ok(path);
     },
@@ -174,13 +150,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       queue([at]);
       return ok(at);
     },
-    async index(): Promise<Result<CollectionIndex>> {
-      const notNotes = new Set(["comment", "person", "reader-annotation", "reader-source"]);
-      const notePaths = [...paths].filter((p) => p.endsWith(".md") && ![...notNotes].some((t) => hasType(authority.get(p)?.frontmatter["type"], t)));
-      const next = { recordPaths: [...paths], filePaths: [...files.keys()], notePaths };
-      if (!indexValue || JSON.stringify(indexValue) !== JSON.stringify(next)) indexValue = next;
-      return ok(indexValue);
-    },
+    async index(): Promise<Result<CollectionIndex>> { return ok(store.index); },
     async readBody(path: string) {
       const opened = await authority.records.open(path, { autosave: false });
       if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
@@ -189,19 +159,16 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       return ok(body);
     },
     async library() {
-      return ok(entries);
+      return ok(store.library);
     },
     async annotationPaths() {
-      return ok([...paths].filter((path) => hasType(authority.get(path)?.frontmatter["type"], "reader-annotation")));
+      return ok([...store.annotations.keys()]);
     },
     async annotationsForSource(source) {
       const out = [];
-      const candidates = sourcePaths;
-      for (const path of paths) {
-        const fm = authority.get(path)?.frontmatter;
-        if (!hasType(fm?.["type"], "reader-annotation")) continue;
+      for (const path of store.annotationsForSource(source).keys()) {
         const record = authority.get(path);
-        if (!record || typeof record.frontmatter["source"] !== "string" || resolveLinkTarget(annotationSourceLink(record.frontmatter["source"]) ?? "", path, candidates) !== source) continue;
+        if (!record) continue;
         const a = sourceAnnotation(path, record.frontmatter, record.body ?? "");
         if (a) out.push(a);
       }
@@ -214,11 +181,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     },
     async comments(scope) {
       const out: CommentRecord[] = [];
-      const candidates = new PathIndex(paths);
-      for (const path of commentPaths) {
-        const fm = authority.get(path)?.frontmatter;
-        const document = typeof fm?.["document"] === "string" ? resolveLinkTarget(linkPath(fm["document"]), path, candidates) : null;
-        if (scope && (!document || !scope.includes(document))) continue;
+      for (const path of store.commentScope(scope)) {
         const c = await readComment(path);
         if (c) out.push(c);
       }
@@ -230,7 +193,6 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       const fields = newCommentFields(input, now, people.me?.link);
       authority.seed(path, { frontmatter: { type: "comment", ...fields }, body: input.text.trim() ? `${input.text.trim()}\n` : "" });
       paths.add(path);
-      commentPaths.add(path);
       queue([path]);
       const comment = commentFromRecord(path, fields, input.text);
       return comment ? ok(comment) : fail("The comment could not be read back.");
@@ -254,7 +216,9 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     onCollectionChange(listener) { dataListeners.add(listener); return () => dataListeners.delete(listener); },
     flushChanges: flush,
     async reconcile() {
-      indexValue = undefined;
+      store.reset();
+      store.upsert([...paths].flatMap((p) => { const row = rowAt(p); return row ? [row] : []; }));
+      store.files([...files.keys()]);
       for (const listener of dataListeners) listener({ paths: [], reset: true });
       return ok(undefined);
     },

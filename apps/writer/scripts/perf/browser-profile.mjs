@@ -1,6 +1,7 @@
 // Opt-in Chromium UI profile against DEV ?demo=large; never a real collection.
 import { chromium } from "playwright";
 import { writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? "/home/calluma/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell" });
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
 const errors = []; page.on("pageerror", (e) => errors.push(e.message));
@@ -50,7 +51,9 @@ try {
   mkdirSync("out", { recursive: true }); await page.screenshot({ path: "out/large-comments-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
   await page.getByRole("tab", { name: /Sources/ }).click(); await page.screenshot({ path: "out/large-sources-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
   report.errors = errors;
-  writeFileSync(process.env.PROFILE_OUTPUT ?? "scripts/perf/browser-profile.json", JSON.stringify(report, null, 2) + "\n");
+  const output = process.env.PROFILE_OUTPUT ?? "out/perf/browser-profile.json";
+  mkdirSync(dirname(output), { recursive: true });
+  writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
   if (errors.length) process.exitCode = 1;
 } finally { await browser.close(); }

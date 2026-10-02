@@ -1,9 +1,10 @@
 // The writer on a real collection through mdbase connect.
-import { PERSON_CONTRACT, type CollectionFileDescriptor, type JsonObject, type QueryRecord, type MdbaseConnection } from "@mdbase-dev/connect";
-import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
-import { annotationSourceLink } from "@mdbase-writer/core/annotations";
-import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
+import { type CollectionFileDescriptor, type JsonObject, type QueryInput, type QueryRecord, type MdbaseConnection } from "@mdbase-dev/connect";
+import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { CollectionSchema, CollectionStore, type Binding, type Domain, type StoreDelta } from "./collection.js";
+export { annotationContract, commentContract, manuscriptContract, sourceContract } from "./collection.js";
 import { CollectionCache } from "./cache.js";
+import { CollectionBodies } from "./bodies.js";
 import { errorMessage } from "../async.js";
 
 import {
@@ -12,7 +13,6 @@ import {
   newCommentFields,
   NO_PEOPLE,
   peopleFromDirectory,
-  personKey,
   signingFromProblem,
   toContract,
   toLocal,
@@ -23,11 +23,9 @@ import {
 import {
   manuscriptBody,
   fail,
-  libraryEntry,
   manuscriptSlug,
   numberedPath,
   ok,
-  sourceAnnotation,
   titleFromNote,
   withType,
   type CollectionIndex,
@@ -40,40 +38,20 @@ import {
   type WriterBackend,
 } from "./types.js";
 
-export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2" } as const;
-export const sourceContract = { id: "dev.mdbase.reader.source", version: "1.0.0-beta.1" } as const;
-export const annotationContract = { id: "dev.mdbase.reader.annotation", version: "1.0.0-beta.1" } as const;
-export const commentContract = { id: "mdbase.comment", version: "1.0.0" } as const;
-
-/** A collection type implementing a contract: its name, its field for each contract field, and the key that declares types. */
-interface ImplementingType {
-  readonly name: string;
-  readonly fields: Record<string, string>;
-  readonly typeKey: string;
-}
-
-interface AnnotationMetadata {
-  readonly path: string;
-  readonly type: string;
-  readonly source: string;
-  readonly fields: Readonly<Record<string, string>>;
-}
-
-interface CommentMetadata { readonly type: string; readonly fields: Readonly<Record<string, string>>; readonly comment: CommentRecord }
-const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+type ImplementingType = Binding;
 const problemMessage = (outcome: { ok: false; problem: { message?: string; code: string } }) => outcome.problem.message ?? outcome.problem.code;
 
 export class ConnectBackend implements WriterBackend {
   readonly kind = "connect";
-  setupStatus: { sources: boolean; annotations: boolean; comments: boolean } | undefined;
+  private store = new CollectionStore(new CollectionSchema({ types: [], contracts: [] }));
+  get setupStatus() { return this.store.schema.setupStatus; }
   private readonly indexCache = new CollectionCache<CollectionIndex>();
   private readonly libraryCache = new CollectionCache<LibraryEntry[]>();
   private readonly manuscriptCache = new CollectionCache<ManuscriptSummary[]>();
-  private readonly commentCache = new CollectionCache<Map<string, CommentMetadata>>();
-  private readonly commentBodies = new Map<string, CommentRecord>();
-  private readonly bodyCache = new Map<string, Promise<Result<string>>>();
-  private recordSet = new Set<string>();
-  private noteSet = new Set<string>();
+  private readonly commentCache = new CollectionCache<true>();
+  private readonly annotationCache = new CollectionCache<true>();
+  private readonly bodies = new CollectionBodies(() => this.store, (metadata) => this.selectedBodies(metadata));
+  private readonly bodyCache = new Map<string, CollectionCache<string>>();
   private readonly dataListeners = new Set<(delta: CollectionDelta) => void>();
   private readonly changedPaths = new Set<string>();
   private changeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -82,7 +60,6 @@ export class ConnectBackend implements WriterBackend {
   private reconcileJob: Promise<Result<void>> | undefined;
   private resetRequested = false;
   private disposed = false;
-  private commentPathsIndex: { paths: readonly string[]; index: PathIndex } | undefined;
   private readonly files = new Map<string, CollectionFileDescriptor>();
   private readonly listeners = new Set<(paths: readonly string[]) => void>();
   private readonly staleFiles = new Set<string>();
@@ -91,24 +68,8 @@ export class ConnectBackend implements WriterBackend {
   private description: ReturnType<MdbaseConnection<JsonObject>["describe"]> | undefined;
   private schemaPaths: ReadonlySet<string> = new Set(["mdbase.yaml"]);
   private schemaFolders: readonly string[] = ["_types", "_contracts"];
-  private annotationIndex: Promise<Result<Map<string, AnnotationMetadata>>> | undefined;
-  private annotationRows = new Map<string, AnnotationMetadata>();
-  private annotationTypes: ImplementingType[] = [];
-  private readonly annotationSources = new Map<string, Promise<Result<SourceAnnotation[]>>>();
-  private sourcePaths = new PathIndex([]);
-  private libraryGeneration = 0;
-  private annotationGroups: { metadata: Map<string, AnnotationMetadata>; sources: PathIndex; groups: Map<string, Map<string, AnnotationMetadata>> } | undefined;
-
   annotationFields(path: string, types: readonly string[] = []): Readonly<Record<string, string>> {
-    return this.annotationRows.get(path)?.fields ?? this.annotationTypes.find((t) => types.includes(t.name))?.fields ?? {};
-  }
-
-  private invalidateAnnotations(): void {
-    this.annotationIndex = undefined;
-    this.annotationRows = new Map();
-    this.annotationTypes = [];
-    this.annotationSources.clear();
-    this.annotationGroups = undefined;
+    return this.store.annotations.get(path)?.fields ?? this.store.schema.annotationFields(types);
   }
 
   private describe(): ReturnType<MdbaseConnection<JsonObject>["describe"]> {
@@ -117,8 +78,7 @@ export class ConnectBackend implements WriterBackend {
       if (this.description !== job) return out;
       if (!out.ok) this.description = undefined;
       else {
-        const has = (id: string, starter: string) => out.value.contracts.some((c) => c.id === id) || out.value.types.some((t) => t.name === starter);
-        this.setupStatus = { sources: has(sourceContract.id, "reader-source"), annotations: has(annotationContract.id, "reader-annotation"), comments: out.value.contracts.some((c) => c.id === commentContract.id && c.implementations.length > 0) };
+        this.store = new CollectionStore(new CollectionSchema(out.value));
         this.schemaPaths = new Set(["mdbase.yaml", ...out.value.types.flatMap((t) => t.path ? [t.path] : []), ...out.value.contracts.flatMap((c) => c.implementations.flatMap((i) => i.typePath ? [i.typePath] : []))]);
         const settings = out.value.configuration?.["settings"] as JsonObject | undefined;
         this.schemaFolders = [settings?.["types_folder"] ?? "_types", settings?.["contracts_folder"] ?? "_contracts"].filter((p): p is string => typeof p === "string" && !!p).map((p) => p.replace(/^\.\//, "").replace(/\/+$/, ""));
@@ -146,7 +106,7 @@ export class ConnectBackend implements WriterBackend {
   }
 
   manuscriptBindings() {
-    return this.implementingTypes(manuscriptContract.id, "manuscripts");
+    return this.implementingTypes("manuscript");
   }
 
   get records() { return this.connection.records; }
@@ -180,22 +140,38 @@ export class ConnectBackend implements WriterBackend {
   listManuscripts(): Promise<Result<ManuscriptSummary[]>> { return this.manuscriptCache.load(() => this.loadManuscripts()); }
 
   private async loadManuscripts(): Promise<Result<ManuscriptSummary[]>> {
-    const out: ManuscriptSummary[] = [];
-    for await (const page of this.connection.queryPages({ contract: manuscriptContract, frontmatterMode: "effective" }, { pageSize: 500 })) {
+    const loaded = await this.loadDomain("manuscript");
+    return loaded.ok ? ok(this.store.manuscripts) : loaded;
+  }
+
+  /** All discovery and watch reads enter the same store, in their raw type view. */
+  private async queryRows(input: QueryInput, pageSize = 1_000): Promise<Result<QueryRecord<JsonObject>[]>> {
+    const rows: QueryRecord<JsonObject>[] = [];
+    for await (const page of this.connection.queryPages(input, { pageSize, signal: this.lifetime.signal })) {
       if (!page.ok) return fail(problemMessage(page));
-      for (const r of page.value.results) {
-        const fm = r.effectiveFrontmatter ?? r.frontmatter ?? {};
-        out.push({
-          path: r.path,
-          title: typeof fm["title"] === "string" ? fm["title"] : r.path,
-          ...(typeof fm["template"] === "string" ? { template: fm["template"] } : {}),
-          ...(typeof fm["csl"] === "string" ? { style: fm["csl"] } : {}),
-          ...(r.file.mtime ? { modified: r.file.mtime } : {}),
-        });
-      }
+      rows.push(...page.value.results);
     }
-    // Titles are useful immediately. Home computes word counts in the background.
-    return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
+    return ok(rows);
+  }
+
+  private async loadDomain(domain: Domain): Promise<Result<true>> {
+    const described = await this.describe();
+    if (!described.ok) return fail(problemMessage(described));
+    const bindings = this.store.schema.bindings(domain, domain === "manuscript");
+    if (!bindings.ok) return bindings;
+    const generation = this.collectionGeneration;
+    const rows = new Map<string, QueryRecord<JsonObject>>();
+    for (const binding of bindings.value) {
+      const loaded = await this.queryRows({
+        types: [binding.name],
+        frontmatterMode: domain === "annotation" || domain === "comment" ? "persisted" : "effective",
+      }, domain === "manuscript" ? 500 : 1_000);
+      if (!loaded.ok) return loaded;
+      for (const row of loaded.value) rows.set(row.path, row);
+    }
+    if (generation !== this.collectionGeneration) return fail("Collection discovery was superseded.");
+    this.store.upsert([...rows.values()], true);
+    return ok(true);
   }
 
   /**
@@ -204,92 +180,54 @@ export class ConnectBackend implements WriterBackend {
    * the contract's fields, and the frontmatter key that declares types.
    */
   private manuscriptType(): Promise<Result<ImplementingType>> {
-    return this.implementingTypes(manuscriptContract.id, "manuscripts").then((r) => (r.ok ? ok(r.value[0] as ImplementingType) : r));
+    return this.implementingTypes("manuscript").then((r) => (r.ok ? ok(r.value[0] as ImplementingType) : r));
   }
 
   /** The collection's types implementing a contract (the first is the one to create with). */
-  private async implementingTypes(contractId: string, what: string): Promise<Result<ImplementingType[]>> {
+  private async implementingTypes(domain: Domain): Promise<Result<ImplementingType[]>> {
     const described = await this.describe();
-    if (!described.ok) return fail(problemMessage(described));
-    const implementations = described.value.contracts.find((c) => c.id === contractId)?.implementations ?? [];
-    if (!implementations.length) return fail(`This collection has no type for ${what}. Set it up again from mdbase connect.`);
-    const settings = described.value.configuration?.["settings"] as { explicit_type_keys?: unknown } | undefined;
-    const keys = settings?.explicit_type_keys;
-    // With explicit type keys turned off, the starter type still matches on `type`.
-    const typeKey = Array.isArray(keys) && typeof keys[0] === "string" ? keys[0] : "type";
-    return ok(implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey })));
-  }
-
-  private async commentMetadata(): Promise<Result<Map<string, CommentMetadata>>> {
-    return this.commentCache.load(async () => {
-      const described = await this.describe();
-      if (!described.ok) return fail(problemMessage(described));
-      if (this.setupStatus?.comments === false) return ok(new Map());
-      const types = await this.implementingTypes(commentContract.id, "comments");
-      if (!types.ok) return types;
-      const out = new Map<string, CommentMetadata>();
-      for (const type of types.value) for await (const page of this.connection.queryPages({ types: [type.name], frontmatterMode: "persisted" }, { pageSize: 1_000 })) {
-        if (!page.ok) return fail(problemMessage(page));
-        for (const r of page.value.results) {
-          const comment = commentFromRecord(r.path, toContract(r.frontmatter ?? {}, type.fields), "");
-          if (comment) out.set(r.path, { type: type.name, fields: type.fields, comment });
-        }
-      }
-      return ok(out);
-    });
+    return described.ok ? this.store.schema.bindings(domain, true) : fail(problemMessage(described));
   }
 
   async comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>> {
     const refreshed = await this.flushChanges();
     if (!refreshed.ok) return refreshed;
     const generation = this.collectionGeneration;
-    const metadata = await this.commentMetadata();
+    const metadata = await this.commentCache.load(() => this.loadDomain("comment"));
     if (!metadata.ok) return metadata;
-    if (generation !== this.collectionGeneration) return this.comments(scope);
-    const selected = new Set<string>();
-    if (!scope) for (const path of metadata.value.keys()) selected.add(path);
-    else {
+    if (!this.setupStatus.comments) return ok([]);
+    if (scope) {
       const index = await this.index();
       if (!index.ok) return index;
-      if (this.commentPathsIndex?.paths !== index.value.recordPaths) this.commentPathsIndex = { paths: index.value.recordPaths, index: new PathIndex(index.value.recordPaths) };
-      const documents = new Set(scope), replies = new Map<string, string[]>();
-      const candidates = new PathIndex(metadata.value.keys());
-      for (const [path, { comment }] of metadata.value) {
-        const document = resolveLinkTarget(linkPath(comment.document), path, this.commentPathsIndex.index);
-        if (document && documents.has(document)) selected.add(path);
-        if (comment.inReplyTo) {
-          const root = resolveLinkTarget(linkPath(comment.inReplyTo), path, candidates);
-          if (root) { if (!replies.has(root)) replies.set(root, []); replies.get(root)!.push(path); }
-        }
-      }
-      for (const path of selected) for (const reply of replies.get(path) ?? []) selected.add(reply);
-    }
-    const wanted = new Map([...selected].map((path) => [path, metadata.value.get(path)]));
-    const byType = new Map<string, string[]>();
-    for (const path of selected) if (!this.commentBodies.has(path)) {
-      const type = metadata.value.get(path)!.type;
-      if (!byType.has(type)) byType.set(type, []);
-      byType.get(type)!.push(path);
-    }
-    for (const [type, paths] of byType) for (let offset = 0; offset < paths.length; offset += 500) {
-      for await (const page of this.connection.queryPages({ types: [type], where: `file.path in ${JSON.stringify(paths.slice(offset, offset + 500))}`, frontmatterMode: "persisted", includeBody: true }, { pageSize: 500 })) {
-        if (!page.ok) return fail(problemMessage(page));
-        for (const r of page.value.results) {
-          if (generation !== this.collectionGeneration) return this.comments(scope);
-          const entry = metadata.value.get(r.path);
-          if (!entry || entry !== wanted.get(r.path)) continue;
-          const fields = entry.fields;
-          const comment = fields && commentFromRecord(r.path, toContract(r.frontmatter ?? {}, fields), r.body ?? "");
-          if (comment) this.commentBodies.set(r.path, comment);
-        }
-      }
     }
     if (generation !== this.collectionGeneration) return this.comments(scope);
-    return ok([...selected].flatMap((path) => { const comment = this.commentBodies.get(path); return comment ? [comment] : []; }));
+    const bodies = await this.bodies.commentsForScope(scope);
+    return generation === this.collectionGeneration ? bodies : this.comments(scope);
+  }
+
+  /** Keep this boundary small: SDK readMany can replace the CEL batching later. */
+  private async selectedBodies(metadata: ReadonlyMap<string, { readonly type: string }>): Promise<Result<QueryRecord<JsonObject>[]>> {
+    const byType = new Map<string, string[]>();
+    for (const [path, entry] of metadata) {
+      if (!byType.has(entry.type)) byType.set(entry.type, []);
+      byType.get(entry.type)!.push(path);
+    }
+    const rows: QueryRecord<JsonObject>[] = [];
+    for (const [type, paths] of byType) {
+      for (let offset = 0; offset < paths.length; offset += 500) {
+        const loaded = await this.queryRows({
+          types: [type], where: `file.path in ${JSON.stringify(paths.slice(offset, offset + 500))}`,
+          frontmatterMode: "persisted", includeBody: true,
+        }, 500);
+        if (!loaded.ok) return loaded;
+        rows.push(...loaded.value);
+      }
+    }
+    return ok(rows);
   }
 
   async createComment(input: NewComment): Promise<Result<CommentRecord>> {
-    const types = await this.implementingTypes(commentContract.id, "comments");
+    const types = await this.implementingTypes("comment");
     if (!types.ok) return types;
     const type = types.value[0] as ImplementingType;
     const now = new Date();
@@ -306,7 +244,7 @@ export class ConnectBackend implements WriterBackend {
   }
 
   async changeComment(comment: CommentRecord, change: CommentChange): Promise<Result<CommentRecord>> {
-    const types = await this.implementingTypes(commentContract.id, "comments");
+    const types = await this.implementingTypes("comment");
     if (!types.ok) return types;
     const current = await this.connection.read({ path: comment.path });
     if (!current.ok) return fail(problemMessage(current));
@@ -334,15 +272,8 @@ export class ConnectBackend implements WriterBackend {
     if (directory.ok) return peopleFromDirectory(directory.value);
     // Without the account, person names still show; comments go unsigned.
     const signing = signingFromProblem(directory.problem);
-    const names = new Map<string, string>();
-    for await (const page of this.connection.queryPages({ contract: PERSON_CONTRACT, frontmatterMode: "effective" }, { pageSize: 500 })) {
-      if (!page.ok) return { ...NO_PEOPLE, signing };
-      for (const r of page.value.results) {
-        const name = (r.effectiveFrontmatter ?? r.frontmatter)?.["name"];
-        if (typeof name === "string") names.set(personKey(r.path), name);
-      }
-    }
-    return { names, signing };
+    const loaded = await this.loadDomain("person");
+    return loaded.ok ? { names: this.store.people, signing } : { ...NO_PEOPLE, signing };
   }
 
   async reviewIdentityAccess(): Promise<Result<void>> {
@@ -405,179 +336,63 @@ export class ConnectBackend implements WriterBackend {
 
   private async loadIndex(): Promise<Result<CollectionIndex>> {
     const generation = this.collectionGeneration;
-    // Records of these contracts' types are not notes (Reader's starter annotation type is named as a fallback, when the contract is absent).
-    const notNotes = new Set(["reader-annotation", "reader-source", "comment", "person"]);
     const described = await this.describe();
-    const contracts = new Set<string>([commentContract.id, PERSON_CONTRACT.id, sourceContract.id, annotationContract.id]);
-    if (described.ok) for (const c of described.value.contracts) if (contracts.has(c.id)) for (const i of c.implementations) notNotes.add(i.typeName);
-    const recordPaths: string[] = [];
-    const notePaths: string[] = [];
-    for await (const page of this.connection.queryPages({ frontmatterMode: "persisted" }, { pageSize: 1_000 })) {
-      if (!page.ok) return fail(problemMessage(page));
-      for (const r of page.value.results) {
-        recordPaths.push(r.path);
-        if (r.path.toLowerCase().endsWith(".md") && !r.types.some((t) => notNotes.has(t))) notePaths.push(r.path);
+    if (!described.ok) return fail(problemMessage(described));
+    const pages = this.connection.queryPages({ frontmatterMode: "persisted" }, {
+      pageSize: 1_000, signal: this.lifetime.signal,
+    })[Symbol.asyncIterator]();
+    try {
+      let page = await pages.next();
+      while (!page.done) {
+        if (!page.value.ok) return fail(problemMessage(page.value));
+        if (generation !== this.collectionGeneration) return fail("Collection discovery was superseded.");
+        // One-page lookahead hides classification behind transport latency,
+        // without parallel cursors or cumulative snapshot allocations.
+        const next = pages.next();
+        this.store.upsert(page.value.value.results, true);
+        page = await next;
       }
-    }
-    if (generation !== this.collectionGeneration) return fail("Collection discovery was superseded.");
+    } finally { await pages.return?.(undefined); }
     const files = new Map<string, CollectionFileDescriptor>();
     try {
       for await (const file of this.connection.files.list()) files.set(file.path, file);
-    } catch (e) { return fail(errorMessage(e)); }
+    } catch (error) { return fail(errorMessage(error)); }
     if (generation !== this.collectionGeneration) return fail("Collection discovery was superseded.");
-    this.recordSet = new Set(recordPaths);
-    this.noteSet = new Set(notePaths);
+    this.store.files([...files.keys()]);
     this.files.clear();
     for (const [path, file] of files) this.files.set(path, file);
-    return ok({ recordPaths, filePaths: [...files.keys()].filter((p) => !/\.md$/i.test(p)), notePaths });
+    return ok(this.store.index);
   }
 
   library(): Promise<Result<LibraryEntry[]>> { return this.libraryCache.load(() => this.loadLibrary()); }
 
   private async loadLibrary(): Promise<Result<LibraryEntry[]>> {
-    const generation = ++this.libraryGeneration;
-    const described = await this.describe();
-    if (!described.ok) return fail(problemMessage(described));
-    const contract = described.value.contracts.some((c) => c.id === sourceContract.id);
-    const starter = described.value.types.some((t) => t.name === "reader-source");
-    if (!contract && !starter) {
-      if (generation === this.libraryGeneration && this.sourcePaths.size) {
-        this.sourcePaths = new PathIndex([]);
-        this.annotationGroups = undefined;
-        this.annotationSources.clear();
-      }
-      return ok([]);
-    }
-    const entries: LibraryEntry[] = [];
-    for await (const page of this.connection.queryPages({ ...(contract ? { contract: sourceContract } : { types: ["reader-source"] }), frontmatterMode: "effective" },  { pageSize: 1_000 })) {
-      if (!page.ok) return fail(problemMessage(page));
-      for (const r of page.value.results) {
-        const entry = libraryEntry(r.path, r.effectiveFrontmatter ?? r.frontmatter);
-        if (entry) entries.push(entry);
-      }
-    }
-    if (generation === this.libraryGeneration && (entries.length !== this.sourcePaths.size || entries.some((e) => !this.sourcePaths.has(e.path)))) {
-      this.sourcePaths = new PathIndex(entries.map((e) => e.path));
-      this.annotationGroups = undefined;
-      this.annotationSources.clear();
-    }
-    return ok(entries);
-  }
-
-  private annotationMetadata(): Promise<Result<Map<string, AnnotationMetadata>>> {
-    if (!this.annotationIndex) {
-      const job = this.loadAnnotationMetadata();
-      this.annotationIndex = job;
-      void job.then((out) => {
-        if (this.annotationIndex !== job) return;
-        if (out.ok) {
-          this.annotationRows = out.value;
-        } else this.annotationIndex = undefined;
-      }, () => { if (this.annotationIndex === job) this.annotationIndex = undefined; });
-    }
-    return this.annotationIndex;
-  }
-
-  private async loadAnnotationMetadata(): Promise<Result<Map<string, AnnotationMetadata>>> {
-    const generation = this.collectionGeneration;
-    const described = await this.describe();
-    if (!described.ok) return fail(problemMessage(described));
-    // Unknown types query as empty in the SDK, but don't issue a needless probe.
-    const contract = described.value.contracts.find((c) => c.id === annotationContract.id);
-    const starter = described.value.types.some((t) => t.name === "reader-annotation");
-    const types = contract ? await this.implementingTypes(annotationContract.id, "annotations") : ok(starter ? [{ name: "reader-annotation", fields: { source: "source", locator: "locator" }, typeKey: "type" }] : []);
-    if (!types.ok) return types;
-    if (generation !== this.collectionGeneration) return fail("Annotation discovery was superseded.");
-    this.annotationTypes = types.value;
-    return this.queryAnnotationMetadata();
-  }
-
-  private async queryAnnotationMetadata(paths?: readonly string[]): Promise<Result<Map<string, AnnotationMetadata>>> {
-    const out = new Map<string, AnnotationMetadata>();
-    for (const type of this.annotationTypes) {
-      // select is additive (values), not a projection of frontmatter in the SDK/authority.
-      for await (const page of this.connection.queryPages({ types: [type.name], frontmatterMode: "persisted", ...(paths ? { where: `file.path in ${JSON.stringify(paths)}` } : {}) }, { pageSize: 1_000 })) {
-        if (!page.ok) return fail(problemMessage(page));
-        for (const r of page.value.results) {
-          const source = toContract(r.frontmatter ?? {}, type.fields)["source"];
-          if (!out.has(r.path)) out.set(r.path, { path: r.path, type: type.name, source: typeof source === "string" ? annotationSourceLink(source) ?? "" : "", fields: type.fields });
-        }
-      }
-    }
-    return ok(out);
+    const loaded = await this.loadDomain("source");
+    return loaded.ok ? ok(this.store.library) : loaded;
   }
 
   async annotationPaths(): Promise<Result<readonly string[]>> {
     const refreshed = await this.flushChanges();
     if (!refreshed.ok) return refreshed;
-    const index = await this.annotationMetadata();
-    return index.ok ? ok([...index.value.keys()]) : index;
+    const loaded = await this.annotationCache.load(() => this.loadDomain("annotation"));
+    return loaded.ok ? ok([...this.store.annotations.keys()]) : loaded;
   }
 
   async annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>> {
-    const refreshed = await this.flushChanges();
-    if (!refreshed.ok) return refreshed;
-    const index = await this.annotationMetadata();
-    if (!index.ok) return index;
-    const known = this.annotationSources.get(path);
-    if (known) return known;
-    if (index.value.size && !this.sourcePaths.has(path)) {
-      const library = await this.library();
-      if (!library.ok) return library;
-      const loaded = this.annotationSources.get(path);
-      if (loaded) return loaded;
-    }
-    const job = this.loadAnnotationsForSource(path, index.value);
-    this.annotationSources.set(path, job);
-    void job.then((out) => {
-      if (!out.ok && this.annotationSources.get(path) === job) this.annotationSources.delete(path);
-    }, () => { if (this.annotationSources.get(path) === job) this.annotationSources.delete(path); });
-    return job;
-  }
-
-  private async loadAnnotationsForSource(path: string, index: Map<string, AnnotationMetadata>): Promise<Result<SourceAnnotation[]>> {
-    if (!index.size) return ok([]);
-    // Metadata resolves aliased/relative/bare links safely; source equality filters would omit them.
-    if (this.annotationGroups?.metadata !== index || this.annotationGroups.sources !== this.sourcePaths) {
-      const groups = new Map<string, Map<string, AnnotationMetadata>>();
-      for (const a of index.values()) {
-        const source = a.source ? resolveLinkTarget(a.source, a.path, this.sourcePaths) : null;
-        if (!source) continue;
-        if (!groups.has(source)) groups.set(source, new Map());
-        groups.get(source)!.set(a.path, a);
-      }
-      this.annotationGroups = { metadata: index, sources: this.sourcePaths, groups };
-    }
-    const selected = this.annotationGroups.groups.get(path) ?? new Map<string, AnnotationMetadata>();
-    const byType = new Map<string, string[]>();
-    for (const a of selected.values()) {
-      if (!byType.has(a.type)) byType.set(a.type, []);
-      byType.get(a.type)!.push(a.path);
-    }
-    const out = new Map<string, SourceAnnotation>();
-    for (const [type, paths] of byType) for (let offset = 0; offset < paths.length; offset += 500) {
-      // Bounded CEL path lists; queryPages limit is page size, never a total-result cap.
-      const where = `file.path in ${JSON.stringify(paths.slice(offset, offset + 500))}`;
-      for await (const page of this.connection.queryPages({ types: [type], where, frontmatterMode: "persisted", includeBody: true }, { pageSize: 500 })) {
-        if (!page.ok) return fail(problemMessage(page));
-        for (const r of page.value.results) {
-          const a = selected.get(r.path);
-          if (!a) continue;
-          const annotation = sourceAnnotation(r.path, toContract(r.frontmatter ?? {}, a.fields), r.body ?? "");
-          if (annotation) out.set(r.path, annotation);
-        }
-      }
-    }
-    return ok([...out.values()]);
+    const identities = await this.annotationPaths();
+    if (!identities.ok) return identities;
+    const library = await this.library();
+    if (!library.ok) return library;
+    return this.bodies.annotationsForSource(path);
   }
 
   readBody(path: string): Promise<Result<string>> {
-    const cached = this.bodyCache.get(path);
-    if (cached) return cached;
-    const job = this.connection.read({ path }).then((read) => read.ok ? ok(read.value.body ?? "") : fail<string>(problemMessage(read)));
-    this.bodyCache.set(path, job);
-    void job.then((out) => { if (!out.ok && this.bodyCache.get(path) === job) this.bodyCache.delete(path); }, () => { if (this.bodyCache.get(path) === job) this.bodyCache.delete(path); });
-    return job;
+    let cache = this.bodyCache.get(path);
+    if (!cache) this.bodyCache.set(path, cache = new CollectionCache());
+    return cache.load(async () => {
+      const read = await this.connection.read({ path });
+      return read.ok ? ok(read.value.body ?? "") : fail(problemMessage(read));
+    });
   }
 
   async readFile(path: string): Promise<Result<Uint8Array>> {
@@ -618,113 +433,30 @@ export class ConnectBackend implements WriterBackend {
     try {
       while (this.changedPaths.size && !this.disposed) {
         const generation = this.collectionGeneration;
-        await Promise.all([this.indexCache.pending, this.libraryCache.pending, this.manuscriptCache.pending, this.commentCache.pending, this.annotationIndex]);
+        await Promise.all([
+          this.indexCache.pending, this.libraryCache.pending, this.manuscriptCache.pending,
+          this.commentCache.pending, this.annotationCache.pending,
+        ]);
         if (generation !== this.collectionGeneration) continue;
         const paths = [...this.changedPaths].slice(0, 500);
         for (const path of paths) this.changedPaths.delete(path);
         try {
           const described = await this.describe();
           if (!described.ok) throw new Error(problemMessage(described));
-          const rows = new Map<string, QueryRecord<JsonObject>>();
-          for await (const page of this.connection.queryPages({ where: `file.path in ${JSON.stringify(paths)}`, frontmatterMode: "both" }, { pageSize: 500, signal: this.lifetime.signal })) {
-            if (!page.ok) throw new Error(problemMessage(page));
-            for (const row of page.value.results) rows.set(row.path, row);
-          }
+          const loaded = await this.queryRows({
+            where: `file.path in ${JSON.stringify(paths)}`, frontmatterMode: "both",
+          }, 500);
+          if (!loaded.ok) throw new Error(loaded.message);
+          const binaries = await this.changedFiles(paths);
           if (generation !== this.collectionGeneration) continue;
-          const typeFor = (id: string, row: QueryRecord<JsonObject> | undefined, starter: string) => {
-            const implementation = described.value.contracts.find((c) => c.id === id)?.implementations.find((i) => row?.types.includes(i.typeName));
-            return implementation ? { name: implementation.typeName, fields: implementation.fields } : row?.types.includes(starter) ? { name: starter, fields: {} } : undefined;
-          };
-          let indexChanged = false, annotations = false, comments = false;
-          const library = this.libraryCache.value && new Map(this.libraryCache.value.map((e) => [e.path, e]));
-          const manuscripts = this.manuscriptCache.value && new Map(this.manuscriptCache.value.map((e) => [e.path, e]));
-          let libraryChanged = false, manuscriptsChanged = false;
-          for (const path of paths) {
-            const row = rows.get(path);
-            if (this.indexCache.value && /\.md$/i.test(path)) {
-              const note = !!row && ![sourceContract.id, annotationContract.id, commentContract.id, PERSON_CONTRACT.id].some((id) => typeFor(id, row, id === sourceContract.id ? "reader-source" : id === annotationContract.id ? "reader-annotation" : id === commentContract.id ? "comment" : "person"));
-              if (this.recordSet.has(path) !== !!row || this.noteSet.has(path) !== note) indexChanged = true;
-              if (row) this.recordSet.add(path); else this.recordSet.delete(path);
-              if (note) this.noteSet.add(path); else this.noteSet.delete(path);
-            }
-            const source = typeFor(sourceContract.id, row, "reader-source");
-            if (library) {
-              const next = source && row ? libraryEntry(path, Object.keys(source.fields).length ? toContract(row.effectiveFrontmatter ?? row.frontmatter ?? {}, source.fields) : row.effectiveFrontmatter ?? row.frontmatter) : null;
-              if (!equal(library.get(path) ?? null, next)) {
-                libraryChanged = true;
-                if (next) library.set(path, next); else library.delete(path);
-              }
-            }
-            const manuscript = typeFor(manuscriptContract.id, row, "writer-manuscript");
-            if (manuscripts) {
-              const fields = row && manuscript ? Object.keys(manuscript.fields).length ? toContract(row.effectiveFrontmatter ?? row.frontmatter ?? {}, manuscript.fields) : row.effectiveFrontmatter ?? row.frontmatter ?? {} : undefined;
-              const next: ManuscriptSummary | undefined = fields ? { path, title: typeof fields["title"] === "string" ? fields["title"] : path, ...(typeof fields["template"] === "string" ? { template: fields["template"] } : {}), ...(typeof fields["csl"] === "string" ? { style: fields["csl"] } : {}), ...(row?.file.mtime ? { modified: row.file.mtime } : {}) } : undefined;
-              if (!equal(manuscripts.get(path), next)) { manuscriptsChanged = true; if (next) manuscripts.set(path, next); else manuscripts.delete(path); }
-            }
-            const annotation = typeFor(annotationContract.id, row, "reader-annotation");
-            if (this.annotationIndex) {
-              const localFields = annotation?.fields && Object.keys(annotation.fields).length ? annotation.fields : { source: "source", locator: "locator" };
-              const target = row && annotation ? toContract(row.frontmatter ?? {}, localFields)["source"] : undefined;
-              const next = annotation && row ? { path, type: annotation.name, source: typeof target === "string" ? annotationSourceLink(target) ?? "" : "", fields: localFields } : undefined;
-              const previous = this.annotationRows.get(path);
-              if (previous || next) {
-                annotations = true;
-                for (const [entry, remove] of [[previous, true], [next, false]] as const) {
-                  if (!entry) continue;
-                  const sourcePath = resolveLinkTarget(entry.source, path, this.sourcePaths);
-                  if (!sourcePath) continue;
-                  this.annotationSources.delete(sourcePath);
-                  if (this.annotationGroups?.metadata !== this.annotationRows) continue;
-                  const groups = this.annotationGroups.groups;
-                  if (remove) groups.get(sourcePath)?.delete(path);
-                  else { if (!groups.has(sourcePath)) groups.set(sourcePath, new Map()); groups.get(sourcePath)!.set(path, entry); }
-                }
-                if (next) this.annotationRows.set(path, next); else this.annotationRows.delete(path);
-              }
-            }
-            const comment = typeFor(commentContract.id, row, "comment");
-            const commentRows = this.commentCache.value;
-            if (commentRows) {
-              const value = comment && row ? commentFromRecord(path, Object.keys(comment.fields).length ? toContract(row.frontmatter ?? {}, comment.fields) : row.frontmatter ?? {}, "") : null;
-              if (value || commentRows.has(path)) {
-                comments = true;
-                this.commentBodies.delete(path);
-                if (value && comment) commentRows.set(path, { type: comment.name, fields: comment.fields, comment: value }); else commentRows.delete(path);
-              }
-            }
-          }
-          // The SDK has no exact binary stat: refresh only affected folders, never all Markdown.
-          const folders = new Set(paths.filter((p) => !/\.md$/i.test(p)).map((p) => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : ""));
-          for (const folder of folders) {
-            const found = new Map<string, CollectionFileDescriptor>();
-            for await (const file of this.connection.files.list({ folder, signal: this.lifetime.signal })) if (paths.includes(file.path)) found.set(file.path, file);
-            for (const path of paths.filter((p) => (p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "") === folder && !/\.md$/i.test(p))) {
-              if (this.files.has(path) !== found.has(path)) indexChanged = true;
-              if (found.has(path)) this.files.set(path, found.get(path)!); else this.files.delete(path);
-            }
-          }
-          const delta: CollectionDelta = { paths, ...(annotations ? { annotations: true } : {}), ...(comments ? { comments: true } : {}) };
-          if (indexChanged && this.indexCache.value) {
-            const index = { recordPaths: [...this.recordSet], notePaths: [...this.noteSet], filePaths: [...this.files.keys()].filter((p) => !/\.md$/i.test(p)) };
-            this.indexCache.set(index);
-            Object.assign(delta, { index });
-          }
-          if (libraryChanged && library) {
-            const entries = [...library.values()];
-            this.libraryCache.set(entries);
-            if (entries.length !== this.sourcePaths.size || entries.some((e) => !this.sourcePaths.has(e.path))) {
-              this.sourcePaths = new PathIndex(entries.map((e) => e.path));
-              this.annotationGroups = undefined;
-              this.annotationSources.clear();
-            }
-            Object.assign(delta, { library: entries });
-          }
-          if (manuscriptsChanged && manuscripts) {
-            const entries = [...manuscripts.values()].sort((a, b) => a.title.localeCompare(b.title));
-            this.manuscriptCache.set(entries);
-            Object.assign(delta, { manuscripts: entries });
-          }
-          this.publish(delta);
+          const present = new Set(loaded.value.map((r) => r.path));
+          const upsert = this.store.upsert(loaded.value);
+          const removed = this.store.remove(paths.filter((p) => !present.has(p)));
+          const files = this.store.files(binaries.present, binaries.removed);
+          this.acceptDelta({ ...upsert, ...removed, ...files, paths,
+            annotationSources: upsert.annotationSources === null || removed.annotationSources === null
+              ? null : [...upsert.annotationSources ?? [], ...removed.annotationSources ?? []],
+          });
         } catch (error) { for (const path of paths) this.changedPaths.add(path); throw error; }
       }
       return ok(undefined);
@@ -733,6 +465,39 @@ export class ConnectBackend implements WriterBackend {
       this.publish({ paths: [], problem: message });
       return fail(message);
     }
+  }
+
+  private acceptDelta(delta: StoreDelta): void {
+    if (delta.index && this.indexCache.value) this.indexCache.set(this.store.index);
+    if (delta.library && this.libraryCache.value) this.libraryCache.set(this.store.library);
+    if (delta.manuscripts && this.manuscriptCache.value) this.manuscriptCache.set(this.store.manuscripts);
+    this.bodies.changed(delta);
+    // Never promote a still-loading/failed domain from a partial discovery.
+    const { index, library, manuscripts, annotations, comments, annotationSources: _sources, ...rest } = delta;
+    this.publish({ ...rest,
+      ...(index && this.indexCache.value ? { index: this.store.index } : {}),
+      ...(library && this.libraryCache.value ? { library: this.store.library } : {}),
+      ...(manuscripts && this.manuscriptCache.value ? { manuscripts: this.store.manuscripts } : {}),
+      ...(annotations && this.annotationCache.value ? { annotations: true } : {}),
+      ...(comments && this.commentCache.value ? { comments: true } : {}),
+    });
+  }
+
+  private async changedFiles(paths: readonly string[]): Promise<{ present: string[]; removed: string[] }> {
+    // No exact binary stat yet: enumerate only the folders containing changed files.
+    const folderOf = (p: string) => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
+    const binaries = paths.filter((p) => !/\.md$/i.test(p));
+    const wanted = new Set(binaries), found = new Map<string, CollectionFileDescriptor>();
+    for (const folder of new Set(binaries.map(folderOf))) {
+      for await (const file of this.connection.files.list({ folder, signal: this.lifetime.signal })) {
+        if (wanted.has(file.path)) found.set(file.path, file);
+      }
+    }
+    for (const path of binaries) {
+      const file = found.get(path);
+      if (file) this.files.set(path, file); else this.files.delete(path);
+    }
+    return { present: [...found.keys()], removed: binaries.filter((p) => !found.has(p)) };
   }
 
   reconcile(): Promise<Result<void>> {
@@ -760,10 +525,19 @@ export class ConnectBackend implements WriterBackend {
     ++this.collectionGeneration;
     clearTimeout(this.changeTimer);
     this.description = undefined;
-    this.indexCache.clear(); this.libraryCache.clear(); this.manuscriptCache.clear(); this.commentCache.clear();
-    this.commentBodies.clear(); this.bodyCache.clear();
-    this.invalidateAnnotations();
-    const results = await Promise.all([this.index(), this.library(), this.listManuscripts(), this.annotationMetadata(), this.commentMetadata()]);
+    this.store.reset();
+    this.indexCache.clear();
+    this.libraryCache.clear();
+    this.manuscriptCache.clear();
+    this.commentCache.clear();
+    this.annotationCache.clear();
+    this.bodies.clear();
+    this.bodyCache.clear();
+    const results = await Promise.all([
+      this.index(), this.library(), this.listManuscripts(),
+      this.annotationCache.load(() => this.loadDomain("annotation")),
+      this.commentCache.load(() => this.loadDomain("comment")),
+    ]);
     const problem = results.slice(0, 2).find((r) => !r.ok);
     this.publish({ paths: [], reset: true, ...(problem && !problem.ok ? { problem: problem.message } : {}) });
     return problem && !problem.ok ? fail(problem.message) : ok(undefined);

@@ -1,7 +1,8 @@
 // Run from apps/writer: pnpm exec vitest run --config scripts/perf/vitest.config.ts
 // No LAB, accounts, network, or product changes. Real backend/workspace/SDK sessions;
 // synthetic query/file transport. Timings are Node proxies, NOT browser paint times.
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { cpus } from "node:os";
 import { performance } from "node:perf_hooks";
 import type { CollectionDescription, CollectionFileDescriptor, JsonObject, MdbaseConnection, QueryInput, QueryRecord } from "@mdbase-dev/connect";
@@ -332,7 +333,9 @@ it("large collection baseline (opt-in)", async () => {
     }
     const report = { environment: { node: process.version, cpu: cpus()[0]?.model, platform: process.platform }, counts, latencyMs, filePageSize, strictContracts, runs, results: output };
     const json = JSON.stringify(report, null, 2);
-    if (process.env["PERF_OUTPUT"]) writeFileSync(process.env["PERF_OUTPUT"], `${json}\n`);
+    const destination = process.env["PERF_OUTPUT"] ?? "out/perf/large-collection.json";
+    mkdirSync(dirname(destination), { recursive: true });
+    writeFileSync(destination, `${json}\n`);
     console.log(json);
   } finally { vi.unstubAllGlobals(); }
 });

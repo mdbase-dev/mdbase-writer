@@ -105,7 +105,7 @@ describe("annotation loading", () => {
     f.rows[0]!.types = ["reader-annotation"];
     f.rows[0]!.body = "";
     expect(await f.backend.annotationPaths()).toEqual({ ok: true, value: ["annotations/a.md"] });
-    expect(f.connection.queryPages).toHaveBeenCalledWith({ types: ["reader-annotation"], frontmatterMode: "persisted" }, { pageSize: 1_000 });
+    expect(f.connection.queryPages).toHaveBeenCalledWith({ types: ["reader-annotation"], frontmatterMode: "persisted" }, expect.objectContaining({ pageSize: 1_000 }));
     f.backend.dispose();
   });
 

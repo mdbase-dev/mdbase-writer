@@ -115,6 +115,17 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   identities supplied later. Export also awaits annotation discovery settling;
   real annotation failures are non-blocking problems/warnings, not preview/export
   gates. Missing-dependency diagnostics remain gated by their discovery domain.
+- **Collection ownership** lives in `backend/collection.ts`. `CollectionSchema`
+  centralizes mapped fields, structural starter roles and active contract bindings.
+  `CollectionStore` applies the same classifier for full discovery and incremental
+  `upsert/remove/reset`, producing `CollectionDelta` snapshots. It retains compact
+  domain metadata, not query rows or bodies. Partial discovery preserves already
+  learned effective defaults; authoritative watch rows replace them. Connect owns
+  query pagination, schema/watch lifetimes, bounded path reads and binary descriptors;
+  `backend/bodies.ts` owns lazy selected-source/scoped-comment hydration. The small
+  demo uses the same store; the large demo already uses ConnectBackend. Native CEL
+  link queries remain deferred: installed canonical CEL lacks `asFile()`, and native
+  basename resolution is not Writer's unique-basename rule.
 - **Path resolution** uses immutable collection-generation indexes: exact paths,
   then relative paths, then a unique case-insensitive basename. Comment membership
   is cached by comments/index identity; only changed manuscript bodies are
