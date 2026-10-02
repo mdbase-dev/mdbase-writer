@@ -5,7 +5,8 @@ testing, deployment, and repository layout.
 
 ## Getting started
 
-Use Node.js 22.12 or newer within the Node 22 release line and pnpm.
+Use Node.js 22.12 or newer within the Node 22 release line and pnpm 11.15.1
+(the version pinned in CI; older pnpm versions cannot read this lockfile's patch metadata).
 From the repository root:
 
 ```sh
@@ -20,6 +21,9 @@ The `?demo` collection runs on the SDK's in-memory record authority
 same SDK paths as a real collection. It is enabled in development and LAB builds, not staging
 or production. Demo changes are not durable collection data.
 
+The browser suite needs Chromium plus the `pandoc` and `unzip` CLIs to inspect downloaded
+Word and bundle exports. CI installs all three; install the CLIs with your system package
+manager and Chromium with `pnpm --filter @mdbase-writer/app exec playwright install chromium`.
 Run the end-to-end Chromium suite with `pnpm dev` running:
 
 ```sh
@@ -54,7 +58,47 @@ and local connector (defaults: production and port 28485).
 
 Use a disposable test collection and review Writer's access and collection setup before approval.
 
-## Deploy
+## CI and GitHub deployment setup
+
+`.github/workflows/ci.yml` runs on pull requests, main pushes, and merge groups. It installs
+with a frozen lockfile, runs `pnpm check`, builds production, and runs both Chromium suites
+against `pnpm dev` with a cold Vite dependency cache and the in-memory `?demo` collection.
+This matches the consumer canary and catches deferred worker imports that reload/reset the demo.
+Both suites run even when the baseline fails; browser screenshots are uploaded on failure. Demo coverage does not prove real Connect
+collection behaviour.
+
+Use **Actions → Deploy Writer → Run workflow**, branch **main**, target **staging** first.
+Validate staging with a disposable collection, then dispatch **production** and approve the
+production environment. The workflow reruns CI, deploys a fresh checkout through
+`scripts/deploy-pages.mjs`, preserves its clean-tree guard, and verifies the live manifest.
+No laptop login or dirty-tree override is needed. This follows Reader's explicit promotion
+model: staging success is not programmatically bound to a production SHA, so reviewers must
+check the run's commit against the validated staging commit before approving.
+
+Repository administrators must configure:
+
+- GitHub environments **writer-staging** and **writer-production**, with deployment branches
+  restricted to **main**. Require reviewers for production, prevent self-review, and disable
+  protection-rule bypass where supported. Staging may also require approval.
+- In each environment, secrets **CLOUDFLARE_API_TOKEN** (account-scoped **Cloudflare Pages: Edit**)
+  and **CLOUDFLARE_ACCOUNT_ID**. These are the only deployment credentials; CI uses none.
+- Keep the existing Pages project **mdbase-writer**, production branch **main**, custom domain
+  **writer.mdbase.dev**, and staging branch alias **staging.mdbase-writer.pages.dev**. Disable any
+  separate Cloudflare Git-triggered production deployment if configured, so it cannot bypass
+  the workflow gate.
+- Keep the existing **mdbase-writer-assets** R2 bucket and compiler objects available to the
+  `WRITER_ASSETS` Functions binding. This workflow does not upload or replace compiler assets.
+- Require the CI job **Check, production build and Chromium** in the main branch ruleset
+  (confirm the displayed check name after its first run). `merge_group` supports enabling a
+  merge queue without losing the required check.
+
+Deployment secrets/settings are not created by this change. Enable the required CI check only
+after the first run is green; existing browser regressions must be fixed, not skipped.
+
+## Deploy locally
+
+Local commands remain available for deliberate operator use. Prefer the protected GitHub
+workflow for staging and production.
 
 Deployments are Cloudflare Pages branches of the `mdbase-writer` project. Targets are defined in
 `apps/writer/scripts/deployment-environment.mjs`:
