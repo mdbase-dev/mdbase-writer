@@ -180,7 +180,7 @@ function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
   const watch = { ...authority.watch, status: { state: "connected" as const, cursor: 0, recovered: false }, problem: null };
   const connection = {
     info: () => ({ displayName: "Synthetic benchmark", collectionId: "synthetic-perf" }),
-    describe: client.describe.bind(client), queryPages: client.queryPages.bind(client), readMany: client.readMany.bind(client),
+    describe: client.describe.bind(client), queryPages: client.queryPages.bind(client), queryAll: client.queryAll.bind(client), readMany: client.readMany.bind(client),
     supportsAuthorityFeature: supports,
     read: async ({ path }: { path: string }) => {
       await delay();

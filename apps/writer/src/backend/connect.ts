@@ -215,7 +215,7 @@ export class ConnectBackend implements WriterBackend {
     return generation === this.collectionGeneration ? bodies : this.comments(scope);
   }
 
-  /** Type selection is domain logic; exact-path batching belongs to the SDK. */
+  /** Read-only display hydration needs bodies, not revision-bearing documents. */
   private async selectedBodies(metadata: ReadonlyMap<string, { readonly type: string }>): Promise<Result<QueryRecord<JsonObject>[]>> {
     const byType = new Map<string, string[]>();
     for (const [path, entry] of metadata) {
@@ -224,13 +224,27 @@ export class ConnectBackend implements WriterBackend {
     }
     const rows: QueryRecord<JsonObject>[] = [];
     for (const [type, paths] of byType) {
-      const loaded = await this.connection.readMany(paths, {
-        types: [type], frontmatterMode: "persisted", includeBody: true,
-        batchSize: 500, signal: this.lifetime.signal,
-      });
-      if (!loaded.ok) return fail(problemMessage(loaded));
-      if (loaded.value.errors.length) return fail(problemMessage(loaded.value.errors[0]!.failure));
-      for (const entry of loaded.value.results) if (entry.status === "found") rows.push(entry.record);
+      // Keep 500-path queries and at most four independent batches in flight.
+      // The SDK still owns cursor pagination and cancellation within each query.
+      for (let offset = 0; offset < paths.length; offset += 2_000) {
+        const batches = Array.from({ length: Math.min(4, Math.ceil((paths.length - offset) / 500)) }, (_, batch) => {
+          const selected = paths.slice(offset + batch * 500, offset + (batch + 1) * 500);
+          return this.connection.queryAll({
+            types: [type], where: `file.path in ${JSON.stringify(selected)}`,
+            frontmatterMode: "persisted", includeBody: true,
+          }, { pageSize: selected.length, signal: this.lifetime.signal });
+        });
+        const selectedRows = new Map<string, QueryRecord<JsonObject>>();
+        for (const loaded of await Promise.all(batches)) {
+          if (!loaded.ok) return fail(problemMessage(loaded));
+          for (const row of loaded.value.results) selectedRows.set(row.path, row);
+        }
+        // Preserve metadata/input ordering independently of authority query order.
+        for (const path of paths.slice(offset, offset + 2_000)) {
+          const row = selectedRows.get(path);
+          if (row) rows.push(row);
+        }
+      }
     }
     return ok(rows);
   }

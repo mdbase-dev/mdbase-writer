@@ -45,7 +45,7 @@ export async function createLargeDemoBackend() {
   } });
   const connection = {
     info: () => ({ collectionId: "large-demo", displayName: "Large demo" }),
-    describe: client.describe.bind(client), readMany: client.readMany.bind(client),
+    describe: client.describe.bind(client), readMany: client.readMany.bind(client), queryAll: client.queryAll.bind(client),
     supportsAuthorityFeature: async () => connectSuccess(false),
     async *queryPages(input: QueryInput = {}, options: { pageSize?: number } = {}) {
       const type = input.contract ? contracts.find(([c]) => c.id === input.contract!.id)?.[1] : undefined;

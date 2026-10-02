@@ -77,7 +77,7 @@ function fixture(contracts: CollectionDescription["contracts"] = [annotation], t
   const connection = {
     describe: vi.fn(client.describe.bind(client)),
     supportsAuthorityFeature: vi.fn(supports),
-    readMany: client.readMany.bind(client),
+    readMany: client.readMany.bind(client), queryAll: client.queryAll.bind(client),
     queryPages, read,
     watch: async () => connectSuccess({ subscribe: (listener: typeof notify, onStatus?: (status: { state: string }) => void) => { notify = listener; resetWatch = () => onStatus?.({ state: "reset_required" }); }, close() {} }),
     records: { follow: () => () => {}, open: authority.records.open.bind(authority.records) },
@@ -91,7 +91,7 @@ function fixture(contracts: CollectionDescription["contracts"] = [annotation], t
 }
 
 describe("annotation loading", () => {
-  it("uses negotiated narrow identities and revision-bearing body batches, not point reads", async () => {
+  it("uses narrow identities but typed query bodies even when document batches are advertised", async () => {
     const f = fixture();
     f.description.authorityCapabilities = ["query-metadata-v1", "read-many-documents-v1"];
     f.rows[0]!.frontmatter["unrelated"] = "Not part of discovery";
@@ -101,9 +101,14 @@ describe("annotation loading", () => {
         { name: "reading", expression: 'record["reading"]' }] }]);
     const annotations = await f.backend.annotationsForSource("sources/a.md");
     expect(annotations).toMatchObject({ ok: true, value: [{ quote: "Quote A", locator: "p. 12" }, { quote: "Another A" }] });
-    expect(f.bodyQueries()).toEqual([]);
-    expect(f.readRequests).toHaveBeenCalledExactlyOnceWith({ paths: ["annotations/a.md", "annotations/c.md"], include_body: true, include_document: false });
+    expect(f.bodyQueries()).toEqual([{ types: ["highlight"], where: 'file.path in ["annotations/a.md","annotations/c.md"]', frontmatterMode: "persisted", includeBody: true }]);
+    expect(f.readRequests).not.toHaveBeenCalled();
     expect(f.read).not.toHaveBeenCalled();
+    // Background path refresh still uses SDK readMany; only display bodies changed.
+    f.rows[0]!.body = "> Updated quotation";
+    f.notify("annotations/a.md");
+    expect(await f.backend.annotationsForSource("sources/a.md")).toMatchObject({ ok: true, value: [{ quote: "Another A" }, { quote: "Updated quotation" }] });
+    expect(f.readRequests).toHaveBeenCalledExactlyOnceWith({ paths: ["annotations/a.md"], include_body: false, include_document: false });
     f.backend.dispose();
   });
 
@@ -151,7 +156,8 @@ describe("annotation loading", () => {
       { name: "csl", expression: 'record["csl"]' }, { name: "title", expression: 'record["title"]' },
       { name: "about", expression: 'record["about"]' }, { name: "date", expression: 'record["date"]' }, { name: "parent", expression: 'record["parent"]' },
     ]);
-    expect(f.readRequests.mock.calls[0]?.[0]["paths"]).toEqual(["comments/a.md", "comments/reply.md"]);
+    expect(f.bodyQueries()).toEqual([{ types: ["feedback"], where: 'file.path in ["comments/a.md","comments/reply.md"]', frontmatterMode: "persisted", includeBody: true }]);
+    expect(f.readRequests).not.toHaveBeenCalled();
     expect(f.read).not.toHaveBeenCalled();
     f.backend.dispose();
   });
@@ -351,12 +357,14 @@ describe("annotation loading", () => {
     } finally { await workspace.dispose(); f.backend.dispose(); f.authority.watch.close(); vi.unstubAllGlobals(); }
   });
 
-  it("pages a large source in bounded path batches and propagates body-query errors", async () => {
+  it.each([false, true])("pages a large source in 500-path query batches with document support=%s", async (documents) => {
     const f = fixture();
+    f.description.authorityCapabilities = documents ? ["query-metadata-v1", "read-many-documents-v1"] : [];
     for (let i = 0; i < 700; i++) f.rows.push({ path: `annotations/extra-${i}.md`, types: ["highlight"], frontmatter: { reading: "[[a]]" }, body: "> More evidence" });
     await f.backend.library();
     const result = await f.backend.annotationsForSource("sources/a.md");
     expect(result.ok && result.value.length).toBe(702);
+    expect(f.readRequests).not.toHaveBeenCalled();
     expect(f.bodyQueries()).toHaveLength(2);
     expect(f.bodyQueries().every((q) => JSON.parse(q.where!.replace(/^file\.path in /, "")).length <= 500)).toBe(true);
     f.connection.queryPages.mockImplementationOnce(async function* () { yield connectFailure<"access_denied">(connectProblem<"access_denied">("access_denied", "Temporary body query failure")); });
