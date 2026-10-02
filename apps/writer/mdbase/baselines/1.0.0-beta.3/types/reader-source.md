@@ -1,7 +1,7 @@
 ---
 kind: mdbase.type
 name: reader-source
-version: 2
+version: 1
 description: A source and user-authored literature note for mdbase Reader.
 schema:
   dialect: json-schema-2020-12
@@ -9,8 +9,9 @@ schema:
     $schema: https://json-schema.org/draft/2020-12/schema
     type: object
     additionalProperties: true
-    required: [id, title, kind, saved_at]
+    required: [type, id, title, kind, saved_at]
     properties:
+      type: { const: reader-source }
       id: { type: string, minLength: 1 }
       title: { type: string, minLength: 1 }
       kind: { type: string, minLength: 1 }
