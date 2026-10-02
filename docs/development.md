@@ -26,6 +26,10 @@ Run the end-to-end Chromium suite with `pnpm dev` running:
 pnpm --filter @mdbase-writer/app test:browser
 ```
 
+If port 5320 is occupied, use `pnpm dev --port 5321` and run both suites with
+`BASE=http://127.0.0.1:5321/ pnpm --filter @mdbase-writer/app test:browser`.
+Stop the development server after testing.
+
 This runs the baseline suite and fault-injection checks for recovery, early exports, chapter
 history, conflicts, cancellation and selectable preview text. Run only the latter with
 `pnpm --filter @mdbase-writer/app test:browser:reliability`.

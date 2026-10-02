@@ -129,7 +129,7 @@ export class CollectionStore {
   private sourceIndexValue: PathIndex | undefined;
   private recordIndexValue: PathIndex | undefined;
   private annotationGroups: Map<string, Map<string, AnnotationMetadata>> | undefined;
-  constructor(readonly schema: CollectionSchema) {}
+  constructor(public schema: CollectionSchema) {}
 
   get index(): CollectionIndex {
     return this.indexValue ??= { recordPaths: [...this.records.keys()], notePaths: [...this.records].filter(([, r]) => r.note).map(([p]) => p), filePaths: [...this.binaries] };

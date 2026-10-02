@@ -22,7 +22,7 @@ The deterministic collection has 5,000 sources, 30,000 annotations, 3,000 commen
 ## What runs
 
 - Real `ConnectBackend`, real `ManuscriptWorkspace` startup and watch-triggered refresh.
-- Real SDK `queryPages` implementation through a test subclass of `MdbaseCollectionClient`.
+- Real SDK `queryPages`, `readMany` and description-cache implementations through a test subclass of `MdbaseCollectionClient`. Only query evaluation is overridden; description responses enter through the transport so repeated backend calls exercise SDK caching.
 - Real SDK record sessions/watch on `createRecordTestAuthority` (as the demo uses).
 - Synthetic query evaluator and binary-file pages; JSON encode/decode models response delivery. Unsupported future query features throw rather than silently return incorrect results. The evaluator supports exactly the generated `file.path in [...]` filters; extend it before benchmarking other `where`/`select`/cursor shapes.
 - Real search, completion, comment placement/threading and component server rendering; explicit proxy computations for chapter embed resolution and 100-record stats. Round 2 uses the workspace's shared path index in the embed proxy, and adds a cached-placement measurement.
@@ -40,6 +40,9 @@ The deterministic collection has 5,000 sources, 30,000 annotations, 3,000 commen
 - Computation measurements are Node/V8 proxies for browser main-thread work. Seven samples normally, three for heavier operations, one per run for the ~10-second bare-link stress case. SSR is initial server rendering, **not** React update cost, layout, focus, or paint.
 - Bare-name comment stress replaces full-path document links with their basename. This exercises the real supported resolver fallback, not an artificially quadratic mock. Chapter proxy reproduces the two resolution calls per embed (Round 1 allocated a Set per embed; Round 2 reuses the generation index), but does not include Markdown parsing, record opens or React rendering. One-off index build cost is measured separately.
 - Baselines are observations, not timing assertions. Run on the same machine without concurrent builds for comparisons; raw results retain variance. Current readiness/content assertions fail rather than produce a false successful baseline. This fixture is not a protocol conformance test, a real Connect authority benchmark, or a browser acceptance test.
+
+The beta.117 → beta.123 migration benchmark and exact check results are recorded in
+[`docs/sdk-beta123-migration.md`](../../../../docs/sdk-beta123-migration.md).
 
 Result JSONs are generated evidence, not source files. The default output is `out/perf/large-collection.json`; parent folders are created automatically. `out/` is gitignored. Historical Round 1–4 result JSONs were removed in Round 5; their key numbers remain below and in `docs/perf-review.md`. Keep future captures in `out/perf/`, not this directory.
 

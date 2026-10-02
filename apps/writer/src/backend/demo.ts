@@ -66,7 +66,8 @@ export async function createDemoBackend(): Promise<WriterBackend> {
     return ok(undefined);
   };
   const stopWatch = authority.watch.subscribe((change) => {
-    const at = [change.payload["path"], change.payload["from"], change.payload["to"]].filter((p): p is string => typeof p === "string");
+    const at = change.kind === "record.renamed" ? [change.from, change.to]
+      : change.kind === "record.created" || change.kind === "record.updated" || change.kind === "record.deleted" ? [change.path] : [];
     for (const listener of listeners) listener(at);
     queue(at);
   });

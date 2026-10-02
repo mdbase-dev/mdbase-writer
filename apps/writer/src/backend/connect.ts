@@ -43,7 +43,7 @@ const problemMessage = (outcome: { ok: false; problem: { message?: string; code:
 
 export class ConnectBackend implements WriterBackend {
   readonly kind = "connect";
-  private store = new CollectionStore(new CollectionSchema({ types: [], contracts: [] }));
+  private readonly store = new CollectionStore(new CollectionSchema({ types: [], contracts: [] }));
   get setupStatus() { return this.store.schema.setupStatus; }
   private readonly indexCache = new CollectionCache<CollectionIndex>();
   private readonly libraryCache = new CollectionCache<LibraryEntry[]>();
@@ -65,28 +65,19 @@ export class ConnectBackend implements WriterBackend {
   private readonly staleFiles = new Set<string>();
   private readonly lifetime = new AbortController();
   private stopFollowing: (() => void) | undefined;
-  private description: ReturnType<MdbaseConnection<JsonObject>["describe"]> | undefined;
-  private schemaPaths: ReadonlySet<string> = new Set(["mdbase.yaml"]);
-  private schemaFolders: readonly string[] = ["_types", "_contracts"];
   annotationFields(path: string, types: readonly string[] = []): Readonly<Record<string, string>> {
     return this.store.annotations.get(path)?.fields ?? this.store.schema.annotationFields(types);
   }
 
-  private describe(): ReturnType<MdbaseConnection<JsonObject>["describe"]> {
-    if (this.description) return this.description;
-    const job = this.connection.describe().then((out) => {
-      if (this.description !== job) return out;
-      if (!out.ok) this.description = undefined;
-      else {
-        this.store = new CollectionStore(new CollectionSchema(out.value));
-        this.schemaPaths = new Set(["mdbase.yaml", ...out.value.types.flatMap((t) => t.path ? [t.path] : []), ...out.value.contracts.flatMap((c) => c.implementations.flatMap((i) => i.typePath ? [i.typePath] : []))]);
-        const settings = out.value.configuration?.["settings"] as JsonObject | undefined;
-        this.schemaFolders = [settings?.["types_folder"] ?? "_types", settings?.["contracts_folder"] ?? "_contracts"].filter((p): p is string => typeof p === "string" && !!p).map((p) => p.replace(/^\.\//, "").replace(/\/+$/, ""));
-      }
-      return out;
-    }).catch((error: unknown) => { if (this.description === job) this.description = undefined; throw error; });
-    this.description = job;
-    return job;
+  private async describe(options: { fresh?: boolean } = {}) {
+    const generation = this.collectionGeneration;
+    const out = await this.connection.describe({ ...options, signal: this.lifetime.signal });
+    // Only derive Writer's bindings here; the SDK owns caching and invalidation.
+    // A TTL reload must not discard already classified metadata or lazy bodies.
+    if (out.ok && generation === this.collectionGeneration && this.store.schema.description !== out.value) {
+      this.store.schema = new CollectionSchema(out.value);
+    }
+    return out;
   }
 
   constructor(
@@ -117,16 +108,27 @@ export class ConnectBackend implements WriterBackend {
     this.stopFollowing = this.connection.records.follow(watch.value);
     watch.value.subscribe(
       (change) => {
-        const paths = [...new Set([change.payload["path"], change.payload["from"], change.payload["to"]].filter((p): p is string => typeof p === "string"))];
-        const schemaChanged = /type|contract|configuration/.test(change.type) || paths.some((p) => this.schemaPaths.has(p) || this.schemaFolders.some((folder) => p.startsWith(`${folder}/`)));
-        if (schemaChanged) void this.reconcile();
+        let paths: string[];
+        switch (change.kind) {
+          case "record.created": case "record.updated": case "record.deleted": case "file.changed":
+            paths = [change.path]; break;
+          case "record.renamed": paths = [...new Set([change.from, change.to])]; break;
+          case "file.put": paths = [change.file.path]; break;
+          case "file.removed": paths = change.previousPath ? [change.previousPath] : []; break;
+          default: paths = []; break;
+        }
+        const reset = change.kind === "schema.changed" || change.kind === "config.changed"
+          || change.kind === "contract.changed" || change.kind === "view.changed"
+          || change.kind === "unknown" || change.kind === "gap" || change.kind === "reset"
+          || (change.kind === "file.removed" && !change.previousPath);
+        if (reset) void this.reconcile();
         else {
           for (const path of paths) { this.changedPaths.add(path); this.bodyCache.delete(path); }
           clearTimeout(this.changeTimer);
           this.changeTimer = setTimeout(() => void this.flushChanges(), 50);
         }
         for (const path of paths) if (this.files.has(path)) this.staleFiles.add(path);
-        if (paths.length || schemaChanged) for (const l of this.listeners) l(schemaChanged ? [] : paths);
+        if (paths.length || reset) for (const l of this.listeners) l(reset ? [] : paths);
       },
       (status) => {
         if (status.state !== "reset_required") return;
@@ -205,7 +207,7 @@ export class ConnectBackend implements WriterBackend {
     return generation === this.collectionGeneration ? bodies : this.comments(scope);
   }
 
-  /** Keep this boundary small: SDK readMany can replace the CEL batching later. */
+  /** Type selection is domain logic; exact-path batching belongs to the SDK. */
   private async selectedBodies(metadata: ReadonlyMap<string, { readonly type: string }>): Promise<Result<QueryRecord<JsonObject>[]>> {
     const byType = new Map<string, string[]>();
     for (const [path, entry] of metadata) {
@@ -214,14 +216,13 @@ export class ConnectBackend implements WriterBackend {
     }
     const rows: QueryRecord<JsonObject>[] = [];
     for (const [type, paths] of byType) {
-      for (let offset = 0; offset < paths.length; offset += 500) {
-        const loaded = await this.queryRows({
-          types: [type], where: `file.path in ${JSON.stringify(paths.slice(offset, offset + 500))}`,
-          frontmatterMode: "persisted", includeBody: true,
-        }, 500);
-        if (!loaded.ok) return loaded;
-        rows.push(...loaded.value);
-      }
+      const loaded = await this.connection.readMany(paths, {
+        types: [type], frontmatterMode: "persisted", includeBody: true,
+        batchSize: 500, signal: this.lifetime.signal,
+      });
+      if (!loaded.ok) return fail(problemMessage(loaded));
+      if (loaded.value.errors.length) return fail(problemMessage(loaded.value.errors[0]!.failure));
+      for (const entry of loaded.value.results) if (entry.status === "found") rows.push(entry.record);
     }
     return ok(rows);
   }
@@ -438,19 +439,22 @@ export class ConnectBackend implements WriterBackend {
           this.commentCache.pending, this.annotationCache.pending,
         ]);
         if (generation !== this.collectionGeneration) continue;
-        const paths = [...this.changedPaths].slice(0, 500);
+        const paths = [...this.changedPaths];
         for (const path of paths) this.changedPaths.delete(path);
         try {
           const described = await this.describe();
           if (!described.ok) throw new Error(problemMessage(described));
-          const loaded = await this.queryRows({
-            where: `file.path in ${JSON.stringify(paths)}`, frontmatterMode: "both",
-          }, 500);
-          if (!loaded.ok) throw new Error(loaded.message);
+          const loaded = await this.connection.readMany(paths, {
+            frontmatterMode: "both", batchSize: 500, signal: this.lifetime.signal,
+          });
+          if (!loaded.ok) throw new Error(problemMessage(loaded));
+          // A failed batch is not evidence of deletion. Retain all paths for retry.
+          if (loaded.value.errors.length) throw new Error(problemMessage(loaded.value.errors[0]!.failure));
+          const rows = loaded.value.results.flatMap((entry) => entry.status === "found" ? [entry.record] : []);
           const binaries = await this.changedFiles(paths);
           if (generation !== this.collectionGeneration) continue;
-          const present = new Set(loaded.value.map((r) => r.path));
-          const upsert = this.store.upsert(loaded.value);
+          const present = new Set(rows.map((r) => r.path));
+          const upsert = this.store.upsert(rows);
           const removed = this.store.remove(paths.filter((p) => !present.has(p)));
           const files = this.store.files(binaries.present, binaries.removed);
           this.acceptDelta({ ...upsert, ...removed, ...files, paths,
@@ -524,7 +528,6 @@ export class ConnectBackend implements WriterBackend {
     if (this.disposed) return ok(undefined);
     ++this.collectionGeneration;
     clearTimeout(this.changeTimer);
-    this.description = undefined;
     this.store.reset();
     this.indexCache.clear();
     this.libraryCache.clear();
@@ -533,6 +536,12 @@ export class ConnectBackend implements WriterBackend {
     this.annotationCache.clear();
     this.bodies.clear();
     this.bodyCache.clear();
+    const described = await this.describe({ fresh: true });
+    if (!described.ok) {
+      const message = problemMessage(described);
+      this.publish({ paths: [], reset: true, problem: message });
+      return fail(message);
+    }
     const results = await Promise.all([
       this.index(), this.library(), this.listManuscripts(),
       this.annotationCache.load(() => this.loadDomain("annotation")),
