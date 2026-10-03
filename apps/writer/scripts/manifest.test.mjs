@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -13,12 +14,14 @@ import { buildWriterManifest, COMMENT_PACK, packResources } from "./writer-manif
 
 const root = resolve(import.meta.dirname, "..");
 
-test("the Reader resources are byte-identical to Reader's own", { skip: !existsSync(resolve(root, "../../../mdbase-reader")) }, () => {
+// Compare against Reader's published main, not whatever branch the sibling checkout is on.
+const reader = resolve(root, "../../../mdbase-reader");
+const readerMain = (source) => execFileSync("git", ["-C", reader, "show", `origin/main:apps/reader/mdbase/${source}`], { encoding: "utf8" });
+test("the Reader resources are byte-identical to Reader's main", { skip: !existsSync(resolve(reader, ".git")) }, () => {
   for (const r of packResources.filter((p) => p.source.includes("reader"))) {
     for (const source of [r.source, ...(r.upgradeFrom ?? [])]) {
       const ours = readFileSync(resolve(root, "mdbase", source), "utf8");
-      const theirs = readFileSync(resolve(root, "../../../mdbase-reader/apps/reader/mdbase", source), "utf8");
-      assert.equal(ours, theirs, `${source} differs from Reader's copy`);
+      assert.equal(ours, readerMain(source), `${source} differs from Reader's main`);
     }
   }
 });
