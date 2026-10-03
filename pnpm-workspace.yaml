@@ -11,3 +11,9 @@ minimumReleaseAgeExclude:
 
 onlyBuiltDependencies:
   - esbuild
+
+# Backports mdbase-dev/mdbase-connect#567's app-manifest schema, which accepts a list of
+# seed `upgrade_from` baselines, so validate-manifest accepts Writer's pack. Remove it when
+# @mdbase-dev/connect-dev moves to the Connect release that includes #567.
+patchedDependencies:
+  '@mdbase-dev/connect-protocol@0.1.0-beta.124': patches/@mdbase-dev__connect-protocol@0.1.0-beta.124.patch
