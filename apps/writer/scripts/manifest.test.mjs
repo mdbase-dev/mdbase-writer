@@ -15,7 +15,7 @@ const root = resolve(import.meta.dirname, "..");
 
 test("the Reader resources are byte-identical to Reader's own", { skip: !existsSync(resolve(root, "../../../mdbase-reader")) }, () => {
   for (const r of packResources.filter((p) => p.source.includes("reader"))) {
-    for (const source of [r.source, r.upgradeFrom].filter(Boolean)) {
+    for (const source of [r.source, ...(r.upgradeFrom ?? [])]) {
       const ours = readFileSync(resolve(root, "mdbase", source), "utf8");
       const theirs = readFileSync(resolve(root, "../../../mdbase-reader/apps/reader/mdbase", source), "utf8");
       assert.equal(ours, theirs, `${source} differs from Reader's copy`);
@@ -43,14 +43,19 @@ test("identity is optional: comments are unsigned without it", async () => {
 
 // Published identities must not change. Add a new version/digest instead of updating this pin.
 // Pack digests are SHA-256 over the canonical (sorted-key) JSON of the whole pack manifest,
-// `upgrade_from` included; beta.4's pin was confirmed with the mdbase CLI's `packs assess`.
+// `upgrade_from` included; the beta.4 and beta.5 pins were confirmed with the mdbase CLI's `packs assess`.
 const releasedDigests = {
   "1.0.0-beta.4": "sha256:b8334c4a7b602b7a84737450c33a5de645f4c5c15e49f445dbfc568ec6542689",
+  "1.0.0-beta.5": "sha256:21dfd856f03330244d2675ef0dc983461adf6ad71262a570256c7dd706dcf4e4",
 };
-// Exact bytes of the version-1 reader-source starter released in Writer's beta.3 (and
-// Reader's beta.3), which beta.4 upgrades from.
-const beta3SeedDigests = {
-  "types/reader-source.md": "sha256:82869c12234662297cc273aab993732d35827b8a2ba8ad74bec18975cadf0c1a",
+// Every earlier reader-source starter, newest first, by the Reader pack that first shipped it:
+// Reader's (and Writer's) beta.3, Reader's beta.2, and Reader's beta.1 (Writer's beta.1 and beta.2).
+const earlierStarters = {
+  "types/reader-source.md": [
+    "sha256:82869c12234662297cc273aab993732d35827b8a2ba8ad74bec18975cadf0c1a",
+    "sha256:54f46e7c3bb70e1cea5a37afa458406a0acf2be7f195c8893160782d87254990",
+    "sha256:e8a3fca643d335e684810c2e83bc9e9c3fc702ecf5a23d29283615902e0cfa55",
+  ],
 };
 
 function sha256(value) {
@@ -88,16 +93,37 @@ test("the released Writer pack digest stays immutable and is independent of depl
   assert.deepEqual(staging.provisions.type_packs[0], pack);
 });
 
-test("the reader-source seed upgrades from the exact beta.3 starter", async () => {
+test("the reader-source seed lists every earlier starter, newest first, as exact bytes", async () => {
   const pack = await writerPack();
+  const documents = new Map(pack.resources.map(({ source, document }) => [source, document]));
   const seeds = pack.manifest.resources.filter((resource) => resource.upgrade_from);
-  assert.deepEqual(seeds.map((seed) => seed.source), Object.keys(beta3SeedDigests));
+  assert.deepEqual(seeds.map((seed) => seed.source), Object.keys(earlierStarters));
   for (const seed of seeds) {
+    assert.equal(seed.kind, "type");
     assert.equal(seed.mode, "seed");
-    assert.equal(seed.upgrade_from.digest, beta3SeedDigests[seed.source]);
-    assert.equal(sha256(seed.upgrade_from.document), seed.upgrade_from.digest);
-    assert.equal(frontmatter(seed.upgrade_from.document).version, 1);
+    assert.deepEqual(seed.upgrade_from.map(({ digest }) => digest), earlierStarters[seed.source]);
+    const type = frontmatter(documents.get(seed.source));
+    for (const { digest, document, version } of seed.upgrade_from) {
+      assert.equal(sha256(document), digest);
+      assert.notEqual(digest, seed.digest);
+      const starter = frontmatter(document);
+      assert.equal(starter.kind, type.kind);
+      assert.equal(starter.name, type.name);
+      assert.equal(version, starter.version);
+      assert.equal(version, 1);
+    }
   }
+});
+
+// Rebuilt from its baseline, beta.4 (one baseline object, no version) keeps its released pin.
+test("the beta.4 pack is reproducible from the listed beta.3 baseline", async () => {
+  const pack = structuredClone((await writerPack()).manifest);
+  pack.version = "1.0.0-beta.4";
+  for (const resource of pack.resources.filter(({ upgrade_from }) => upgrade_from)) {
+    const { digest, document } = resource.upgrade_from[0];
+    resource.upgrade_from = { digest, document };
+  }
+  assert.equal(sha256(canonicalJson(pack)), releasedDigests["1.0.0-beta.4"]);
 });
 
 test("starter types neither declare nor require the type key", async () => {

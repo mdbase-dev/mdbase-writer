@@ -14,9 +14,15 @@
 // and required `type`, which fails in collections whose
 // settings.explicit_type_keys record the type elsewhere (such as
 // `[mdbase_type]`). Version 2 drops the pin, matching Reader's pack beta.4, and
-// names the exact beta.3 bytes it replaces (`upgrade_from`) so Connect can offer
-// a reviewed three-way upgrade that keeps collection edits. Baselines under
-// mdbase/baselines/ are released bytes: never edit them.
+// lists the exact bytes of every earlier reader-source starter, newest first
+// (`upgrade_from`), so Connect can offer a reviewed upgrade from any of them: an
+// unedited starter is replaced, and an edited one is merged three-way against
+// the starter it was installed from, keeping collection edits. The list is
+// Reader's own, byte for byte, kept under the same paths: baselines are named
+// for the Reader pack version that first shipped them (Writer's beta.1 and
+// beta.2 shipped Reader's beta.1 starter, its beta.3 Reader's beta.3 starter;
+// Reader's beta.2 starter is listed because a collection may hold it). They are
+// released bytes: never edit them.
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -24,14 +30,25 @@ import { resolve } from "node:path";
 import { dataContractDigest } from "@callumalpass/mdbase";
 import { parse as parseYaml } from "yaml";
 
-export const WRITER_TYPE_PACK_VERSION = "1.0.0-beta.4";
+// beta.5 ships the same starters as beta.4 and lists every earlier starter as an upgrade baseline.
+export const WRITER_TYPE_PACK_VERSION = "1.0.0-beta.5";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 export const packResources = [
   { kind: "contract", mode: "managed", source: "contracts/dev.mdbase.writer.manuscript.md", target: "_contracts/dev.mdbase.writer.manuscript.md" },
   { kind: "contract", mode: "managed", source: "contracts/dev.mdbase.reader.source.md", target: "_contracts/dev.mdbase.reader.source.md" },
   { kind: "type", mode: "seed", source: "types/writer-manuscript.md", target: "_types/writer-manuscript.md" },
-  { kind: "type", mode: "seed", source: "types/reader-source.md", target: "_types/reader-source.md", upgradeFrom: "baselines/1.0.0-beta.3/types/reader-source.md" },
+  {
+    kind: "type",
+    mode: "seed",
+    source: "types/reader-source.md",
+    target: "_types/reader-source.md",
+    upgradeFrom: [
+      "baselines/1.0.0-beta.3/types/reader-source.md",
+      "baselines/1.0.0-beta.2/types/reader-source.md",
+      "baselines/1.0.0-beta.1/types/reader-source.md",
+    ],
+  },
 ];
 
 /** The published comment pack: `{ manifest, resources, provides }`, as mdbase contracts builds it. */
@@ -42,12 +59,17 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
   const resources = await Promise.all(
     packResources.map(async (resource) => {
       const document = await readFile(resolve(projectRoot, "mdbase", resource.source), "utf8");
-      const baseline = resource.upgradeFrom ? await readFile(resolve(projectRoot, "mdbase", resource.upgradeFrom), "utf8") : undefined;
+      const baselines = await Promise.all(
+        (resource.upgradeFrom ?? []).map(async (path) => {
+          const baseline = await readFile(resolve(projectRoot, "mdbase", path), "utf8");
+          return { digest: sha256(baseline), version: parseFrontmatter(baseline).version, document: baseline };
+        }),
+      );
       return {
         ...resource,
         digest: sha256(document),
         document,
-        ...(baseline === undefined ? {} : { upgrade_from: { digest: sha256(baseline), document: baseline } }),
+        ...(baselines.length === 0 ? {} : { upgrade_from: baselines }),
         ...(resource.kind === "contract" ? { contractDigest: dataContractDigest(parseFrontmatter(document)) } : {}),
       };
     }),
@@ -107,7 +129,7 @@ function sha256(value) {
 
 function parseFrontmatter(document) {
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(document);
-  if (!match?.[1]) throw new Error("Contract resource has no YAML frontmatter.");
+  if (!match?.[1]) throw new Error("Pack resource has no YAML frontmatter.");
   return parseYaml(match[1]);
 }
 

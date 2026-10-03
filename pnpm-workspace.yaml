@@ -3,11 +3,11 @@ packages:
   - packages/*
 
 minimumReleaseAgeExclude:
-  - '@mdbase-dev/connect-protocol@0.1.0-beta.124'
-  - '@mdbase-dev/connect-testing@0.1.0-beta.124'
-  - '@mdbase-dev/connect@0.1.0-beta.124'
-  - '@mdbase-dev/connect-dev@0.1.0-beta.124'
-  - '@mdbase-dev/ui@0.1.0-beta.124'
+  - '@mdbase-dev/connect-protocol@0.1.0-beta.125'
+  - '@mdbase-dev/connect-testing@0.1.0-beta.125'
+  - '@mdbase-dev/connect@0.1.0-beta.125'
+  - '@mdbase-dev/connect-dev@0.1.0-beta.125'
+  - '@mdbase-dev/ui@0.1.0-beta.125'
 
 onlyBuiltDependencies:
   - esbuild
