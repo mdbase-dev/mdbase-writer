@@ -3,17 +3,11 @@ packages:
   - packages/*
 
 minimumReleaseAgeExclude:
-  - '@mdbase-dev/connect-protocol@0.1.0-beta.124'
-  - '@mdbase-dev/connect-testing@0.1.0-beta.124'
-  - '@mdbase-dev/connect@0.1.0-beta.124'
-  - '@mdbase-dev/connect-dev@0.1.0-beta.124'
-  - '@mdbase-dev/ui@0.1.0-beta.124'
+  - '@mdbase-dev/connect-protocol@0.1.0-beta.125'
+  - '@mdbase-dev/connect-testing@0.1.0-beta.125'
+  - '@mdbase-dev/connect@0.1.0-beta.125'
+  - '@mdbase-dev/connect-dev@0.1.0-beta.125'
+  - '@mdbase-dev/ui@0.1.0-beta.125'
 
 onlyBuiltDependencies:
   - esbuild
-
-# Backports mdbase-dev/mdbase-connect#567's app-manifest schema, which accepts a list of
-# seed `upgrade_from` baselines, so validate-manifest accepts Writer's pack. Remove it when
-# @mdbase-dev/connect-dev moves to the Connect release that includes #567.
-patchedDependencies:
-  '@mdbase-dev/connect-protocol@0.1.0-beta.124': patches/@mdbase-dev__connect-protocol@0.1.0-beta.124.patch
