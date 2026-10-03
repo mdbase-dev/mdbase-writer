@@ -142,7 +142,7 @@ describe("workspace reliability", () => {
     expect(workspace.getSnapshot().libraryLoad.phase).toBe("loading");
     expect(workspace.getSnapshot().records.has("chapters/one.md")).toBe(false);
     expect(workspace.dependencyDiagnostics()).toEqual([]);
-    expect(workspace["compile"].send).not.toHaveBeenCalled();
+    expect(workspace["compile"].send).toHaveBeenCalledExactlyOnceWith({ type: "prepare", baseUrl: "/" });
     let exported = false;
     const exportJob = workspace.exportBundle().then(() => { exported = true; });
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -153,6 +153,57 @@ describe("workspace reliability", () => {
     finishLibrary();
     await exportJob;
   });
+  it("previews self-contained text before the collection index, but exports still wait", async () => {
+    const { backend, authority, open } = fixture();
+    authority.editElsewhere("main.md", { body: "# Self-contained\n\nPlain text.\n" });
+    const index = backend.index;
+    let finishIndex!: () => void;
+    backend.index = () => new Promise((resolve) => { finishIndex = () => { void index().then(resolve); }; });
+    const workspace = open(); await ready(workspace);
+    await vi.waitFor(() => expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "init" })));
+    expect(workspace.getSnapshot().indexLoad.phase).toBe("loading");
+    expect(workspace["compile"].send).toHaveBeenCalledWith({ type: "collection", recordPaths: [], filePaths: [] });
+    let exported = false;
+    const job = workspace.exportBundle().then(() => { exported = true; });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(exported).toBe(false);
+    finishIndex(); await job;
+    expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "collection-delta", recordUpsert: ["main.md", "chapters/one.md", "chapters/two.md"] }));
+  });
+
+  it.each([
+    { body: "![[same]]", patch: {} },
+    { body: "![Figure](figure.svg)", patch: {} },
+    { body: "Plain text", patch: { template: "custom.typ" } },
+    { body: "Plain text", patch: { local_style: "custom.csl" } },
+  ])("still waits for a complete index for dependencies: $body $patch", async ({ body, patch }) => {
+    const { backend, authority, open } = fixture();
+    authority.editElsewhere("main.md", { body, patch });
+    let finishIndex!: () => void;
+    backend.index = () => new Promise((resolve) => { finishIndex = () => resolve(ok({ recordPaths: ["main.md", "one/same.md", "two/same.md"], notePaths: [], filePaths: [] })); });
+    const workspace = open(); await ready(workspace);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(workspace["compile"].send).not.toHaveBeenCalledWith(expect.objectContaining({ type: "init" }));
+    finishIndex();
+    await vi.waitFor(() => expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "init" })));
+    expect(workspace.getSnapshot().records.size).toBe(1); // ambiguous "same" opens neither candidate
+  });
+
+  it("rechecks dependencies added while waiting for library metadata", async () => {
+    const { backend, authority, open } = fixture();
+    authority.editElsewhere("main.md", { body: "Plain text" });
+    const index = backend.index;
+    let finishIndex!: () => void, finishLibrary!: () => void;
+    backend.index = () => new Promise((resolve) => { finishIndex = () => { void index().then(resolve); }; });
+    backend.library = () => new Promise((resolve) => { finishLibrary = () => resolve(ok([])); });
+    const workspace = open(); await ready(workspace);
+    workspace.setBody("main.md", "![[chapters/one]]");
+    finishLibrary(); await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(workspace["compile"].send).not.toHaveBeenCalledWith(expect.objectContaining({ type: "init" }));
+    finishIndex();
+    await vi.waitFor(() => expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "init" })));
+  });
+
   it("initializes preview before annotation discovery, then sends late quotation paths", async () => {
     const { backend, open } = fixture();
     let finish!: () => void;

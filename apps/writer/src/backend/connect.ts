@@ -1,7 +1,7 @@
 // The writer on a real collection through mdbase connect.
-import { type CollectionFileDescriptor, type JsonObject, type QueryInput, type QueryRecord, type MdbaseConnection } from "@mdbase-dev/connect";
+import { type CollectionFileDescriptor, type JsonObject, type QueryInput, type QueryMetadataInput, type QueryRecord, type MdbaseConnection } from "@mdbase-dev/connect";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
-import { CollectionSchema, CollectionStore, type Binding, type Domain, type StoreDelta } from "./collection.js";
+import { CollectionSchema, CollectionStore, type Binding, type Domain, type StoreDelta, type CollectionRow } from "./collection.js";
 export { annotationContract, commentContract, manuscriptContract, sourceContract } from "./collection.js";
 import { CollectionCache } from "./cache.js";
 import { CollectionBodies } from "./bodies.js";
@@ -147,9 +147,11 @@ export class ConnectBackend implements WriterBackend {
   }
 
   /** All discovery and watch reads enter the same store, in their raw type view. */
-  private async queryRows(input: QueryInput, pageSize = 1_000): Promise<Result<QueryRecord<JsonObject>[]>> {
-    const rows: QueryRecord<JsonObject>[] = [];
-    for await (const page of this.connection.queryPages(input, { pageSize, signal: this.lifetime.signal })) {
+  private async queryRows(input: QueryInput | QueryMetadataInput, pageSize = 1_000): Promise<Result<CollectionRow[]>> {
+    const rows: CollectionRow[] = [];
+    const options = { pageSize, signal: this.lifetime.signal };
+    const pages = input.output === "metadata" ? this.connection.queryPages(input, options) : this.connection.queryPages(input, options);
+    for await (const page of pages) {
       if (!page.ok) return fail(problemMessage(page));
       rows.push(...page.value.results);
     }
@@ -162,11 +164,17 @@ export class ConnectBackend implements WriterBackend {
     const bindings = this.store.schema.bindings(domain, domain === "manuscript");
     if (!bindings.ok) return bindings;
     const generation = this.collectionGeneration;
-    const rows = new Map<string, QueryRecord<JsonObject>>();
+    const rows = new Map<string, CollectionRow>();
+    const identity = domain === "annotation" || domain === "comment";
+    const support = identity && bindings.value.length
+      ? await this.connection.supportsAuthorityFeature("query-metadata-v1", { signal: this.lifetime.signal }) : { ok: true as const, value: false };
+    if (!support.ok) return fail(problemMessage(support));
     for (const binding of bindings.value) {
-      const loaded = await this.queryRows({
-        types: [binding.name],
-        frontmatterMode: domain === "annotation" || domain === "comment" ? "persisted" : "effective",
+      const loaded = await this.queryRows(support.value ? {
+        types: [binding.name], frontmatterMode: "persisted", output: "metadata",
+        select: this.store.schema.discoverySelect(),
+      } : {
+        types: [binding.name], frontmatterMode: identity ? "persisted" : "effective",
       }, domain === "manuscript" ? 500 : 1_000);
       if (!loaded.ok) return loaded;
       for (const row of loaded.value) rows.set(row.path, row);
@@ -207,7 +215,7 @@ export class ConnectBackend implements WriterBackend {
     return generation === this.collectionGeneration ? bodies : this.comments(scope);
   }
 
-  /** Type selection is domain logic; exact-path batching belongs to the SDK. */
+  /** Read-only display hydration needs bodies, not revision-bearing documents. */
   private async selectedBodies(metadata: ReadonlyMap<string, { readonly type: string }>): Promise<Result<QueryRecord<JsonObject>[]>> {
     const byType = new Map<string, string[]>();
     for (const [path, entry] of metadata) {
@@ -216,13 +224,27 @@ export class ConnectBackend implements WriterBackend {
     }
     const rows: QueryRecord<JsonObject>[] = [];
     for (const [type, paths] of byType) {
-      const loaded = await this.connection.readMany(paths, {
-        types: [type], frontmatterMode: "persisted", includeBody: true,
-        batchSize: 500, signal: this.lifetime.signal,
-      });
-      if (!loaded.ok) return fail(problemMessage(loaded));
-      if (loaded.value.errors.length) return fail(problemMessage(loaded.value.errors[0]!.failure));
-      for (const entry of loaded.value.results) if (entry.status === "found") rows.push(entry.record);
+      // Keep 500-path queries and at most four independent batches in flight.
+      // The SDK still owns cursor pagination and cancellation within each query.
+      for (let offset = 0; offset < paths.length; offset += 2_000) {
+        const batches = Array.from({ length: Math.min(4, Math.ceil((paths.length - offset) / 500)) }, (_, batch) => {
+          const selected = paths.slice(offset + batch * 500, offset + (batch + 1) * 500);
+          return this.connection.queryAll({
+            types: [type], where: `file.path in ${JSON.stringify(selected)}`,
+            frontmatterMode: "persisted", includeBody: true,
+          }, { pageSize: selected.length, signal: this.lifetime.signal });
+        });
+        const selectedRows = new Map<string, QueryRecord<JsonObject>>();
+        for (const loaded of await Promise.all(batches)) {
+          if (!loaded.ok) return fail(problemMessage(loaded));
+          for (const row of loaded.value.results) selectedRows.set(row.path, row);
+        }
+        // Preserve metadata/input ordering independently of authority query order.
+        for (const path of paths.slice(offset, offset + 2_000)) {
+          const row = selectedRows.get(path);
+          if (row) rows.push(row);
+        }
+      }
     }
     return ok(rows);
   }
@@ -339,9 +361,12 @@ export class ConnectBackend implements WriterBackend {
     const generation = this.collectionGeneration;
     const described = await this.describe();
     if (!described.ok) return fail(problemMessage(described));
-    const pages = this.connection.queryPages({ frontmatterMode: "persisted" }, {
-      pageSize: 1_000, signal: this.lifetime.signal,
-    })[Symbol.asyncIterator]();
+    const support = await this.connection.supportsAuthorityFeature("query-metadata-v1", { signal: this.lifetime.signal });
+    if (!support.ok) return fail(problemMessage(support));
+    const options = { pageSize: 1_000, signal: this.lifetime.signal };
+    const pages = (support.value
+      ? this.connection.queryPages({ output: "metadata", frontmatterMode: "persisted", select: this.store.schema.discoverySelect() }, options)
+      : this.connection.queryPages({ frontmatterMode: "persisted" }, options))[Symbol.asyncIterator]();
     try {
       let page = await pages.next();
       while (!page.done) {

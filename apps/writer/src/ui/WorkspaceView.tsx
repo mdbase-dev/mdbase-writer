@@ -48,6 +48,7 @@ import { OutlinePanel } from "./OutlinePanel.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
+import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { plural, recordTitle, STATE_LABEL, STATE_SHORT_LABEL, STATE_TONE } from "./records.js";
@@ -55,6 +56,7 @@ import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar, ThemeChoice } from "./topbar.js";
+import { signalFailure, signalResult } from "./mark.js";
 
 /** Which part a phone shows. */
 type Pane = "outline" | "write" | "preview";
@@ -135,6 +137,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [pane, setPane] = useState<Pane>("write");
   const [layout, setLayoutState] = useState<Layout>(loadLayout);
   const [exportStatus, setExportStatus] = useState<ExportStatus | null>(null);
+  // An export has no count to show, so the mark streams until it ends or is cancelled.
+  useMdbaseMarkBusy(exportStatus?.tone === "busy" && "stream");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsFocus, setSettingsFocus] = useState<SettingsFocus | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -427,9 +431,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     const before = at && at.from === at.to ? at.text[at.from - 1] : undefined;
     editor.current?.insert(text.startsWith("[@") && before && /[^\s([{]/.test(before) ? ` ${text}` : text);
   }, []);
-  const replyToThread = useCallback((thread: Parameters<typeof workspace.reply>[0], text: string) => workspace.reply(thread, text), [workspace]);
-  const changeComment = useCallback((comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => workspace.changeComment(comment, change), [workspace]);
-  const acceptSuggestion = useCallback((p: PlacedThread) => workspace.acceptSuggestion(p.record, p.thread.root), [workspace]);
+  const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);
+  const changeComment = useCallback(async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change)), [workspace]);
+  const acceptSuggestion = useCallback(async (p: PlacedThread) => signalFailure(await workspace.acceptSuggestion(p.record, p.thread.root)), [workspace]);
   const commentDrafts = useRef<CommentDrafts>(new Map());
   const sidebarPanel = useRef<HTMLDivElement>(null);
   const sidebarScroll = useRef(new Map<SidebarTab, number>());
@@ -493,11 +497,13 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         } else {
           download(out.bytes, type, name);
           exported(EXPORT_NAME[format], []);
+          signalMdbaseMark("saved");
         }
       } catch (error) {
         if (!controller.signal.aborted) {
           reportError({ code: "unknown_error" });
           setExportStatus({ tone: "problem", text: errorMessage(error) });
+          signalMdbaseMark("error");
         }
       } finally {
         if (exportJob.current === controller) exportJob.current = null;
@@ -555,7 +561,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
     else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
-    else if (mod && !e.shiftKey && e.code === "KeyS") void workspace.retrySave();
+    else if (mod && !e.shiftKey && e.code === "KeyS") void workspace.retrySave().then(signalResult);
     else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
     else if (mod && (e.key === "?" || (e.shiftKey && e.code === "Slash"))) setShortcutsOpen(true);
     else if (!mod && e.key === "?" && !isTextEntry(e.target)) setShortcutsOpen(true);
@@ -700,7 +706,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
                   }}
                   onJump={jump}
                   onMove={(from, to) => workspace.moveChapter(from, to)}
-                  onAdd={(title) => workspace.addChapter(title)}
+                  onAdd={async (title) => signalFailure(await workspace.addChapter(title))}
                 />
               )}
             </>
@@ -720,7 +726,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               onSelect={selectThread}
               onSubmit={async (text, replacement) => {
                 if (!pendingComment) return { ok: true, value: null };
-                const created = await workspace.addComment(pendingComment.draft ?? { record: pendingComment.record }, text, replacement);
+                const created = signalResult(await workspace.addComment(pendingComment.draft ?? { record: pendingComment.record }, text, replacement));
                 if (created.ok) {
                   setPendingComment(null);
                   setActiveComment(created.value.path);
@@ -796,7 +802,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
           <div className="banner" role="alert">
             <span>Not saved: {activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.</span>
-            <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active)}>Retry save</button>
+            <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active).then(signalResult)}>Retry save</button>
             <button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button>
           </div>
         )}
@@ -929,7 +935,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         onClose={() => setPaletteOpen(false)}
         label="Writer commands"
         commands={[
-          { id: "save", group: "Manuscript", label: "Save all records now", shortcut: "mod+s", run: () => { void workspace.retrySave(); } },
+          { id: "save", group: "Manuscript", label: "Save all records now", shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
           { id: "local-drafts", group: "Manuscript", label: "Download local drafts", keywords: "backup unsaved recovery", run: downloadDrafts },
           { id: "settings", group: "Manuscript", label: "Manuscript settings", shortcut: "mod+,", run: () => setSettingsOpen(true) },
           { id: "search", group: "Manuscript", label: "Search the manuscript", shortcut: "mod+shift+f", keywords: "find all chapters", run: showSearch },
@@ -979,7 +985,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           <button type="button" className="mdbase-button" onClick={() => {
             const pending = pendingExport;
             setPendingExport(null);
-            if (pending) { download(pending.bytes, pending.type, pending.name); exported(EXPORT_NAME[lastExport.current], pending.problems); }
+            if (pending) { download(pending.bytes, pending.type, pending.name); exported(EXPORT_NAME[lastExport.current], pending.problems); signalMdbaseMark("saved"); }
           }}>Export anyway</button>
         </div>
       </Dialog>

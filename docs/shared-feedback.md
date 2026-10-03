@@ -1,4 +1,4 @@
-# Private feedback integration (release-blocked)
+# Private feedback integration
 
 Writer uses the shared `@mdbase-dev/ui/feedback` form, screenshot capture/markup
 and verification. There is no new delivery adapter, telemetry or persistence.
@@ -15,11 +15,11 @@ not. Capture-phase keyboard shortcuts ignore open-dialog targets, including F8.
 
 ## Release dependency
 
-Do not merge or deploy until a coordinated mdbase-connect release publishes the
-UI package containing these exports. The pinned beta.123 does **not** have them.
-Update the pin and regenerate the lockfile using the actual published version,
-then repeat clean-install checks and browser acceptance. Local generated links
-used for isolated verification are not committed dependencies.
+The integration now uses the published `@mdbase-dev/ui@0.1.0-beta.124`, which
+contains these exports and was published through the coordinated Connect
+release. The dependency and lockfile use that actual version. Repeat a fresh
+frozen-lockfile install, full CI and intercepted browser acceptance; local
+worktree links are not release evidence.
 
 First deploy the compatible Worker through guarded cloud-ops, with exact Writer
 CORS origins and environment-specific Turnstile hosts. Enable the build with:
@@ -27,9 +27,19 @@ CORS origins and environment-specific Turnstile hosts. Enable the build with:
 - `VITE_MDBASE_FEEDBACK_URL`: approved environment's `/v1/feedback` endpoint.
 - `VITE_MDBASE_FEEDBACK_TURNSTILE_SITE_KEY`: that environment's public widget key.
 
-Missing/invalid endpoints hide feedback. Deployment tooling supplies
-`VITE_MDBASE_ENV` and `VITE_MDBASE_WRITER_BUILD_ID`. No implicit production endpoint,
-widget, secret, package publication or deployment is introduced here.
+Missing/invalid endpoints hide feedback. Deployment workflows map the
+environment-scoped public variables `MDBASE_FEEDBACK_URL` and
+`MDBASE_FEEDBACK_TURNSTILE_SITE_KEY` to those build variables. Keep them unset
+until Worker CORS policy, widget hosts and live acceptance are ready. Tooling
+supplies `VITE_MDBASE_ENV` and `VITE_MDBASE_WRITER_BUILD_ID`; there is no implicit
+production endpoint.
+
+The existing deployment contract identifies the exact candidate origins:
+`https://staging.mdbase-writer.pages.dev` (staging) and
+`https://writer.mdbase.dev` (production). These are a configuration proposal, not
+an assertion that CORS/widget-host approval or configuration has happened.
+No production widget, secret, package publication or deployment is introduced
+by this source PR.
 
 ## Sample-data acceptance
 

@@ -1,5 +1,5 @@
 // Imported only by the DEV ?demo=large branch. No account, daemon or production data.
-import type { CollectionDescription, JsonObject, MdbaseConnection, QueryInput, QueryRecord } from "@mdbase-dev/connect";
+import type { CollectionDescription, JsonObject, MdbaseConnection, QueryInput, QueryMetadataInput, QueryRecord } from "@mdbase-dev/connect";
 import { MdbaseCollectionClient, connectSuccess } from "@mdbase-dev/connect/advanced";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { counts, generateCollection } from "../../scripts/perf/generator.js";
@@ -45,7 +45,8 @@ export async function createLargeDemoBackend() {
   } });
   const connection = {
     info: () => ({ collectionId: "large-demo", displayName: "Large demo" }),
-    describe: client.describe.bind(client), readMany: client.readMany.bind(client),
+    describe: client.describe.bind(client), readMany: client.readMany.bind(client), queryAll: client.queryAll.bind(client),
+    supportsAuthorityFeature: async () => connectSuccess(false),
     async *queryPages(input: QueryInput = {}, options: { pageSize?: number } = {}) {
       const type = input.contract ? contracts.find(([c]) => c.id === input.contract!.id)?.[1] : undefined;
       const paths = input.where ? new Set<string>(JSON.parse(input.where.replace(/^file\.path in /, ""))) : undefined;
@@ -63,7 +64,13 @@ export async function createLargeDemoBackend() {
     people: { directory: async () => connectSuccess({ people: [], account: {}, me: { status: "unlinked" } }) },
     files: { async *list() { for (let i = 0; i < counts.files; i++) yield { path: `files/image-${i}.png`, fileId: String(i), revision: "1", contentDigest: "sha256:" + "0".repeat(64), size: 1, mediaType: "image/png", mediaClass: "image", modifiedAt: "2026-01-01T00:00:00Z" }; } },
   };
-  client.queryPages = (input = {}, options) => connection.queryPages(input, options);
+  function pages(input: QueryMetadataInput, options?: { pageSize?: number }): AsyncGenerator<never>;
+  function pages(input?: QueryInput, options?: { pageSize?: number }): ReturnType<typeof connection.queryPages>;
+  function pages(input: QueryInput | QueryMetadataInput = {}, options?: { pageSize?: number }) {
+    if (input.output === "metadata") throw new Error("Legacy demo does not support metadata output");
+    return connection.queryPages(input, options);
+  }
+  client.queryPages = pages;
   const backend = new ConnectBackend(connection as unknown as MdbaseConnection<JsonObject>);
   const dispose = backend.dispose.bind(backend);
   backend.dispose = () => { dispose(); stop(); authority.watch.close(); };

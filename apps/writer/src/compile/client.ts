@@ -47,7 +47,7 @@ export class CompileClient {
   }
   send(message: ToWorker, transfer: Transferable[] = []): void {
     if (this.stopped) return;
-    if (message.type !== "init" && message.type !== "export-pdf" && this.compileTimer === undefined) {
+    if (message.type !== "prepare" && message.type !== "init" && message.type !== "export-pdf" && this.compileTimer === undefined) {
       this.compileTimer = setTimeout(() => this.fail("Typesetting took too long. Your editor is still available; retry the preview."), 60_000);
     }
     try { this.worker.postMessage(message, transfer); }

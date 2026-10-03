@@ -165,6 +165,8 @@ function DemoRoot() {
     let live = true;
     let owned: WriterBackend | undefined;
     void import("./backend/demo.js").then(async ({ createDemoBackend }) => {
+      // StrictMode may have disposed this effect while the module was loading.
+      if (!live) return;
       const b = import.meta.env.DEV && params.get("demo") === "large"
         ? await (await import("./backend/large-demo.js")).createLargeDemoBackend()
         : await createDemoBackend();

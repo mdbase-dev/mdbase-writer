@@ -69,6 +69,14 @@ export class PathIndex implements ReadonlySet<string> {
   }
 }
 
+const pathIndexes = new WeakMap<readonly string[], PathIndex>();
+/** Share an index only for immutable collection-generation arrays. Never mutate the input. */
+export function pathIndex(paths: readonly string[]): PathIndex {
+  let index = pathIndexes.get(paths);
+  if (!index) { index = new PathIndex(paths); pathIndexes.set(paths, index); }
+  return index;
+}
+
 /**
  * Resolves an embed or link target the way Obsidian-style collections expect:
  * exact collection path, then relative to the linking record, then a unique

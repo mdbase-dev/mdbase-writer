@@ -12,6 +12,14 @@ mkdirSync("out", { recursive: true });
 const browser = await chromium.launch({ executablePath });
 const context = await browser.newContext({ viewport: { width: 1500, height: 950 }, acceptDownloads: true });
 const page = await context.newPage();
+if (process.env.COLD_CACHE) {
+  // Context routing also disables HTTP caching for dedicated-worker requests.
+  await context.route("**/*", (route) => route.continue());
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Network.enable");
+  await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  await cdp.send("Network.setBypassServiceWorker", { bypass: true });
+}
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => {

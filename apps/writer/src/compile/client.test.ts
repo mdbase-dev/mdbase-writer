@@ -15,6 +15,16 @@ class FakeWorker {
 }
 beforeEach(() => { vi.useFakeTimers(); vi.stubGlobal("Worker", FakeWorker); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+it("prepares independently without starting a compile timeout", async () => {
+  const client = new CompileClient();
+  client.send({ type: "prepare", baseUrl: "/" });
+  FakeWorker.latest.reply({ type: "ready", initMs: 1 });
+  await client.ready;
+  const failure = vi.fn(); client.onFailure(failure);
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(failure).not.toHaveBeenCalled();
+  client.terminate();
+});
 it("settles readiness and all outstanding exports when the worker fails", async () => {
   const client = new CompileClient();
   const failed = vi.fn(); client.onFailure(failed);

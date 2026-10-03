@@ -39,6 +39,33 @@ describe("collection semantics", () => {
     expect(store.people.get("person")).toBe("Person");
     expect(store.schema.bindings("manuscript")).toMatchObject({ ok: true, value: [{ typeKey: "kind" }] });
   });
+  it("classifies narrow values like full persisted discovery, including multi-role records and mtime", () => {
+    const full = fresh(), narrow = fresh();
+    const records = [
+      row("sources/a.md", ["book"], { bib: { id: "a" }, title: "Fallback title", unrelated: "wide" }),
+      row("mixed.md", ["paper", "highlight"], { heading: "Mixed", layout: "book", style: "apa", reading: "[[a]]", page: { label: "Not needed until hydrated" } }),
+      row("comments/root.md", ["feedback"], { about: "[[mixed]]", date: "2026-01-01", target: { quote: { exact: "Large anchor" } } }),
+      row("comments/reply.md", ["feedback"], { about: "[[elsewhere]]", date: "2026-01-02", parent: "[[root]]" }),
+      row("note.md", []), row("person.md", ["person"], { name: "Person" }),
+    ];
+    full.upsert(records.map(({ effectiveFrontmatter: _effective, ...r }) => r), true);
+    narrow.upsert(records.map((r) => ({ path: r.path, types: r.types,
+      values: Object.fromEntries(narrow.schema.discoverySelect().flatMap((s) => {
+        const field = /^record\[(.*)\]$/.exec(s.expression)?.[1];
+        const value = field ? r.frontmatter?.[JSON.parse(field) as string] : s.expression === "file.mtime" ? r.file?.mtime : undefined;
+        return value === undefined ? [] : [[s.name, value]];
+      })),
+    })), true);
+    expect(snapshot(narrow)).toEqual(snapshot(full));
+    expect([...narrow.annotationsForSource("sources/a.md").keys()]).toEqual(["mixed.md"]);
+    expect([...narrow.commentScope(["mixed.md"])]).toEqual(["comments/root.md", "comments/reply.md"]);
+    expect(narrow.manuscripts[0]?.modified).toBe("2026-01-01");
+  });
+  it("escapes literal mapped field names rather than interpreting dots or CEL syntax", () => {
+    const schema = new CollectionSchema({ types: [], contracts: [{ ...annotationContract, contractType: "record", digest: "test", schema: {},
+      implementations: [impl("highlight", { source: 'a.b["source"]' })] }] });
+    expect(schema.discoverySelect()).toEqual([{ name: 'a.b["source"]', expression: 'record["a.b[\\"source\\"]"]' }]);
+  });
   it("distinguishes structural starter roles from configured contract membership", () => {
     const store = fresh();
     store.upsert([row("unbound.md", ["reader-source"], { csl: { id: "ignored" } })]);
