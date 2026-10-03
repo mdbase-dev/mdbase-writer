@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Reusable deploy checks must not cancel independent CI runs.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Check, production build and Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 11.15.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      # Demo is development/LAB-only, so verify the production build separately.
+      - run: pnpm build
+      - name: Install export inspection tools
+        # The browser suite reads downloaded DOCX/ZIP files with these CLIs.
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends pandoc unzip
+      - name: Install Chromium
+        run: pnpm --filter @mdbase-writer/app exec playwright install --with-deps chromium
+      - name: Run baseline and reliability suites against the demo collection
+        env:
+          BASE: http://127.0.0.1:5320/
+        run: |
+          # Match the consumer canary: no warmed dependency optimizer cache.
+          # Deferred worker imports must not trigger a reload/reset mid-demo.
+          rm -rf apps/writer/node_modules/.vite
+          pnpm dev > "$RUNNER_TEMP/writer-dev.log" 2>&1 &
+          dev_pid=$!
+          trap 'kill "$dev_pid" 2>/dev/null || true; cat "$RUNNER_TEMP/writer-dev.log"' EXIT
+          ready=0
+          for attempt in {1..60}; do
+            if curl --fail --silent "$BASE" >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo "::error::Writer development server did not become ready."
+            exit 1
+          fi
+          result=0
+          pnpm --filter @mdbase-writer/app exec node scripts/browser-test.mjs || result=1
+          pnpm --filter @mdbase-writer/app test:browser:reliability || result=1
+          exit "$result"
+      - name: Upload browser failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: writer-browser-failures
+          path: apps/writer/out/
+          if-no-files-found: ignore
+          retention-days: 7
