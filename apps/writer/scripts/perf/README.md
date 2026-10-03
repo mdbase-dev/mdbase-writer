@@ -93,9 +93,8 @@ pnpm -C apps/writer exec node scripts/perf/heap-summary.mjs out/perf/main.heapsn
 COLD_CACHE=1 pnpm -C apps/writer test:browser
 ```
 
-See [the cold preview/heap report](../../../../docs/cold-preview-heap.md) for the
-fixture-corrected product comparison (3,426 → 2,134 ms; GC main heap 60.91 →
-58.28 MiB), the larger **demo-only** body-sharing savings and worker CSL retention.
+On the fixture-corrected product comparison, cold preview went from 3,426 to
+2,134 ms and the GC-controlled main heap from 60.91 to 58.28 MiB.
 Uncollected heap is still recorded for historical comparisons, not treated as a
 retention measurement.
 

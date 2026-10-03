@@ -180,8 +180,8 @@ keystroke (from the spike). Download: about 9.4 MB compressed, mostly the
 Typst compiler, cached after the first visit. The Word export adds about
 16 MB (Pandoc) on its first use; the demo paper converts in about a second.
 
-For cold large-collection preview, GC-controlled main/worker heap measurements,
-fixture-only savings and remaining costs, see [the cold preview profile](cold-preview-heap.md).
+Cold large-collection preview and GC-controlled heap measurements come from the
+perf harness in `apps/writer/scripts/perf/`.
 
 ## Known limits
 
