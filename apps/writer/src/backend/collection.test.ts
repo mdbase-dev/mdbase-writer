@@ -1,5 +1,6 @@
 import type { CollectionDescription, JsonObject } from "@mdbase-dev/connect";
 import { describe, expect, it } from "vitest";
+import { validateCanonicalQueryInput } from "../../node_modules/@callumalpass/mdbase/dist/operations/canonical-query.js";
 import { annotationContract, commentContract, manuscriptContract, sourceContract, CollectionSchema, CollectionStore, starterSchema, type CollectionRow } from "./collection.js";
 const impl = (name: string, fields: Record<string, string>) => ({ typeName: name, typeVersion: 1, digest: "test", fields });
 const description: Pick<CollectionDescription, "types" | "contracts" | "configuration"> = {
@@ -60,6 +61,19 @@ describe("collection semantics", () => {
     expect([...narrow.annotationsForSource("sources/a.md").keys()]).toEqual(["mixed.md"]);
     expect([...narrow.commentScope(["mixed.md"])]).toEqual(["comments/root.md", "comments/reply.md"]);
     expect(narrow.manuscripts[0]?.modified).toBe("2026-01-01");
+  });
+  it.each([
+    ["configured collection", new CollectionSchema(description)],
+    ["starter collection", starterSchema()],
+    ["unconfigured collection", new CollectionSchema({ types: [], contracts: [] })],
+  ])("uses schema-valid discovery selection names for a %s", (_name, schema) => {
+    const select = schema.discoverySelect().map(({ name, expression }) => ({ name, expr: expression }));
+    expect(validateCanonicalQueryInput({ select })).toEqual([]);
+  });
+  it("reads manuscript modification time from the named metadata selection", () => {
+    const store = fresh();
+    store.upsert([{ path: "paper.md", types: ["paper"], values: { heading: "Paper", file_mtime: "2026-01-02" } }], true);
+    expect(store.manuscripts).toEqual([{ path: "paper.md", title: "Paper", modified: "2026-01-02" }]);
   });
   it("escapes literal mapped field names rather than interpreting dots or CEL syntax", () => {
     const schema = new CollectionSchema({ types: [], contracts: [{ ...annotationContract, contractType: "record", digest: "test", schema: {},
