@@ -10,7 +10,7 @@ import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyI
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";
-import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
+import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
@@ -135,10 +135,10 @@ export class ManuscriptWorkspace {
   private commentsTimer: ReturnType<typeof setTimeout> | undefined;
   private current: WorkspaceSnapshot;
   private workerLibrary = new Map<string, LibraryEntry["item"]>();
-  private workerRecordPaths = new Set<string>();
-  private workerFilePaths = new Set<string>();
-  private workerAnnotationPaths = new Set<string>();
-  private workerSourceKeys = new Map<string, string>();
+  private workerRecordPaths: ReadonlySet<string> = new Set();
+  private workerFilePaths: ReadonlySet<string> = new Set();
+  private workerAnnotationPaths: ReadonlySet<string> = new Set();
+  private workerSourceKeys: ReadonlyMap<string, string> = new Map();
   private commentsScope = "";
   private metadataJobs: Partial<Record<MetadataDomain, Promise<void>>> = {};
   private metadataGeneration = 0;
@@ -195,8 +195,8 @@ export class ManuscriptWorkspace {
 
   private update(patch: Partial<WorkspaceSnapshot>): void {
     if (this.disposed) return;
-    if (patch.recordPaths) patch = { ...patch, recordIndex: new PathIndex(patch.recordPaths) };
-    if (patch.filePaths) patch = { ...patch, fileIndex: new PathIndex(patch.filePaths) };
+    if (patch.recordPaths) patch = { ...patch, recordIndex: pathIndex(patch.recordPaths) };
+    if (patch.filePaths) patch = { ...patch, fileIndex: pathIndex(patch.filePaths) };
     this.current = { ...this.current, ...patch };
     for (const l of this.listeners) l();
   }
@@ -274,16 +274,16 @@ export class ManuscriptWorkspace {
     } catch (error) { if (generation === this.metadataGeneration) this.update({ libraryLoad: { phase: "failed", problem: errorMessage(error) } }); }
   }
 
-  private async metadata(annotations = true): Promise<void> {
+  private async metadata(annotations = true, index = true): Promise<void> {
     this.loadMetadata();
     for (;;) {
       const generation = this.metadataGeneration;
-      await Promise.all(annotations ? Object.values(this.metadataJobs) : [this.metadataJobs.indexLoad, this.metadataJobs.libraryLoad]);
+      await Promise.all(annotations ? Object.values(this.metadataJobs) : [index ? this.metadataJobs.indexLoad : undefined, this.metadataJobs.libraryLoad]);
       if (this.disposed || generation === this.metadataGeneration) break;
     }
     if (this.disposed) throw new Error("The manuscript was closed.");
     // Annotation discovery is optional: a real failure is visible, not a preview/export gate.
-    for (const domain of ["indexLoad", "libraryLoad"] as const) {
+    for (const domain of (index ? ["indexLoad", "libraryLoad"] : ["libraryLoad"]) as MetadataDomain[]) {
       const state = this.current[domain];
       if (state.phase !== "ready") throw new Error(state.problem ?? "Collection metadata is still loading.");
     }
@@ -299,16 +299,30 @@ export class ManuscriptWorkspace {
   private async initializePreview(): Promise<void> {
     const client = this.compile;
     try {
-      // Annotation identities follow through sendQuotations; their diagnostics remain gated.
-      await this.metadata(false);
-      const csl = await loadStyles();
+      // Compiler assets and CSL can load while the collection is enumerated.
+      client.send({ type: "prepare", baseUrl: import.meta.env.BASE_URL });
+      const styles = loadStyles();
+      // Handle an early fetch failure even while metadata is still pending.
+      void styles.catch(() => {});
+      await this.metadata(false, false);
+      const csl = await styles;
+      // A self-contained manuscript needs CSL, not every collection path. Never
+      // resolve an embed/image/custom asset against a partial basename index.
+      // Recheck after the awaits: the user may have added a dependency meanwhile.
+      const record = this.current.records.get(this.main)?.snapshot;
+      const translated = record && this.translated(this.main, record.body);
+      const template = record?.frontmatter["template"], style = record?.frontmatter["csl"];
+      if (!translated || translated.includes.length || translated.images.length
+        || template !== undefined && template !== "article" && template !== "thesis"
+        || style !== undefined && !STYLES.some((s) => s.id === style)) await this.metadata(false);
+      // Annotation identities follow through sendQuotations; diagnostics remain gated.
       if (this.disposed || client !== this.compile) return;
       client.send({ type: "init", library: this.current.library.map((e) => e.item), styles: [...csl.styles], locales: [...csl.locales], baseUrl: import.meta.env.BASE_URL });
       this.previewInitialized = true;
       this.workerLibrary = new Map(this.current.library.map((e) => [e.key, e.item]));
-      this.workerRecordPaths = new Set(this.current.recordPaths);
-      this.workerFilePaths = new Set(this.current.filePaths);
-      this.workerAnnotationPaths.clear(); this.workerSourceKeys.clear();
+      this.workerRecordPaths = this.current.recordIndex;
+      this.workerFilePaths = this.current.fileIndex;
+      this.workerAnnotationPaths = new Set(); this.workerSourceKeys = new Map();
       client.send({ type: "collection", recordPaths: this.current.recordPaths, filePaths: this.current.filePaths });
       client.send({ type: "main", path: this.main });
       client.send({ type: "records", upsert: this.writerRecords() });
@@ -379,7 +393,7 @@ export class ManuscriptWorkspace {
 
   private sendCollection(): void {
     if (!this.previewInitialized) return;
-    const records = new Set(this.current.recordPaths), files = new Set(this.current.filePaths);
+    const records = this.current.recordIndex, files = this.current.fileIndex;
     const recordUpsert = [...records].filter((p) => !this.workerRecordPaths.has(p)), recordRemove = [...this.workerRecordPaths].filter((p) => !records.has(p));
     const fileUpsert = [...files].filter((p) => !this.workerFilePaths.has(p)), fileRemove = [...this.workerFilePaths].filter((p) => !files.has(p));
     if (recordUpsert.length || recordRemove.length || fileUpsert.length || fileRemove.length) this.compile.send({ type: "collection-delta", recordUpsert, recordRemove, fileUpsert, fileRemove });
@@ -401,7 +415,7 @@ export class ManuscriptWorkspace {
     const annotationUpsert = [...annotations].filter((p) => !this.workerAnnotationPaths.has(p)), annotationRemove = [...this.workerAnnotationPaths].filter((p) => !annotations.has(p));
     const sourceUpsert = [...keys].filter(([path, key]) => this.workerSourceKeys.get(path) !== key), sourceRemove = [...this.workerSourceKeys.keys()].filter((p) => !keys.has(p));
     if (annotationUpsert.length || annotationRemove.length || sourceUpsert.length || sourceRemove.length) this.compile.send({ type: "quotations-delta", annotationUpsert, annotationRemove, sourceUpsert, sourceRemove });
-    this.workerAnnotationPaths = new Set(annotations); this.workerSourceKeys = new Map(keys);
+    this.workerAnnotationPaths = annotations; this.workerSourceKeys = keys;
   }
 
   async loadComments(): Promise<void> {

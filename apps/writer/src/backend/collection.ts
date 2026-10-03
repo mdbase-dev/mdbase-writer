@@ -2,7 +2,7 @@
 import type { CollectionDescription, JsonObject, QuerySelectionExpression } from "@mdbase-dev/connect";
 import { annotationSourceLink } from "@mdbase-writer/core/annotations";
 import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
-import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
+import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { personKey, toContract } from "./comments.js";
 import { fail, libraryEntry, ok, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary } from "./types.js";
 
@@ -157,7 +157,7 @@ export class CollectionStore {
   get library(): LibraryEntry[] { return this.libraryValue ??= [...this.sources.values()].sort((a, b) => a.path.localeCompare(b.path)); }
   get manuscripts(): ManuscriptSummary[] { return this.manuscriptValue ??= [...this.papers.values()].sort((a, b) => a.title.localeCompare(b.title) || a.path.localeCompare(b.path)); }
   get sourceIndex(): PathIndex { return this.sourceIndexValue ??= new PathIndex(this.sources.keys()); }
-  get recordIndex(): PathIndex { return this.recordIndexValue ??= new PathIndex(this.records.keys()); }
+  get recordIndex(): PathIndex { return this.recordIndexValue ??= pathIndex(this.index.recordPaths); }
 
   private classify(row: CollectionRow, previous: Classified | undefined, discovery: boolean): Classified {
     const fm = row.values ?? row.frontmatter ?? row.effectiveFrontmatter ?? {};

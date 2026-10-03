@@ -111,8 +111,11 @@ canvas preview  ◀──── artifact ────────  raw-block iso
 - **Collection discovery** runs independently of the main record: writing
   waits only for manuscript bindings and its session. Index, library, annotation
   identities and comments have separate loading/error states. Index arrival
-  retries embeds. Preview initialization waits for index/library, with annotation
-  identities supplied later. Export also awaits annotation discovery settling;
+  retries embeds. Compiler/font and CSL loading overlap discovery. Self-contained
+  manuscripts with bundled layouts/styles preview after library discovery, without
+  the full index. Embeds, images and custom styles/layouts still wait for the complete
+  index; dependency checks remain provisional until discovery settles. Annotation
+  identities arrive later. Export still awaits the index and annotation discovery;
   real annotation failures are non-blocking problems/warnings, not preview/export
   gates. Missing-dependency diagnostics remain gated by their discovery domain.
 - **Collection ownership** lives in `backend/collection.ts`. `CollectionSchema`
@@ -126,7 +129,7 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   demo uses the same store; the large demo already uses ConnectBackend. Native CEL
   link queries remain deferred: installed canonical CEL lacks `asFile()`, and native
   basename resolution is not Writer's unique-basename rule.
-- **Path resolution** uses immutable collection-generation indexes: exact paths,
+- **Path resolution** uses shared immutable collection-generation indexes: exact paths,
   then relative paths, then a unique case-insensitive basename. Comment membership
   is cached by comments/index identity; only changed manuscript bodies are
   re-anchored. Comment metadata resolves manuscript targets against the complete
@@ -176,6 +179,9 @@ of three records 77 ms. Compiling a 141-page thesis takes about 350 ms per
 keystroke (from the spike). Download: about 9.4 MB compressed, mostly the
 Typst compiler, cached after the first visit. The Word export adds about
 16 MB (Pandoc) on its first use; the demo paper converts in about a second.
+
+For cold large-collection preview, GC-controlled main/worker heap measurements,
+fixture-only savings and remaining costs, see [the cold preview profile](cold-preview-heap.md).
 
 ## Known limits
 
