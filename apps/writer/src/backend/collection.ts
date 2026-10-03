@@ -120,7 +120,8 @@ export class CollectionSchema {
     }
     return [
       ...[...fields].map((field) => ({ name: field, expression: `record[${JSON.stringify(field)}]` })),
-      ...(modified ? [{ name: "file.mtime", expression: "file.mtime" }] : fields.size ? [] : [{ name: "file.path", expression: "file.path" }]),
+      // Output aliases are field names: dots are valid in expressions, not names.
+      ...(modified ? [{ name: "file_mtime", expression: "file.mtime" }] : fields.size ? [] : [{ name: "file_path", expression: "file.path" }]),
     ];
   }
   annotationFields(types: readonly string[]): Readonly<Record<string, string>> {
@@ -177,7 +178,7 @@ export class CollectionStore {
         }
         case "manuscript": {
           const fields = fieldsOf(effective, binding);
-          const modified = row.values?.["file.mtime"] ?? row.file?.mtime;
+          const modified = row.values?.["file_mtime"] ?? row.file?.mtime;
           const manuscript = retainEffective && previous.manuscript ? previous.manuscript : {
             path: row.path, title: typeof fields["title"] === "string" ? fields["title"] : row.path,
             ...(typeof fields["template"] === "string" ? { template: fields["template"] } : {}),
