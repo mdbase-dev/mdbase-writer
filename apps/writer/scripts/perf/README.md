@@ -79,4 +79,23 @@ PROFILE_NAME=after PROFILE_OUTPUT=out/perf/browser-after.json pnpm -C apps/write
 pnpm -C apps/writer test:browser
 ```
 
-`BASE`, `CHROME`, `PROFILE_NAME`, `PROFILE_OUTPUT` are configurable. The script captures editor/preview visible geometry at animation frames, CDP main-isolate JS heap, >50 ms main-thread long tasks during two ~10 s typing phases, source paging (historically Show all), 300-highlight expansion, citation/embed completion, page errors and `out/large-{sources,comments}-{before,after}.png`. One run is observational, not a statistical timing assertion; heap excludes workers/WASM and is not GC-controlled, and visible canvas is not pixel verification. The default JSON output is `out/perf/browser-profile.json`. Historical before was captured before Round 4 UI changes; after uses a corrected reply counter. Interpretation and deferred work are in `docs/perf-review.md`.
+`BASE`, `CHROME`, `PROFILE_NAME`, `PROFILE_OUTPUT` are configurable.
+HTTP cache is explicitly disabled and service workers bypassed on every profile.
+The profiler now also captures startup tasks, first drawn-revision time, worker
+messages/resource timings, main heap after forced GC/full discovery and worker
+heap usage. `PROFILE_CPU=out/perf/main.cpuprofile`,
+`PROFILE_HEAP=out/perf/main.heapsnapshot`, and
+`PROFILE_WORKER_HEAP=out/perf/worker` optionally save detailed evidence.
+Summarise a snapshot with:
+
+```sh
+pnpm -C apps/writer exec node scripts/perf/heap-summary.mjs out/perf/main.heapsnapshot > apps/writer/out/perf/heap-summary.json
+COLD_CACHE=1 pnpm -C apps/writer test:browser
+```
+
+On the fixture-corrected product comparison, cold preview went from 3,426 to
+2,134 ms and the GC-controlled main heap from 60.91 to 58.28 MiB.
+Uncollected heap is still recorded for historical comparisons, not treated as a
+retention measurement.
+
+The script also captures editor/preview visible geometry at animation frames, CDP main-isolate JS heap, >50 ms main-thread long tasks during two ~10 s typing phases, source paging (historically Show all), 300-highlight expansion, citation/embed completion, page errors and `out/large-{sources,comments}-{before,after}.png`. One run is observational, not a statistical timing assertion; the main heap field excludes workers/native backing storage, and visible canvas is not pixel verification. The original Round 4 heap field was not GC-controlled. The default JSON output is `out/perf/browser-profile.json`. Historical before was captured before Round 4 UI changes; after uses a corrected reply counter. Interpretation and deferred work are in `docs/perf-review.md`.

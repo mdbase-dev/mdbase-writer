@@ -12,6 +12,13 @@ const main = "manuscripts/patient-observation.md";
 async function scenario(name, run) {
   const context = await browser.newContext({ viewport: { width: 1500, height: 950 }, acceptDownloads: true });
   const page = await context.newPage();
+  if (process.env.COLD_CACHE) {
+    await context.route("**/*", (route) => route.continue());
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Network.enable");
+    await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+    await cdp.send("Network.setBypassServiceWorker", { bypass: true });
+  }
   try { await run(page); console.log(`ok    ${name}`); }
   catch (error) {
     failures++;
@@ -111,6 +118,29 @@ try {
     await page.evaluate(() => { window.finishIndex(); window.finishLibrary(); });
     await page.evaluate(() => window.exportJob);
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.has("chapters/worms.md"));
+  });
+
+  await scenario("self-contained preview does not wait for the collection index; exports do", async (page) => {
+    await page.goto(`${base}?demo`);
+    await page.locator(".manuscript-row").first().waitFor();
+    await page.evaluate(async (path) => {
+      const backend = window.writer.backend;
+      const index = await backend.index();
+      backend.authority.editElsewhere(path, { body: "# Self-contained\n\nA plain paragraph.\n" });
+      backend.index = () => new Promise((resolve) => { window.finishIndex = () => resolve(index); });
+    }, main);
+    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
+    await painted(page);
+    assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().indexLoad.phase), "loading");
+    await page.getByText("Dependencies not checked").waitFor();
+    await page.evaluate(() => {
+      window.exportFinished = false;
+      window.pendingBundle = window.writer.workspace.exportBundle().then(() => { window.exportFinished = true; });
+    });
+    await page.waitForTimeout(100);
+    assert.equal(await page.evaluate(() => window.exportFinished), false);
+    await page.evaluate(async () => { window.finishIndex(); await window.pendingBundle; });
+    assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().indexLoad.phase), "ready");
   });
 
   await scenario("preview starts while annotation discovery is held", async (page) => {

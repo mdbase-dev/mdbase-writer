@@ -1,6 +1,6 @@
 // The collection's manuscripts, and creating a new one.
 import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
-import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
+import { pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { STYLES, type StyleId } from "@mdbase-writer/core/styles";
 import { signalMdbaseMark } from "@mdbase-dev/ui/mark-activity";
 import { Select } from "@mdbase-dev/ui/select";
@@ -84,7 +84,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     return () => { stop(); clearTimeout(timer); window.removeEventListener("focus", focus); };
   }, [backend]);
 
-  const recordIndex = useMemo(() => new PathIndex(recordPaths ?? []), [recordPaths]);
+  const recordIndex = useMemo(() => pathIndex(recordPaths ?? []), [recordPaths]);
 
   // Bodies are only read for visible rows, at most four concurrent manuscript traversals.
   useEffect(() => {

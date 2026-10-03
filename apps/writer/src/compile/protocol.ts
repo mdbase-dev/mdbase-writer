@@ -39,6 +39,8 @@ export interface SourceMark {
 }
 
 export type ToWorker =
+  /** Start font/WASM loading independently of collection discovery. No compile yet. */
+  | { readonly type: "prepare"; readonly baseUrl: string }
   | { readonly type: "init"; readonly library: readonly CslItem[]; readonly styles: readonly [string, string][]; readonly locales: readonly [string, string][]; readonly baseUrl: string }
   | { readonly type: "library"; readonly library: readonly CslItem[] }
   | { readonly type: "library-delta"; readonly upsert: readonly CslItem[]; readonly remove: readonly string[] }
@@ -69,7 +71,7 @@ export interface CompileResult {
   readonly labels: readonly string[];
   /** The bibliography entry for each cited source, as Typst markup (for hovers). */
   readonly references: readonly { readonly key: string; readonly text: string }[];
-  readonly timings: { readonly assembleMs: number; readonly compileMs: number; readonly citations: string; readonly clusters: number };
+  readonly timings: { readonly assembleMs: number; readonly compileMs: number; readonly citeprocMs?: number; readonly citations: string; readonly clusters: number };
 }
 
 export type FromWorker =

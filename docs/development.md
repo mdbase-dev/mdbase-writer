@@ -28,6 +28,8 @@ Run the end-to-end Chromium suite with `pnpm dev` running:
 
 ```sh
 pnpm --filter @mdbase-writer/app test:browser
+# Explicitly disable the HTTP cache and bypass service workers in both Chromium suites:
+COLD_CACHE=1 pnpm --filter @mdbase-writer/app test:browser
 ```
 
 If port 5320 is occupied, use `pnpm dev --port 5321` and run both suites with

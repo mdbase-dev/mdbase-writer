@@ -67,23 +67,39 @@ const pdfRequests: Extract<ToWorker, { type: "export-pdf" }>[] = [];
 const post = (message: FromWorker, transfer: Transferable[] = []) => self.postMessage(message, transfer);
 const bytes = async (url: string) => new Uint8Array(await (await fetchChecked(url)).arrayBuffer());
 
+const mark = (name: string) => { if (import.meta.env.DEV) performance.mark(`writer:${name}`); };
+let preparation: Promise<{ compiler: TypstCompiler; initMs: number }> | undefined;
+function prepare(baseUrl: string) {
+  return preparation ??= (async () => {
+    const started = performance.now();
+    mark("compiler-start");
+    // Fetch WASM concurrently with fonts, not after all font requests settle.
+    const module = compilerUrl(baseUrl).then(fetchChecked);
+    void module.catch(() => {});
+    const [fonts, mitex] = await Promise.all([
+      Promise.all(FONTS.map((f) => bytes(`${baseUrl}fonts/${f}`))),
+      Promise.all(MITEX.map((f) => bytes(`${baseUrl}typst/mitex/${f}`))),
+    ]);
+    mark("fonts-ready");
+    const c = createTypstCompiler();
+    await c.init({ getModule: () => module, beforeBuild: [disableDefaultFontAssets(), loadFonts(fonts)] });
+    mark("wasm-ready");
+    MITEX.forEach((f, i) => c.mapShadow(`/vendor/mitex/${f}`, mitex[i] ?? new Uint8Array()));
+    for (const [path, source] of Object.entries(runtime)) c.addSource(path.replace(/^\.\.\/\.\.\/typst/, ""), source);
+    mark("compiler-prepared");
+    // Do not expose the compiler to drain until the init snapshot has arrived.
+    return { compiler: c, initMs: performance.now() - started };
+  })();
+}
+
 async function init(message: Extract<ToWorker, { type: "init" }>) {
-  const started = performance.now();
   library = new Map(message.library.map((i) => [i.id, i]));
   styles = new Map(message.styles);
   locales = new Map(message.locales);
-  const [fonts, mitex] = await Promise.all([
-    Promise.all(FONTS.map((f) => bytes(`${message.baseUrl}fonts/${f}`))),
-    Promise.all(MITEX.map((f) => bytes(`${message.baseUrl}typst/mitex/${f}`))),
-  ]);
-  const c = createTypstCompiler();
-  const wasmUrl = await compilerUrl(message.baseUrl);
-  await c.init({ getModule: () => fetchChecked(wasmUrl), beforeBuild: [disableDefaultFontAssets(), loadFonts(fonts)] });
-  MITEX.forEach((f, i) => c.mapShadow(`/vendor/mitex/${f}`, mitex[i] ?? new Uint8Array()));
-  for (const [path, source] of Object.entries(runtime)) c.addSource(path.replace(/^\.\.\/\.\.\/typst/, ""), source);
-  for (const [path, data] of assetData) c.mapShadow(`/${path}`, data);
-  compiler = c;
-  post({ type: "ready", initMs: performance.now() - started });
+  const prepared = await prepare(message.baseUrl);
+  for (const [path, data] of assetData) prepared.compiler.mapShadow(`/${path}`, data);
+  compiler = prepared.compiler;
+  post({ type: "ready", initMs: prepared.initMs });
   schedule();
 }
 
@@ -182,6 +198,7 @@ async function compile(c: TypstCompiler): Promise<CompileResult> {
     timings: {
       assembleMs: assembled - started,
       compileMs: performance.now() - assembled,
+      ...(import.meta.env.DEV ? { citeprocMs: assembly.citations.ms } : {}),
       citations: assembly.citations.mode,
       clusters: assembly.citations.clusters,
     },
@@ -284,6 +301,9 @@ async function exportPdf(c: TypstCompiler, id: number) {
 self.onmessage = (event: MessageEvent<ToWorker>) => {
   const message = event.data;
   switch (message.type) {
+    case "prepare":
+      void prepare(message.baseUrl).catch((error: unknown) => post({ type: "failure", message: error instanceof Error ? error.message : String(error) }));
+      return;
     case "init":
       void init(message).catch((error: unknown) => post({ type: "failure", message: error instanceof Error ? error.message : String(error) }));
       return;

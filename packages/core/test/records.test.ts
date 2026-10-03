@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IMAGE_EXTENSION, joinPath, dirname, PathIndex, resolveLinkTarget } from "../src/records.js";
+import { IMAGE_EXTENSION, joinPath, dirname, PathIndex, pathIndex, resolveLinkTarget } from "../src/records.js";
 
 // Frozen reference: the pre-index resolver, including exact case-sensitive precedence.
 function oldResolve(target: string, fromPath: string, candidates: ReadonlySet<string>, extension = ".md"): string | null {
@@ -48,6 +48,16 @@ describe("indexed path resolution", () => {
         expect(resolveLinkTarget(target, from, index, extension), `${collection}: ${target} from ${from}`).toBe(oldResolve(target, from, paths, extension));
       }
     }
+  });
+
+  it("shares only immutable array generations, preserving ambiguity after replacement", () => {
+    const paths = Object.freeze(["one/a.md"]);
+    const before = pathIndex(paths);
+    expect(pathIndex(paths)).toBe(before);
+    const after = pathIndex(Object.freeze([...paths, "two/a.md"]));
+    expect(after).not.toBe(before);
+    expect(resolveLinkTarget("a", "main.md", before)).toBe("one/a.md");
+    expect(resolveLinkTarget("a", "main.md", after)).toBeNull();
   });
 
   it("keeps collection generations independent", () => {
