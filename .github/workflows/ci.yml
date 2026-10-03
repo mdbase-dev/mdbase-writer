@@ -52,6 +52,7 @@ jobs:
           trap 'kill "$dev_pid" 2>/dev/null || true; cat "$RUNNER_TEMP/writer-dev.log"' EXIT
           ready=0
           for attempt in {1..60}; do
+            kill -0 "$dev_pid" 2>/dev/null || exit 1
             if curl --fail --silent "$BASE" >/dev/null; then
               ready=1
               break
@@ -66,6 +67,27 @@ jobs:
           pnpm --filter @mdbase-writer/app exec node scripts/browser-test.mjs || result=1
           pnpm --filter @mdbase-writer/app test:browser:reliability || result=1
           exit "$result"
+      - name: Verify private feedback with demo data and intercepted delivery
+        env:
+          VITE_WRITER_DEMO: "1"
+          VITE_MDBASE_FEEDBACK_URL: http://127.0.0.1:8892/v1/feedback
+          VITE_MDBASE_ENV: lab
+        run: |
+          pnpm --filter @mdbase-writer/app build
+          pnpm --filter @mdbase-writer/app exec vite preview --host 127.0.0.1 --port 8892 --strictPort > "$RUNNER_TEMP/writer-feedback-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in {1..30}; do
+            kill -0 "$preview_pid" 2>/dev/null || exit 1
+            if curl --max-time 2 --fail --silent http://127.0.0.1:8892/ >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          pnpm --filter @mdbase-writer/app test:feedback
       - name: Upload browser failure screenshots
         if: failure()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

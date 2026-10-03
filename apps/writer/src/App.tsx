@@ -9,6 +9,8 @@ import type { WriterBackend } from "./backend/types.js";
 import { createWriterSession, type WriterSession } from "./connect/session.js";
 import { appUrls } from "./apps.js";
 import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
+import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
+import { useWriterFeedbackContext } from "./FeedbackRoot.js";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { Home } from "./ui/Home.js";
@@ -65,6 +67,7 @@ function useManuscriptParam(mayLeave: () => Promise<boolean>): [string | null, (
 }
 
 export function App() {
+  const { reportError } = useFeedback();
   const [theme, setTheme] = useState<ThemePreference>(() => loadThemePreference());
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => saveThemePreference(theme), [theme]);
@@ -77,24 +80,27 @@ export function App() {
             <AppSwitcher current="writer" urls={appUrls} />
             <div className="topbar-slot" ref={setSlot} />
             <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />
+            <FeedbackButton />
           </header>
-          <ErrorBoundary>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
+          <ErrorBoundary onError={() => reportError({ code: "unknown_error" })}>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
         </div>
       </TopbarSlot.Provider>
     </ThemeChoice.Provider>
   );
 }
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+class ErrorBoundary extends Component<{ children: ReactNode; onError(): void }, { error: Error | null }> {
   override state = { error: null as Error | null };
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
+  override componentDidCatch() { this.props.onError(); }
   override render() {
     if (!this.state.error) return this.props.children;
     return (
       <main className="gate">
         <h1>Something went wrong</h1>
+        <FeedbackButton topic="problem" />
         <p>{this.state.error.message}</p>
         <p className="muted">Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading.</p>
         <button className="mdbase-button" type="button" onClick={() => {
@@ -198,6 +204,7 @@ function Manuscripts({ backend, collectionPicker }: { backend: WriterBackend; co
     return new Promise<boolean>((finish) => setNavigation({ message: saved.message, finish }));
   });
   const workspace = useOwned(() => (path ? new ManuscriptWorkspace(backend, path) : null), (w) => void w.dispose(), [backend, path]);
+  useWriterFeedbackContext(path ? "manuscript" : "manuscripts", backend.collectionName);
   currentWorkspace.current = workspace;
   (window as unknown as { writer?: unknown }).writer = { backend, workspace };
   if (!path) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} />;

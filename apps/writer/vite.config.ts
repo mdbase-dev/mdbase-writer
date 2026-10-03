@@ -30,7 +30,7 @@ export default defineConfig({
       { find: /^pandoc-wasm\/core$/, replacement: resolve(pandocWasm, "src", "core.js") },
       { find: /^pandoc-wasm\/pandoc\.wasm\?url$/, replacement: `${resolve(pandocWasm, "src", "pandoc.wasm")}?url` },
     ],
-    dedupe: ["@codemirror/state", "@codemirror/view", "@codemirror/language", "@lezer/common", "@lezer/highlight", "@lezer/markdown"],
+    dedupe: ["react", "react-dom", "@codemirror/state", "@codemirror/view", "@codemirror/language", "@lezer/common", "@lezer/highlight", "@lezer/markdown"],
   },
   server: { host: "127.0.0.1", port: 5320, strictPort: true },
   build: { target: "es2022", sourcemap: true },

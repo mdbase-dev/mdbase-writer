@@ -61,6 +61,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_MDBASE_FEEDBACK_URL: ${{ vars.MDBASE_FEEDBACK_URL }}
+          VITE_MDBASE_FEEDBACK_TURNSTILE_SITE_KEY: ${{ vars.MDBASE_FEEDBACK_TURNSTILE_SITE_KEY }}
       - name: Verify deployed manifest
         env:
           ORIGIN: ${{ inputs.target == 'production' && 'https://writer.mdbase.dev' || 'https://staging.mdbase-writer.pages.dev' }}
