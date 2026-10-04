@@ -1,10 +1,13 @@
-// Top level: pick the backend (Connect, or the development demo), then show
+// Top level: pick the backend (Connect, the development demo, or the opt-in
+// mdbase-next backend with `?next` / `?demo=next`), then show
 // the manuscript list or an open manuscript. The open manuscript lives in the
 // URL (`?manuscript=path`) so reloads and links land in the same place.
 import { externalStore } from "@mdbase-dev/connect";
 import { Component, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { ConnectBackend } from "./backend/connect.js";
+import type { NextBackend } from "./backend/next.js";
+import type { NextProblem } from "./backend/next-errors.js";
 import type { WriterBackend } from "./backend/types.js";
 import { createWriterSession, type WriterSession } from "./connect/session.js";
 import { appUrls } from "./apps.js";
@@ -12,6 +15,7 @@ import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { useWriterFeedbackContext } from "./FeedbackRoot.js";
 import { ConnectGate } from "./ui/ConnectGate.js";
+import { NextGate, NextStatus } from "./ui/NextGate.js";
 import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { Home } from "./ui/Home.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
@@ -26,6 +30,8 @@ import { ManuscriptWorkspace } from "./workspace/workspace.js";
 
 const params = new URL(location.href).searchParams;
 const demoRequested = (import.meta.env.DEV || import.meta.env.VITE_WRITER_DEMO === "1") && params.has("demo");
+// Opt-in: an mdbase-next collection over the relay. The default stays Connect.
+const nextRequested = (import.meta.env.DEV || import.meta.env.VITE_WRITER_NEXT === "1") && params.has("next");
 
 function useManuscriptParam(mayLeave: () => Promise<boolean>): [string | null, (path: string | null, force?: boolean) => void] {
   const [value, setValue] = useState(() => new URL(location.href).searchParams.get("manuscript"));
@@ -82,7 +88,7 @@ export function App() {
             <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />
             <FeedbackButton />
           </header>
-          <ErrorBoundary onError={() => reportError({ code: "unknown_error" })}>{demoRequested ? <DemoRoot /> : <ConnectRoot />}</ErrorBoundary>
+          <ErrorBoundary onError={() => reportError({ code: "unknown_error" })}>{demoRequested ? <DemoRoot /> : nextRequested ? <NextRoot /> : <ConnectRoot />}</ErrorBoundary>
         </div>
       </TopbarSlot.Provider>
     </ThemeChoice.Provider>
@@ -169,7 +175,9 @@ function DemoRoot() {
       if (!live) return;
       const b = import.meta.env.DEV && params.get("demo") === "large"
         ? await (await import("./backend/large-demo.js")).createLargeDemoBackend()
-        : await createDemoBackend();
+        : params.get("demo") === "next"
+          ? await (await import("./backend/next-demo.js")).createNextDemoBackend()
+          : await createDemoBackend();
       if (live) { owned = b; setBackend(b); }
       else b.dispose();
     }).catch((error: unknown) => { if (live) setProblem(error instanceof Error ? error.message : String(error)); });
@@ -180,7 +188,41 @@ function DemoRoot() {
   }, []);
   if (problem) return <ConnectLayout app="writer" title="The demo could not be loaded" error={problem}><button type="button" className="mdbase-button" onClick={() => location.reload()}>Retry loading</button></ConnectLayout>;
   if (!backend) return <OpeningScreen app="writer" title="Opening the demo collection" />;
-  return <Manuscripts backend={backend} />;
+  return <>{backend.kind === "next" && <NextStatus backend={backend as NextBackend} />}<Manuscripts backend={backend} /></>;
+}
+
+/**
+ * `?next&collection=<id>&grant=<id>`: a collection on mdbase-next. The route
+ * comes from a proposed control-plane endpoint (connect/next-control.ts).
+ */
+function NextRoot() {
+  const [backend, setBackend] = useState<NextBackend | null>(null);
+  const [waiting, setWaiting] = useState<NextProblem | undefined>();
+  const [problem, setProblem] = useState<NextProblem | undefined>();
+  useEffect(() => {
+    const abort = new AbortController();
+    let owned: NextBackend | undefined;
+    const collection = params.get("collection");
+    // The SDK loads only in this mode.
+    const errors = import("./backend/next-errors.js");
+    void (async () => {
+      if (!collection) throw new Error("Open Writer with ?next&collection=<collection ID>&grant=<grant ID>.");
+      const [{ connectNext, proposedControlPlane }, { NextBackend }, { problemFrom }] = await Promise.all([import("./connect/next-control.js"), import("./backend/next.js"), errors]);
+      const control = proposedControlPlane({ serverUrl: params.get("server") ?? import.meta.env.VITE_MDBASE_CONNECT_URL ?? "https://connect.mdbase.dev", grant: params.get("grant") });
+      const client = await connectNext({ collection, control, signal: abort.signal, onWaiting: (why) => setWaiting(problemFrom(why)) });
+      if (abort.signal.aborted) { client.close(); return; }
+      owned = new NextBackend(client, { collectionName: params.get("name") ?? "Collection", draftNamespace: `next:${collection}`, ownsClient: true });
+      setBackend(owned);
+    })().catch(async (error: unknown) => {
+      const { problemFrom } = await errors;
+      if (abort.signal.aborted) return;
+      const mapped = problemFrom(error);
+      setProblem(error instanceof Error && !("code" in error) ? { ...mapped, message: error.message } : mapped);
+    });
+    return () => { abort.abort(); owned?.dispose(); };
+  }, []);
+  if (!backend) return <NextGate waiting={waiting} problem={problem} />;
+  return <><NextStatus backend={backend} /><Manuscripts backend={backend} /></>;
 }
 
 function downloadLocalDrafts(workspace: ManuscriptWorkspace): void {
@@ -204,6 +246,8 @@ function Manuscripts({ backend, collectionPicker }: { backend: WriterBackend; co
     return new Promise<boolean>((finish) => setNavigation({ message: saved.message, finish }));
   });
   const workspace = useOwned(() => (path ? new ManuscriptWorkspace(backend, path) : null), (w) => void w.dispose(), [backend, path]);
+  // A new manuscript whose path was taken at the log moved: follow it.
+  useEffect(() => backend.onRecordMoved?.(({ from, to }) => { if (from === path) setPath(to, true); }), [backend, path]);
   useWriterFeedbackContext(path ? "manuscript" : "manuscripts", backend.collectionName);
   currentWorkspace.current = workspace;
   (window as unknown as { writer?: unknown }).writer = { backend, workspace };

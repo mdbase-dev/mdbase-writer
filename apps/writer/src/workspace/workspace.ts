@@ -5,7 +5,7 @@
 // (autosave, conflict detection, exact recovery — all from the SDK). Every
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
-import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
+import type { JsonObject } from "@mdbase-dev/connect";
 import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
@@ -14,7 +14,7 @@ import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/rec
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
-import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type Result, type WriterBackend } from "../backend/types.js";
+import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
 import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
@@ -22,7 +22,7 @@ import { CompileClient } from "../compile/client.js";
 import type { CompileResult, WriterDiagnostic } from "../compile/protocol.js";
 import { toDocx } from "../export/pandoc.js";
 import { zip } from "../export/zip.js";
-import { appendEmbed, chapterEmbeds, moveEmbed } from "./chapters.js";
+import { appendEmbed, chapterEmbeds, moveEmbed, retargetEmbeds } from "./chapters.js";
 
 // Styles and locales are fetched, not bundled: only the worker needs most of them.
 const cslUrls = import.meta.glob("../../../../packages/core/assets/csl/*.{csl,xml}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -51,7 +51,7 @@ export function sourceKeys(library: readonly LibraryEntry[]): ReadonlyMap<string
   return keys;
 }
 
-export type SessionSnapshot = MdbaseRecordSessionSnapshot<RecordDocument<JsonObject>>;
+export type SessionSnapshot = RecordSessionSnapshot;
 
 export interface RecordView {
   readonly path: string;
@@ -121,7 +121,7 @@ export class ManuscriptWorkspace {
   private readonly assetJobs = new Map<string, Promise<void>>();
   private readonly assetAttempts = new Map<string, number>();
   private readonly retryTimers = new Set<ReturnType<typeof setTimeout>>();
-  private readonly leases = new Map<string, { lease: MdbaseRecordLease<JsonObject>; unsubscribe: () => void }>();
+  private readonly leases = new Map<string, { lease: RecordLease; unsubscribe: () => void }>();
   private readonly opening = new Map<string, Promise<boolean>>();
   private readonly sent = new Map<string, string>();
   private readonly translations = new Map<string, { body: string; translated: ReturnType<typeof translateRecord> }>();
@@ -155,6 +155,7 @@ export class ManuscriptWorkspace {
     this.followCompiler();
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
     if (backend.onCollectionChange) this.cleanups.push(backend.onCollectionChange((delta) => this.onCollectionChange(delta)));
+    if (backend.onRecordMoved) this.cleanups.push(backend.onRecordMoved(({ from, to }) => this.onRecordMoved(from, to)));
     // Linking a person record happens in another tab (mdbase Editor): look again on return.
     if (typeof window !== "undefined") {
       const onFocus = () => {
@@ -650,6 +651,32 @@ export class ManuscriptWorkspace {
       clearTimeout(this.commentsTimer);
       this.commentsTimer = setTimeout(() => void this.loadComments(), 50);
     }
+  }
+
+  /**
+   * A record created here now lives at another path. Its old session is
+   * dropped with its draft (the backend carried the text over); embeds of it
+   * follow. A moved main record is reopened by the app at its new path.
+   */
+  private onRecordMoved(from: string, to: string): void {
+    if (this.disposed) return;
+    const held = this.leases.get(from);
+    if (held) { held.unsubscribe(); held.lease.release(); this.leases.delete(from); }
+    this.drafts.remove(from);
+    this.sent.delete(from);
+    const records = new Map(this.current.records), recordProblems = new Map(this.current.recordProblems), recoveredDrafts = new Map(this.current.recoveredDrafts);
+    records.delete(from); recordProblems.delete(from); recoveredDrafts.delete(from);
+    const recordPaths = [...this.current.recordPaths.filter((p) => p !== from && p !== to), to];
+    this.update({ records, recordProblems, recoveredDrafts, recordPaths });
+    if (this.previewInitialized) this.compile.send({ type: "records", upsert: [], remove: [from] });
+    this.sendCollection();
+    if (from === this.main) return;
+    const body = this.current.records.get(this.main)?.snapshot.body;
+    if (body !== undefined) {
+      const next = retargetEmbeds(body, from, to);
+      if (next !== body) this.setBody(this.main, next);
+    }
+    void this.open(to);
   }
 
   private onExternalChange(paths: readonly string[]): void {
