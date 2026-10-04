@@ -289,3 +289,18 @@ describe("mdbase-next problems", () => {
     expect(problemFrom(failed)).toMatchObject({ code: "upgrade_required", recovery: "upgrade" });
   });
 });
+
+describe("next-demo", () => {
+  it("serves the bundled demo manuscripts through NextBackend", async () => {
+    vi.stubGlobal("fetch", async () => new Response(null, { status: 404 }));
+    const { createNextDemoBackend } = await import("./next-demo.js");
+    const backend = await createNextDemoBackend();
+    owned.push(backend);
+    const manuscripts = await backend.listManuscripts();
+    expect(manuscripts.ok && manuscripts.value.map((m) => m.path)).toContain("manuscripts/patient-observation.md");
+    const library = await backend.library();
+    expect(library.ok && library.value.length).toBeGreaterThan(0);
+    const comments = await backend.comments();
+    expect(comments.ok && comments.value.length).toBe(3);
+  });
+});

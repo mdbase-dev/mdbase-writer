@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_MDBASE_CONNECT_URL?: string;
   readonly VITE_MDBASE_CONNECT_LOOPBACK_URL?: string;
   readonly VITE_WRITER_DEMO?: string;
+  /** "1" allows the opt-in mdbase-next backend (`?next`) outside development builds. */
+  readonly VITE_WRITER_NEXT?: string;
   readonly VITE_MDBASE_EDITOR_URL?: string;
   readonly VITE_MDBASE_READER_URL?: string;
   readonly VITE_MDBASE_WRITER_URL?: string;
