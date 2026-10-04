@@ -10,6 +10,7 @@ export function nextStatusText(sync: NextSync): string | null {
   }
   const parts: string[] = [];
   if (sync.status.connection !== "online" && sync.status.pending) parts.push(`${sync.status.pending} ${sync.status.pending === 1 ? "change is" : "changes are"} saved on the replica and waiting to sync`);
+  if (sync.writeProblem) parts.push(`Not saved: ${sync.writeProblem}`);
   if (sync.holds) parts.push(`${sync.holds} ${sync.holds === 1 ? "record needs" : "records need"} a decision`);
   return parts.length ? `${parts.join("; ")}.` : null;
 }

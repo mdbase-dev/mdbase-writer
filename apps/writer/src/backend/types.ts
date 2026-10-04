@@ -188,6 +188,11 @@ export interface WriterBackend {
   reviewIdentityAccess?(): Promise<Result<void>>;
   /** Changed paths; an empty list requests reconciliation after a watch gap or schema change. */
   onExternalChange(listener: (paths: readonly string[]) => void): () => void;
+  /**
+   * A record this backend created moved to another path after it was
+   * accepted (its first path turned out to be taken); open views follow it.
+   */
+  onRecordMoved?(listener: (move: { readonly from: string; readonly to: string }) => void): () => void;
   /** Applied, coalesced collection changes (after the shared caches are updated). */
   onCollectionChange?(listener: (delta: CollectionDelta) => void): () => void;
   /** Await queued path reads, e.g. before navigation or export. */

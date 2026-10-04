@@ -54,3 +54,13 @@ export function appendEmbed(body: string, target: string, isChapter?: IsChapter)
   lines.splice(last + 1, 0, ...(tight ? [embed] : ["", embed]));
   return lines.join("\n");
 }
+
+/** Points embeds of `from` (written with or without `.md`) at `to`, keeping how it was written. */
+export function retargetEmbeds(body: string, from: string, to: string): string {
+  const bare = (p: string) => p.replace(/\.md$/i, "");
+  return body.split("\n").map((line) => {
+    const target = embedTarget(line);
+    if (!target || bare(target) !== bare(from)) return line;
+    return line.replace(target, target.endsWith(".md") ? to : bare(to));
+  }).join("\n");
+}

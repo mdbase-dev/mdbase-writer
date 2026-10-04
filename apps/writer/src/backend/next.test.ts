@@ -236,6 +236,60 @@ describe("NextBackend writes", () => {
     expect(replica.allRecords.find((r) => r.path === "manuscripts/paper-2.md")).toMatchObject({ types: ["writer-manuscript"], pending: true });
   });
 
+  it("retries at the next numbered path when the log rejects the path later, carrying edits made meanwhile", async () => {
+    const { replica, db, backend } = await fixture();
+    const create = vi.spyOn(db, "create");
+    const moves: { from: string; to: string }[] = [];
+    backend.onRecordMoved((move) => moves.push(move));
+    expect(await backend.createManuscript({ title: "Late", template: "article", style: "apa" })).toEqual({ ok: true, value: "manuscripts/late.md" });
+    const first = await (create.mock.results[0]?.value as Promise<Write>);
+    const { session } = await open(backend, "manuscripts/late.md", false);
+    session.setBody("# Introduction {#sec-intro}\n\nWritten before the log answered.\n");
+    await vi.waitFor(async () => { const listed = await backend.listManuscripts(); expect(listed.ok && listed.value.map((m) => m.path)).toContain("manuscripts/late.md"); });
+    // The log finds the path taken after the replica accepted the create.
+    replica.reject(first.mutationId, { code: "conflict", recovery: "resolve_conflict", message: "taken at head", reason: "path_taken" });
+    await vi.waitFor(() => expect(moves).toEqual([{ from: "manuscripts/late.md", to: "manuscripts/late-2.md" }]));
+    expect(create).toHaveBeenCalledTimes(2);
+    const retry = await (create.mock.results[1]?.value as Promise<Write>);
+    expect(retry.mutationId).not.toBe(first.mutationId);
+    expect(retry.records[0]?.id).not.toBe(first.records[0]?.id);
+    // MemoryReplica (c573c96) rolls the rejected optimistic create back.
+    expect(replica.allRecords.find((r) => r.path === "manuscripts/late.md")).toBeUndefined();
+    expect(replica.allRecords.find((r) => r.path === "manuscripts/late-2.md")).toMatchObject({ body: "# Introduction {#sec-intro}\n\nWritten before the log answered.\n", types: ["writer-manuscript"] });
+    await vi.waitFor(async () => {
+      const listed = await backend.listManuscripts();
+      expect(listed.ok && listed.value.map((m) => m.path)).toEqual(["manuscripts/late-2.md", "manuscripts/paper.md"]);
+    });
+    await vi.waitFor(() => expect(session.getSnapshot().state).toBe("deleted"));
+  });
+
+  it("moves a new chapter's embed and session to the retried path", async () => {
+    const { replica, db, backend } = await fixture();
+    const create = vi.spyOn(db, "create");
+    const workspace = new ManuscriptWorkspace(backend, "manuscripts/paper.md");
+    owned.push({ dispose: () => void workspace.dispose() });
+    await vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
+    expect(await workspace.addChapter("Two")).toEqual({ ok: true, value: "chapters/two.md" });
+    const first = await (create.mock.results[0]?.value as Promise<Write>);
+    replica.reject(first.mutationId, { code: "conflict", recovery: "resolve_conflict", message: "taken at head", reason: "path_taken" });
+    await vi.waitFor(() => expect(workspace.getSnapshot().records.has("chapters/two-2.md")).toBe(true));
+    const snap = workspace.getSnapshot();
+    expect(snap.records.has("chapters/two.md")).toBe(false);
+    expect(snap.records.get("manuscripts/paper.md")?.snapshot.body).toContain("![[chapters/two-2]]");
+    expect(snap.records.get("manuscripts/paper.md")?.snapshot.body).not.toContain("![[chapters/two]]");
+    expect(snap.recordPaths).toContain("chapters/two-2.md");
+  });
+
+  it("reports a late rejection that is not a path collision", async () => {
+    const { replica, db, backend } = await fixture();
+    const create = vi.spyOn(db, "create");
+    expect(await backend.createRecord("notes/new.md", "")).toEqual({ ok: true, value: "notes/new.md" });
+    const first = await (create.mock.results[0]?.value as Promise<Write>);
+    replica.reject(first.mutationId, { code: "forbidden", recovery: "reauthorize", message: "no" });
+    await vi.waitFor(() => expect(backend["sync"].writeProblem).toBe(`notes/new.md: ${nextProblem("forbidden").message}`));
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
   it("does not retry a create for other problems", async () => {
     const { db, backend } = await fixture();
     const create = vi.spyOn(db, "create").mockRejectedValue(mdbaseError("forbidden", "no"));

@@ -9,7 +9,7 @@
 // - Record sessions save with `update(view, { patch, body })`, so concurrent
 //   edits merge on the replica (see next-session.ts).
 // - Files are listed once and kept current from the change feed.
-import { isMdbaseError, toPlain, type CreateInput, type FileView, type Hold, type LinkState, type LiveQuery, type LiveQueryState, type MdbaseClient, type QueryUpdate, type RecordView, type SyncStatus } from "@mdbase-dev/sdk";
+import { isMdbaseError, toPlain, type CreateInput, type FileView, type Hold, type LinkState, type LiveQuery, type LiveQueryState, type MdbaseClient, type QueryUpdate, type RecordView, type SyncStatus, type Write } from "@mdbase-dev/sdk";
 import type { CollectionDescription, JsonObject, QueryRecord } from "@mdbase-dev/connect";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 
@@ -44,6 +44,7 @@ import {
 const WITH_BODY = { body: true } as const;
 type ChangesResult = Parameters<Parameters<MdbaseClient["watchChanges"]>[1]>[0];
 const BODY_READS = 8;
+const CREATE_ATTEMPTS = 20;
 
 export interface NextBackendOptions {
   readonly collectionName?: string;
@@ -60,6 +61,8 @@ export interface NextSync {
   readonly problem: NextProblem | null;
   readonly status: SyncStatus;
   readonly holds: number;
+  /** The last write that the log rejected after the replica accepted it. */
+  readonly writeProblem?: string;
 }
 
 const fieldsOf = (fm: JsonObject, binding: Binding) => (Object.keys(binding.fields).length ? toContract(fm, binding.fields) : fm);
@@ -113,6 +116,7 @@ export class NextBackend implements WriterBackend {
   private readonly listeners = new Set<(paths: readonly string[]) => void>();
   private readonly dataListeners = new Set<(delta: CollectionDelta) => void>();
   private readonly syncListeners = new Set<(sync: NextSync) => void>();
+  private readonly moveListeners = new Set<(move: { readonly from: string; readonly to: string }) => void>();
   private readonly cleanups: (() => void)[] = [];
   private readonly ready: Promise<Result<void>>;
   private holds: readonly Hold[] = [];
@@ -384,11 +388,13 @@ export class NextBackend implements WriterBackend {
   /**
    * Creates at `pathFor(1)`, then numbered paths while the replica answers
    * `conflict` (`path_taken`). Resolves once the replica holds the record
-   * (pending); a later rejection at the log is reported as a collection problem.
+   * (pending). The same applies when the log rejects the path later: the
+   * rejected record is rolled back, a fresh create (new record and mutation
+   * IDs) tries the next numbered path, and `onRecordMoved` reports the move.
    */
-  private async createAt(pathFor: (n: number) => string, input: Omit<CreateInput, "path">): Promise<Result<string>> {
+  private async createAt(pathFor: (n: number) => string, input: Omit<CreateInput, "path">, from = 1): Promise<Result<string>> {
     let last = "";
-    for (let n = 1; n <= 20; n++) {
+    for (let n = from; n <= CREATE_ATTEMPTS; n++) {
       const path = pathFor(n);
       try {
         const write = await this.client.create({ ...input, path });
@@ -397,14 +403,39 @@ export class NextBackend implements WriterBackend {
           if (isPathTaken(write.receipt.problem)) { last = problem.message; continue; }
           return fail(problem.message);
         }
-        write.confirmed.catch((error: unknown) => this.publish({ paths: [path], problem: `${path}: ${problemFrom(error).message}` }));
-        return ok(write.records[0]?.path ?? path);
+        const created = write.records[0]?.path ?? path;
+        write.confirmed.catch((error: unknown) => this.lateCreateFailure(error, write, created, pathFor, input, n));
+        return ok(created);
       } catch (error) {
         if (isMdbaseError(error) && isPathTaken(error)) { last = problemFrom(error).message; continue; }
         return fail(problemFrom(error).message);
       }
     }
     return fail(last);
+  }
+
+  private async lateCreateFailure(error: unknown, write: Write, path: string, pathFor: (n: number) => string, input: Omit<CreateInput, "path">, n: number): Promise<void> {
+    if (this.disposed) return;
+    if (!isMdbaseError(error) || !isPathTaken(error) || n >= CREATE_ATTEMPTS) { this.writeProblem(path, error); return; }
+    // Keep what was written into the optimistic record meanwhile.
+    const id = write.records[0]?.id;
+    const local = id ? this.sessions.get(id)?.session.getSnapshot() : undefined;
+    const carried = local ? { ...input, frontmatter: asPlain(local.frontmatter), body: local.body } : input;
+    const retried = await this.createAt(pathFor, carried, n + 1);
+    if (!retried.ok) { this.writeProblem(path, retried.message); return; }
+    if (this.disposed) return;
+    for (const listener of [...this.moveListeners]) listener({ from: path, to: retried.value });
+  }
+
+  /** A write that failed after it was accepted; shown on the status line. */
+  private writeProblem(path: string, error: unknown): void {
+    this.setSync({ writeProblem: `${path}: ${typeof error === "string" ? error : problemFrom(error).message}` });
+  }
+
+  /** A record created here moved to another path (its first path was taken at the log). */
+  onRecordMoved(listener: (move: { readonly from: string; readonly to: string }) => void): () => void {
+    this.moveListeners.add(listener);
+    return () => this.moveListeners.delete(listener);
   }
 
   async createManuscript(input: NewManuscript): Promise<Result<string>> {
@@ -439,7 +470,7 @@ export class NextBackend implements WriterBackend {
       if (typeof fm[titleField] !== "string" || !fm[titleField]) patch[titleField] = titleFromNote(path, view.body ?? "");
       const write = await this.client.update(view, { patch: asPlain(patch) });
       if (write.state === "rejected" || write.state === "unknown") return fail(problemFromWire(write.receipt.problem).message);
-      write.confirmed.catch((error: unknown) => this.publish({ paths: [path], problem: `${path}: ${problemFrom(error).message}` }));
+      write.confirmed.catch((error: unknown) => this.writeProblem(path, error));
       return ok(write.records[0]?.path ?? path);
     } catch (error) { return fail(problemFrom(error).message); }
   }
@@ -474,7 +505,7 @@ export class NextBackend implements WriterBackend {
       const { fields, body } = changeFields(comment, change, new Date(), (await this.people()).me?.link);
       const write = await this.client.update(view, { patch: asPlain(toLocal(fields, type.fields)), ...(body !== undefined ? { body } : {}) });
       if (write.state === "rejected" || write.state === "unknown") return fail(problemFromWire(write.receipt.problem).message);
-      write.confirmed.catch((error: unknown) => this.publish({ paths: [comment.path], problem: `${comment.path}: ${problemFrom(error).message}` }));
+      write.confirmed.catch((error: unknown) => this.writeProblem(comment.path, error));
       const after = write.records.find((r) => r.id === view.id);
       const next = commentFromRecord(comment.path, fieldsOf(after ? plainFrontmatter(after) : { ...plainFrontmatter(view), ...toLocal(fields, type.fields) }, type), body ?? after?.body ?? comment.text);
       return next ? ok(next) : fail("The comment was changed but could not be read back.");
@@ -529,6 +560,7 @@ export class NextBackend implements WriterBackend {
     this.listeners.clear();
     this.dataListeners.clear();
     this.syncListeners.clear();
+    this.moveListeners.clear();
     if (this.options.ownsClient) this.client.close();
   }
 }

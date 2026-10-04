@@ -246,6 +246,8 @@ function Manuscripts({ backend, collectionPicker }: { backend: WriterBackend; co
     return new Promise<boolean>((finish) => setNavigation({ message: saved.message, finish }));
   });
   const workspace = useOwned(() => (path ? new ManuscriptWorkspace(backend, path) : null), (w) => void w.dispose(), [backend, path]);
+  // A new manuscript whose path was taken at the log moved: follow it.
+  useEffect(() => backend.onRecordMoved?.(({ from, to }) => { if (from === path) setPath(to, true); }), [backend, path]);
   useWriterFeedbackContext(path ? "manuscript" : "manuscripts", backend.collectionName);
   currentWorkspace.current = workspace;
   (window as unknown as { writer?: unknown }).writer = { backend, workspace };
