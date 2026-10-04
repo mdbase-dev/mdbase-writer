@@ -1,6 +1,7 @@
-// What the writer needs from a collection. Two implementations: Connect (real
-// collections) and a demo on the SDK's in-memory record authority.
-import type { JsonObject, MdbaseRecords } from "@mdbase-dev/connect";
+// What the writer needs from a collection. Implementations: Connect (real
+// collections), a demo on the SDK's in-memory record authority, and the opt-in
+// mdbase-next backend (`next.ts`).
+import type { JsonObject } from "@mdbase-dev/connect";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
 import type { SourceAnnotation } from "@mdbase-writer/core/annotations";
 import type { CommentRecord } from "@mdbase-writer/core/comments";
@@ -80,14 +81,85 @@ export interface NewManuscript {
   readonly starter?: boolean;
 }
 
+/**
+ * - `saved`: the draft is the acknowledged record.
+ * - `unsaved`: local changes wait for autosave or `flush()`.
+ * - `saving`: a write is in flight (or, on mdbase-next, pending confirmation).
+ * - `conflict`: a newer record changed what was edited locally; see `remote`.
+ * - `recovery`: a write's outcome is unknown.
+ * - `error`: a write or refresh failed; local changes are kept.
+ * - `deleted`: the record no longer exists; local changes are kept.
+ */
+export type RecordSessionState = "saved" | "unsaved" | "saving" | "conflict" | "recovery" | "error" | "deleted";
+
+export interface SessionProblem {
+  readonly code: string;
+  readonly message?: string;
+}
+
+/** The parts of a record the workspace reads from a session. */
+export interface SessionRecord {
+  readonly path: string;
+  readonly revision: string;
+  readonly types: readonly string[];
+  readonly frontmatter: JsonObject;
+  readonly body?: string;
+}
+
+export interface RecordSessionSnapshot {
+  readonly state: RecordSessionState;
+  readonly body: string;
+  /** The record's frontmatter with local patches applied. */
+  readonly frontmatter: JsonObject;
+  /** The latest record the session accepted as its base. */
+  readonly record: SessionRecord;
+  /** The newer record that conflicts with local changes, while `state` is `conflict`. */
+  readonly remote: SessionRecord | null;
+  /** Local changes not yet acknowledged. */
+  readonly dirty: boolean;
+  readonly problem: SessionProblem | null;
+}
+
+export type RecordResolution = { readonly keep: "mine" | "theirs" } | { readonly body: string };
+
+/**
+ * One open, editable record, as the workspace uses it. Connect's
+ * `MdbaseRecordSession` satisfies it, as does `NextRecordSession`.
+ */
+export interface RecordSession {
+  getSnapshot(): RecordSessionSnapshot;
+  /** Listeners run synchronously after every change. */
+  subscribe(listener: () => void): () => void;
+  setBody(body: string): void;
+  patchFrontmatter(patch: JsonObject): void;
+  resolve(choice: RecordResolution): void;
+  /** Save until every local change is acknowledged, or report why it cannot be. */
+  flush(options?: { timeoutMs?: number }): Promise<{ readonly ok: true } | { readonly ok: false; readonly problem: SessionProblem }>;
+}
+
+export interface RecordLease {
+  readonly session: RecordSession;
+  release(): void;
+}
+
+export interface RecordOpenOptions {
+  readonly autosave?: { readonly idleMs: number } | false;
+  readonly timeoutMs?: number;
+}
+
+/** Shared record sessions: one per path, whoever opens it. */
+export interface WriterRecords {
+  open(path: string, options?: RecordOpenOptions): Promise<{ readonly ok: true; readonly value: RecordLease } | { readonly ok: false; readonly problem: SessionProblem }>;
+}
+
 export interface WriterBackend {
   readonly setupStatus?: { readonly sources: boolean; readonly annotations: boolean; readonly comments: boolean } | undefined;
-  readonly kind: "connect" | "demo";
+  readonly kind: "connect" | "demo" | "next";
   readonly collectionName: string;
   /** Stable, non-secret collection identity for local draft isolation. */
   readonly draftNamespace?: string;
   manuscriptBindings?(): Promise<Result<readonly ManuscriptBinding[]>>;
-  readonly records: Pick<MdbaseRecords<JsonObject>, "open">;
+  readonly records: WriterRecords;
   listManuscripts(): Promise<Result<ManuscriptSummary[]>>;
   createManuscript(input: NewManuscript): Promise<Result<string>>;
   /** Marks an existing note as a manuscript (adds the manuscript type; keeps its other types). */

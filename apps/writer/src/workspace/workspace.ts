@@ -5,7 +5,7 @@
 // (autosave, conflict detection, exact recovery — all from the SDK). Every
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
-import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
+import type { JsonObject } from "@mdbase-dev/connect";
 import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
@@ -14,7 +14,7 @@ import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/rec
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
-import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type Result, type WriterBackend } from "../backend/types.js";
+import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
 import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
@@ -51,7 +51,7 @@ export function sourceKeys(library: readonly LibraryEntry[]): ReadonlyMap<string
   return keys;
 }
 
-export type SessionSnapshot = MdbaseRecordSessionSnapshot<RecordDocument<JsonObject>>;
+export type SessionSnapshot = RecordSessionSnapshot;
 
 export interface RecordView {
   readonly path: string;
@@ -121,7 +121,7 @@ export class ManuscriptWorkspace {
   private readonly assetJobs = new Map<string, Promise<void>>();
   private readonly assetAttempts = new Map<string, number>();
   private readonly retryTimers = new Set<ReturnType<typeof setTimeout>>();
-  private readonly leases = new Map<string, { lease: MdbaseRecordLease<JsonObject>; unsubscribe: () => void }>();
+  private readonly leases = new Map<string, { lease: RecordLease; unsubscribe: () => void }>();
   private readonly opening = new Map<string, Promise<boolean>>();
   private readonly sent = new Map<string, string>();
   private readonly translations = new Map<string, { body: string; translated: ReturnType<typeof translateRecord> }>();
