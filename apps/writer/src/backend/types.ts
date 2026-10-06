@@ -42,6 +42,8 @@ export interface LibraryEntry {
   readonly item: CslItem;
   readonly title: string;
   readonly path: string;
+  /** When the source record was last written (ISO 8601), when the collection says. */
+  readonly modified?: string;
 }
 
 export interface CollectionIndex {
@@ -142,14 +144,14 @@ export const manuscriptBody = (starter = false, citekey?: string): string => sta
   : "# Introduction {#sec-intro}\n\n";
 
 /** The citekey of a CSL-JSON item in a Reader source's `csl` field. */
-export function libraryEntry(path: string, frontmatter: JsonObject | undefined): LibraryEntry | null {
+export function libraryEntry(path: string, frontmatter: JsonObject | undefined, modified?: string): LibraryEntry | null {
   const csl = frontmatter?.["csl"];
   if (!csl || typeof csl !== "object" || Array.isArray(csl)) return null;
   const item = csl as Record<string, unknown>;
   const key = typeof item["id"] === "string" ? item["id"] : null;
   if (!key) return null;
   const title = typeof item["title"] === "string" ? item["title"] : typeof frontmatter?.["title"] === "string" ? frontmatter["title"] : key;
-  return { key, item: { ...item, id: key }, title, path };
+  return { key, item: { ...item, id: key }, title, path, ...(modified ? { modified } : {}) };
 }
 
 /** `chapters/x.md` numbered for the nth try: `chapters/x-2.md` (and `figures/x.png` to `figures/x-2.png`). */

@@ -600,7 +600,7 @@ await step("the phone layout switches between write, preview and outline", async
   await page.locator(".preview-pane").waitFor({ state: "visible" });
   assert.equal(await page.locator(".write").isVisible(), false);
   await page.screenshot({ path: "out/e2e-mobile-preview.png" });
-  await page.getByRole("button", { name: "Outline", exact: true }).click();
+  await page.getByRole("button", { name: "Sidebar", exact: true }).click();
   await page.locator(".outline").waitFor({ state: "visible" });
   await page.screenshot({ path: "out/e2e-mobile-outline.png" });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

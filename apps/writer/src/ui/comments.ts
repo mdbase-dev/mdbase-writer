@@ -138,3 +138,35 @@ export function when(iso: string, now = Date.now()): string {
   if (abs < 7 * 86_400) return relative.format(Math.round(seconds / 86_400), "day");
   return new Date(then).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
+
+/** A run of comment text as it reads: plain, emphasised, code, or a link. */
+export type InlinePiece = { readonly kind: "text" | "em" | "strong" | "code"; readonly text: string } | { readonly kind: "link"; readonly text: string; readonly href: string };
+
+/**
+ * The light Markdown a comment uses (emphasis, code, links), as pieces to
+ * render; anything else stays as written. Only http(s) links are links.
+ */
+export function inlinePieces(text: string): InlinePiece[] {
+  const out: InlinePiece[] = [];
+  const pattern = /`([^`\n]+)`|\*\*(?=\S)([^\n]*?\S)\*\*|\*(?=\S)([^*\n]*?\S)\*|(?<![\p{L}\p{N}])_(?=\S)([^_\n]*?\S)_(?![\p{L}\p{N}])|\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>")\]]+[^\s<>")\].,;:!?])/gu;
+  let last = 0;
+  for (const m of text.matchAll(pattern)) {
+    const at = m.index ?? 0;
+    if (at > last) out.push({ kind: "text", text: text.slice(last, at) });
+    if (m[1] !== undefined) out.push({ kind: "code", text: m[1] });
+    else if (m[2] !== undefined) out.push({ kind: "strong", text: m[2] });
+    else if (m[3] !== undefined || m[4] !== undefined) out.push({ kind: "em", text: (m[3] ?? m[4]) as string });
+    else if (m[5] !== undefined && m[6] !== undefined) out.push({ kind: "link", text: m[5], href: m[6] });
+    else if (m[7] !== undefined) out.push({ kind: "link", text: m[7], href: m[7] });
+    last = at + m[0].length;
+  }
+  if (last < text.length) out.push({ kind: "text", text: text.slice(last) });
+  return out;
+}
+
+/** Whether anyone else wrote in the thread after `since` (a thread of one's own is never new). */
+export function threadIsNew(thread: CommentThread, since: string | undefined, me: string | undefined): boolean {
+  if (!since) return false;
+  const mine = (c: CommentRecord) => Boolean(me && c.createdBy && c.createdBy.toLowerCase() === me.toLowerCase());
+  return [thread.root, ...thread.replies].some((c) => !c.deletedAt && !mine(c) && c.createdAt > since);
+}

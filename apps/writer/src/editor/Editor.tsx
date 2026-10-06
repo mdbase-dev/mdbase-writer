@@ -12,7 +12,7 @@ import { memo, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
-import { commentAnchors, showAnchors, type CommentAnchor } from "./comments.js";
+import { commentAnchors, showAnchors, type AnchorCard, type CommentAnchor } from "./comments.js";
 import { writerCompletions, type CompletionData } from "./completions.js";
 import { fixesFor } from "./fixes.js";
 import { formattingKeymap, makeLink, toggleBold, toggleCode, toggleItalic, type InlineFormat } from "./formatting.js";
@@ -39,6 +39,10 @@ export interface EditorHandle {
   selection(): { from: number; to: number; text: string };
   /** Formats the selection as Markdown (toggling bold, italic or code), or makes it a link. */
   format(kind: InlineFormat | "link"): void;
+  /** Where a body offset is drawn, in viewport coordinates; null while it is not on screen. */
+  coords(offset: number): { left: number; top: number; bottom: number } | null;
+  /** The editor's scrolling element, to follow while something is placed beside the text. */
+  scroller(): HTMLElement;
 }
 
 export interface RetainedEditor {
@@ -78,11 +82,13 @@ export interface EditorProps {
   activeComment?: string | null;
   /** A click on a commented passage or suggestion. */
   onAnchor?(id: string): void;
+  /** What a hover over a commented passage shows of its thread. */
+  anchorCard?(id: string): AnchorCard | null;
   /** An action from the toolbar over a selection, with the selected text. */
   onSelectionAction?(action: SelectionAction, selected: string): void;
 }
 
-export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, onSelectionAction }: EditorProps) {
+export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -94,8 +100,8 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
   const shownDiagnostics = useRef("");
   const joining = useRef(new Compartment());
   const preview = useRef<ReturnType<typeof livePreviewExtension> | null>(null);
-  const latest = useRef({ onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles });
-  latest.current = { onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles };
+  const latest = useRef({ onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, anchorCard, onSelectionAction, onImageFiles });
+  latest.current = { onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, anchorCard, onSelectionAction, onImageFiles };
 
   // Layout cleanup snapshots the viewport before React detaches its DOM (which
   // would reset scrollTop), including development's setup/cleanup/setup cycle.
@@ -142,7 +148,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           writerLanguage(),
           writerInsight(() => latest.current.insight, (target) => latest.current.onFollow?.(target)),
           chapterCards(() => latest.current.chapters),
-          commentAnchors((id) => latest.current.onAnchor?.(id)),
+          commentAnchors((id) => latest.current.onAnchor?.(id), (id) => latest.current.anchorCard?.(id) ?? null),
           selectionBar((action, view) => {
             const { from, to } = view.state.selection.main;
             const selected = view.state.sliceDoc(from, to);
@@ -191,6 +197,13 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
         const command = kind === "bold" ? toggleBold : kind === "italic" ? toggleItalic : kind === "code" ? toggleCode : makeLink;
         command(v);
         v.focus();
+      },
+      coords(offset) {
+        const at = v.coordsAtPos(Math.min(offset, v.state.doc.length));
+        return at ? { left: at.left, top: at.top, bottom: at.bottom } : null;
+      },
+      scroller() {
+        return v.scrollDOM;
       },
       insert(insertion, options) {
         if (v.state.readOnly) return;

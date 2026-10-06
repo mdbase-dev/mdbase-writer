@@ -21,6 +21,8 @@ import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import {
   AlertIcon,
+  BooksIcon,
+  ChatIcon,
   CheckIcon,
   ChevronDown,
   ChevronLeft,
@@ -37,6 +39,7 @@ import {
   PlusIcon,
   SidebarIcon,
   SplitIcon,
+  SplitVerticalIcon,
 } from "./icons.js";
 import { readerSourceHref } from "../apps.js";
 import { errorMessage } from "../async.js";
@@ -44,8 +47,12 @@ import { zip } from "../export/zip.js";
 import { CompareDialog, type Comparison } from "./CompareDialog.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
-import { anchorsFor, ThreadPlacement, type PlacedThread } from "./comments.js";
-import { CommentsPanel, openCount, type CommentDrafts, type PendingComment } from "./CommentsPanel.js";
+import { anchorsFor, threadIsNew, ThreadPlacement, when, type PlacedThread } from "./comments.js";
+import { CommentsPanel, Composer, openCount, type CommentDrafts, type PendingComment } from "./CommentsPanel.js";
+import { headingAt, headings } from "./outline.js";
+import { personName } from "../backend/comments.js";
+import type { AnchorCard } from "../editor/comments.js";
+import type { CitationSite } from "./SourcesPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { ProblemsStrip } from "./ProblemsStrip.js";
@@ -98,6 +105,23 @@ const NO_MARKS: readonly SourceMark[] = [];
 const THEME_NAME: Record<ThemePreference, string> = { system: "System", light: "Light", dark: "Dark" };
 
 const VIEW_ORDER: readonly View[] = ["both", "write", "preview"];
+const SIDEBAR_TABS: readonly SidebarTab[] = ["outline", "sources", "comments"];
+const TAB_NAME: Record<SidebarTab, string> = { outline: "Outline", sources: "Sources", comments: "Comments" };
+/** The sidebar tab each manuscript was left on, for this page's lifetime; a manuscript opens on its outline. */
+const rememberedTabs = new Map<string, SidebarTab>();
+
+/** Whether the window is laid out for a phone (one pane at a time). */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(() => typeof matchMedia === "function" && matchMedia("(max-width: 900px)").matches);
+  useEffect(() => {
+    if (typeof matchMedia !== "function") return;
+    const query = matchMedia("(max-width: 900px)");
+    const update = () => setNarrow(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return narrow;
+}
 const VIEW_NAME: Record<View, string> = { both: "Editor and preview", write: "Editor only", preview: "Preview only" };
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -120,7 +144,7 @@ function useSustained(flag: boolean, delay: number): boolean {
   return flag && held;
 }
 
-export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWorkspace; onClose(force?: boolean): void }) {
+export function WorkspaceView({ workspace, since, onClose }: { workspace: ManuscriptWorkspace; /** When this manuscript was last opened here, so what others wrote since can be marked. */ since?: string | undefined; onClose(force?: boolean): void }) {
   const snap = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot);
   const { reportError } = useFeedback();
   const failedSaves = useRef(new Set<string>());
@@ -139,7 +163,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const slowCompile = useSustained(snap.compiling, 600);
   const [active, setActive] = useState(workspace.main);
   const [pane, setPane] = useState<Pane>("write");
-  const [layout, setLayoutState] = useState<Layout>(loadLayout);
+  const [layout, setLayoutState] = useState<Layout>(() => ({ ...loadLayout(), tab: rememberedTabs.get(workspace.main) ?? "outline" }));
+  const narrow = useNarrow();
   const [notice, setNotice] = useState<Notice | null>(null);
   // An export has no count to show, so the mark streams until it ends or is cancelled.
   useMdbaseMarkBusy(notice?.tone === "busy" && "stream");
@@ -186,7 +211,13 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   }, []);
   const toggleJoinLines = useCallback(() => setLayout((l) => ({ ...l, joinLines: !l.joinLines })), [setLayout]);
   const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
-  const setSidebarTab = useCallback((tab: SidebarTab) => setLayout((l) => ({ ...l, tab })), [setLayout]);
+  const setSidebarTab = useCallback((tab: SidebarTab) => {
+    rememberedTabs.set(workspace.main, tab);
+    // The lower panel never repeats the upper: the two swap.
+    setLayout((l) => ({ ...l, tab, lowerTab: l.lowerTab === tab ? l.tab : l.lowerTab }));
+  }, [setLayout, workspace.main]);
+  const setLowerTab = useCallback((lowerTab: SidebarTab | null) => setLayout((l) => ({ ...l, lowerTab: lowerTab === l.tab ? null : lowerTab })), [setLayout]);
+  const toggleLower = useCallback(() => setLayout((l) => ({ ...l, lowerTab: l.lowerTab ? null : l.tab === "comments" ? "outline" : "comments" })), [setLayout]);
 
   const order = useMemo(() => workspace.readingOrder(), [workspace, snap.records, snap.recordPaths, snap.annotationPaths]);
   const activeView = snap.records.get(active);
@@ -251,7 +282,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   }, [placed, active]);
 
   const showComments = useCallback(() => {
-    setLayout((l) => (l.sidebar && l.tab === "comments" ? l : { ...l, sidebar: true, tab: "comments" }));
+    setLayout((l) => (l.sidebar && (l.tab === "comments" || l.lowerTab === "comments") ? l : { ...l, sidebar: true, tab: "comments", lowerTab: l.lowerTab === "comments" ? l.tab : l.lowerTab }));
     setPane("outline");
   }, [setLayout]);
 
@@ -265,6 +296,27 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     showComments();
   }, [snap.records, active, showComments]);
 
+  const me = snap.people.me?.link;
+  const anchorCard = useCallback((id: string): AnchorCard | null => {
+    const hit = placed.find((p) => p.thread.root.path === id);
+    if (!hit) return null;
+    const { root, replies } = hit.thread;
+    return {
+      kind: root.motivation === "editing" ? "suggestion" : "comment",
+      author: personName(root.createdBy, snap.people) ?? "Unsigned",
+      when: when(root.createdAt),
+      text: root.text || (root.suggestion ? `Replace with “${root.suggestion.replacement}”` : ""),
+      replies: replies.filter((r) => !r.deletedAt).length,
+      isNew: threadIsNew(hit.thread, since, me),
+    };
+  }, [placed, snap.people, since, me]);
+  // Where each record's open threads are anchored, for the outline's quiet counts.
+  const commentOffsets = useMemo(() => {
+    const map = new Map<string, number[]>();
+    for (const p of placed) if (p.thread.root.status === "open" && p.at && p.at !== "whole") map.set(p.record, [...(map.get(p.record) ?? []), p.at.from]);
+    return map;
+  }, [placed]);
+  const openThreads = useMemo(() => placed.filter((p) => p.thread.root.status === "open"), [placed]);
   const selectThread = useCallback((p: PlacedThread) => {
     setActiveComment(p.thread.root.path);
     if (p.at && p.at !== "whole") jump(p.record, p.at.from);
@@ -378,6 +430,40 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     if (target.kind === "label") jump(target.target.record, target.target.offset);
     else showSources(target.key);
   }, [jump, showSources]);
+
+  // The next or previous open comment, in reading order from the cursor (F7 / Shift-F7).
+  const stepComment = useCallback((direction: 1 | -1) => {
+    const { order, cursor, active } = citationNav.current;
+    const located = openThreads.filter((p) => p.at && p.at !== "whole");
+    if (!located.length) return;
+    const here = cursor ?? { record: active, offset: -1 };
+    const rank = (record: string, offset: number) => order.indexOf(record) * 1e9 + offset;
+    const at = rank(here.record, here.offset);
+    const pos = (p: PlacedThread) => rank(p.record, (p.at as { from: number }).from);
+    const next = direction > 0
+      ? located.find((p) => pos(p) > at) ?? located[0]
+      : [...located].reverse().find((p) => pos(p) < at) ?? located[located.length - 1];
+    if (next) { setActiveComment(next.thread.root.path); jump(next.record, (next.at as { from: number }).from); showComments(); }
+  }, [openThreads, jump, showComments]);
+
+  // Where a source is cited, named by section, for the Sources panel.
+  const sitesFor = useCallback((key: string): readonly CitationSite[] => {
+    const { order, snap } = citationNav.current;
+    const out: CitationSite[] = [];
+    const seen = new Set<string>();
+    for (const record of order) {
+      const body = snap.records.get(record)?.snapshot.body ?? "";
+      const list = headings(body);
+      for (const offset of referenceOffsets(body, key)) {
+        const heading = headingAt(list, offset);
+        const id = `${record}:${heading?.offset ?? -1}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.push({ record, offset, name: heading?.text ?? recordTitle(snap.records.get(record), record) });
+      }
+    }
+    return out;
+  }, []);
 
   // The next or previous citation of a source, in reading order from the cursor.
   const citationNav = useRef({ order, snap, cursor, active });
@@ -502,6 +588,16 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     if (next) jump(next.record, next.from);
   }, [bodyProblems, cursor, active, jump, order]);
 
+  const submitComment = useCallback(async (text: string, replacement?: string) => {
+    if (!pendingComment) return { ok: true as const, value: null };
+    const created = signalResult(await workspace.addComment(pendingComment.draft ?? { record: pendingComment.record }, text, replacement));
+    if (created.ok) {
+      setPendingComment(null);
+      setActiveComment(created.value.path);
+      editor.current?.reveal(pendingComment.draft?.to ?? 0, { focus: true });
+    }
+    return created;
+  }, [pendingComment, workspace]);
   const bodyOf = useCallback((record: string) => snap.records.get(record)?.snapshot.body, [snap.records]);
   const titleOf = useCallback((record: string) => recordTitle(snap.records.get(record), record), [snap.records]);
   const fileStem = manuscriptTitle.replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "manuscript";
@@ -601,6 +697,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     else if (mod && e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, view: VIEW_ORDER[(VIEW_ORDER.indexOf(l.view) + 1) % VIEW_ORDER.length] as View }));
     else if (mod && e.shiftKey && e.code === "KeyF") showSearch();
     else if (mod && e.shiftKey && e.code === "KeyE") showSources();
+    else if (mod && e.shiftKey && e.code === "KeyM") showComments();
+    else if (e.key === "F7" && !mod) stepComment(e.shiftKey ? -1 : 1);
     else if (mod && !e.shiftKey && e.key === ",") (settingsOpen ? closeSettings() : setSettingsOpen(true));
     else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
     else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
@@ -622,6 +720,93 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     window.addEventListener("keydown", listener, true);
     return () => window.removeEventListener("keydown", listener, true);
   }, []);
+
+  const sourcesPanel = (
+    <SourcesPanel
+      library={snap.library}
+      cited={stats.cited}
+      atCursor={citedAtCursor}
+      loadAnnotations={workspace.annotationsForSource}
+      annotationVersion={snap.annotationVersion}
+      loading={snap.libraryLoad.phase === "loading"}
+      problem={snap.libraryLoad.problem}
+      onRetry={() => void workspace.retryMetadata()}
+      notSetUp={workspace.setupStatus?.sources === false}
+      annotationsNotSetUp={workspace.setupStatus?.annotations === false}
+      canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted" && !snap.recoveredDrafts.has(active))}
+      onInsert={insertSource}
+      onStepCitation={stepCitation}
+      sitesFor={sitesFor}
+      onJump={jump}
+      {...(sourceHref ? { sourceHref } : {})}
+      request={sourcesRequest}
+    />
+  );
+  /** A sidebar panel's contents (Sources in the upper slot is rendered by the sidebar itself, kept mounted). */
+  const panelFor = (tab: SidebarTab) =>
+    tab === "sources" ? sourcesPanel : (
+          tab === "outline" ? (
+        <>
+          <ManuscriptSearch
+            query={searchQuery}
+            onQuery={setSearchQuery}
+            order={order}
+            records={records}
+            recordTitle={(path) => recordTitle(snap.records.get(path), path)}
+            onGo={(hit, focus) => jump(hit.record, hit.from, { to: hit.to, focus })}
+            request={searchRequest}
+          />
+          {!searchQuery.trim() && (
+            <OutlinePanel
+              main={workspace.main}
+              order={order}
+              records={snap.records}
+              chapters={chapters}
+              words={stats.words}
+              byRecord={byRecord}
+              active={active}
+              cursor={cursor}
+              onOpen={(path) => {
+                setActive(path);
+                setPane("write");
+              }}
+              onJump={jump}
+              onMove={(from, to) => workspace.moveChapter(from, to)}
+              onAdd={async (title) => signalFailure(await workspace.addChapter(title))}
+              onRename={(path, title) => signalFailure(workspace.renameChapter(path, title))}
+              commentOffsets={commentOffsets}
+            />
+          )}
+        </>
+      ) : (
+        <CommentsPanel
+          loading={snap.commentsLoad.phase === "loading" || snap.indexLoad.phase === "loading"}
+          onRetry={() => void workspace.loadComments()}
+          placed={placed}
+          drafts={commentDrafts.current}
+          grouped={order.length > 1}
+          people={snap.people}
+          problem={snap.commentsProblem}
+          notSetUp={workspace.setupStatus?.comments === false}
+          active={activeComment}
+          pending={pendingComment?.draft && !narrow ? null : pendingComment}
+          since={since}
+          recordTitle={(path) => recordTitle(snap.records.get(path), path)}
+          onSelect={selectThread}
+          onSubmit={submitComment}
+          onCancel={() => setPendingComment(null)}
+          onReply={replyToThread}
+          onChange={changeComment}
+          onAccept={acceptSuggestion}
+          onWholeRecord={() => {
+            setPendingComment({ kind: "comment", record: active });
+            setActiveComment(null);
+          }}
+          onCheckAccount={() => workspace.refreshPeople()}
+          {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})}
+        />
+      )
+    );
 
   if (snap.phase === "failed") {
     return (
@@ -716,104 +901,49 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         </div>
       </InTopbar>
 
-      <aside className="outline" aria-label="Manuscript sidebar">
+      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} aria-label="Manuscript sidebar">
         <SidebarTabs
           tab={layout.tab}
           onTab={setSidebarTab}
           sources={snap.library.length}
-          comments={placed.filter((p) => p.thread.root.status === "open").length}
+          comments={openThreads.length}
           commentsTitle={openCount(placed)}
+          split={layout.lowerTab !== null}
+          onSplit={toggleLower}
         />
         <div ref={sidebarPanel} onScroll={(e) => sidebarScroll.current.set(layout.tab, e.currentTarget.scrollTop)} className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
-          {layout.tab === "outline" ? (
-            <>
-              <ManuscriptSearch
-                query={searchQuery}
-                onQuery={setSearchQuery}
-                order={order}
-                records={records}
-                recordTitle={(path) => recordTitle(snap.records.get(path), path)}
-                onGo={(hit, focus) => jump(hit.record, hit.from, { to: hit.to, focus })}
-                request={searchRequest}
-              />
-              {!searchQuery.trim() && (
-                <OutlinePanel
-                  main={workspace.main}
-                  order={order}
-                  records={snap.records}
-                  chapters={chapters}
-                  words={stats.words}
-                  byRecord={byRecord}
-                  active={active}
-                  cursor={cursor}
-                  onOpen={(path) => {
-                    setActive(path);
-                    setPane("write");
-                  }}
-                  onJump={jump}
-                  onMove={(from, to) => workspace.moveChapter(from, to)}
-                  onAdd={async (title) => signalFailure(await workspace.addChapter(title))}
-                />
-              )}
-            </>
-          ) : layout.tab === "comments" ? (
-            <CommentsPanel
-              loading={snap.commentsLoad.phase === "loading" || snap.indexLoad.phase === "loading"}
-              onRetry={() => void workspace.loadComments()}
-              placed={placed}
-              drafts={commentDrafts.current}
-              grouped={order.length > 1}
-              people={snap.people}
-              problem={snap.commentsProblem}
-              notSetUp={workspace.setupStatus?.comments === false}
-              active={activeComment}
-              pending={pendingComment}
-              recordTitle={(path) => recordTitle(snap.records.get(path), path)}
-              onSelect={selectThread}
-              onSubmit={async (text, replacement) => {
-                if (!pendingComment) return { ok: true, value: null };
-                const created = signalResult(await workspace.addComment(pendingComment.draft ?? { record: pendingComment.record }, text, replacement));
-                if (created.ok) {
-                  setPendingComment(null);
-                  setActiveComment(created.value.path);
-                }
-                return created;
-              }}
-              onCancel={() => setPendingComment(null)}
-              onReply={replyToThread}
-              onChange={changeComment}
-              onAccept={acceptSuggestion}
-              onWholeRecord={() => {
-                setPendingComment({ kind: "comment", record: active });
-                setActiveComment(null);
-              }}
-              onCheckAccount={() => workspace.refreshPeople()}
-              {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})}
-            />
-          ) : null}
-          <div hidden={layout.tab !== "sources"}>
-            <SourcesPanel
-              library={snap.library}
-              cited={stats.cited}
-              atCursor={citedAtCursor}
-              loadAnnotations={workspace.annotationsForSource}
-              annotationVersion={snap.annotationVersion}
-              loading={snap.libraryLoad.phase === "loading"}
-              problem={snap.libraryLoad.problem}
-              onRetry={() => void workspace.retryMetadata()}
-              notSetUp={workspace.setupStatus?.sources === false}
-              annotationsNotSetUp={workspace.setupStatus?.annotations === false}
-              canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted" && !snap.recoveredDrafts.has(active))}
-              onInsert={insertSource}
-              onStepCitation={stepCitation}
-              {...(sourceHref ? { sourceHref } : {})}
-              request={sourcesRequest}
-            />
-          </div>
+          {layout.tab !== "sources" && panelFor(layout.tab)}
+          {/* Sources stays mounted (hidden) so its search, expanded source and scroll last across tab switches. */}
+          {layout.lowerTab !== "sources" && <div hidden={layout.tab !== "sources"}>{sourcesPanel}</div>}
         </div>
+        {layout.lowerTab && (
+          <div className="sidebar-lower">
+            <div className="sidebar-lower-tabs" role="tablist" aria-label="Lower panel">
+              {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
+                <button key={t} type="button" role="tab" aria-selected={layout.lowerTab === t} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
+              ))}
+              <button type="button" className="mdbase-icon-button is-small" aria-label="Close the lower panel" title="Close the lower panel" onClick={() => setLowerTab(null)}><CloseIcon /></button>
+            </div>
+            <div className="sidebar-panel is-lower" role="tabpanel">{panelFor(layout.lowerTab)}</div>
+          </div>
+        )}
         <SidebarResizer width={layout.sidebarWidth} onChange={(sidebarWidth) => setLayout((l) => ({ ...l, sidebarWidth }))} />
       </aside>
 
+      {!layout.sidebar && (
+        <nav className="sidebar-rail" aria-label="Sidebar">
+          {SIDEBAR_TABS.map((t) => {
+            const Icon = t === "outline" ? OutlineIcon : t === "sources" ? BooksIcon : ChatIcon;
+            const count = t === "sources" ? snap.library.length : t === "comments" ? openThreads.length : 0;
+            return (
+              <button key={t} type="button" className="rail-button" onClick={() => { setLayout((l) => ({ ...l, sidebar: true })); setSidebarTab(t); }} title={`${TAB_NAME[t]}${count ? ` (${count})` : ""}`} aria-label={TAB_NAME[t]}>
+                <Icon />
+                {count > 0 && <span className="rail-count">{count}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      )}
       <section className="write" aria-label="Editor">
         {active !== workspace.main && (
           <header className="pane-header">
@@ -875,10 +1005,22 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             anchors={anchors}
             activeComment={activeComment}
             onAnchor={onEditorAnchor}
+            anchorCard={anchorCard}
             onSelectionAction={onSelectionAction}
           />
         ) : (
           <p className="muted pad">Opening…</p>
+        )}
+        {pendingComment?.draft && !narrow && (
+          <InlineComposer key={`${pendingComment.record}:${pendingComment.draft.from}:${pendingComment.kind}`} editor={editor} at={pendingComment.draft.to}>
+            <Composer
+              pending={pendingComment}
+              signer={snap.people.signing?.kind === "linked" ? snap.people.me?.name : undefined}
+              recordTitle={titleOf}
+              onSubmit={submitComment}
+              onCancel={() => setPendingComment(null)}
+            />
+          </InlineComposer>
         )}
         {problemsOpen && diagnostics.length > 0 && (
           <ProblemsStrip
@@ -973,8 +1115,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
                 {p === "write" && diagnostics.length > 0 && (
                   <span className={`tab-badge tone-${errors ? "danger" : "warning"}`} aria-label={plural(diagnostics.length, "problem")}>{diagnostics.length}</span>
                 )}
+                {p === "outline" && openThreads.length > 0 && (
+                  <span className="tab-badge tone-comments" aria-label={plural(openThreads.length, "open comment")}>{openThreads.length}</span>
+                )}
               </span>
-              {p === "outline" ? "Outline" : p === "write" ? "Write" : "Preview"}
+              {p === "outline" ? "Sidebar" : p === "write" ? "Write" : "Preview"}
             </button>
           );
         })}
@@ -1011,7 +1156,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           ...inserts.map((c) => ({ id: `insert-${c.id}`, group: "Insert", label: c.label, detail: c.syntax, keywords: c.keywords, run: c.run })),
           { id: "comment", group: "Comments", label: "Comment on the selection", shortcut: "mod+alt+m", run: () => startComment("comment") },
           { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
-          { id: "comments", group: "Comments", label: "Show comments", run: showComments },
+          { id: "comments", group: "Comments", label: "Show comments", shortcut: "mod+shift+m", run: showComments },
+          { id: "next-comment", group: "Comments", label: "Next comment", shortcut: "F7", run: () => stepComment(1) },
+          { id: "previous-comment", group: "Comments", label: "Previous comment", shortcut: "shift+F7", run: () => stepComment(-1) },
+          { id: "lower-panel", group: "View", label: layout.lowerTab ? "Close the lower sidebar panel" : "Show a second sidebar panel", keywords: "split stack outline comments sources", run: toggleLower },
           { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: () => void requestClose() },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
@@ -1073,9 +1221,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   );
 }
 
-/** Outline, Sources and Comments, as tabs: ←/→ move between them. */
-function SidebarTabs({ tab, onTab, sources, comments, commentsTitle }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number; comments: number; commentsTitle: string }) {
-  const tabs: readonly SidebarTab[] = ["outline", "sources", "comments"];
+/** Outline, Sources and Comments, as tabs: ←/→ move between them. A second panel can open beneath. */
+function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSplit }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number; comments: number; commentsTitle: string; split: boolean; onSplit(): void }) {
+  const tabs = SIDEBAR_TABS;
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
     e.preventDefault();
@@ -1096,15 +1244,50 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle }: { tab: Si
           aria-controls={`sidebar-${t}`}
           tabIndex={tab === t ? 0 : -1}
           onClick={() => onTab(t)}
-          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? commentsTitle : `Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
+          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? `${commentsTitle} (${MOD_LABEL}-Shift-M)` : `Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
         >
-          {t === "outline" ? "Outline" : t === "sources" ? "Sources" : "Comments"}
+          {TAB_NAME[t]}
           {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
           {t === "comments" && comments > 0 && <span className="tab-count">{comments}</span>}
         </button>
       ))}
+      <button type="button" className="mdbase-icon-button is-small sidebar-split" aria-pressed={split} onClick={onSplit} title={split ? "Close the lower panel" : "Show a second panel beneath (outline and comments together)"} aria-label="Second panel">
+        <SplitVerticalIcon />
+      </button>
     </div>
   );
+}
+
+/** A comment composer beside the passage it is for, following the text as it scrolls. */
+function InlineComposer({ editor, at, children }: { editor: React.RefObject<EditorHandle | null>; at: number; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    const host = el?.parentElement;
+    const handle = editor.current;
+    if (!el || !host || !handle) return;
+    const place = () => {
+      const coords = handle.coords(at);
+      const frame = host.getBoundingClientRect();
+      if (!coords) { el.style.visibility = "hidden"; return; }
+      el.style.visibility = "";
+      const width = el.offsetWidth;
+      const height = el.offsetHeight;
+      const left = Math.max(8, Math.min(coords.left - frame.left, frame.width - width - 8));
+      const below = coords.bottom - frame.top + 8;
+      const top = below + height <= frame.height - 8 ? below : Math.max(8, coords.top - frame.top - height - 8);
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+    };
+    place();
+    const scroller = handle.scroller();
+    scroller.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    const observer = new ResizeObserver(place);
+    observer.observe(el);
+    return () => { scroller.removeEventListener("scroll", place); window.removeEventListener("resize", place); observer.disconnect(); };
+  }, [editor, at]);
+  return <div ref={box} className="inline-composer">{children}</div>;
 }
 
 function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { diagnostics: readonly WriterDiagnostic[]; pending: boolean; checking: boolean; open: boolean; setOpen(open: boolean): void }) {
@@ -1398,6 +1581,9 @@ const SHORTCUTS: readonly [string, string][] = [
   [`${MOD_LABEL} Shift \\`, "Editor and preview → editor only → preview only"],
   [`${MOD_LABEL} Shift F`, "Search the whole manuscript"],
   [`${MOD_LABEL} Shift E`, "Find a source"],
+  [`${MOD_LABEL} Shift M`, "Show comments"],
+  ["F7 / Shift F7", "Next / previous comment"],
+  ["F2", "Rename the chapter chosen in the outline"],
   [`${MOD_LABEL} ,`, "Manuscript settings"],
   [`${MOD_LABEL} B / ${MOD_LABEL} I`, "Bold / italic (again to remove it)"],
   [`${MOD_LABEL} Shift K`, "Make the selection a link"],

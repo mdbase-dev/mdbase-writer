@@ -95,8 +95,10 @@ does the same.
 ### Sources and citations
 
 Open **Sources** to search your Reader library and insert a citation, optionally with a page
-number. Sources already cited in the manuscript appear first. You can also type `@` or `[@`
-to see completion suggestions by citekey, author, title, or year.
+number. Sources already cited in the manuscript appear first, the rest most recently written
+first. A search of three letters or more also looks through the text of your Reader highlights.
+An expanded source lists the sections that cite it. You can also type `@` or `[@` to see
+completion suggestions by citekey, author, title, or year.
 
 Each source needs citation metadata and a citekey. Manage those in [mdbase Reader](https://reader.mdbase.dev)
 in the same collection. Reader highlights can be inserted as quotations with their source citation
@@ -118,10 +120,23 @@ To include another Markdown record, put its embed on a line of its own:
 Writer assembles these records in order. Citations, footnotes, and cross-references work across
 the manuscript. Chapter records do not need a special manuscript type.
 
-Use **Outline** to open or add chapters. Drag chapters, or use **Alt+↑/↓**, to reorder them.
+Use **Outline** to open or add chapters. Drag chapters, or use **Alt+↑/↓**, to reorder them;
+double-click one (or press **F2**) to rename it. A chapter's headings fold away unless it is
+the one being written. Sections with open comments or problems show a small count or dot
+beside their word count.
 Chapter cards in the editor show their title, word count, and problems, with a button to open them.
 
 ## Navigate and review
+
+Select a passage and press **Ctrl/⌘+Alt+M** to comment on it, or **Ctrl/⌘+Alt+S** to suggest an
+edit: the comment is written beside the passage. Commented lines are marked in the editor's
+margin, hovering a passage shows who said what, and **F7** steps to the next comment. The
+**Comments** panel lists every thread, with what others wrote since you last opened the
+manuscript marked as new, and can be filtered to one person's comments or your own.
+
+The sidebar's tabs can be opened side by side: the split button beside them shows a second
+panel beneath, so the outline and comments can be read together. Hiding the sidebar leaves a
+rail of its tabs.
 
 Click a block in the preview to jump to the corresponding text. The preview also follows the
 editor's cursor. **Problems** in the top bar lists unknown citekeys, missing labels, unavailable
@@ -140,6 +155,8 @@ Useful shortcuts (**⌘** on macOS, **Ctrl** elsewhere):
 | -------------- | ------------------------ |
 | Ctrl/⌘+K       | Open the command palette |
 | Ctrl/⌘+Shift+E | Find a source            |
+| Ctrl/⌘+Shift+M | Show comments            |
+| F7             | Go to the next comment   |
 | Ctrl/⌘+,       | Open manuscript settings |
 | Ctrl/⌘+Shift+S | Choose an export format  |
 | F8             | Go to the next problem   |

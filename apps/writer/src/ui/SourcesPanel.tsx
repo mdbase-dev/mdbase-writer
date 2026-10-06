@@ -11,6 +11,18 @@ import { authorYear, searchLibrary, sortedLibrary } from "../editor/library-sear
 import { readerSourceHref } from "../apps.js";
 import { useRowWindow } from "./paging.js";
 import { ChevronLeft, ChevronRight, ExternalIcon, SearchIcon } from "./icons.js";
+import { clipPassage } from "./comments.js";
+
+/** Where a source is cited: a place in the text, named by its section. */
+export interface CitationSite {
+  readonly record: string;
+  readonly offset: number;
+  readonly name: string;
+}
+
+/** A query this long also searches the text of highlights, once typing has paused this long. */
+const HIGHLIGHT_SEARCH_FROM = 3;
+const HIGHLIGHT_SEARCH_AFTER_MS = 700;
 
 /** Library sources listed before "Show all". */
 const LIBRARY_PREVIEW = 20;
@@ -57,7 +69,12 @@ export function SourcesPanel({
   onRetry: retryLibrary,
   notSetUp = false,
   annotationsNotSetUp = false,
+  sitesFor,
+  onJump,
 }: {
+  /** Where a source is cited, by section, for an expanded row. */
+  sitesFor?(key: string): readonly CitationSite[];
+  onJump?(record: string, offset: number): void;
   annotationsNotSetUp?: boolean;
   problem?: string | undefined;
   onRetry?(): void;
@@ -93,6 +110,29 @@ export function SourcesPanel({
   const sorted = useMemo(() => sortedLibrary(library), [library]);
   const rest = useMemo(() => sorted.filter((e) => !cited.has(e.key)), [sorted, cited]);
   const results = useMemo(() => (query.trim() ? searchLibrary(library, query, 60) : []), [library, query]);
+  const highlightSearch = query.trim().length >= HIGHLIGHT_SEARCH_FROM;
+  // Highlights are read once typing has paused, not on every keystroke.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (!highlightSearch) { setSettled(false); return; }
+    const t = setTimeout(() => setSettled(true), HIGHLIGHT_SEARCH_AFTER_MS);
+    return () => clearTimeout(t);
+  }, [highlightSearch, query]);
+  const highlightIndex = useHighlightIndex(library, loadAnnotations, annotationVersion, highlightSearch && settled && !annotationsNotSetUp);
+  const inHighlights = useMemo(() => {
+    if (!highlightSearch) return [];
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const found = new Set(results.map((e) => e.key));
+    const out: { entry: LibraryEntry; annotation: SourceAnnotation }[] = [];
+    for (const entry of library) {
+      if (found.has(entry.key)) continue;
+      const notes = highlightIndex.loaded.get(entry.path);
+      const hit = notes?.find((a) => { const text = `${a.quote ?? ""} ${a.note ?? ""}`.toLowerCase(); return words.every((w) => text.includes(w)); });
+      if (hit) out.push({ entry, annotation: hit });
+      if (out.length >= 30) break;
+    }
+    return out;
+  }, [highlightSearch, query, results, library, highlightIndex.loaded]);
 
   const rowFor = (key: string) => panel.current?.querySelector<HTMLElement>(`.source-row[data-key="${CSS.escape(key)}"]`);
 
@@ -200,6 +240,8 @@ export function SourcesPanel({
       onStep={onStepCitation}
       href={sourceHref?.(entry)}
       annotationsNotSetUp={annotationsNotSetUp}
+      sites={open === entry.key ? sitesFor?.(entry.key) ?? [] : NO_SITES}
+      {...(onJump ? { onJump } : {})}
     />
   );
   const shownRest = rest.slice(libraryWindow.from, libraryWindow.from + libraryWindow.size);
@@ -224,10 +266,31 @@ export function SourcesPanel({
       {libraryProblem && <p className="muted small" role="alert">Sources unavailable: {libraryProblem} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></p>}
       <span id="sources-keys" className="visually-hidden">Down arrow moves to the sources; Enter cites the first match.</span>
       {query.trim() ? (
-        <div className="source-group">
-          <ul aria-label="Matching sources">{results.map(row)}</ul>
-          {results.length === 0 && <p className="muted small">Nothing matches “{query}”.</p>}
-        </div>
+        <>
+          <div className="source-group">
+            <ul aria-label="Matching sources">{results.map(row)}</ul>
+            {results.length === 0 && !inHighlights.length && <p className="muted small">{highlightSearch && highlightIndex.pending > 0 ? `No source matches “${query}”; searching highlights…` : `Nothing matches “${query}”.`}</p>}
+          </div>
+          {highlightSearch && (inHighlights.length > 0 || (results.length > 0 && highlightIndex.pending > 0)) && (
+            <div className="source-group">
+              <h3 className="sidebar-heading" id="sources-highlights">
+                In highlights <span className="heading-count">{inHighlights.length}</span>
+                {highlightIndex.pending > 0 && <span className="heading-count">· searching {highlightIndex.pending} more</span>}
+              </h3>
+              <ul aria-labelledby="sources-highlights">
+                {inHighlights.map(({ entry, annotation }) => (
+                  <li key={entry.key}>
+                    <button type="button" className="source-row highlight-hit" data-key={entry.key} onClick={() => { setQuery(""); setOpen(entry.key); requestAnimationFrame(() => rowFor(entry.key)?.scrollIntoView({ block: "nearest" })); }} title={`${entry.title} · @${entry.key}`}>
+                      <span className="source-title">{entry.title}</span>
+                      <span className="source-meta">{authorYear(entry) || entry.key}{annotation.locator ? ` · ${annotation.locator}` : ""}</span>
+                      <span className="highlight-snippet">{clipPassage(annotation.quote || annotation.note || "")}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="source-group">
@@ -273,7 +336,11 @@ const SourceRow = memo(function SourceRow({
   onStep,
   href,
   annotationsNotSetUp,
+  sites,
+  onJump,
 }: {
+  sites: readonly CitationSite[];
+  onJump?(record: string, offset: number): void;
   annotationsNotSetUp: boolean;
   entry: LibraryEntry;
   locators: Map<string, string>;
@@ -339,6 +406,17 @@ const SourceRow = memo(function SourceRow({
               Cite{locator.trim() ? ` at ${/^\d/.test(locator.trim()) ? `p. ${locator.trim()}` : locator.trim()}` : ""}
             </button>
           </form>
+          {sites.length > 0 && (
+            <p className="source-sites small">
+              <span className="muted">Cited in </span>
+              {sites.map((site, i) => (
+                <span key={`${site.record}:${site.offset}`}>
+                  {i > 0 && <span className="muted">, </span>}
+                  <button type="button" className="site-link" onClick={() => onJump?.(site.record, site.offset)} title={site.record}>{site.name}</button>
+                </span>
+              ))}
+            </p>
+          )}
           <div className="source-facts">
             {uses > 0 ? (
               <span className="source-uses-nav">
@@ -392,3 +470,38 @@ const SourceRow = memo(function SourceRow({
     </li>
   );
 });
+
+const NO_SITES: readonly CitationSite[] = [];
+
+/**
+ * The highlights of every source, loaded a few at a time once a search is long
+ * enough to want them, and kept until the annotations change.
+ */
+function useHighlightIndex(library: readonly LibraryEntry[], load: (path: string) => Promise<Result<SourceAnnotation[]>>, version: number, wanted: boolean): { loaded: ReadonlyMap<string, SourceAnnotation[]>; pending: number } {
+  const [state, setState] = useState<{ version: number; loaded: Map<string, SourceAnnotation[]> }>({ version, loaded: new Map() });
+  const running = useRef(false);
+  useEffect(() => {
+    if (!wanted || running.current) return;
+    const loaded = state.version === version ? state.loaded : new Map<string, SourceAnnotation[]>();
+    const todo = library.filter((e) => !loaded.has(e.path)).map((e) => e.path);
+    if (!todo.length) { if (state.version !== version) setState({ version, loaded }); return; }
+    running.current = true;
+    let live = true;
+    let index = 0;
+    const found = new Map(loaded);
+    const worker = async () => {
+      while (live && index < todo.length) {
+        const path = todo[index++] as string;
+        const result = await load(path).catch(() => null);
+        if (!live) return;
+        found.set(path, result?.ok ? result.value : []);
+        if (found.size % 8 === 0 || index >= todo.length) setState({ version, loaded: new Map(found) });
+      }
+    };
+    void Promise.all([worker(), worker(), worker(), worker()]).finally(() => { running.current = false; if (live) setState({ version, loaded: new Map(found) }); });
+    return () => { live = false; running.current = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a load runs once per library and annotation version
+  }, [wanted, library, version, load]);
+  const loaded = state.version === version ? state.loaded : new Map<string, SourceAnnotation[]>();
+  return { loaded, pending: wanted ? library.filter((e) => !loaded.has(e.path)).length : 0 };
+}

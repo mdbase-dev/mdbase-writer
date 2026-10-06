@@ -14,7 +14,7 @@ import { useWriterFeedbackContext } from "./FeedbackRoot.js";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { Home } from "./ui/Home.js";
-import { localNamespace, recordOpened } from "./ui/recent.js";
+import { localNamespace, recentManuscripts, recordOpened } from "./ui/recent.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import { zip } from "./export/zip.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
@@ -208,13 +208,15 @@ function Manuscripts({ backend, collectionPicker }: { backend: WriterBackend; co
   useWriterFeedbackContext(path ? "manuscript" : "manuscripts", backend.collectionName);
   currentWorkspace.current = workspace;
   (window as unknown as { writer?: unknown }).writer = { backend, workspace };
+  // When this manuscript was last opened here (read before the opening is recorded, below).
+  const since = useMemo(() => (path ? recentManuscripts(localNamespace(backend)).find((e) => e.path === path)?.at : undefined), [backend, path]);
   useEffect(() => {
     if (path) recordOpened(localNamespace(backend), path);
   }, [backend, path]);
   if (!path) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} />;
   if (!workspace) return null;
   return <>
-    <WorkspaceView key={workspace.main} workspace={workspace} onClose={(force) => setPath(null, force)} />
+    <WorkspaceView key={workspace.main} workspace={workspace} since={since} onClose={(force) => setPath(null, force)} />
     <Dialog open={Boolean(navigation)} onClose={() => { navigation?.finish(false); setNavigation(null); }} title="Some changes are not saved">
       <p className="problem">{navigation?.message}</p>
       <p>Download a local copy before leaving if saving cannot be completed.</p>
