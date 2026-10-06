@@ -6,8 +6,6 @@ export type SidebarTab = "outline" | "sources" | "comments";
 export interface Layout {
   readonly sidebar: boolean;
   readonly tab: SidebarTab;
-  /** A second panel shown under the first, or none. */
-  readonly lowerTab: SidebarTab | null;
   /** The sidebar's width in CSS pixels. */
   readonly sidebarWidth: number;
   readonly view: View;
@@ -21,7 +19,7 @@ export interface Layout {
 }
 
 const KEY = "mdbase-writer:layout";
-export const DEFAULT_LAYOUT: Layout = { sidebar: true, tab: "outline", lowerTab: null, sidebarWidth: 272, view: "both", split: 0.5, zoom: "fit", joinLines: true, livePreview: true };
+export const DEFAULT_LAYOUT: Layout = { sidebar: true, tab: "outline", sidebarWidth: 272, view: "both", split: 0.5, zoom: "fit", joinLines: true, livePreview: true };
 export const ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const;
 
 export const SIDEBAR_MIN = 200;
@@ -35,7 +33,6 @@ export function loadLayout(): Layout {
     return {
       sidebar: typeof raw.sidebar === "boolean" ? raw.sidebar : DEFAULT_LAYOUT.sidebar,
       tab: raw.tab === "sources" || raw.tab === "comments" ? raw.tab : "outline",
-      lowerTab: raw.lowerTab === "outline" || raw.lowerTab === "sources" || raw.lowerTab === "comments" ? raw.lowerTab : null,
       sidebarWidth: typeof raw.sidebarWidth === "number" ? clampSidebar(raw.sidebarWidth) : DEFAULT_LAYOUT.sidebarWidth,
       view: raw.view === "write" || raw.view === "preview" || raw.view === "both" ? raw.view : DEFAULT_LAYOUT.view,
       split: typeof raw.split === "number" ? clampSplit(raw.split) : DEFAULT_LAYOUT.split,

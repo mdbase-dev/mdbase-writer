@@ -134,9 +134,7 @@ margin, hovering a passage shows who said what, and **F7** steps to the next com
 **Comments** panel lists every thread, with what others wrote since you last opened the
 manuscript marked as new, and can be filtered to one person's comments or your own.
 
-The sidebar's tabs can be opened side by side: the split button beside them shows a second
-panel beneath, so the outline and comments can be read together. Hiding the sidebar leaves a
-rail of its tabs.
+Hiding the sidebar leaves a rail of its tabs.
 
 Click a block in the preview to jump to the corresponding text. The preview also follows the
 editor's cursor. **Problems** in the top bar lists unknown citekeys, missing labels, unavailable

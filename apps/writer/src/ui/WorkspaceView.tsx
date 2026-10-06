@@ -39,7 +39,6 @@ import {
   PlusIcon,
   SidebarIcon,
   SplitIcon,
-  SplitVerticalIcon,
 } from "./icons.js";
 import { readerSourceHref } from "../apps.js";
 import { errorMessage } from "../async.js";
@@ -213,11 +212,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => {
     rememberedTabs.set(workspace.main, tab);
-    // The lower panel never repeats the upper: the two swap.
-    setLayout((l) => ({ ...l, tab, lowerTab: l.lowerTab === tab ? l.tab : l.lowerTab }));
+    setLayout((l) => ({ ...l, tab }));
   }, [setLayout, workspace.main]);
-  const setLowerTab = useCallback((lowerTab: SidebarTab | null) => setLayout((l) => ({ ...l, lowerTab: lowerTab === l.tab ? null : lowerTab })), [setLayout]);
-  const toggleLower = useCallback(() => setLayout((l) => ({ ...l, lowerTab: l.lowerTab ? null : l.tab === "comments" ? "outline" : "comments" })), [setLayout]);
 
   const order = useMemo(() => workspace.readingOrder(), [workspace, snap.records, snap.recordPaths, snap.annotationPaths]);
   const activeView = snap.records.get(active);
@@ -282,7 +278,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   }, [placed, active]);
 
   const showComments = useCallback(() => {
-    setLayout((l) => (l.sidebar && (l.tab === "comments" || l.lowerTab === "comments") ? l : { ...l, sidebar: true, tab: "comments", lowerTab: l.lowerTab === "comments" ? l.tab : l.lowerTab }));
+    setLayout((l) => (l.sidebar && l.tab === "comments" ? l : { ...l, sidebar: true, tab: "comments" }));
     setPane("outline");
   }, [setLayout]);
 
@@ -742,9 +738,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       request={sourcesRequest}
     />
   );
-  /** A sidebar panel's contents (Sources in the upper slot is rendered by the sidebar itself, kept mounted). */
+  /** The outline or comments panel (Sources is rendered by the sidebar itself, kept mounted). */
   const panelFor = (tab: SidebarTab) =>
-    tab === "sources" ? sourcesPanel : (
+    tab === "sources" ? null : (
           tab === "outline" ? (
         <>
           <ManuscriptSearch
@@ -901,32 +897,19 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
       </InTopbar>
 
-      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} aria-label="Manuscript sidebar">
+      <aside className="outline" aria-label="Manuscript sidebar">
         <SidebarTabs
           tab={layout.tab}
           onTab={setSidebarTab}
           sources={snap.library.length}
           comments={openThreads.length}
           commentsTitle={openCount(placed)}
-          split={layout.lowerTab !== null}
-          onSplit={toggleLower}
         />
         <div ref={sidebarPanel} onScroll={(e) => sidebarScroll.current.set(layout.tab, e.currentTarget.scrollTop)} className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
           {layout.tab !== "sources" && panelFor(layout.tab)}
           {/* Sources stays mounted (hidden) so its search, expanded source and scroll last across tab switches. */}
-          {layout.lowerTab !== "sources" && <div hidden={layout.tab !== "sources"}>{sourcesPanel}</div>}
+          <div hidden={layout.tab !== "sources"}>{sourcesPanel}</div>
         </div>
-        {layout.lowerTab && (
-          <div className="sidebar-lower">
-            <div className="sidebar-lower-tabs" role="tablist" aria-label="Lower panel">
-              {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
-                <button key={t} type="button" role="tab" aria-selected={layout.lowerTab === t} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
-              ))}
-              <button type="button" className="mdbase-icon-button is-small" aria-label="Close the lower panel" title="Close the lower panel" onClick={() => setLowerTab(null)}><CloseIcon /></button>
-            </div>
-            <div className="sidebar-panel is-lower" role="tabpanel">{panelFor(layout.lowerTab)}</div>
-          </div>
-        )}
         <SidebarResizer width={layout.sidebarWidth} onChange={(sidebarWidth) => setLayout((l) => ({ ...l, sidebarWidth }))} />
       </aside>
 
@@ -1159,7 +1142,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           { id: "comments", group: "Comments", label: "Show comments", shortcut: "mod+shift+m", run: showComments },
           { id: "next-comment", group: "Comments", label: "Next comment", shortcut: "F7", run: () => stepComment(1) },
           { id: "previous-comment", group: "Comments", label: "Previous comment", shortcut: "shift+F7", run: () => stepComment(-1) },
-          { id: "lower-panel", group: "View", label: layout.lowerTab ? "Close the lower sidebar panel" : "Show a second sidebar panel", keywords: "split stack outline comments sources", run: toggleLower },
           { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: () => void requestClose() },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
@@ -1221,8 +1203,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   );
 }
 
-/** Outline, Sources and Comments, as tabs: ←/→ move between them. A second panel can open beneath. */
-function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSplit }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number; comments: number; commentsTitle: string; split: boolean; onSplit(): void }) {
+/** Outline, Sources and Comments, as tabs: ←/→ move between them. */
+function SidebarTabs({ tab, onTab, sources, comments, commentsTitle }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number; comments: number; commentsTitle: string }) {
   const tabs = SIDEBAR_TABS;
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
@@ -1251,9 +1233,6 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
           {t === "comments" && comments > 0 && <span className="tab-count">{comments}</span>}
         </button>
       ))}
-      <button type="button" className="mdbase-icon-button is-small sidebar-split" aria-pressed={split} onClick={onSplit} title={split ? "Close the lower panel" : "Show a second panel beneath (outline and comments together)"} aria-label="Second panel">
-        <SplitVerticalIcon />
-      </button>
     </div>
   );
 }
