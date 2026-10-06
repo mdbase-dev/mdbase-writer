@@ -21,6 +21,7 @@ import { joinLines as joinLinesExtension } from "./join-lines.js";
 import { writerInsight, type EditorInsight, type FollowTarget } from "./insight.js";
 import { writerLanguage } from "./language.js";
 import { livePreview as livePreviewExtension, refreshLivePreview } from "./live-preview.js";
+import { slashCommands, type InsertCommand } from "./slash.js";
 import { nextFootnoteId, type Snippet } from "./snippets.js";
 
 const remote = Annotation.define<boolean>();
@@ -59,6 +60,8 @@ export interface EditorProps {
   onImageFiles?(files: readonly File[]): void;
   diagnostics: readonly WriterDiagnostic[];
   completion: CompletionData;
+  /** What "/" offers to insert (a footnote, a figure…). */
+  inserts?: readonly InsertCommand[];
   insight: EditorInsight;
   onChange(text: string): void;
   /** Mod-click on a citation or cross-reference. */
@@ -79,7 +82,7 @@ export interface EditorProps {
   onSelectionAction?(action: SelectionAction, selected: string): void;
 }
 
-export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, livePreview = true, onImageFiles, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, onSelectionAction }: EditorProps) {
+export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, onSelectionAction }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -91,8 +94,8 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
   const shownDiagnostics = useRef("");
   const joining = useRef(new Compartment());
   const preview = useRef<ReturnType<typeof livePreviewExtension> | null>(null);
-  const latest = useRef({ onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles });
-  latest.current = { onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles };
+  const latest = useRef({ onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles });
+  latest.current = { onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles };
 
   // Layout cleanup snapshots the viewport before React detaches its DOM (which
   // would reset scrollTop), including development's setup/cleanup/setup cycle.
@@ -133,7 +136,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           highlightSelectionMatches(),
           search({ top: true }),
           lintGutter(),
-          autocompletion({ override: [writerCompletions(() => latest.current.completion)] }),
+          autocompletion({ override: [slashCommands(() => latest.current.inserts ?? []), writerCompletions(() => latest.current.completion)] }),
           mdbasePopupTheme,
           keymap.of([...formattingKeymap, ...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap, indentWithTab]),
           writerLanguage(),
@@ -150,7 +153,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           EditorView.lineWrapping,
           joining.current.of(joinLines ? joinLinesExtension() : []),
           EditorState.readOnly.of(readOnly),
-          placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
+          placeholder("Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."),
           EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
           EditorView.updateListener.of((u) => {
             if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);

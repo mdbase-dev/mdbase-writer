@@ -22,6 +22,7 @@ import { MagnifyingGlassIcon as PhMagnifyingGlass } from "@phosphor-icons/react/
 import { MinusIcon as PhMinus } from "@phosphor-icons/react/Minus";
 import { PencilSimpleIcon as PhPencilSimple } from "@phosphor-icons/react/PencilSimple";
 import { PlusIcon as PhPlus } from "@phosphor-icons/react/Plus";
+import { PlusSquareIcon as PhPlusSquare } from "@phosphor-icons/react/PlusSquare";
 import { SidebarSimpleIcon as PhSidebarSimple } from "@phosphor-icons/react/SidebarSimple";
 import { TextBIcon as PhTextB } from "@phosphor-icons/react/TextB";
 import { TextItalicIcon as PhTextItalic } from "@phosphor-icons/react/TextItalic";
@@ -48,6 +49,7 @@ export const AlertIcon = icon(PhWarningCircle);
 export const CheckIcon = icon(PhCheck);
 export const CloseIcon = icon(PhX);
 export const PlusIcon = icon(PhPlus);
+export const InsertIcon = icon(PhPlusSquare);
 export const MinusIcon = icon(PhMinus);
 export const KeyboardIcon = icon(PhKeyboard);
 export const MoreIcon = icon(PhDotsThree);

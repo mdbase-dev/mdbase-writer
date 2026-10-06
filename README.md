@@ -85,8 +85,9 @@ this off under **Editor** at the end of **Settings** to see the Markdown everywh
 
 ### Figures, tables and equations
 
-Use the command palette (**Ctrl/⌘+K**) to insert a **Figure from an image**, a **Table**, an
-**Equation**, a **Cross-reference** or a **Footnote**. A figure's image is stored in the
+Type `/` in the text, or use **Insert** in the top bar (or the command palette, **Ctrl/⌘+K**),
+to add a **Footnote** (also **Ctrl/⌘+Alt+F**), a **Figure from an image**, a **Table**, an
+**Equation**, a **Cross-reference** or a **Citation**; each shows the Markdown it stands for. A figure's image is stored in the
 collection (in a `figures` folder beside the manuscript's other images) and written with a
 label to refer to; its caption is selected to type. Pasting or dropping an image into the text
 does the same.

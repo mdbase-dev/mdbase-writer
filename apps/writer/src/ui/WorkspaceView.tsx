@@ -11,6 +11,7 @@ import type { ChapterCards } from "../editor/chapter-cards.js";
 import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle, type RetainedEditor } from "../editor/Editor.js";
 import { equationSnippet, figureSnippet, tableSnippet } from "../editor/snippets.js";
+import type { InsertCommand } from "../editor/slash.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
 import { authorYear } from "../editor/library-search.js";
 import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
@@ -27,6 +28,7 @@ import {
   DownloadIcon,
   EditorOnly,
   GearIcon,
+  InsertIcon,
   MinusIcon,
   MoreIcon,
   OutlineIcon,
@@ -461,6 +463,16 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const insertEquation = useCallback(() => { setPane("write"); editor.current?.insertBlock(equationSnippet(labelSet)); }, [labelSet]);
   const insertReference = useCallback(() => { setPane("write"); editor.current?.insert("@", { complete: true }); }, []);
   const insertFootnote = useCallback(() => { setPane("write"); editor.current?.insertFootnote(); }, []);
+  /** What can be inserted, offered by "/" in the editor, the Insert menu and the command palette alike. */
+  const inserts = useMemo<readonly InsertCommand[]>(() => [
+    { id: "citation", label: "Citation", syntax: "[@citekey, p. 12]", keywords: "cite source reference", run: () => showSources() },
+    { id: "footnote", label: "Footnote", syntax: "[^1] … with its text at the end", keywords: "note", run: insertFootnote },
+    { id: "crossref", label: "Cross-reference", syntax: "@sec-intro, @fig-plan", keywords: "refer section figure table label", run: insertReference },
+    { id: "figure", label: "Figure from an image…", syntax: "![Caption](figures/plan.png){#fig-plan}", keywords: "image picture photo upload", run: insertFigure },
+    { id: "table", label: "Table", syntax: "| … | … | with : Caption {#tbl-x}", keywords: "grid columns rows", run: insertTable },
+    { id: "equation", label: "Equation", syntax: "$$ … $$ {#eq-x}", keywords: "math formula display", run: insertEquation },
+  ], [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
+  const [insertOpen, setInsertOpen] = useState(false);
   const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);
   const changeComment = useCallback(async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change)), [workspace]);
   const acceptSuggestion = useCallback(async (p: PlacedThread) => signalFailure(await workspace.acceptSuggestion(p.record, p.thread.root)), [workspace]);
@@ -592,6 +604,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     else if (mod && !e.shiftKey && e.key === ",") (settingsOpen ? closeSettings() : setSettingsOpen(true));
     else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
     else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
+    else if (mod && e.altKey && e.code === "KeyF") insertFootnote();
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
     else if (mod && !e.shiftKey && e.code === "KeyS") void workspace.retrySave().then(signalResult);
     else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
@@ -676,6 +689,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               })}
             </div>
           </div>
+          <InsertMenu open={insertOpen} setOpen={setInsertOpen} commands={inserts} disabled={!activeView || activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)} />
           <button type="button" className="mdbase-button" aria-label="Settings" aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
             <GearIcon />
             <span className="button-label">Settings</span>
@@ -850,6 +864,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             onImageFiles={(files) => void addFigures(files)}
             diagnostics={byRecord.get(active) ?? NO_DIAGNOSTICS}
             completion={completion}
+            inserts={inserts}
             insight={insight}
             onChange={onEditorChange}
             onReady={onEditorReady}
@@ -993,12 +1008,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           { id: "italic", group: "Format", label: "Italic", shortcut: "mod+i", run: () => editor.current?.format("italic") },
           { id: "code", group: "Format", label: "Inline code", run: () => editor.current?.format("code") },
           { id: "link", group: "Format", label: "Link", shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
-          { id: "insert-citation", group: "Insert", label: "Citation", keywords: "cite source reference", run: () => showSources() },
-          { id: "insert-figure", group: "Insert", label: "Figure from an image…", keywords: "image picture photo upload", run: insertFigure },
-          { id: "insert-table", group: "Insert", label: "Table", keywords: "grid columns rows", run: insertTable },
-          { id: "insert-equation", group: "Insert", label: "Equation", keywords: "math formula display", run: insertEquation },
-          { id: "insert-crossref", group: "Insert", label: "Cross-reference", keywords: "refer section figure table label", run: insertReference },
-          { id: "insert-footnote", group: "Insert", label: "Footnote", keywords: "note", run: insertFootnote },
+          ...inserts.map((c) => ({ id: `insert-${c.id}`, group: "Insert", label: c.label, detail: c.syntax, keywords: c.keywords, run: c.run })),
           { id: "comment", group: "Comments", label: "Comment on the selection", shortcut: "mod+alt+m", run: () => startComment("comment") },
           { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
           { id: "comments", group: "Comments", label: "Show comments", run: showComments },
@@ -1131,6 +1141,45 @@ function Popover({ id, trigger, width, label, align = "start", focus, onClose, c
     <div ref={ref} id={id} className="mdbase-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, ref.current)}>
       {children}
     </div>
+  );
+}
+
+/** What can be inserted at the cursor, each with the Markdown it stands for. */
+function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setOpen(open: boolean): void; commands: readonly InsertCommand[]; disabled: boolean }) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className="mdbase-button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        aria-label="Insert"
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+        title="Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
+      >
+        <InsertIcon />
+        <span className="button-label">Insert</span>
+      </button>
+      {open && (
+        <Popover id={id} trigger={trigger} width={340} label="Insert" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+          setOpen(false);
+          if (refocus) trigger.current?.focus();
+        }}>
+          {commands.map((c) => (
+            <button key={c.id} type="button" role="menuitem" className="menu-item" onClick={() => { setOpen(false); c.run(); }}>
+              <strong>{c.label}</strong>
+              <small><code>{c.syntax}</code></small>
+            </button>
+          ))}
+          <p className="popover-note">Or type <kbd>/</kbd> in the text to pick one there.</p>
+        </Popover>
+      )}
+    </>
   );
 }
 
@@ -1354,6 +1403,8 @@ const SHORTCUTS: readonly [string, string][] = [
   [`${MOD_LABEL} Shift K`, "Make the selection a link"],
   [`${MOD_LABEL} ${ALT_LABEL} M`, "Comment on the selection"],
   [`${MOD_LABEL} ${ALT_LABEL} S`, "Suggest an edit to the selection"],
+  [`${MOD_LABEL} ${ALT_LABEL} F`, "Add a footnote"],
+  ["/", "Insert a footnote, figure, table, equation, cross-reference or citation"],
   [`${MOD_LABEL} S`, "Save all records now"],
   [`${MOD_LABEL} Shift S`, "Export"],
   ["F8 / Shift F8", "Next / previous problem"],

@@ -145,6 +145,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .menu-item { display: grid; gap: 1px; width: 100%; text-align: left; padding: 8px 10px; border: 0; border-radius: var(--control-radius); background: none; cursor: pointer; }
 .menu-item strong { color: var(--ink); font-weight: 600; }
 .menu-item small { color: var(--muted); font-size: 11.5px; line-height: 1.35; }
+.menu-item small code { font-size: 11px; color: var(--ink-soft); }
 .menu-item:hover:not(:disabled), .menu-item:focus-visible { background: var(--subtle); outline: 0; }
 .menu-item:disabled { opacity: 0.5; cursor: default; }
 .menu-item.is-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 13px; }
