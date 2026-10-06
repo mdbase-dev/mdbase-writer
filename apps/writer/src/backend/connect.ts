@@ -435,6 +435,20 @@ export class ConnectBackend implements WriterBackend {
     }
   }
 
+  async writeFile(path: string, bytes: Uint8Array, mediaType?: string): Promise<Result<string>> {
+    let target = path;
+    for (let n = 2; this.files.has(target) && n <= 50; n++) target = numberedPath(path, n);
+    try {
+      const stored = await this.connection.files.upload(target, bytes, { ...(mediaType ? { mediaType } : {}), signal: this.lifetime.signal });
+      this.files.set(stored.path, stored);
+      // The index learns the file now; the watch's file.put only confirms it.
+      this.acceptDelta(this.store.files([stored.path]));
+      return ok(stored.path);
+    } catch (e) {
+      return fail(errorMessage(e));
+    }
+  }
+
   onCollectionChange(listener: (delta: CollectionDelta) => void): () => void {
     this.dataListeners.add(listener);
     return () => this.dataListeners.delete(listener);

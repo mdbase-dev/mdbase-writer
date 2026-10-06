@@ -180,6 +180,14 @@ export async function createDemoBackend(): Promise<WriterBackend> {
       if (!url) return fail(`No file at ${path}.`);
       return ok(new Uint8Array(await (await fetch(url)).arrayBuffer()));
     },
+    async writeFile(path: string, bytes: Uint8Array, mediaType?: string) {
+      let target = path;
+      for (let n = 2; files.has(target) && n <= 50; n++) target = numberedPath(path, n);
+      files.set(target, URL.createObjectURL(new Blob([bytes as BlobPart], mediaType ? { type: mediaType } : {})));
+      const delta = store.files([target]);
+      for (const listener of dataListeners) listener({ ...delta, paths: [target] });
+      return ok(target);
+    },
     async comments(scope) {
       const out: CommentRecord[] = [];
       for (const path of store.commentScope(scope)) {
