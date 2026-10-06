@@ -160,6 +160,22 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .popover-note { margin: 4px 2px 0; padding: 8px 8px 2px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
 
 /* Home */
+/* Picking up where writing stopped: the last manuscript opened, with its goal. */
+.continue-card { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-top: 1.25rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); }
+.continue-text { display: grid; gap: 0.2rem; min-width: 0; }
+.continue-title { margin: 0; font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 700; line-height: 1.3; }
+.continue-progress { display: block; width: min(100%, 22rem); height: 4px; margin: 0.3rem 0 0.15rem; border-radius: 2px; background: var(--subtle); overflow: hidden; }
+.continue-progress > span { display: block; height: 100%; border-radius: 2px; background: var(--app-writer); }
+.continue-goal { justify-self: start; }
+.goal-form { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
+.goal-form .mdbase-field { width: 10rem; }
+.continue-card > .mdbase-button { flex: none; }
+.home-drafts { display: grid; gap: 0.5rem; margin-top: 1.25rem; padding: 0.8rem 1rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); }
+.home-drafts h2 { margin: 0; color: var(--color-warning-text); }
+.home-drafts ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.home-drafts li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.home-draft-text { display: grid; gap: 0.05rem; min-width: 0; }
+.home-drafts p { margin: 0; }
 .home { width: 100%; max-width: 50rem; margin: 0 auto; padding: 2rem 16px; display: grid; gap: 2rem; align-content: start; overflow: auto; }
 .home-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .home-header p { margin: 0; }
@@ -317,6 +333,19 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .field-problem.severity-error { color: var(--danger); }
 .field-problem.severity-warning { color: var(--color-warning-text); }
 .has-problem :is(.mdbase-field, .mdbase-select) { border-color: var(--warning); }
+/* Authors as rows: name, affiliation, and the row's order and removal. */
+.authors-field { display: grid; gap: 0.35rem; font-size: 13px; color: var(--ink-soft); }
+.authors-label { margin-bottom: 0.05rem; }
+.author-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto auto; gap: 0.35rem; align-items: center; }
+.author-row .mdbase-field { min-width: 0; }
+.author-actions { display: flex; align-items: center; gap: 0.75rem; }
+.author-actions .text-button { margin-left: -0.4rem; }
+/* Editor preferences, kept in this browser, at the end of the settings sheet. */
+.editor-prefs { display: grid; gap: 0.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.editor-prefs h2 { margin: 0; }
+.pref-row { display: grid; grid-template-columns: auto 1fr; gap: 0.6rem; align-items: start; font-size: 13.5px; color: var(--ink); cursor: pointer; }
+.pref-row input { margin: 0.2rem 0 0; }
+.pref-row > span { display: grid; gap: 0.1rem; }
 
 .sources { display: grid; grid-template-columns: minmax(0, 1fr); }
 /* The search stays at the top while the list scrolls under it. */
@@ -429,7 +458,6 @@ blockquote.thread-quote::after { content: "”"; }
 .cm-suggest-insert { color: var(--connected); text-decoration: underline; text-decoration-thickness: 1.5px; background: color-mix(in oklch, var(--connected) 12%, transparent); cursor: pointer; }
 :is(.cm-suggest-delete, .cm-suggest-insert).is-active { outline: 1px solid var(--line-strong); border-radius: 2px; }
 
-.problems { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
 .problem-row { display: grid; gap: 0.1rem; width: 100%; text-align: left; border: 0; background: none; padding: 0.4rem 0.55rem; border-radius: 5px; cursor: pointer; font-size: 13px; color: var(--ink); }
 /* A problem's severity is the dot before its message. */
 .problem-row > span:first-child::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 0.5rem; border-radius: 50%; vertical-align: 0.08em; background: var(--line-strong); }
@@ -438,6 +466,17 @@ blockquote.thread-quote::after { content: "”"; }
 .problem-row.severity-error > span:first-child::before { background: var(--danger); }
 .problem-row.severity-warning > span:first-child::before { background: var(--warning); }
 .problem-row .record-path { padding-left: calc(7px + 0.5rem); }
+/* Problems under the editor (ProblemsStrip.tsx): they stay listed while they are fixed. */
+.problems-strip { flex: none; display: grid; grid-template-rows: auto minmax(0, 1fr); max-height: min(40%, 18rem); border-top: 1px solid var(--line); background: var(--canvas); }
+.problems-strip-header { display: flex; align-items: center; gap: 0.5rem; min-height: 34px; padding: 0 0.5rem 0 1rem; font-size: 12.5px; }
+.problems-strip-header > .icon { width: 15px; height: 15px; color: var(--danger); }
+.problems-strip-hint { flex: 1; text-align: right; font-size: 11.5px; }
+.problems-strip-list { list-style: none; margin: 0; padding: 0 0.5rem 0.5rem; overflow: auto; display: grid; gap: 1px; }
+.problems-strip-list .problem-row { padding: 0.3rem 0.55rem; }
+.problems-strip-list .problem-row .record-path { padding-left: calc(7px + 0.5rem); }
+.problems-strip-list li.is-current .problem-row { background: color-mix(in oklch, var(--selected) 55%, transparent); }
+.problems-strip-list li.is-current .problem-row:hover { background: var(--selected); }
+.bar-problems.is-checking { color: var(--muted); }
 
 .write { grid-area: write; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
 .write > .editor { flex: 1; }
@@ -510,6 +549,34 @@ blockquote.thread-quote::after { content: "”"; }
 .cm-ref-body { color: var(--ink); }
 .cm-ref-hint { font-size: 11px; color: var(--faint); }
 
+/* Live preview: the editor reads like the manuscript until the cursor is on a line (live-preview.ts). */
+.cm-lp-chip { display: inline-block; max-width: 24em; margin: 0 1px; padding: 0 0.35em; border-radius: 4px; vertical-align: baseline; font-size: 0.88em; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; }
+.cm-lp-chip.is-cite { color: var(--accent); background: color-mix(in oklch, var(--accent) 9%, transparent); }
+.cm-lp-chip.is-ref { color: var(--ink-soft); background: var(--subtle); }
+.cm-lp-chip.is-label { color: var(--muted); background: var(--subtle); font-family: var(--mono); font-size: 0.72em; letter-spacing: -0.01em; vertical-align: 0.1em; }
+.cm-lp-link { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--accent) 45%, transparent); text-underline-offset: 2px; }
+.cm-lp-quiet { color: var(--faint); }
+.cm-lp-fn-ref { color: var(--accent); font-size: 0.72em; font-weight: 700; line-height: 0; cursor: text; }
+.cm-lp-fn-number { color: var(--muted); font-size: 0.85em; font-variant-numeric: tabular-nums; margin-right: 0.35em; }
+.editor .cm-lp-footnote { font-size: 0.92em; color: var(--ink-soft); }
+.editor .cm-lp-block { margin: 0.35rem 0; font-family: var(--sans); cursor: text; }
+.editor .cm-lp-block-kind { margin-bottom: 0.25rem; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.editor .cm-lp-caption { margin-top: 0.35rem; font-size: 0.92em; color: var(--ink-soft); text-align: center; }
+.editor .cm-lp-figure { display: grid; justify-items: center; padding: 0.6rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); }
+.editor .cm-lp-figure:hover, .editor .cm-lp-table:hover, .editor .cm-lp-code:hover, .editor .cm-lp-math:hover { border-color: var(--line-strong); }
+.editor .cm-lp-figure-image { max-width: 100%; max-height: 22rem; object-fit: contain; }
+.editor .cm-lp-figure-missing { display: grid; place-items: center; min-height: 4.5rem; width: 100%; border: 1px dashed var(--line-strong); border-radius: 4px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.editor .cm-lp-table { padding: 0.5rem 0.6rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); overflow: auto; }
+.editor .cm-lp-table table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+.editor .cm-lp-table th, .editor .cm-lp-table td { padding: 0.3rem 0.6rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.editor .cm-lp-table th { font-weight: 700; border-bottom-color: var(--line-strong); }
+.editor .cm-lp-table tr:last-child td { border-bottom: 0; }
+.editor .cm-lp-code, .editor .cm-lp-math { padding: 0.5rem 0.75rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); }
+.editor .cm-lp-code pre, .editor .cm-lp-math pre { margin: 0; font-family: var(--mono); font-size: 0.85em; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-soft); }
+.editor .cm-lp-math pre { text-align: center; color: var(--ink); }
+/* A completion list shows whole rows: seven of them, never a row cut in half. */
+.editor .cm-tooltip.cm-tooltip-autocomplete > ul { max-height: min(312px, 45vh); }
+
 .preview { position: relative; overflow: auto; min-height: 0; padding: 1rem; }
 .preview.is-stale .preview-pages { opacity: 0.55; transition: opacity var(--motion-base) var(--ease-out); }
 .preview-empty { color: var(--muted); text-align: center; margin-top: 4rem; max-width: none; }
@@ -547,6 +614,9 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
 .spinner { width: 14px; height: 14px; flex: none; border: 2px solid var(--line-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 800ms linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Shown only on phones (see the 900px rule below). */
+.phone-only { display: none; }
+
 /* Narrower windows: fewer words in the bar. */
 @media (max-width: 1180px) {
   .bar-words { display: none; }
@@ -563,6 +633,8 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .bar-back span, .bar-divider, .bar-layout, .bar-problems.is-clear { display: none; }
   /* Only a save state that needs attention, in few words. The title gives way first; if the bar is still too wide the notice does, rather than push the buttons off screen. */
   .bar .mdbase-save-notice.is-long { display: none; }
+  /* Export is rarely what a phone is for; it moves into the More menu. */
+  .bar .split-button { display: none; }
   .bar .mdbase-save-notice.is-short { display: block; flex: 0 0.001 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .bar .mdbase-button { padding: 0 0.55rem; min-height: 32px; }
   .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "main" "tabs"; }
@@ -581,9 +653,11 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .workspace.pane-write .write { display: flex; }
   .workspace.pane-preview .preview-pane { display: grid; }
   .divider, .sidebar-resizer { display: none !important; }
+  .phone-only { display: grid; }
   .pane-path, .page-indicator { display: none; }
   .editor .cm-content { padding: 1rem 16px 40vh; }
   .new-manuscript { grid-template-columns: 1fr; }
+  .continue-card { flex-direction: column; align-items: stretch; }
   .shortcuts div { grid-template-columns: 1fr; gap: 0.2rem; }
   .toast { left: 16px; right: 16px; bottom: 70px; max-width: none; }
 }

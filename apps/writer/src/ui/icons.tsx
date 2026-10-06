@@ -4,6 +4,7 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { ArrowSquareOutIcon as PhArrowSquareOut } from "@phosphor-icons/react/ArrowSquareOut";
 import { ArticleIcon as PhArticle } from "@phosphor-icons/react/Article";
 import { CaretDownIcon as PhCaretDown } from "@phosphor-icons/react/CaretDown";
+import { CaretUpIcon as PhCaretUp } from "@phosphor-icons/react/CaretUp";
 import { CaretLeftIcon as PhCaretLeft } from "@phosphor-icons/react/CaretLeft";
 import { CaretRightIcon as PhCaretRight } from "@phosphor-icons/react/CaretRight";
 import { CheckIcon as PhCheck } from "@phosphor-icons/react/Check";
@@ -34,6 +35,7 @@ function icon(Glyph: PhosphorIcon) {
 }
 
 export const ChevronDown = icon(PhCaretDown);
+export const ChevronUp = icon(PhCaretUp);
 export const ChevronLeft = icon(PhCaretLeft);
 export const ChevronRight = icon(PhCaretRight);
 export const SidebarIcon = icon(PhSidebarSimple);

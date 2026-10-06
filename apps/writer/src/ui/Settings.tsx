@@ -13,7 +13,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
 import { joinSoftBreaks } from "../editor/join-lines.js";
-import { CloseIcon } from "./icons.js";
+import { ChevronUp, CloseIcon, MinusIcon, PlusIcon } from "./icons.js";
 import { templateName } from "./names.js";
 
 type JsonValue = JsonObject[string];
@@ -45,6 +45,9 @@ export function Settings({
   onClose,
   focus,
   joinLines = false,
+  livePreview = true,
+  onJoinLines,
+  onLivePreview,
 }: {
   workspace: ManuscriptWorkspace;
   view: RecordView | undefined;
@@ -55,6 +58,9 @@ export function Settings({
   focus: SettingsFocus | null;
   /** Shows the abstract's soft line breaks as spaces, as the editor does. */
   joinLines?: boolean;
+  livePreview?: boolean;
+  onJoinLines?(): void;
+  onLivePreview?(): void;
 }) {
   const titleId = useId();
   const sheet = useRef<HTMLElement>(null);
@@ -120,14 +126,15 @@ export function Settings({
         <div className="span-2">
           <TextField label="Subtitle" multiline={1} grow singleLine value={str("subtitle")} onCommit={(v) => patch({ subtitle: v || null })} {...props("subtitle")} />
         </div>
-        <TextField
-          label="Authors"
-          hint="one per line; “Name; Affiliation”"
-          multiline={3}
-          value={authorsText(fm["authors"] ?? fm["author"])}
-          onCommit={(v) => patch({ [authorsKey]: parseAuthors(v) })}
-          {...props("authors")}
-        />
+        <div className="span-2">
+          <AuthorsField
+            label="Authors"
+            value={authorList(fm["authors"] ?? fm["author"])}
+            onCommit={(authors) => patch({ [authorsKey]: authors.length ? authors.map(toAuthor) : null })}
+            {...props("authors")}
+            onDraft={(draft) => workspace.stageFrontmatter(workspace.main, { [authorsKey]: parseAuthors(draft) })}
+          />
+        </div>
         <TextField label="Date" hint="as it should appear" value={str("date")} onCommit={(v) => patch({ date: v || null })} {...props("date")} />
         <div className="span-2">
           <TextField label="Abstract" multiline={7} grow value={joinLines ? joinSoftBreaks(str("abstract")) : str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
@@ -163,6 +170,24 @@ export function Settings({
         />
       </fieldset>
       <p className="muted small dialog-note">Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them.</p>
+      {(onJoinLines || onLivePreview) && (
+        <section className="editor-prefs" aria-labelledby={`${titleId}-editor`}>
+          <h2 id={`${titleId}-editor`}>Editor</h2>
+          {onLivePreview && (
+            <label className="pref-row" title="Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed.">
+              <input type="checkbox" checked={livePreview} onChange={onLivePreview} />
+              <span>Read as the manuscript<span className="muted small">Off shows the Markdown as written</span></span>
+            </label>
+          )}
+          {onJoinLines && (
+            <label className="pref-row" title="A line break inside a paragraph reads as a space; show it as one, so hard-wrapped text flows to the editor's width. The text is not changed.">
+              <input type="checkbox" checked={joinLines} onChange={onJoinLines} />
+              <span>Join hard-wrapped lines<span className="muted small">Paragraphs flow to the editor’s width</span></span>
+            </label>
+          )}
+          <p className="muted small dialog-note">These apply in this browser, to every manuscript.</p>
+        </section>
+      )}
     </aside>
   );
 }
@@ -308,12 +333,88 @@ function SelectField(props: FieldProps & { value: string; onCommit(value: string
   );
 }
 
-function authorsText(raw: JsonValue | undefined): string {
+export interface Author {
+  readonly name: string;
+  readonly affiliation: string;
+}
+
+/** Authors as the record has them (strings or objects), as rows to edit. */
+export function authorList(raw: JsonValue | undefined): Author[] {
   const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
   return list
-    .map((a) => (typeof a === "string" ? a : a && typeof a === "object" && !Array.isArray(a) ? [String(a["name"] ?? ""), a["affiliation"]].filter(Boolean).join("; ") : ""))
-    .filter(Boolean)
-    .join("\n");
+    .map((a): Author | null => {
+      if (typeof a === "string") { const [name = "", ...rest] = a.split(";").map((p) => p.trim()); return { name, affiliation: rest.filter(Boolean).join("; ") }; }
+      if (a && typeof a === "object" && !Array.isArray(a)) return { name: String(a["name"] ?? ""), affiliation: typeof a["affiliation"] === "string" ? a["affiliation"] : "" };
+      return null;
+    })
+    .filter((a): a is Author => a !== null && (a.name !== "" || a.affiliation !== ""));
+}
+
+const toAuthor = (a: Author): JsonObject => (a.affiliation.trim() ? { name: a.name.trim(), affiliation: a.affiliation.trim() } : { name: a.name.trim() });
+const authorsDraft = (authors: readonly Author[]) => authors.map((a) => [a.name, a.affiliation].filter((p) => p.trim()).join("; ")).join("\n");
+
+/** Authors as rows of name and affiliation: add, remove or reorder them. */
+function AuthorsField(props: FieldProps & { value: readonly Author[]; onCommit(authors: readonly Author[]): void }) {
+  const { value, onCommit, onDraft, field, problems, focus, label } = props;
+  const [rows, setRows] = useState<Author[]>(() => [...value]);
+  const editing = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const element = useRef<HTMLDivElement>(null);
+  const problemId = useId();
+  useFocusRequest(field, focus, element);
+  useEffect(() => {
+    if (!editing.current) setRows([...value]);
+  }, [value]);
+  const same = (a: readonly Author[], b: readonly Author[]) => JSON.stringify(a.map(toAuthor)) === JSON.stringify(b.map(toAuthor));
+  const commit = (next: readonly Author[]) => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+    const kept = next.filter((a) => a.name.trim() || a.affiliation.trim());
+    if (!same(kept, value)) onCommit(kept);
+  };
+  const pending = useRef({ rows, value, onCommit });
+  pending.current = { rows, value, onCommit };
+  useEffect(() => () => {
+    if (timer.current === undefined) return;
+    clearTimeout(timer.current);
+    const { rows: last, value: saved, onCommit: save } = pending.current;
+    const kept = last.filter((a) => a.name.trim() || a.affiliation.trim());
+    if (!same(kept, saved)) save(kept);
+  }, []);
+  const change = (next: Author[], immediate = false) => {
+    setRows(next);
+    onDraft?.(authorsDraft(next));
+    clearTimeout(timer.current);
+    if (immediate) commit(next);
+    else timer.current = setTimeout(() => commit(next), COMMIT_AFTER_MS);
+  };
+  const shown = rows.length ? rows : [{ name: "", affiliation: "" }];
+  return (
+    <div className={`authors-field${problems.length ? " has-problem" : ""}`} ref={element} role="group" aria-label={label} aria-describedby={problems.length ? problemId : undefined}>
+      <span className="authors-label">{label}</span>
+      {shown.map((author, i) => (
+        <div key={i} className="author-row" onFocus={() => (editing.current = true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) { editing.current = false; commit(rows); } }}>
+          <input className="mdbase-field" value={author.name} placeholder="Name" aria-label={`Author ${i + 1} name`} onChange={(e) => change(shown.map((a, j) => (j === i ? { ...a, name: e.target.value } : a)))} />
+          <input className="mdbase-field" value={author.affiliation} placeholder="Affiliation" aria-label={`Author ${i + 1} affiliation`} onChange={(e) => change(shown.map((a, j) => (j === i ? { ...a, affiliation: e.target.value } : a)))} />
+          <button type="button" className="mdbase-icon-button is-small" aria-label={`Move author ${i + 1} up`} title="Move up" disabled={i === 0} onClick={() => change(shown.map((a, j) => (j === i - 1 ? shown[i]! : j === i ? shown[i - 1]! : a)), true)}>
+            <ChevronUp />
+          </button>
+          <button type="button" className="mdbase-icon-button is-small" aria-label={`Remove author ${i + 1}`} title="Remove" disabled={shown.length === 1 && !author.name && !author.affiliation} onClick={() => change(shown.filter((_, j) => j !== i), true)}>
+            <MinusIcon />
+          </button>
+        </div>
+      ))}
+      <div className="author-actions">
+        <button type="button" className="text-button" onClick={() => change([...shown, { name: "", affiliation: "" }])}>
+          <PlusIcon />
+          Add author
+        </button>
+      </div>
+      {problems.map((p, i) => (
+        <span key={i} id={i === 0 ? problemId : undefined} className={`field-problem severity-${p.severity}`}>{p.message}</span>
+      ))}
+    </div>
+  );
 }
 
 export function parseAuthors(text: string): JsonObject[] {
