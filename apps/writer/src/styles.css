@@ -253,16 +253,6 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .sidebar-tabs button:focus-visible { outline-offset: -2px; }
 .tab-count { font-size: 11px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .sidebar-panel { min-height: 0; overflow: auto; padding: 0.5rem 0.5rem 1.5rem; scrollbar-gutter: stable; }
-/* A second panel beneath the first, with its own small tabs. */
-.outline.has-lower { grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); }
-.sidebar-lower { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; border-top: 1px solid var(--line); }
-.sidebar-lower-tabs { display: flex; align-items: center; gap: 0.9rem; min-height: 32px; padding: 0 0.5rem 0 1rem; border-bottom: 1px solid var(--line); }
-.sidebar-lower-tabs > [role="tab"] { padding: 0; border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
-.sidebar-lower-tabs > [role="tab"]:hover { color: var(--ink); }
-.sidebar-lower-tabs > [role="tab"][aria-selected="true"] { color: var(--ink); font-weight: 700; }
-.sidebar-lower-tabs > .mdbase-icon-button { margin-left: auto; }
-.sidebar-split { margin-left: auto; align-self: center; color: var(--muted); }
-.sidebar-split[aria-pressed="true"] { color: var(--ink); }
 /* The sidebar hidden leaves a rail of its tabs. */
 .sidebar-rail { grid-area: rail; display: grid; align-content: start; justify-items: center; gap: 0.25rem; padding: 0.5rem 0; border-right: 1px solid var(--line); background: var(--canvas); }
 .rail-button { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
