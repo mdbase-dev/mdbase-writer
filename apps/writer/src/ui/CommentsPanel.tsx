@@ -8,7 +8,9 @@ import { personName, type CommentChange, type People } from "../backend/comments
 import type { Result } from "../backend/types.js";
 import { ALT_LABEL, MOD_LABEL } from "../editor/insight.js";
 import type { CommentDraft } from "../workspace/workspace.js";
-import { clipPassage, describeSuggestion, plainPassage, when, type PlacedThread } from "./comments.js";
+import { Select } from "@mdbase-dev/ui/select";
+
+import { clipPassage, describeSuggestion, inlinePieces, plainPassage, threadIsNew, when, type PlacedThread } from "./comments.js";
 import { useRowWindow } from "./paging.js";
 import { PlusIcon } from "./icons.js";
 import { plural } from "./records.js";
@@ -44,8 +46,11 @@ export function CommentsPanel({
   onRetry,
   notSetUp = false,
   drafts: providedDrafts,
+  since,
 }: {
   drafts?: CommentDrafts;
+  /** When the manuscript was last opened here, for marking what others wrote since. */
+  since?: string | undefined;
   notSetUp?: boolean;
   loading?: boolean;
   onRetry?(): void;
@@ -73,11 +78,28 @@ export function CommentsPanel({
   onReviewAccess?(): Promise<Result<unknown>>;
 }) {
   const [filter, setFilter] = useState<Filter>("open");
+  // Whose threads: everyone's, what is new since the last visit, one's own, or one person's.
+  const [who, setWho] = useState<string>("all");
   const panel = useRef<HTMLElement>(null);
   const ownDrafts = useRef<CommentDrafts>(new Map());
   const drafts = providedDrafts ?? ownDrafts.current;
   const window = useRowWindow();
-  const groups = useMemo(() => ({ open: placed.filter((p) => p.thread.root.status === "open"), resolved: placed.filter((p) => p.thread.root.status === "resolved") }), [placed]);
+  const me = people.me?.link;
+  const isNew = (p: PlacedThread) => threadIsNew(p.thread, since, me);
+  const authors = useMemo(() => {
+    const links = new Map<string, string>();
+    for (const p of placed) for (const c of [p.thread.root, ...p.thread.replies]) if (c.createdBy && !links.has(c.createdBy.toLowerCase())) links.set(c.createdBy.toLowerCase(), personName(c.createdBy, people) ?? c.createdBy);
+    return [...links].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [placed, people]);
+  const wanted = (p: PlacedThread) => {
+    if (who === "all") return true;
+    if (who === "new") return isNew(p);
+    const all = [p.thread.root, ...p.thread.replies];
+    if (who === "mine") return Boolean(me) && all.some((c) => c.createdBy?.toLowerCase() === me?.toLowerCase());
+    return all.some((c) => c.createdBy?.toLowerCase() === who);
+  };
+  const newCount = useMemo(() => placed.filter((p) => p.thread.root.status === "open" && isNew(p)).length, [placed, since, me]);
+  const groups = useMemo(() => ({ open: placed.filter((p) => p.thread.root.status === "open" && wanted(p)), resolved: placed.filter((p) => p.thread.root.status === "resolved" && wanted(p)) }), [placed, who, since, me]);
   const counts = { open: groups.open.length, resolved: groups.resolved.length };
   const logical = groups[filter];
   const shown = logical.slice(window.from, window.from + window.size);
@@ -113,10 +135,25 @@ export function CommentsPanel({
             </button>
           ))}
         </div>
-        <button type="button" className="text-button" onClick={onWholeRecord} title="Comment on the whole record in the editor">
-          <PlusIcon /> Comment
+        <button type="button" className="text-button" onClick={onWholeRecord} title="A comment on the whole record, not on a passage (select text in the editor to comment on it)">
+          <PlusIcon /> On the record
         </button>
       </div>
+      {placed.length > 0 && (authors.length > 1 || newCount > 0) && (
+        <div className="comments-who">
+          <Select
+            aria-label="Whose comments"
+            value={who}
+            onChange={(value) => { setWho(value); window.reset(); }}
+            options={[
+              { value: "all", label: "Everyone" },
+              ...(newCount > 0 || who === "new" ? [{ value: "new", label: `New since last visit (${newCount})` }] : []),
+              ...(me ? [{ value: "mine", label: "Mine" }] : []),
+              ...authors.map(([link, name]) => ({ value: link, label: name })),
+            ]}
+          />
+        </div>
+      )}
       <Signing people={people} onCheck={onCheckAccount} {...(onReviewAccess ? { onReviewAccess } : {})} />
       {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} signer={signer} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
       {loading && <p className="muted small" role="status">Loading comments…</p>}
@@ -152,6 +189,7 @@ export function CommentsPanel({
               placed={p}
               drafts={drafts}
               people={people}
+              isNew={isNew(p)}
               active={p.thread.root.path === active}
               onSelect={onSelect}
               onReply={onReply}
@@ -182,7 +220,7 @@ function useAction() {
   return { busy, error, run };
 }
 
-function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: { pending: PendingComment; signer: string | undefined; recordTitle(path: string): string; onSubmit(text: string, replacement?: string): Promise<Result<unknown>>; onCancel(): void }) {
+export function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: { pending: PendingComment; signer: string | undefined; recordTitle(path: string): string; onSubmit(text: string, replacement?: string): Promise<Result<unknown>>; onCancel(): void }) {
   const { draft, kind } = pending;
   const quote = draft ? draft.body.slice(draft.from, draft.to) : "";
   const [text, setText] = useState("");
@@ -248,6 +286,7 @@ const Thread = memo(function Thread({
   drafts,
   placed,
   people,
+  isNew = false,
   active,
   onSelect,
   onReply,
@@ -257,6 +296,7 @@ const Thread = memo(function Thread({
   placed: PlacedThread;
   drafts: CommentDrafts;
   people: People;
+  isNew?: boolean;
   active: boolean;
   onSelect(placed: PlacedThread): void;
   onReply(thread: CommentThread, text: string): Promise<Result<unknown>>;
@@ -278,8 +318,9 @@ const Thread = memo(function Thread({
   const resolvedNote = !open ? `${suggestion ? outcome : "Resolved"}${root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""}${root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""}` : null;
 
   return (
-    <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}`} data-thread={root.path}>
+    <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}${isNew ? " is-new" : ""}`} data-thread={root.path}>
       <button type="button" className="thread-anchor" onClick={() => onSelect(placed)} title={at === null ? "This passage is no longer in the text" : "Show in the editor"}>
+        {isNew && <span className="thread-new small">New since your last visit</span>}
         {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{plainPassage(root.target.quote.exact) || "(a point in the text)"}</blockquote> : <span className="thread-whole small muted">On the whole record</span>}
         {at === null && <span className="thread-detached small">Detached: the text has changed</span>}
       </button>
@@ -354,6 +395,21 @@ const Thread = memo(function Thread({
 });
 
 /** A suggested edit as it will read: the text taken out, struck through, and the text put in. */
+/** A comment's text with its light Markdown rendered. */
+function InlineText({ text }: { text: string }) {
+  return (
+    <>
+      {inlinePieces(text).map((piece, i) =>
+        piece.kind === "link" ? <a key={i} href={piece.href} target="_blank" rel="noopener noreferrer">{piece.text}</a>
+          : piece.kind === "em" ? <em key={i}>{piece.text}</em>
+          : piece.kind === "strong" ? <strong key={i}>{piece.text}</strong>
+          : piece.kind === "code" ? <code key={i}>{piece.text}</code>
+          : piece.text,
+      )}
+    </>
+  );
+}
+
 function Suggestion({ root }: { root: CommentRecord }) {
   const exact = root.target?.quote.exact ?? "";
   const replacement = root.suggestion?.replacement ?? "";
@@ -377,7 +433,7 @@ function Comment({ comment, people, reply, children }: { comment: CommentRecord;
         <strong>{author}</strong> <time dateTime={comment.createdAt} title={new Date(comment.createdAt).toLocaleString()}>{when(comment.createdAt)}</time>
         {children}
       </p>
-      {comment.deletedAt ? <p className="small muted">Withdrawn.</p> : comment.text ? <p className="comment-text">{comment.text}</p> : null}
+      {comment.deletedAt ? <p className="small muted">Withdrawn.</p> : comment.text ? <p className="comment-text"><InlineText text={comment.text} /></p> : null}
     </div>
   );
 }
