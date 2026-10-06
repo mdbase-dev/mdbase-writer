@@ -19,6 +19,8 @@
   --page-shadow: 0 1px 3px oklch(20% 0.01 255 / 0.14);
   --preview-bg: oklch(96.5% 0.004 255);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --scrollbar-thumb-current: var(--scrollbar-thumb-rest);
+  --scrollbar-size: 2px;
   font-family: var(--sans);
   font-size: 14px;
   line-height: 1.5;
@@ -38,7 +40,17 @@
   --preview-bg: oklch(14.5% 0.01 255);
 }
 
-* { box-sizing: border-box; }
+/* Scrollbars rest as a hairline and widen only while a pane is in use (as in
+   the mdbase editor); the thumb colours come from the shared tokens. */
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb-current) transparent; }
+:is(.workspace > *, .home, .settings-sheet, .popover, .mdbase-dialog):is(:hover, :focus-within) {
+  --scrollbar-thumb-current: var(--scrollbar-thumb);
+  --scrollbar-size: 6px;
+}
+*::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+*::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--scrollbar-thumb-current); }
+*::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); background-clip: padding-box; }
 html, body, #root { height: 100%; margin: 0; }
 body { background: var(--canvas); }
 h1 { font-size: 20px; margin: 0 0 0.5rem; line-height: 1.25; }
