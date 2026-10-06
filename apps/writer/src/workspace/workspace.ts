@@ -190,6 +190,11 @@ export class ManuscriptWorkspace {
     return this.backend.kind;
   }
 
+  /** The namespace this browser keeps local state for the collection under (drafts, recents). */
+  get namespace(): string {
+    return this.backend.draftNamespace ?? `${this.backend.kind}:${this.backend.collectionName}`;
+  }
+
   getSnapshot = (): WorkspaceSnapshot => this.current;
 
   subscribe = (listener: () => void): (() => void) => {
@@ -746,6 +751,28 @@ export class ManuscriptWorkspace {
     this.setBody(this.main, appendEmbed(body, path.replace(/\.md$/i, ""), this.isChapter));
     await opened;
     return ok(path);
+  }
+
+  /**
+   * Gives a chapter a new title: in its frontmatter when it has one there,
+   * otherwise in the heading that opens it (what the outline shows).
+   */
+  renameChapter(path: string, title: string): Result<void> {
+    const name = title.trim();
+    if (!name) return fail("A chapter needs a title.");
+    const view = this.current.records.get(path);
+    if (!view || view.snapshot.state === "deleted") return fail("The chapter is not open.");
+    if (typeof view.snapshot.frontmatter["title"] === "string") {
+      this.patchFrontmatter(path, { title: name });
+      return ok(undefined);
+    }
+    const body = view.snapshot.body;
+    const heading = /^(#\s+)(.+?)(\s*\{[^}]*\})?\s*$/m.exec(body);
+    if (heading && heading.index !== undefined) {
+      const line = `${heading[1]}${name}${heading[3] ?? ""}`;
+      this.setBody(path, `${body.slice(0, heading.index)}${line}${body.slice(heading.index + heading[0].length)}`);
+    } else this.setBody(path, `# ${name}\n\n${body}`);
+    return ok(undefined);
   }
 
   /** Whether the collection accepts files, so a figure can be stored from the editor. */

@@ -9,7 +9,7 @@ import type { WriterDiagnostic } from "../compile/protocol.js";
 import { wordCount } from "../words.js";
 import type { RecordView } from "../workspace/workspace.js";
 import { useRowWindow } from "./paging.js";
-import { GripIcon, PlusIcon } from "./icons.js";
+import { ChatIcon, ChevronRight, GripIcon, PlusIcon } from "./icons.js";
 import { headingAt, headings, sectionWords, withoutTitle } from "./outline.js";
 import { formatCount, plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
 
@@ -26,7 +26,13 @@ export function OutlinePanel({
   onJump,
   onMove,
   onAdd,
+  onRename,
+  commentOffsets,
 }: {
+  /** Gives a chapter a new title. */
+  onRename?(path: string, title: string): Promise<Result<unknown>> | Result<unknown>;
+  /** Where each record's open comment threads are anchored, for a quiet count by section. */
+  commentOffsets?: ReadonlyMap<string, readonly number[]>;
   main: string;
   /** Every record in reading order, the manuscript first. */
   order: readonly string[];
@@ -47,6 +53,17 @@ export function OutlinePanel({
   const [dragging, setDragging] = useState<number | null>(null);
   const [drop, setDrop] = useState<{ index: number; after: boolean } | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  // A book's chapters fold their headings away, except the one being written.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const isExpanded = (path: string) => expanded.has(path) || path === active;
+  const toggleExpanded = (path: string) => setExpanded((set) => {
+    const next = new Set(set);
+    if (isExpanded(path)) { next.delete(path); if (path === active) next.add(`!${path}`); }
+    else { next.add(path); next.delete(`!${path}`); }
+    return next;
+  });
+  const shows = (path: string) => (path === active ? !expanded.has(`!${path}`) : expanded.has(path));
   const refocus = useRef<string | null>(null);
   const list = useRef<HTMLOListElement>(null);
   const rest = useMemo(() => order.slice(1), [order]);
@@ -90,7 +107,7 @@ export function OutlinePanel({
         <RecordState view={mainView} problems={byRecord.get(main)?.length ?? 0} />
         <span className="record-words" title="In the whole manuscript; citations, code and math are not counted">{plural(words, "word")}</span>
       </button>
-      <RecordHeadings view={mainView} path={main} cursor={cursor?.record === main ? cursor.offset : null} onJump={onJump} />
+      <RecordHeadings view={mainView} path={main} cursor={cursor?.record === main ? cursor.offset : null} onJump={onJump} comments={commentOffsets?.get(main)} problems={byRecord.get(main)} />
 
       {rest.length > 0 && (
         <h3 className="sidebar-heading outline-chapters" id="outline-chapters">
@@ -120,6 +137,9 @@ export function OutlinePanel({
               if (drop?.index !== index || drop.after !== after) setDrop({ index, after });
             };
             const dropClass = drop?.index === index && dragging !== null ? (drop.after ? "drop-after" : "drop-before") : "";
+            const hasHeadings = view ? withoutTitle(headings(view.snapshot.body), recordTitle(view, path)).length > 0 : false;
+            const comments = commentOffsets?.get(path)?.length ?? 0;
+            const openRename = () => { if (onRename && view) setRenaming(path); };
             return (
               <li
                 key={path}
@@ -137,24 +157,43 @@ export function OutlinePanel({
                 }}
                 onDragOver={onDragOver}
               >
-                <button
-                  type="button"
-                  className="record-row"
-                  data-path={path}
-                  aria-current={path === active ? "true" : undefined}
-                  onClick={() => onOpen(path)}
-                  onKeyDown={onKeyDown}
-                  title={direct ? `${path} · drag, or Alt-↑/↓, to reorder` : path}
-                >
-                  <span className="record-number" aria-hidden={!direct}>
-                    <span className="record-index">{direct ? index + 1 : ""}</span>
-                    {direct && <GripIcon className="record-grip" />}
-                  </span>
-                  <span className="record-name">{recordTitle(view, path)}</span>
-                  <RecordState view={view} problems={byRecord.get(path)?.length ?? 0} />
-                  <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
-                </button>
-                <RecordHeadings view={view} path={path} cursor={cursor?.record === path ? cursor.offset : null} onJump={onJump} />
+                {renaming === path && view ? (
+                  <RenameChapter
+                    title={recordTitle(view, path)}
+                    onDone={async (title) => {
+                      setRenaming(null);
+                      if (title !== null && onRename) { const done = await onRename(path, title); if (!done.ok) setAnnouncement(done.message); }
+                      requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`.record-row[data-path="${CSS.escape(path)}"]`)?.focus());
+                    }}
+                  />
+                ) : (
+                  <div className="record-line">
+                    <button
+                      type="button"
+                      className="record-row"
+                      data-path={path}
+                      aria-current={path === active ? "true" : undefined}
+                      onClick={() => onOpen(path)}
+                      onDoubleClick={openRename}
+                      onKeyDown={(e) => { if (e.key === "F2") { e.preventDefault(); openRename(); } else onKeyDown(e); }}
+                      title={`${path}${direct ? " · drag, or Alt-↑/↓, to reorder" : ""}${onRename ? " · double-click or F2 to rename" : ""}`}
+                    >
+                      <span className="record-number" aria-hidden={!direct}>
+                        <span className="record-index">{direct ? index + 1 : ""}</span>
+                        {direct && <GripIcon className="record-grip" />}
+                      </span>
+                      <span className="record-name">{recordTitle(view, path)}</span>
+                      <RecordState view={view} problems={byRecord.get(path)?.length ?? 0} comments={comments} />
+                      <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
+                    </button>
+                    {hasHeadings && (
+                      <button type="button" className="record-fold" aria-expanded={shows(path)} aria-label={`${shows(path) ? "Hide" : "Show"} the headings of ${recordTitle(view, path)}`} onClick={() => toggleExpanded(path)}>
+                        <ChevronRight />
+                      </button>
+                    )}
+                  </div>
+                )}
+                {shows(path) && <RecordHeadings view={view} path={path} cursor={cursor?.record === path ? cursor.offset : null} onJump={onJump} comments={commentOffsets?.get(path)} problems={byRecord.get(path)} />}
               </li>
             );
           })}
@@ -168,14 +207,39 @@ export function OutlinePanel({
   );
 }
 
-function RecordState({ view, problems }: { view: RecordView | undefined; problems: number }) {
+function RecordState({ view, problems, comments = 0 }: { view: RecordView | undefined; problems: number; comments?: number }) {
   const state = view?.snapshot.state;
-  if ((!state || state === "saved") && !problems) return null;
+  if ((!state || state === "saved") && !problems && !comments) return null;
   return (
     <span className="record-state">
       {state && state !== "saved" && <span className={`status tone-${STATE_TONE[state]}`} title={STATE_LABEL[state]}><span className="dot" aria-hidden="true" /><span className="visually-hidden">{STATE_LABEL[state]}</span></span>}
+      {comments > 0 && <CommentCount count={comments} />}
       {problems > 0 && <span className="count tone-warning" title={plural(problems, "problem")}>{problems}</span>}
     </span>
+  );
+}
+
+/** An open-comment count, kept as quiet as a word count. */
+function CommentCount({ count }: { count: number }) {
+  return <span className="outline-comments" title={`${plural(count, "open comment")}`}><ChatIcon /><span>{count}</span></span>;
+}
+
+/** A chapter's title, edited in place: Enter keeps it, Escape leaves it. */
+function RenameChapter({ title, onDone }: { title: string; onDone(title: string | null): void }) {
+  const [value, setValue] = useState(title);
+  return (
+    <form className="record-rename" onSubmit={(e) => { e.preventDefault(); onDone(value.trim() && value.trim() !== title ? value.trim() : null); }}>
+      <input
+        className="mdbase-field"
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={(e) => e.target.select()}
+        onBlur={() => onDone(value.trim() && value.trim() !== title ? value.trim() : null)}
+        onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onDone(null); } }}
+        aria-label="Chapter title"
+      />
+    </form>
   );
 }
 
@@ -188,11 +252,17 @@ const Words = memo(function Words({ body }: { body: string }) {
  * A record's headings, less an opening heading that repeats its title. Only
  * the record being edited, or the one the cursor is in, renders as you type.
  */
-const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump }: { view: RecordView | undefined; path: string; cursor: number | null; onJump(path: string, offset: number): void }) {
+const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump, comments, problems }: { view: RecordView | undefined; path: string; cursor: number | null; onJump(path: string, offset: number): void; comments?: readonly number[] | undefined; problems?: readonly WriterDiagnostic[] | undefined }) {
   const body = view?.snapshot.body;
   const title = recordTitle(view, path);
   const all = useMemo(() => (body ? headings(body) : []), [body]);
   const words = useMemo(() => (body ? sectionWords(body, all) : []), [body, all]);
+  // What each section holds: the comments and problems anchored between its heading and the next of its level or higher.
+  const counts = useMemo(() => all.map((h, i) => {
+    const end = all.slice(i + 1).find((n) => n.level <= h.level)?.offset ?? Number.MAX_SAFE_INTEGER;
+    const within = (offset: number) => offset >= h.offset && offset < end;
+    return { comments: comments?.filter(within).length ?? 0, problems: problems?.filter((d) => !d.field && within(d.from)).length ?? 0 };
+  }), [all, comments, problems]);
   const list = useMemo(() => withoutTitle(all, title), [all, title]);
   const window = useRowWindow();
   const ranks = useMemo(() => new Map(all.map((h, i) => [h, i])), [all]);
@@ -226,6 +296,8 @@ const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump
             onClick={() => onJump(path, h.offset)}
           >
             <span className="heading-text">{h.text}</span>
+            {(counts[ranks.get(h)!]?.comments ?? 0) > 0 && <CommentCount count={counts[ranks.get(h)!]!.comments} />}
+            {(counts[ranks.get(h)!]?.problems ?? 0) > 0 && <span className="heading-problem" title={plural(counts[ranks.get(h)!]!.problems, "problem")} />}
             <span className="heading-words" title={`${plural(words[ranks.get(h)!] ?? 0, "word")} in this section`}>{formatCount(words[ranks.get(h)!] ?? 0)}</span>
           </button>
         </li>
