@@ -78,6 +78,20 @@ A sentence with a footnote.[^note]
 
 Replace `smith2024` with a citekey from your library and the image path with a file in your collection.
 
+The editor reads like the manuscript: a citation shows who it cites, a cross-reference what it
+points to, footnote markers their numbers, and figures, tables, equations and code draw as
+blocks. The Markdown is unchanged; the line the cursor is on always shows it as written. Turn
+this off under **Editor** at the end of **Settings** to see the Markdown everywhere.
+
+### Figures, tables and equations
+
+Type `/` in the text, or use **Insert** in the top bar (or the command palette, **Ctrl/⌘+K**),
+to add a **Footnote** (also **Ctrl/⌘+Alt+F**), a **Figure from an image**, a **Table**, an
+**Equation**, a **Cross-reference** or a **Citation**; each shows the Markdown it stands for. A figure's image is stored in the
+collection (in a `figures` folder beside the manuscript's other images) and written with a
+label to refer to; its caption is selected to type. Pasting or dropping an image into the text
+does the same.
+
 ### Sources and citations
 
 Open **Sources** to search your Reader library and insert a citation, optionally with a page
@@ -110,8 +124,12 @@ Chapter cards in the editor show their title, word count, and problems, with a b
 ## Navigate and review
 
 Click a block in the preview to jump to the corresponding text. The preview also follows the
-editor's cursor. Use **Problems** to find unknown citekeys, missing labels, unavailable images
-or records, and typesetting errors. **F8** moves to the next problem.
+editor's cursor. **Problems** in the top bar lists unknown citekeys, missing labels, unavailable
+images or records, and typesetting errors under the editor, each with its record and line; the
+list stays open while you fix them, and **F8** moves to the next problem.
+
+The home screen offers the manuscript you opened last, with an optional word goal kept in this
+browser, and lists any text typed but not yet saved to the collection.
 
 The sidebar, editor/preview split, and zoom are remembered in your browser. On a phone, switch
 between writing, preview, and outline views.

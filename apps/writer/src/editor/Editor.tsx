@@ -1,12 +1,12 @@
 // The Markdown editor for one record. The record session owns the text; the
 // editor reports edits and adopts external changes as remote transactions.
 import { mdbasePopupTheme } from "@mdbase-dev/ui/codemirror";
-import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
+import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap, startCompletion } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Annotation, Compartment, EditorState, StateEffect, Transaction } from "@codemirror/state";
+import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
 import { memo, useEffect, useLayoutEffect, useRef } from "react";
 
@@ -20,14 +20,21 @@ import { collapseToEnd, selectionBar, type SelectionAction } from "./selection-b
 import { joinLines as joinLinesExtension } from "./join-lines.js";
 import { writerInsight, type EditorInsight, type FollowTarget } from "./insight.js";
 import { writerLanguage } from "./language.js";
+import { livePreview as livePreviewExtension, refreshLivePreview } from "./live-preview.js";
+import { slashCommands, type InsertCommand } from "./slash.js";
+import { nextFootnoteId, type Snippet } from "./snippets.js";
 
 const remote = Annotation.define<boolean>();
 
 export interface EditorHandle {
   /** Scrolls to `offset` (selecting up to `to`, when given) and focuses the editor unless `focus` is false. */
   reveal(offset: number, options?: { to?: number; focus?: boolean }): void;
-  /** Replaces the selection with text (a citation, a quotation) and leaves the cursor after it. */
-  insert(text: string): void;
+  /** Replaces the selection with text (a citation, a quotation) and leaves the cursor after it; with `complete`, opens completions there. */
+  insert(text: string, options?: { complete?: boolean }): void;
+  /** Inserts a block (a figure, a table) on lines of its own at the cursor, selecting the snippet's placeholder. */
+  insertBlock(snippet: Snippet): void;
+  /** Puts a footnote marker at the cursor and its definition at the end of the record, ready to write. */
+  insertFootnote(): void;
   /** The main selection (UTF-16 offsets) and the text it is in. */
   selection(): { from: number; to: number; text: string };
   /** Formats the selection as Markdown (toggling bold, italic or code), or makes it a link. */
@@ -47,8 +54,14 @@ export interface EditorProps {
   readOnly: boolean;
   /** Draws a paragraph's soft line breaks as spaces, so hard-wrapped text flows. */
   joinLines?: boolean;
+  /** Draws citations, figures, tables and marks as the manuscript reads, rather than as Markdown source. */
+  livePreview?: boolean;
+  /** Images pasted or dropped into the text, to store in the collection as figures. */
+  onImageFiles?(files: readonly File[]): void;
   diagnostics: readonly WriterDiagnostic[];
   completion: CompletionData;
+  /** What "/" offers to insert (a footnote, a figure…). */
+  inserts?: readonly InsertCommand[];
   insight: EditorInsight;
   onChange(text: string): void;
   /** Mod-click on a citation or cross-reference. */
@@ -69,7 +82,7 @@ export interface EditorProps {
   onSelectionAction?(action: SelectionAction, selected: string): void;
 }
 
-export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, diagnostics, completion, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, onSelectionAction }: EditorProps) {
+export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, onSelectionAction }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -80,14 +93,40 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
   // replaces the line's DOM, which would cancel a hover in progress.
   const shownDiagnostics = useRef("");
   const joining = useRef(new Compartment());
-  const latest = useRef({ onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction });
-  latest.current = { onChange, completion, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction };
+  const preview = useRef<ReturnType<typeof livePreviewExtension> | null>(null);
+  const latest = useRef({ onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles });
+  latest.current = { onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, onSelectionAction, onImageFiles };
 
   // Layout cleanup snapshots the viewport before React detaches its DOM (which
   // would reset scrollTop), including development's setup/cleanup/setup cycle.
   useLayoutEffect(() => {
     if (!host.current) return;
+    preview.current = livePreviewExtension(() => latest.current.insight, livePreview);
+    const imageFiles = (list: FileList | null | undefined) => {
+      const files = [...(list ?? [])].filter((f) => /^image\//.test(f.type));
+      return files.length ? files : null;
+    };
     const extensions = [
+          preview.current.extension,
+          EditorView.domEventHandlers({
+            paste(event, view) {
+              const files = imageFiles(event.clipboardData?.files);
+              if (!files || view.state.readOnly || !latest.current.onImageFiles) return false;
+              event.preventDefault();
+              latest.current.onImageFiles(files);
+              return true;
+            },
+            drop(event, view) {
+              const files = imageFiles(event.dataTransfer?.files);
+              if (!files || view.state.readOnly || !latest.current.onImageFiles) return false;
+              event.preventDefault();
+              const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+              if (pos !== null) view.dispatch({ selection: EditorSelection.cursor(pos) });
+              view.focus();
+              latest.current.onImageFiles(files);
+              return true;
+            },
+          }),
           history(),
           drawSelection(),
           indentOnInput(),
@@ -97,7 +136,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           highlightSelectionMatches(),
           search({ top: true }),
           lintGutter(),
-          autocompletion({ override: [writerCompletions(() => latest.current.completion)] }),
+          autocompletion({ override: [slashCommands(() => latest.current.inserts ?? []), writerCompletions(() => latest.current.completion)] }),
           mdbasePopupTheme,
           keymap.of([...formattingKeymap, ...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap, indentWithTab]),
           writerLanguage(),
@@ -114,7 +153,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           EditorView.lineWrapping,
           joining.current.of(joinLines ? joinLinesExtension() : []),
           EditorState.readOnly.of(readOnly),
-          placeholder("Write in Markdown. Cite with [@citekey], embed chapters with ![[path]]."),
+          placeholder("Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."),
           EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
           EditorView.updateListener.of((u) => {
             if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);
@@ -153,9 +192,44 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
         command(v);
         v.focus();
       },
-      insert(insertion) {
+      insert(insertion, options) {
         if (v.state.readOnly) return;
         v.dispatch(v.state.replaceSelection(insertion), { scrollIntoView: true, userEvent: "input" });
+        v.focus();
+        if (options?.complete) startCompletion(v);
+      },
+      insertBlock(snippet) {
+        if (v.state.readOnly) return;
+        // A block goes after whatever is selected; it never replaces text.
+        const from = v.state.selection.main.to;
+        const to = from;
+        const line = v.state.doc.lineAt(from);
+        const after = line;
+        // On lines of its own: blank lines open before and after as needed.
+        const before = line.from === from ? (line.number > 1 && v.state.doc.line(line.number - 1).text.trim() ? "\n" : "") : (line.text.slice(0, from - line.from).trim() ? "\n\n" : "\n");
+        const rest = after.text.slice(to - after.from);
+        const next = after.number < v.state.doc.lines ? v.state.doc.line(after.number + 1).text : "";
+        const trailing = rest.trim() ? "\n\n" : next.trim() ? "\n" : "";
+        const text = `${before}${snippet.text}${trailing}`;
+        const start = from + before.length + snippet.select[0];
+        const end = from + before.length + snippet.select[1];
+        v.dispatch({ changes: { from, to, insert: text }, selection: EditorSelection.range(start, end), scrollIntoView: true, userEvent: "input" });
+        v.focus();
+      },
+      insertFootnote() {
+        if (v.state.readOnly) return;
+        const id = nextFootnoteId(v.state.doc.toString());
+        const at = v.state.selection.main.to;
+        const end = v.state.doc.length;
+        const tail = v.state.doc.sliceString(Math.max(0, end - 2), end);
+        const gap = end === 0 ? "" : tail.endsWith("\n\n") ? "" : tail.endsWith("\n") ? "\n" : "\n\n";
+        const definition = `${gap}[^${id}]: `;
+        v.dispatch({
+          changes: [{ from: at, insert: `[^${id}]` }, { from: end, insert: definition }],
+          selection: EditorSelection.cursor(end + `[^${id}]`.length + definition.length),
+          scrollIntoView: true,
+          userEvent: "input",
+        });
         v.focus();
       },
     });
@@ -198,6 +272,15 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
   useEffect(() => {
     view.current?.dispatch({ effects: joining.current.reconfigure(joinLines ? joinLinesExtension() : []) });
   }, [joinLines]);
+
+  useEffect(() => {
+    if (view.current) preview.current?.set(view.current, livePreview);
+  }, [livePreview]);
+
+  // Chips and figures follow the sources, labels and images they draw.
+  useEffect(() => {
+    view.current?.dispatch({ effects: refreshLivePreview.of(null) });
+  }, [insight]);
 
   // Chapter cards follow their records' titles, words and problems.
   useEffect(() => {

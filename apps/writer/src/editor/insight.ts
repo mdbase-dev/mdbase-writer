@@ -2,7 +2,9 @@
 // `@key` to see the source's bibliography entry or the labelled block it
 // points to; Mod-click it to go there. Label attributes (`{#sec-intro}`) and
 // footnote markers are drawn quieter than the prose around them.
-import { Decoration, EditorView, hoverTooltip, MatchDecorator, ViewPlugin, type DecorationSet, type ViewUpdate } from "@codemirror/view";
+import { syntaxTree } from "@codemirror/language";
+import type { EditorState } from "@codemirror/state";
+import { Decoration, EditorView, hoverTooltip, MatchDecorator, ViewPlugin, type DecorationSet, type Tooltip, type ViewUpdate } from "@codemirror/view";
 
 import type { LibraryEntry } from "../backend/types.js";
 import { authorYear } from "./library-search.js";
@@ -20,6 +22,8 @@ export interface EditorInsight {
   /** Bibliography entries (Typst markup) of the sources the manuscript cites. */
   readonly references: ReadonlyMap<string, string>;
   readonly labels: ReadonlyMap<string, LabelTarget>;
+  /** A URL for an image the record refers to, once it is loaded (for drawing figures in the editor). */
+  readonly image?: (target: string) => string | null;
 }
 
 export type FollowTarget = { readonly kind: "source"; readonly key: string } | { readonly kind: "label"; readonly target: LabelTarget };
@@ -33,6 +37,25 @@ export function referenceAt(line: string, offset: number): { key: string; from: 
     const from = (m.index ?? 0) + (m[1] ?? "").length;
     const to = from + (m[2] ?? "").length + key.length;
     if (key && offset >= from && offset <= to) return { key, from, to };
+  }
+  return null;
+}
+
+/**
+ * The reference at or beside a document position: the `@key` the position is
+ * in, or, when the position is at the edge of a citation or cross-reference
+ * drawn as a chip (which has no positions inside it), that element's first key.
+ */
+export function referenceNear(state: EditorState, pos: number): { key: string; from: number; to: number } | null {
+  const line = state.doc.lineAt(pos);
+  const inLine = referenceAt(line.text, pos - line.from);
+  if (inLine) return { key: inLine.key, from: line.from + inLine.from, to: line.from + inLine.to };
+  for (const side of [1, -1] as const) {
+    let node: { name: string; from: number; to: number; parent: { name: string; from: number; to: number; parent: unknown } | null } | null = syntaxTree(state).resolveInner(pos, side);
+    while (node && node.name !== "Citation" && node.name !== "AtReference") node = node.parent as typeof node;
+    if (!node) continue;
+    const key = referenceKeys(state.sliceDoc(node.from, node.to))[0];
+    if (key) return { key, from: node.from, to: node.to };
   }
   return null;
 }
@@ -151,7 +174,7 @@ function tip(kind: string, body: (el: HTMLElement) => void, hint?: string): HTML
   return dom;
 }
 
-const LABEL_KINDS: Record<string, string> = { sec: "Section", fig: "Figure", tbl: "Table", eq: "Equation", lst: "Listing" };
+export const LABEL_KINDS: Record<string, string> = { sec: "Section", fig: "Figure", tbl: "Table", eq: "Equation", lst: "Listing" };
 
 function resolve(insight: EditorInsight, key: string): FollowTarget | null {
   const label = insight.labels.get(key);
@@ -160,16 +183,14 @@ function resolve(insight: EditorInsight, key: string): FollowTarget | null {
   return null;
 }
 
-export function writerInsight(insight: () => EditorInsight, follow: (target: FollowTarget) => void) {
-  const hover = hoverTooltip((view, pos) => {
-    const line = view.state.doc.lineAt(pos);
-    const ref = referenceAt(line.text, pos - line.from);
+/** The card for the citation or cross-reference at `pos`: its bibliography entry, or what it labels. */
+export function referenceTooltip(view: EditorView, pos: number, data: EditorInsight): Tooltip | null {
+    const ref = referenceNear(view.state, pos);
     if (!ref) return null;
-    const data = insight();
     const target = resolve(data, ref.key);
     return {
-      pos: line.from + ref.from,
-      end: line.from + ref.to,
+      pos: ref.from,
+      end: ref.to,
       above: true,
       create: () => {
         if (target?.kind === "label") {
@@ -196,15 +217,17 @@ export function writerInsight(insight: () => EditorInsight, follow: (target: Fol
         return { dom: tip("Unknown", (el) => (el.textContent = `No source or label is called “${ref.key}”.`)) };
       },
     };
-  });
+}
+
+export function writerInsight(insight: () => EditorInsight, follow: (target: FollowTarget) => void) {
+  const hover = hoverTooltip((view, pos) => referenceTooltip(view, pos, insight()));
 
   const click = EditorView.domEventHandlers({
     mousedown(event, view) {
       if (!(isMac ? event.metaKey : event.ctrlKey) || event.button !== 0) return false;
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
       if (pos === null) return false;
-      const line = view.state.doc.lineAt(pos);
-      const ref = referenceAt(line.text, pos - line.from);
+      const ref = referenceNear(view.state, pos);
       const target = ref ? resolve(insight(), ref.key) : null;
       if (!target) return false;
       event.preventDefault();

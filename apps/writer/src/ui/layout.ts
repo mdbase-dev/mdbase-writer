@@ -14,10 +14,12 @@ export interface Layout {
   readonly zoom: number | "fit";
   /** Hard-wrapped paragraphs flow in the editor (their soft line breaks drawn as spaces). */
   readonly joinLines: boolean;
+  /** The editor reads like the manuscript (citations, figures and tables drawn) rather than as Markdown source. */
+  readonly livePreview: boolean;
 }
 
 const KEY = "mdbase-writer:layout";
-export const DEFAULT_LAYOUT: Layout = { sidebar: true, tab: "outline", sidebarWidth: 272, view: "both", split: 0.5, zoom: "fit", joinLines: true };
+export const DEFAULT_LAYOUT: Layout = { sidebar: true, tab: "outline", sidebarWidth: 272, view: "both", split: 0.5, zoom: "fit", joinLines: true, livePreview: true };
 export const ZOOM_STEPS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const;
 
 export const SIDEBAR_MIN = 200;
@@ -35,6 +37,7 @@ export function loadLayout(): Layout {
       view: raw.view === "write" || raw.view === "preview" || raw.view === "both" ? raw.view : DEFAULT_LAYOUT.view,
       split: typeof raw.split === "number" ? clampSplit(raw.split) : DEFAULT_LAYOUT.split,
       joinLines: typeof raw.joinLines === "boolean" ? raw.joinLines : DEFAULT_LAYOUT.joinLines,
+      livePreview: typeof raw.livePreview === "boolean" ? raw.livePreview : DEFAULT_LAYOUT.livePreview,
       zoom: raw.zoom === "fit" || (typeof raw.zoom === "number" && raw.zoom >= 0.25 && raw.zoom <= 4) ? raw.zoom : DEFAULT_LAYOUT.zoom,
     };
   } catch {

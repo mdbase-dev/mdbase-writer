@@ -103,6 +103,8 @@ export interface WriterBackend {
   /** Only this source's Reader annotations (including relative and bare source links). */
   annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>>;
   readFile(path: string): Promise<Result<Uint8Array>>;
+  /** Stores a file (an image for a figure) at `path`, or at `path` numbered when that is taken; resolves to its path. */
+  writeFile?(path: string, bytes: Uint8Array, mediaType?: string): Promise<Result<string>>;
   /** A Markdown record's body, read once (no record session). */
   readBody(path: string): Promise<Result<string>>;
   /** Metadata selects threads for these manuscript records; only their bodies are read. No scope means all. */
@@ -150,8 +152,8 @@ export function libraryEntry(path: string, frontmatter: JsonObject | undefined):
   return { key, item: { ...item, id: key }, title, path };
 }
 
-/** `chapters/x.md` numbered for the nth try: `chapters/x-2.md`. */
-export const numberedPath = (path: string, n: number) => (n > 1 ? path.replace(/(\.md)?$/i, `-${n}$1`) : path);
+/** `chapters/x.md` numbered for the nth try: `chapters/x-2.md` (and `figures/x.png` to `figures/x-2.png`). */
+export const numberedPath = (path: string, n: number) => (n > 1 ? path.replace(/(\.[a-z0-9]{1,5})?$/i, `-${n}$1`) : path);
 
 export function manuscriptSlug(title: string): string {
   const slug = title

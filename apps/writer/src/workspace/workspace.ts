@@ -10,7 +10,7 @@ import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyI
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";
-import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
+import { IMAGE_EXTENSION, PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
@@ -89,6 +89,8 @@ export interface WorkspaceSnapshot {
   /** Records the collection lists as Reader annotations (an embedded one is a quotation). */
   readonly annotationPaths: ReadonlySet<string>;
   readonly annotationVersion: number;
+  /** Increases as images and other files load, so views drawing them redraw. */
+  readonly assetVersion: number;
   readonly compiling: boolean;
   readonly pendingSettings: boolean;
   /** Every comment in the collection; the UI keeps those on this manuscript's records. */
@@ -118,6 +120,8 @@ export class ManuscriptWorkspace {
   private readonly drafts: DraftStore;
   private readonly stagedSettings = new Map<string, JsonObject>();
   private readonly assetBytes = new Map<string, Uint8Array>();
+  /** Object URLs of images shown in the editor, revoked when the manuscript closes. */
+  private readonly imageUrls = new Map<string, string>();
   private readonly assetJobs = new Map<string, Promise<void>>();
   private readonly assetAttempts = new Map<string, number>();
   private readonly retryTimers = new Set<ReturnType<typeof setTimeout>>();
@@ -151,7 +155,7 @@ export class ManuscriptWorkspace {
     readonly main: string,
   ) {
     this.drafts = new DraftStore(backend.draftNamespace ?? `${backend.kind}:${backend.collectionName}`);
-    this.current = { main, phase: "loading", indexLoad: LOADING, libraryLoad: LOADING, annotationsLoad: LOADING, commentsLoad: LOADING, records: new Map(), library: [], recordPaths: [], filePaths: [], recordIndex: new PathIndex([]), fileIndex: new PathIndex([]), annotationPaths: new Set(), annotationVersion: 0, compiling: true, pendingSettings: false, comments: [], people: NO_PEOPLE, recoveredDrafts: new Map(), assetProblems: new Map(), recordProblems: new Map() };
+    this.current = { main, phase: "loading", indexLoad: LOADING, libraryLoad: LOADING, annotationsLoad: LOADING, commentsLoad: LOADING, records: new Map(), library: [], recordPaths: [], filePaths: [], recordIndex: new PathIndex([]), fileIndex: new PathIndex([]), annotationPaths: new Set(), annotationVersion: 0, assetVersion: 0, compiling: true, pendingSettings: false, comments: [], people: NO_PEOPLE, recoveredDrafts: new Map(), assetProblems: new Map(), recordProblems: new Map() };
     this.followCompiler();
     this.cleanups.push(backend.onExternalChange((paths) => this.onExternalChange(paths)));
     if (backend.onCollectionChange) this.cleanups.push(backend.onCollectionChange((delta) => this.onCollectionChange(delta)));
@@ -585,10 +589,12 @@ export class ManuscriptWorkspace {
       if (this.disposed) return;
       this.assetAttempts.delete(path);
       this.assetBytes.set(path, read.value);
+      const shown = this.imageUrls.get(path);
+      if (shown) { URL.revokeObjectURL(shown); this.imageUrls.delete(path); }
       if (/\.(csl|typ)$/i.test(path)) this.texts.set(path, new TextDecoder().decode(read.value));
       const assetProblems = new Map(this.current.assetProblems);
       assetProblems.delete(path);
-      this.update({ assetProblems });
+      this.update({ assetProblems, assetVersion: this.current.assetVersion + 1 });
       this.sendAssets([[path, read.value]]);
     } catch (error) {
       if (this.disposed) return;
@@ -740,6 +746,53 @@ export class ManuscriptWorkspace {
     this.setBody(this.main, appendEmbed(body, path.replace(/\.md$/i, ""), this.isChapter));
     await opened;
     return ok(path);
+  }
+
+  /** Whether the collection accepts files, so a figure can be stored from the editor. */
+  get canStoreFiles(): boolean {
+    return typeof this.backend.writeFile === "function";
+  }
+
+  /**
+   * Stores an image in the collection, next to the manuscript's other figures
+   * (its `figures` folder unless one is already used), and resolves to its
+   * path. The index learns the file at once, so the figure typesets without a
+   * fresh listing.
+   */
+  async addFigure(file: { name: string; bytes: Uint8Array; type?: string }): Promise<Result<string>> {
+    if (!this.backend.writeFile) return fail("This collection does not accept files from Writer.");
+    const extension = /\.[a-z0-9]{1,5}$/i.exec(file.name)?.[0]?.toLowerCase() ?? "";
+    if (!IMAGE_EXTENSION.test(extension)) return fail("Figures must be PNG, JPEG, GIF, SVG or WebP images.");
+    const stem = manuscriptSlug(file.name.slice(0, file.name.length - extension.length)) || "figure";
+    const used = [...this.current.fileIndex].find((p) => IMAGE_EXTENSION.test(p) && p.includes("/"));
+    const folder = used ? used.slice(0, used.lastIndexOf("/")) : "figures";
+    const stored = await this.backend.writeFile(`${folder}/${stem}${extension}`, file.bytes, file.type);
+    if (!stored.ok) return stored;
+    const path = stored.value;
+    this.assetBytes.set(path, file.bytes);
+    if (!this.current.fileIndex.has(path)) {
+      const filePaths = [...this.current.filePaths, path];
+      this.update({ filePaths });
+      this.compile.send({ type: "collection", recordPaths: this.current.recordPaths, filePaths });
+    }
+    return ok(path);
+  }
+
+  /** An object URL for an image the manuscript uses, once its bytes are loaded for the preview; null until then. */
+  imageUrl(target: string, from: string): string | null {
+    const path = resolveLinkTarget(target, from, this.current.fileIndex, "");
+    if (!path) return null;
+    const known = this.imageUrls.get(path);
+    if (known) return known;
+    const bytes = this.assetBytes.get(path);
+    if (!bytes) {
+      // Not needed by the compiler yet (a figure just written); load it for the card.
+      if (!this.requestedAssets.has(path)) void this.loadAssets([path]);
+      return null;
+    }
+    const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: imageType(path) }));
+    this.imageUrls.set(path, url);
+    return url;
   }
 
   /** Focused setting drafts are backed up immediately, without typesetting half-parsed fields. */
@@ -984,6 +1037,8 @@ export class ManuscriptWorkspace {
     if (this.disposed) return;
     this.commitSettings();
     this.disposed = true;
+    for (const url of this.imageUrls.values()) URL.revokeObjectURL(url);
+    this.imageUrls.clear();
     clearTimeout(this.refreshTimer);
     clearTimeout(this.commentsTimer);
     for (const timer of this.retryTimers) clearTimeout(timer);
@@ -997,4 +1052,9 @@ export class ManuscriptWorkspace {
     }));
     this.leases.clear();
   }
+}
+
+const IMAGE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp" };
+function imageType(path: string): string {
+  return IMAGE_TYPES[path.slice(path.lastIndexOf(".") + 1).toLowerCase()] ?? "application/octet-stream";
 }

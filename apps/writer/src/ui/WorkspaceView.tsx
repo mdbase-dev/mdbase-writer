@@ -10,6 +10,8 @@ import type { BlockPosition, SourceMark, WriterDiagnostic } from "../compile/pro
 import type { ChapterCards } from "../editor/chapter-cards.js";
 import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle, type RetainedEditor } from "../editor/Editor.js";
+import { equationSnippet, figureSnippet, tableSnippet } from "../editor/snippets.js";
+import type { InsertCommand } from "../editor/slash.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
 import { authorYear } from "../editor/library-search.js";
 import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
@@ -26,6 +28,7 @@ import {
   DownloadIcon,
   EditorOnly,
   GearIcon,
+  InsertIcon,
   MinusIcon,
   MoreIcon,
   OutlineIcon,
@@ -45,6 +48,7 @@ import { anchorsFor, ThreadPlacement, type PlacedThread } from "./comments.js";
 import { CommentsPanel, openCount, type CommentDrafts, type PendingComment } from "./CommentsPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
+import { ProblemsStrip } from "./ProblemsStrip.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
@@ -60,7 +64,7 @@ import { signalFailure, signalResult } from "./mark.js";
 
 /** Which part a phone shows. */
 type Pane = "outline" | "write" | "preview";
-interface ExportStatus {
+interface Notice {
   readonly text: string;
   readonly tone: "busy" | "ok" | "problem";
 }
@@ -136,9 +140,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const [active, setActive] = useState(workspace.main);
   const [pane, setPane] = useState<Pane>("write");
   const [layout, setLayoutState] = useState<Layout>(loadLayout);
-  const [exportStatus, setExportStatus] = useState<ExportStatus | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   // An export has no count to show, so the mark streams until it ends or is cancelled.
-  useMdbaseMarkBusy(exportStatus?.tone === "busy" && "stream");
+  useMdbaseMarkBusy(notice?.tone === "busy" && "stream");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsFocus, setSettingsFocus] = useState<SettingsFocus | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -181,6 +185,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     });
   }, []);
   const toggleJoinLines = useCallback(() => setLayout((l) => ({ ...l, joinLines: !l.joinLines })), [setLayout]);
+  const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => setLayout((l) => ({ ...l, tab })), [setLayout]);
 
   const order = useMemo(() => workspace.readingOrder(), [workspace, snap.records, snap.recordPaths, snap.annotationPaths]);
@@ -200,6 +205,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     return shown.length === allDiagnostics.length ? allDiagnostics : shown;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the live cursor is a ref; the trailing cursor says when it moved
   }, [allDiagnostics, typing, snap.records, cursor]);
+  // Problems on the line being typed, held back until typing pauses.
+  const heldProblems = allDiagnostics.length - diagnostics.length;
   const byRecord = useMemo(() => {
     const map = new Map<string, WriterDiagnostic[]>();
     // Problems with a setting belong to the settings dialog, not to a line of the body.
@@ -221,8 +228,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       library: new Map(snap.library.map((e) => [e.key, e])),
       references: new Map((snap.result?.references ?? []).map((r) => [r.key, r.text])),
       labels: stats.labels,
+      image: (target) => workspace.imageUrl(target, active),
     }),
-    [snap.library, snap.result?.references, stats.labels],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- images redraw as their bytes load (assetVersion) and resolve from the active record
+    [workspace, snap.library, snap.result?.references, stats.labels, snap.assetVersion, snap.fileIndex, active],
   );
 
   // Threads on the manuscript's records, placed in their (slightly deferred) text.
@@ -431,6 +440,39 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     const before = at && at.from === at.to ? at.text[at.from - 1] : undefined;
     editor.current?.insert(text.startsWith("[@") && before && /[^\s([{]/.test(before) ? ` ${text}` : text);
   }, []);
+  const figureInput = useRef<HTMLInputElement>(null);
+  const labelSet = useMemo(() => new Set(snap.result?.labels ?? []), [snap.result?.labels]);
+  const labels = useRef(labelSet);
+  labels.current = labelSet;
+  /** Stores each image in the collection and writes a figure for it at the cursor. */
+  const addFigures = useCallback(async (files: readonly File[]) => {
+    for (const file of files) {
+      setNotice({ tone: "busy", text: `Storing ${file.name}…` });
+      const stored = signalFailure(await workspace.addFigure({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), type: file.type }));
+      if (!stored.ok) { setNotice({ tone: "problem", text: `${file.name} could not be stored: ${stored.message}` }); return; }
+      setPane("write");
+      editor.current?.insertBlock(figureSnippet(stored.value, labels.current));
+      setNotice({ tone: "ok", text: `Stored ${stored.value}. Write the caption.` });
+    }
+  }, [workspace]);
+  const insertFigure = useCallback(() => {
+    if (!workspace.canStoreFiles) { setNotice({ tone: "problem", text: "This collection does not accept files from Writer. Add the image to the collection, then write ![Caption](path){#fig-name}." }); return; }
+    figureInput.current?.click();
+  }, [workspace]);
+  const insertTable = useCallback(() => { setPane("write"); editor.current?.insertBlock(tableSnippet(labelSet)); }, [labelSet]);
+  const insertEquation = useCallback(() => { setPane("write"); editor.current?.insertBlock(equationSnippet(labelSet)); }, [labelSet]);
+  const insertReference = useCallback(() => { setPane("write"); editor.current?.insert("@", { complete: true }); }, []);
+  const insertFootnote = useCallback(() => { setPane("write"); editor.current?.insertFootnote(); }, []);
+  /** What can be inserted, offered by "/" in the editor, the Insert menu and the command palette alike. */
+  const inserts = useMemo<readonly InsertCommand[]>(() => [
+    { id: "citation", label: "Citation", syntax: "[@citekey, p. 12]", keywords: "cite source reference", run: () => showSources() },
+    { id: "footnote", label: "Footnote", syntax: "[^1] … with its text at the end", keywords: "note", run: insertFootnote },
+    { id: "crossref", label: "Cross-reference", syntax: "@sec-intro, @fig-plan", keywords: "refer section figure table label", run: insertReference },
+    { id: "figure", label: "Figure from an image…", syntax: "![Caption](figures/plan.png){#fig-plan}", keywords: "image picture photo upload", run: insertFigure },
+    { id: "table", label: "Table", syntax: "| … | … | with : Caption {#tbl-x}", keywords: "grid columns rows", run: insertTable },
+    { id: "equation", label: "Equation", syntax: "$$ … $$ {#eq-x}", keywords: "math formula display", run: insertEquation },
+  ], [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
+  const [insertOpen, setInsertOpen] = useState(false);
   const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);
   const changeComment = useCallback(async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change)), [workspace]);
   const acceptSuggestion = useCallback(async (p: PlacedThread) => signalFailure(await workspace.acceptSuggestion(p.record, p.thread.root)), [workspace]);
@@ -460,6 +502,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     if (next) jump(next.record, next.from);
   }, [bodyProblems, cursor, active, jump, order]);
 
+  const bodyOf = useCallback((record: string) => snap.records.get(record)?.snapshot.body, [snap.records]);
+  const titleOf = useCallback((record: string) => recordTitle(snap.records.get(record), record), [snap.records]);
   const fileStem = manuscriptTitle.replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "manuscript";
   const download = (bytes: Uint8Array, type: string, name: string) => {
     const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
@@ -470,7 +514,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
   };
   const exported = (name: string, problems: readonly string[]) =>
-    setExportStatus(
+    setNotice(
       problems.length
         ? { tone: "problem", text: `Exported ${name} with ${plural(problems.length, "problem")}: ${problems[0]}` }
         : { tone: "ok", text: `Exported ${name}.` },
@@ -483,7 +527,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     saveExportFormat(format);
     const controller = new AbortController();
     exportJob.current = controller;
-    setExportStatus({ tone: "busy", text: format === "docx" ? "Checking chapters and images, then making Word… (first use loads about 16 MB)" : `Checking chapters and images, then making ${EXPORT_NAME[format]}…` });
+    setNotice({ tone: "busy", text: format === "docx" ? "Checking chapters and images, then making Word… (first use loads about 16 MB)" : `Checking chapters and images, then making ${EXPORT_NAME[format]}…` });
     void (async () => {
       try {
         const out = await (format === "pdf" ? workspace.exportPdf(controller.signal) : format === "docx" ? workspace.exportDocx(controller.signal) : workspace.exportBundle(controller.signal));
@@ -493,7 +537,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         const name = format === "bundle" ? `${fileStem} (Pandoc).zip` : `${fileStem}.${format}`;
         if (out.problems.length) {
           setPendingExport({ bytes: out.bytes, type, name, problems: out.problems });
-          setExportStatus(null);
+          setNotice(null);
         } else {
           download(out.bytes, type, name);
           exported(EXPORT_NAME[format], []);
@@ -502,7 +546,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
       } catch (error) {
         if (!controller.signal.aborted) {
           reportError({ code: "unknown_error" });
-          setExportStatus({ tone: "problem", text: errorMessage(error) });
+          setNotice({ tone: "problem", text: errorMessage(error) });
           signalMdbaseMark("error");
         }
       } finally {
@@ -513,7 +557,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   const cancelExport = () => {
     exportJob.current?.abort();
     exportJob.current = null;
-    setExportStatus(null);
+    setNotice(null);
     setPendingExport(null);
   };
   const canExport: Record<ExportFormat, boolean> = { pdf: snap.phase === "ready", docx: snap.phase === "ready", bundle: snap.phase === "ready" };
@@ -540,11 +584,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
   }, []);
   // A finished export's note goes after a few seconds; a problem stays until dismissed.
   useEffect(() => {
-    if (exportStatus?.tone !== "ok") return;
+    if (notice?.tone !== "ok") return;
     // A finished export settles away (.mdbase-settle), then leaves.
-    const t = setTimeout(() => setExportStatus(null), 2400);
+    const t = setTimeout(() => setNotice(null), 2400);
     return () => clearTimeout(t);
-  }, [exportStatus]);
+  }, [notice]);
 
   // Keyboard shortcuts (listed in the shortcuts dialog).
   const shortcuts = useRef<(e: KeyboardEvent) => void>(() => {});
@@ -560,6 +604,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
     else if (mod && !e.shiftKey && e.key === ",") (settingsOpen ? closeSettings() : setSettingsOpen(true));
     else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
     else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
+    else if (mod && e.altKey && e.code === "KeyF") insertFootnote();
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
     else if (mod && !e.shiftKey && e.code === "KeyS") void workspace.retrySave().then(signalResult);
     else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
@@ -616,10 +661,10 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           </span>
           <ProblemsButton
             pending={snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready"}
+            checking={heldProblems > 0}
             diagnostics={diagnostics}
             open={problemsOpen}
             setOpen={setProblemsOpen}
-            onPick={(d) => (d.field ? showSetting(d.field) : jump(d.record, d.from))}
           />
           <span className="bar-spacer" />
           <div className="bar-layout" role="group" aria-label="Layout">
@@ -644,6 +689,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
               })}
             </div>
           </div>
+          <InsertMenu open={insertOpen} setOpen={setInsertOpen} commands={inserts} disabled={!activeView || activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)} />
           <button type="button" className="mdbase-button" aria-label="Settings" aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
             <GearIcon />
             <span className="button-label">Settings</span>
@@ -652,7 +698,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           <ExportMenu
             open={exportOpen}
             setOpen={setExportOpen}
-            busy={exportStatus?.tone === "busy" || Boolean(pendingExport)}
+            busy={notice?.tone === "busy" || Boolean(pendingExport)}
             format={exportFormat}
             can={canExport}
             customTemplate={snap.result?.meta.customTemplate ?? false}
@@ -663,8 +709,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             setOpen={setMoreOpen}
             onCommands={() => setPaletteOpen(true)}
             onShortcuts={() => setShortcutsOpen(true)}
-            joinLines={layout.joinLines}
-            onJoinLines={toggleJoinLines}
+            onExport={runExport}
+            canExport={snap.phase === "ready" && !(notice?.tone === "busy" || Boolean(pendingExport))}
             {...(themeChoice ? { theme: themeChoice.theme, onTheme: themeChoice.setTheme } : {})}
           />
         </div>
@@ -814,8 +860,11 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
             text={activeView.snapshot.body}
             readOnly={activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)}
             joinLines={layout.joinLines}
+            livePreview={layout.livePreview}
+            onImageFiles={(files) => void addFigures(files)}
             diagnostics={byRecord.get(active) ?? NO_DIAGNOSTICS}
             completion={completion}
+            inserts={inserts}
             insight={insight}
             onChange={onEditorChange}
             onReady={onEditorReady}
@@ -831,6 +880,18 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         ) : (
           <p className="muted pad">Opening…</p>
         )}
+        {problemsOpen && diagnostics.length > 0 && (
+          <ProblemsStrip
+            diagnostics={diagnostics}
+            order={order}
+            body={bodyOf}
+            title={titleOf}
+            current={active}
+            onPick={(d) => (d.field ? showSetting(d.field) : jump(d.record, d.from))}
+            onClose={() => setProblemsOpen(false)}
+          />
+        )}
+        <input ref={figureInput} type="file" accept="image/png,image/jpeg,image/gif,image/svg+xml,image/webp" multiple hidden onChange={(e) => { const files = [...(e.target.files ?? [])]; e.target.value = ""; if (files.length) void addFigures(files); }} />
       </section>
 
       <Divider
@@ -928,6 +989,9 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
         onClose={closeSettings}
         focus={settingsFocus}
         joinLines={layout.joinLines}
+        livePreview={layout.livePreview}
+        onJoinLines={toggleJoinLines}
+        onLivePreview={toggleLivePreview}
       />
       <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} />
       <CommandPalette
@@ -944,6 +1008,7 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           { id: "italic", group: "Format", label: "Italic", shortcut: "mod+i", run: () => editor.current?.format("italic") },
           { id: "code", group: "Format", label: "Inline code", run: () => editor.current?.format("code") },
           { id: "link", group: "Format", label: "Link", shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
+          ...inserts.map((c) => ({ id: `insert-${c.id}`, group: "Insert", label: c.label, detail: c.syntax, keywords: c.keywords, run: c.run })),
           { id: "comment", group: "Comments", label: "Comment on the selection", shortcut: "mod+alt+m", run: () => startComment("comment") },
           { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
           { id: "comments", group: "Comments", label: "Show comments", run: showComments },
@@ -951,6 +1016,8 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: () => void requestClose() },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
           { id: "join-lines", group: "View", label: layout.joinLines ? "Show line breaks as written" : "Join hard-wrapped lines", keywords: "wrap reflow soft line breaks", run: toggleJoinLines },
+          { id: "live-preview", group: "View", label: layout.livePreview ? "Show Markdown as written" : "Read as the manuscript", keywords: "source markup raw live preview chips", run: toggleLivePreview },
+          { id: "problems", group: "Manuscript", label: problemsOpen ? "Hide problems" : "Show problems", keywords: "errors warnings list", run: () => setProblemsOpen(!problemsOpen) },
           ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
           ...(snap.phase === "ready" ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => runExport("pdf") }] : []),
           { id: "export-docx", group: "Export", label: "Export Word (DOCX)", run: () => runExport("docx") },
@@ -989,14 +1056,14 @@ export function WorkspaceView({ workspace, onClose }: { workspace: ManuscriptWor
           }}>Export anyway</button>
         </div>
       </Dialog>
-      {exportStatus && (
-        <div className={`toast tone-${exportStatus.tone}${exportStatus.tone === "ok" ? " mdbase-settle" : ""}`} role={exportStatus.tone === "problem" ? "alert" : "status"}>
-          {exportStatus.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : exportStatus.tone === "ok" ? <CheckIcon /> : <AlertIcon />}
-          <span>{exportStatus.text}</span>
-          {exportStatus.tone === "busy" && <button type="button" className="text-button" onClick={cancelExport}>Cancel export</button>}
-          {exportStatus.tone === "problem" && <button type="button" className="text-button" onClick={() => runExport(lastExport.current)}>Retry export</button>}
-          {exportStatus.tone !== "busy" && (
-            <button type="button" className="mdbase-icon-button is-small" aria-label="Dismiss" onClick={() => setExportStatus(null)}>
+      {notice && (
+        <div className={`toast tone-${notice.tone}${notice.tone === "ok" ? " mdbase-settle" : ""}`} role={notice.tone === "problem" ? "alert" : "status"}>
+          {notice.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : notice.tone === "ok" ? <CheckIcon /> : <AlertIcon />}
+          <span>{notice.text}</span>
+          {notice.tone === "busy" && <button type="button" className="text-button" onClick={cancelExport}>Cancel export</button>}
+          {notice.tone === "problem" && <button type="button" className="text-button" onClick={() => runExport(lastExport.current)}>Retry export</button>}
+          {notice.tone !== "busy" && (
+            <button type="button" className="mdbase-icon-button is-small" aria-label="Dismiss" onClick={() => setNotice(null)}>
               <CloseIcon />
             </button>
           )}
@@ -1040,62 +1107,30 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle }: { tab: Si
   );
 }
 
-function ProblemsButton({ diagnostics, pending, open, setOpen, onPick }: { diagnostics: readonly WriterDiagnostic[]; pending: boolean; open: boolean; setOpen(open: boolean): void; onPick(d: WriterDiagnostic): void }) {
-  const trigger = useRef<HTMLButtonElement>(null);
-  const id = useId();
+function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { diagnostics: readonly WriterDiagnostic[]; pending: boolean; checking: boolean; open: boolean; setOpen(open: boolean): void }) {
   if (!diagnostics.length) {
+    const label = pending ? "Dependencies not checked" : checking ? "Checking…" : "No problems";
     return (
-      <span className="bar-problems is-clear" title={pending ? "Collection dependencies have not been checked yet" : "No problems"}>
-        {pending ? <span className="spinner" aria-hidden="true" /> : <CheckIcon />}
-        <span className="button-label">{pending ? "Dependencies not checked" : "No problems"}</span>
+      <span className={`bar-problems ${checking && !pending ? "is-checking" : "is-clear"}`} title={pending ? "Collection dependencies have not been checked yet" : checking ? "The line being typed is checked once typing pauses" : "No problems"}>
+        {pending || checking ? <span className="spinner" aria-hidden="true" /> : <CheckIcon />}
+        <span className="button-label">{label}</span>
       </span>
     );
   }
   const errors = diagnostics.some((d) => d.severity === "error");
   return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        className={`bar-problems tone-${errors ? "danger" : "warning"}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={plural(diagnostics.length, "problem")}
-        aria-controls={open ? id : undefined}
-        onClick={() => setOpen(!open)}
-        title="Show problems (F8 goes to the next one)"
-      >
-        <AlertIcon />
-        <span>{diagnostics.length}</span>
-        <span className="button-label">{diagnostics.length === 1 ? "problem" : "problems"}</span>
-      </button>
-      {open && (
-        <Popover id={id} trigger={trigger} width={420} label="Problems" onClose={(refocus) => {
-          setOpen(false);
-          if (refocus) trigger.current?.focus();
-        }}>
-          <ul className="problems">
-            {diagnostics.map((d, i) => (
-              <li key={`${d.record}:${d.from}:${i}`}>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={`problem-row severity-${d.severity}`}
-                  onClick={() => {
-                    setOpen(false);
-                    onPick(d);
-                  }}
-                >
-                  <span>{d.message}</span>
-                  <span className="record-path">{d.field ? `Manuscript settings · ${d.field}` : d.record}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="popover-note">F8 and Shift-F8 step through problems in the text.</p>
-        </Popover>
-      )}
-    </>
+    <button
+      type="button"
+      className={`bar-problems tone-${errors ? "danger" : "warning"}`}
+      aria-pressed={open}
+      aria-label={plural(diagnostics.length, "problem")}
+      onClick={() => setOpen(!open)}
+      title={`${open ? "Hide" : "List"} the problems under the editor (F8 goes to the next one)`}
+    >
+      <AlertIcon />
+      <span>{diagnostics.length}</span>
+      <span className="button-label">{diagnostics.length === 1 ? "problem" : "problems"}</span>
+    </button>
   );
 }
 
@@ -1106,6 +1141,45 @@ function Popover({ id, trigger, width, label, align = "start", focus, onClose, c
     <div ref={ref} id={id} className="mdbase-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, ref.current)}>
       {children}
     </div>
+  );
+}
+
+/** What can be inserted at the cursor, each with the Markdown it stands for. */
+function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setOpen(open: boolean): void; commands: readonly InsertCommand[]; disabled: boolean }) {
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className="mdbase-button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        aria-label="Insert"
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+        title="Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
+      >
+        <InsertIcon />
+        <span className="button-label">Insert</span>
+      </button>
+      {open && (
+        <Popover id={id} trigger={trigger} width={340} label="Insert" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+          setOpen(false);
+          if (refocus) trigger.current?.focus();
+        }}>
+          {commands.map((c) => (
+            <button key={c.id} type="button" role="menuitem" className="menu-item" onClick={() => { setOpen(false); c.run(); }}>
+              <strong>{c.label}</strong>
+              <small><code>{c.syntax}</code></small>
+            </button>
+          ))}
+          <p className="popover-note">Or type <kbd>/</kbd> in the text to pick one there.</p>
+        </Popover>
+      )}
+    </>
   );
 }
 
@@ -1173,8 +1247,8 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
   );
 }
 
-/** Commands, keyboard shortcuts, how lines are shown and the theme, out of the bar's way. */
-function MoreMenu({ open, setOpen, onCommands, onShortcuts, joinLines, onJoinLines, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; joinLines: boolean; onJoinLines(): void; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
+/** Commands, keyboard shortcuts and the theme, out of the bar's way; on a phone, export too. */
+function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; onExport(format: ExportFormat): void; canExport: boolean; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
   const run = (action: () => void) => () => {
@@ -1192,7 +1266,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, joinLines, onJoinLin
         aria-controls={open ? id : undefined}
         aria-label="More"
         onClick={() => setOpen(!open)}
-        title="Commands, shortcuts, line breaks and theme"
+        title="Commands, shortcuts and theme"
       >
         <MoreIcon />
       </button>
@@ -1209,17 +1283,15 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, joinLines, onJoinLin
             <span>Keyboard shortcuts</span>
             <kbd>?</kbd>
           </button>
-          <button
-            type="button"
-            role="menuitemcheckbox"
-            aria-checked={joinLines}
-            className="menu-item is-row"
-            onClick={onJoinLines}
-            title="A line break inside a paragraph reads as a space; show it as one, so hard-wrapped text flows to the editor's width. The text is not changed."
-          >
-            <span>Join hard-wrapped lines</span>
-            {joinLines && <CheckIcon />}
-          </button>
+          <div role="group" aria-label="Export" className="menu-group phone-only">
+            <span className="menu-label" aria-hidden="true">Export</span>
+            {(["pdf", "docx", "bundle"] as const).map((format) => (
+              <button key={format} type="button" role="menuitem" className="menu-item is-row" disabled={!canExport} onClick={run(() => onExport(format))}>
+                <span>{format === "bundle" ? "Pandoc bundle (zip)" : format === "docx" ? "Word (DOCX)" : "PDF"}</span>
+                <DownloadIcon />
+              </button>
+            ))}
+          </div>
           {theme && onTheme && (
             <div role="group" aria-label="Theme" className="menu-group">
               <span className="menu-label" aria-hidden="true">Theme</span>
@@ -1331,6 +1403,8 @@ const SHORTCUTS: readonly [string, string][] = [
   [`${MOD_LABEL} Shift K`, "Make the selection a link"],
   [`${MOD_LABEL} ${ALT_LABEL} M`, "Comment on the selection"],
   [`${MOD_LABEL} ${ALT_LABEL} S`, "Suggest an edit to the selection"],
+  [`${MOD_LABEL} ${ALT_LABEL} F`, "Add a footnote"],
+  ["/", "Insert a footnote, figure, table, equation, cross-reference or citation"],
   [`${MOD_LABEL} S`, "Save all records now"],
   [`${MOD_LABEL} Shift S`, "Export"],
   ["F8 / Shift F8", "Next / previous problem"],

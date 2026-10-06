@@ -88,6 +88,15 @@ const editorText = () =>
     return (path && window.writer.workspace.getSnapshot().records.get(path)?.snapshot.body) ?? "";
   });
 
+/** Lists the problems under the editor (the top bar's button toggles the list, which stays open while they are fixed). */
+async function openProblems() {
+  // Problems on the line being typed are held until typing pauses: wait for them to count.
+  await page.locator("button.bar-problems").waitFor({ timeout: 10_000 });
+  if (await page.locator(".problems-strip").count()) return;
+  await page.locator("button.bar-problems").click();
+  await page.locator(".problems-strip").waitFor({ timeout: 5_000 });
+}
+
 async function typeAtEndOfParagraph(needle, text) {
   // Click at the end of the line holding `needle`, then type like a person. The click goes to
   // its last wrapped row: End alone only reaches the end of the row that was clicked.
@@ -261,7 +270,7 @@ await step("a setting's problem opens the setting", async () => {
   const before = (await snapshot()).revision;
   await page.evaluate(() => window.writer.workspace.patchFrontmatter("manuscripts/slow-change.md", { lang: "tlh" }));
   await waitForRevisionAfter(before);
-  await page.locator("button.bar-problems").click();
+  await openProblems();
   await page.locator(".problem-row", { hasText: "no terms for" }).click();
   await page.locator(".settings-sheet .field-problem", { hasText: "no terms for" }).waitFor();
   assert.equal(await page.evaluate(() => document.activeElement?.value), "tlh");
@@ -280,7 +289,7 @@ await step("an unknown citekey is reported in Problems and in the editor", async
   await waitForRevisionAfter(before);
   const s = await snapshot();
   assert.ok(s.diagnostics.some((d) => d.includes("No source in the library has the citekey nosuchsource2020")), s.diagnostics.join("\n"));
-  await page.locator("button.bar-problems").click();
+  await openProblems();
   await page.locator(".problem-row", { hasText: "nosuchsource2020" }).waitFor();
   await page.keyboard.press("Escape");
   await page.locator(".cm-lintRange-error").first().waitFor({ timeout: 5_000 });
@@ -309,14 +318,22 @@ await step("hovering a citation shows its bibliography entry; Mod-click on a cro
     await page.mouse.move(point.x, point.y, { steps: 4 });
   };
   await page.getByRole("tab", { name: "Outline" }).click();
-  await page.evaluate(() => document.querySelector(".cm-scroller").scrollTo(0, 0));
-  await page.waitForTimeout(100);
-  const cite = await at("lyellPrinciples30");
-  assert.ok(cite, "citation on screen");
+  // With the cursor on the heading, the paragraph's citations and cross-references are drawn as chips.
+  await page.locator(".heading-row", { hasText: "Introduction" }).click();
+  await page.waitForTimeout(300);
+  const chip = async (text) => {
+    const box = await page.locator(".cm-lp-chip", { hasText: text }).first().boundingBox();
+    assert.ok(box, `${text} chip on screen`);
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  };
+  const cite = await chip("Lyell, 1830");
   await hover(cite);
   await page.locator(".cm-ref-tip", { hasText: "John Murray" }).waitFor({ timeout: 5_000 });
   assert.equal(await page.locator(".cm-ref-tip em").first().textContent(), "Principles of Geology");
-  const ref = await at("@sec-worms", 4);
+  // On the cursor's line the source shows as written, and the hover still works on the key itself.
+  const raw = await at("lyellPrinciples30");
+  if (raw) await hover(raw);
+  const ref = await chip("Earthworms: the moving surface");
   await hover(ref);
   await page.locator(".cm-ref-tip", { hasText: "Earthworms: the moving surface" }).waitFor({ timeout: 5_000 });
   await page.keyboard.down("ControlOrMeta");
