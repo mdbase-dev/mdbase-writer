@@ -36,6 +36,22 @@ export class DraftStore {
   remove(path: string): void {
     try { this.storage?.removeItem(this.key(path)); } catch { /* Keep recovery available if storage is locked. */ }
   }
+  /** Every record with a draft in this namespace, newest first (for the home screen). */
+  list(): { path: string; updated: string }[] {
+    const out: { path: string; updated: string }[] = [];
+    try {
+      const store = this.storage as (Storage | undefined);
+      const prefix = `mdbase-writer:draft:${encodeURIComponent(this.namespace)}:`;
+      const keys = store && typeof store.length === "number" ? Array.from({ length: store.length }, (_, i) => store.key(i)) : [];
+      for (const key of keys) {
+        if (!key?.startsWith(prefix)) continue;
+        const path = decodeURIComponent(key.slice(prefix.length));
+        const draft = this.read(path);
+        if (draft) out.push({ path, updated: draft.updated });
+      }
+    } catch { /* Nothing listed when storage is locked. */ }
+    return out.sort((a, b) => b.updated.localeCompare(a.updated));
+  }
 }
 const isObject = (value: unknown): value is JsonObject => Boolean(value && typeof value === "object" && !Array.isArray(value));
 

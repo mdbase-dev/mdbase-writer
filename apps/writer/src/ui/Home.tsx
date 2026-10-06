@@ -14,6 +14,9 @@ import { chapterEmbeds } from "../workspace/chapters.js";
 import { wordCount } from "../words.js";
 import { PlusIcon, SearchIcon } from "./icons.js";
 import { byRecentlyEdited, noteName, relativeTime, styleName, templateName } from "./names.js";
+import { DraftStore } from "../workspace/drafts.js";
+import { localNamespace, recentManuscripts, setWordGoal, wordGoal } from "./recent.js";
+import { ChevronRight, PenIcon } from "./icons.js";
 
 /** Manuscripts listed before a search field is worth showing. */
 const SEARCH_FROM = 6;
@@ -38,6 +41,14 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   const [dialog, setDialog] = useState(false);
   const [filter, setFilter] = useState("");
   const [limit, setLimit] = useState(50);
+  const namespace = localNamespace(backend);
+  // What this browser remembers: the manuscripts opened last, and drafts not yet saved.
+  const [recent, setRecent] = useState(() => recentManuscripts(namespace));
+  const [drafts, setDrafts] = useState(() => new DraftStore(namespace).list());
+  useEffect(() => {
+    setRecent(recentManuscripts(namespace));
+    setDrafts(new DraftStore(namespace).list());
+  }, [namespace, reload]);
 
   useEffect(() => {
     let live = true;
@@ -125,6 +136,16 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     rows.current?.querySelectorAll("[data-path]").forEach((row) => observer.observe(row));
     return () => observer.disconnect();
   }, [shown, limit]);
+  const byPath = useMemo(() => new Map((manuscripts ?? []).map((m) => [m.path, m])), [manuscripts]);
+  const continuing = useMemo(() => recent.map((r) => byPath.get(r.path)).find((m): m is ManuscriptSummary => Boolean(m)), [recent, byPath]);
+  // A chapter's draft belongs to the manuscript that embeds it; a stray one is still listed.
+  const draftRows = useMemo(() => drafts.map((d) => {
+    const manuscript = byPath.get(d.path) ?? (manuscripts ?? []).find((m) => (summaries.get(m.path)?.chapters ?? m.chapters ?? []).some((c) => c === d.path || `${c}.md` === d.path || d.path.endsWith(`/${c}.md`)));
+    return { ...d, manuscript, title: byPath.get(d.path)?.title ?? noteName(d.path) };
+  }), [drafts, byPath, manuscripts, summaries]);
+  useEffect(() => {
+    if (continuing) setVisiblePaths((previous) => previous.has(continuing.path) ? previous : new Set([...previous, continuing.path]));
+  }, [continuing]);
   const newButton = (
     <button type="button" className="mdbase-button is-primary" onClick={() => setDialog(true)}>
       <PlusIcon />
@@ -140,8 +161,10 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
             <h1>Manuscripts</h1>
             <p className="muted">
               In {collectionPicker ?? <strong>{backend.collectionName}</strong>}
+              {backend.kind === "connect" && <> via mdbase Connect</>}
               {sources !== null && sources > 0 && <> · {sources} {sources === 1 ? "source" : "sources"} to cite from mdbase Reader</>}
               {sources === 0 && <> · {backend.setupStatus?.sources === false ? "Sources not set up" : "No sources yet"}</>}
+              {backend.setupStatus?.comments === false && <> · Comments not set up</>}
             </p>
           </div>
           {manuscripts && manuscripts.length > 0 && newButton}
@@ -171,6 +194,36 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
             </ol>
             {newButton}
           </div>
+        )}
+        {draftRows.length > 0 && (
+          <section className="home-drafts" aria-label="Unsaved drafts">
+            <h2>Unsaved in this browser</h2>
+            <ul>
+              {draftRows.map((d) => (
+                <li key={d.path}>
+                  <span className="home-draft-text">
+                    <strong>{d.title}</strong>
+                    <span className="muted small">
+                      {d.manuscript && d.manuscript.path !== d.path ? `in ${d.manuscript.title} · ` : ""}backed up {relativeTime(d.updated)}
+                    </span>
+                  </span>
+                  {d.manuscript
+                    ? <button type="button" className="mdbase-button is-small" onClick={() => onOpen(d.manuscript!.path)}>Review</button>
+                    : <span className="muted small">Open its manuscript to review it</span>}
+                </li>
+              ))}
+            </ul>
+            <p className="muted small">A draft is what was typed but not saved to the collection. Opening its manuscript offers it back.</p>
+          </section>
+        )}
+        {continuing && manuscripts && manuscripts.length > 0 && (
+          <ContinueCard
+            manuscript={continuing}
+            words={summaries.get(continuing.path)?.words ?? continuing.words}
+            goal={wordGoal(namespace, continuing.path)}
+            onGoal={(goal) => { setWordGoal(namespace, continuing.path, goal); setReload((v) => v + 1); }}
+            onOpen={() => onOpen(continuing.path)}
+          />
         )}
         {manuscripts && manuscripts.length >= SEARCH_FROM && (
           <label className="home-search">
@@ -404,5 +457,51 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
         </ul>
       )}
     </div>
+  );
+}
+
+/** The manuscript opened last: pick up where writing stopped, and see how far it is against a goal. */
+function ContinueCard({ manuscript, words, goal, onGoal, onOpen }: { manuscript: ManuscriptSummary; words: number | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(goal ? String(goal) : "");
+  const goalId = useId();
+  useEffect(() => { setDraft(goal ? String(goal) : ""); }, [goal]);
+  const progress = goal && words !== undefined ? Math.min(1, words / goal) : null;
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const n = Number(draft.replace(/[^\d]/g, ""));
+    onGoal(Number.isFinite(n) && n > 0 ? n : null);
+    setEditing(false);
+  };
+  return (
+    <section className="continue-card" aria-labelledby={`${goalId}-title`}>
+      <div className="continue-text">
+        <span className="muted small">Continue writing</span>
+        <h2 id={`${goalId}-title`} className="continue-title">{manuscript.title}</h2>
+        <span className="muted small">
+          {[wordsLabel(words), manuscript.modified ? `edited ${relativeTime(manuscript.modified)}` : null].filter(Boolean).join(" · ")}
+          {goal && words !== undefined && <> · {Math.round((words / goal) * 100)}% of {goal.toLocaleString()}</>}
+        </span>
+        {progress !== null && <span className="continue-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label="Progress to the word goal"><span style={{ width: `${progress * 100}%` }} /></span>}
+        {editing ? (
+          <form className="goal-form" onSubmit={submit}>
+            <label>
+              <span className="visually-hidden">Word goal</span>
+              <input className="mdbase-field" inputMode="numeric" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Words, e.g. 8000" autoFocus />
+            </label>
+            <button type="submit" className="mdbase-button is-small">Set goal</button>
+            {goal && <button type="button" className="text-button is-quiet" onClick={() => { onGoal(null); setEditing(false); }}>Remove</button>}
+            <button type="button" className="text-button is-quiet" onClick={() => setEditing(false)}>Cancel</button>
+          </form>
+        ) : (
+          <button type="button" className="text-button is-quiet continue-goal" onClick={() => setEditing(true)}>{goal ? "Change the word goal" : "Set a word goal"}</button>
+        )}
+      </div>
+      <button type="button" className="mdbase-button is-primary" onClick={onOpen}>
+        <PenIcon />
+        Continue
+        <ChevronRight className="chevron" />
+      </button>
+    </section>
   );
 }

@@ -14,6 +14,7 @@ import { useWriterFeedbackContext } from "./FeedbackRoot.js";
 import { ConnectGate } from "./ui/ConnectGate.js";
 import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { Home } from "./ui/Home.js";
+import { localNamespace, recordOpened } from "./ui/recent.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import { zip } from "./export/zip.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
@@ -207,6 +208,9 @@ function Manuscripts({ backend, collectionPicker }: { backend: WriterBackend; co
   useWriterFeedbackContext(path ? "manuscript" : "manuscripts", backend.collectionName);
   currentWorkspace.current = workspace;
   (window as unknown as { writer?: unknown }).writer = { backend, workspace };
+  useEffect(() => {
+    if (path) recordOpened(localNamespace(backend), path);
+  }, [backend, path]);
   if (!path) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} />;
   if (!workspace) return null;
   return <>
