@@ -98,7 +98,7 @@ describe("annotation loading", () => {
     expect(await f.backend.annotationPaths()).toEqual({ ok: true, value: f.rows.map((r) => r.path) });
     expect(f.metadataQueries()).toEqual([{ types: ["highlight"], frontmatterMode: "persisted", output: "metadata",
       select: [{ name: "csl", expression: 'record["csl"]' }, { name: "title", expression: 'record["title"]' },
-        { name: "reading", expression: 'record["reading"]' }] }]);
+        { name: "reading", expression: 'record["reading"]' }, { name: "file_mtime", expression: "file.mtime" }] }]);
     const annotations = await f.backend.annotationsForSource("sources/a.md");
     expect(annotations).toMatchObject({ ok: true, value: [{ quote: "Quote A", locator: "p. 12" }, { quote: "Another A" }] });
     expect(f.bodyQueries()).toEqual([{ types: ["highlight"], where: 'file.path in ["annotations/a.md","annotations/c.md"]', frontmatterMode: "persisted", includeBody: true }]);
@@ -155,6 +155,7 @@ describe("annotation loading", () => {
     expect(discovery?.select).toEqual([
       { name: "csl", expression: 'record["csl"]' }, { name: "title", expression: 'record["title"]' },
       { name: "about", expression: 'record["about"]' }, { name: "date", expression: 'record["date"]' }, { name: "parent", expression: 'record["parent"]' },
+      { name: "file_mtime", expression: "file.mtime" },
     ]);
     expect(f.bodyQueries()).toEqual([{ types: ["feedback"], where: 'file.path in ["comments/a.md","comments/reply.md"]', frontmatterMode: "persisted", includeBody: true }]);
     expect(f.readRequests).not.toHaveBeenCalled();

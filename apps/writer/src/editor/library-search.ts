@@ -60,9 +60,15 @@ export function authorYear(entry: LibraryEntry): string {
  */
 const collator = new Intl.Collator();
 const sorted = new WeakMap<readonly LibraryEntry[], readonly LibraryEntry[]>();
+/** The library as it is listed: most recently written first; sources the collection has no date for follow, by author and title. */
 export function sortedLibrary(library: readonly LibraryEntry[]): readonly LibraryEntry[] {
   let rows = sorted.get(library);
-  if (!rows) { rows = [...index(library)].sort((a, b) => collator.compare(a.sortKey, b.sortKey) || collator.compare(a.entry.title, b.entry.title)).map((i) => i.entry); sorted.set(library, rows); }
+  if (!rows) {
+    rows = [...index(library)]
+      .sort((a, b) => (b.entry.modified ?? "").localeCompare(a.entry.modified ?? "") || collator.compare(a.sortKey, b.sortKey) || collator.compare(a.entry.title, b.entry.title))
+      .map((i) => i.entry);
+    sorted.set(library, rows);
+  }
   return rows;
 }
 

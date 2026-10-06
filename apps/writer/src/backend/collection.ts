@@ -115,7 +115,7 @@ export class CollectionSchema {
     let modified = false;
     for (const role of this.byType.values()) for (const [domain, binding] of role) {
       if (!binding.active) continue;
-      modified ||= domain === "manuscript";
+      modified ||= domain === "manuscript" || domain === "source";
       for (const field of needed[domain]) fields.add(binding.fields[field] ?? field);
     }
     return [
@@ -172,7 +172,8 @@ export class CollectionStore {
       if (!binding.active) continue;
       switch (domain) {
         case "source": {
-          const source = retainEffective && previous.source ? previous.source : libraryEntry(row.path, fieldsOf(effective, binding));
+          const written = row.values?.["file_mtime"] ?? row.file?.mtime;
+          const source = retainEffective && previous.source ? previous.source : libraryEntry(row.path, fieldsOf(effective, binding), typeof written === "string" ? written : undefined);
           if (source) next.source = equal(previous?.source, source) ? previous!.source! : source;
           break;
         }
