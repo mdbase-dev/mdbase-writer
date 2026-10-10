@@ -50,7 +50,8 @@ runtime, locks and original signal. The default Connect/demo backends stay intac
 The user gesture reserves the mdbase tab before asynchronous SDK start/expiry
 renewal. Approval detection, custody and lifecycle remain SDK-owned. Canonical
 status/email, reopen-tab, popup-blocked and interrupted messages reflect actual
-SDK state. A generic refusal is not labelled as a user decline. Sign out waits
+SDK state. Secondary actions reuse Writer's shared button controls instead of
+browser-default button styling. A generic refusal is not labelled as a user decline. Sign out waits
 for SDK close and means local shutdown, not grant revocation or store erasure;
 forget delegates the actual selected collection ID to SDK `forget`.
 The surrounding owner closes its borrowed SDK instance on teardown, and may
