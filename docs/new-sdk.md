@@ -47,8 +47,15 @@ exact packed tarball with its SHA256; do not install an unqualified npm version.
 `AppWebSignInSession`, with explicit owner-provided release/app identity/origins,
 runtime, locks and original signal. The default Connect/demo backends stay intact.
 
-The user gesture reserves the mdbase tab before asynchronous SDK start/expiry
-renewal. Approval detection, custody and lifecycle remain SDK-owned. Canonical
+The user gesture synchronously reserves a named 620×760 Connect popup before
+SDK start/expiry renewal. The trusted popup keeps its production opener; the tab
+fallback detaches its opener before SDK-validated navigation. No secrets,
+postMessage approval or storage callback use the opener. The UI retains its
+original handle after handoff and closes on completed/terminal public statuses,
+never authorizing additional consent even when already paired. View teardown
+closes only its owned popup. A detached fallback tab is not claimed parent-closeable
+across origins. This follows TaskNotes' app-owned pattern without an SDK repin.
+Approval detection, custody and lifecycle remain SDK-owned. Canonical
 status/email, reopen-tab, popup-blocked and interrupted messages reflect actual
 SDK state. Secondary actions reuse Writer's shared button controls instead of
 browser-default button styling. A generic refusal is not labelled as a user decline. Sign out waits
