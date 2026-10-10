@@ -57,9 +57,26 @@ function NativeSignInView({ binding, onSignedOut }: NativeSignInProps) {
     return () => {
       mounted.current = false;
       document.removeEventListener("visibilitychange", foreground);
+      portal.cancel();
       // Borrowed SDK session: its actual owner handles unmount/HMR shutdown.
     };
-  }, [session]);
+  }, [session, portal]);
+
+  useEffect(() => {
+    // An already paired account may still be authorizing additional consent.
+    if (
+      [
+        "unselected",
+        "opening",
+        "setup_required",
+        "ready",
+        "blocked",
+        "closed",
+      ].includes(snapshot.status)
+    ) {
+      portal.cancel();
+    }
+  }, [portal, snapshot.status]);
 
   const act = async (action: () => Promise<unknown>) => {
     if (busy.current) return;

@@ -131,19 +131,27 @@ describe("native sign-in presentation, not an authentication engine", () => {
     expect(view.message).toBe("Your browser blocked the sign-in tab.");
     expect(view.action).toBe("Open sign-in");
   });
-  it("opens a tab in the UI gesture, detaches the opener, and delegates only navigation", () => {
-    const tab = { opener: {}, location: { replace: vi.fn() }, close: vi.fn() };
-    vi.stubGlobal("window", { open: vi.fn(() => tab) });
+  it("opens the named production popup synchronously with its trusted opener", () => {
+    const opener = {};
+    const popup = {
+      opener,
+      closed: false,
+      location: { href: "" },
+      close: vi.fn(),
+    };
+    vi.stubGlobal("window", { open: vi.fn(() => popup) });
     try {
       const portal = openSignInPortal();
-      expect(window.open).toHaveBeenCalledWith("about:blank", "_blank");
-      expect(tab.opener).toBeNull();
-      portal.navigate("https://mdbase.test/approve");
-      expect(tab.location.replace).toHaveBeenCalledWith(
-        "https://mdbase.test/approve",
+      expect(window.open).toHaveBeenCalledWith(
+        "",
+        "mdbase-connect-authorization",
+        "popup,width=620,height=760",
       );
+      expect(popup.opener).toBe(opener);
+      portal.navigate("https://mdbase.test/approve");
+      expect(popup.location.href).toBe("https://mdbase.test/approve");
       portal.close();
-      expect(tab.close).toHaveBeenCalledOnce();
+      expect(popup.close).toHaveBeenCalledOnce();
     } finally {
       vi.unstubAllGlobals();
     }
