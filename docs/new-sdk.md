@@ -23,9 +23,10 @@ app-specific session engine or proposed route/grant protocol. Shared SDK sign-in
 manifest-driven setup, actual native files and people-directory support are also
 required before the new backend can be opened.
 
-The release-qualified `8cbc82fb` successor packed archive is pinned in
+The release-qualified `9ab0f31d` successor packed archive is pinned in
 `vendor/mdbase-next-sdk.json`, with independently verified SHA256/SHA512. It
-includes SDK808's session fix, SDK809 leases and SDK814's shared read helpers.
+includes SDK808's session fix, SDK809 leases, SDK814's shared read helpers and
+SDK816's explicit environment selection.
 The working records/session delegate is unchanged; ordinary readMany gets do
 not prove a native atomic snapshot or qualify People producer compatibility.
 This is source/package
