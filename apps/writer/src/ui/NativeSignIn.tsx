@@ -100,7 +100,7 @@ function NativeSignInView({ binding, onSignedOut }: NativeSignInProps) {
         <div className="connection-actions">
           {view.waiting ? (
             <button
-              className="text-action"
+              className="mdbase-button"
               type="button"
               disabled={working}
               onClick={() => void act(authorize)}
@@ -119,7 +119,7 @@ function NativeSignInView({ binding, onSignedOut }: NativeSignInProps) {
           ) : null}
           {view.paired ? (
             <button
-              className="text-action"
+              className="mdbase-button"
               type="button"
               disabled={working}
               onClick={() => void act(signOut)}
@@ -129,7 +129,7 @@ function NativeSignInView({ binding, onSignedOut }: NativeSignInProps) {
           ) : null}
           {snapshot.selectedCollectionId ? (
             <button
-              className="text-action"
+              className="mdbase-button"
               type="button"
               disabled={working}
               onClick={() => {
