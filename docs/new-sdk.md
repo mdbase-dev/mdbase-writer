@@ -39,3 +39,26 @@ There is no new-SDK browser mode in this adapter preparation. The historical
 `next/writer-sdk` draft is reference only, not the active migration branch or
 launch evidence. New SDK artifacts must come from the release workstream as an
 exact packed tarball with its SHA256; do not install an unqualified npm version.
+
+## Public SDK sign-in UI
+
+`ConnectGate` accepts an optional `nativeSignIn` binding created with
+`createNativeSignIn(options)`. That helper constructs the actual pinned SDK
+`AppWebSignInSession`, with explicit owner-provided release/app identity/origins,
+runtime, locks and original signal. The default Connect/demo backends stay intact.
+
+The user gesture reserves the mdbase tab before asynchronous SDK start/expiry
+renewal. Approval detection, custody and lifecycle remain SDK-owned. Canonical
+status/email, reopen-tab, popup-blocked and interrupted messages reflect actual
+SDK state. A generic refusal is not labelled as a user decline. Sign out waits
+for SDK close and means local shutdown, not grant revocation or store erasure;
+forget delegates the actual selected collection ID to SDK `forget`.
+The surrounding owner closes its borrowed SDK instance on teardown, and may
+replace it only after confirmed close or explicit sign-in. Retired UI actions
+cannot publish into a new binding.
+
+The collection callback explicitly rejects with **Opening collections isn't
+available in this build yet.** There is no pretend client, setup result, native
+save state, offline-sync guarantee or reminder provider. Typed forwarding tests
+use stand-ins; actual authenticated build inputs and qualified factory/setup
+composition are still needed for a native runnable URL.
