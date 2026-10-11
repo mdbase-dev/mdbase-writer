@@ -51,7 +51,9 @@ Starter type names are not recognised as native implementations.
 Bodies are loaded lazily using their original UUID/revision; protected or changed
 records are not treated as confirmed current content. Files are read by original
 file UUID/digest with current readback checks. **Image upload is unavailable in
-SDK mode:** Writer's existing declaration grants files list/read, not files add.
+SDK mode:** Writer requires files list/read and declares files add optional. Its
+native backend does not enable uploads; the upload command and image paste/drop
+handler are hidden until incremental consent is integrated and validated.
 No adapter silently widens that permission or substitutes caller MIME metadata
 for native extension-based media classification.
 
@@ -83,9 +85,9 @@ A reconnected watch reloads the collection, and it never closes the borrowed cli
 ## Development package and evidence
 
 The normal original development archive from source
-`41c26ca73f6c97551ba4732c35627d626b927f03`, original cut
-`sdk-dev-41c26ca7`, is pinned in `vendor/mdbase-next-sdk.json` (3978820 bytes,
-SHA256 `f8a00e2364d6adacb8a8ddcfa219f4ae5a5451bfd817758a9022ca32fb9ef1e3`).
+`4c484d3cc3d06b7ecbac8061b171a25d72be2ae4`, original cut
+`sdk-dev-4c484d3c`, is pinned in `vendor/mdbase-next-sdk.json` (4000217 bytes,
+SHA256 `b4cee1c3cd8141d62b1fdaf3239184ba70542e92e223e3b5014fb12e7f763d73`).
 The SDK bundles the original beta129 `c280cd194ffd` protocol archive; Writer's
 ordinary direct `d765e675c3da` legacy protocol dependency is unchanged. This
 archive has no vendor warnings; the earlier unused-protocol exception is not
@@ -108,7 +110,14 @@ Catalog/type and lifecycle/readiness metadata stand-ins are explicit; record,
 lease, file, receipt and readback tests run through the real public SDK over
 `MemoryReplica`.
 
-This is **DEV/LAB development intake, not release qualification**. The original `41c`
+The current cut adds SDK-owned lazy Worker startup, pairing only from a sign-in
+gesture, native-return opening and refused/expired sign-in recovery. Sign in stays
+enabled while authorizing and invokes SDK `approve()`; SDK refusal copy is unchanged.
+Image insertion declares `files:add` optional, but native uploads remain disabled
+until public incremental consent is integrated and validated. No startup add permission
+or app-side consent/renewal engine is introduced.
+
+This is **DEV/LAB development intake, not release qualification**. The original `4c`
 packet carries the 3,555,291-byte native runtime matching the committed
 `9f90af73e1591cafe9c35bdd42f18ae49d5a91a0186e78695e841fecabcd833a` pin,
 including the public setup-assessment ABI and owner-binding fixes,

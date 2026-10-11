@@ -44,6 +44,13 @@ test("identity is optional: comments are unsigned without it", async () => {
   assert.deepEqual(manifest.requirements.people, { version: 1, optional: ["identity"] });
 });
 
+test("image insertion declares add OPTIONAL without widening startup file access", async () => {
+  const manifest = await buildWriterManifest();
+  assert.deepEqual(manifest.requirements.files, {
+    required: ["list", "read"], optional: ["add"], scope: { kind: "collection" },
+  });
+});
+
 // Published identities must not change. Add a new version/digest instead of updating this pin.
 // Pack digests are SHA-256 over the canonical (sorted-key) JSON of the whole pack manifest,
 // `upgrade_from` included; the beta.4 and beta.5 pins were confirmed with the mdbase CLI's `packs assess`.

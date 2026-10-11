@@ -79,6 +79,27 @@ function Capture({scope, publish}: {scope: WriterNativeScope; publish(scope: Wri
 }
 
 describe("Writer public SDK fixture boundary", () => {
+  for (const reason of ["refused", "expired"]) it(`SDK ${reason} sign-in stays renewable with exact SDK copy`, () => {
+    const h = fixture({status: "blocked", problem: reason});
+    const copy = describeError(h.application.getSnapshot());
+    if (!copy?.actionLabel) throw new Error("Missing SDK sign-in description");
+    render(<SdkWriterRoot sdk={h.sdk} />);
+    expect(screen.getByText(copy.title)).toBeTruthy();
+    expect(screen.getByText(copy.message)).toBeTruthy();
+    const signIn = screen.getByRole("button", {name: copy.actionLabel});
+    expect(signIn.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(signIn);
+    expect(h.controls.observedActions().filter(call => call.action === "approve")).toHaveLength(1);
+    expect(h.controls.observedActions().some(call => call.action === "authorize")).toBe(false);
+  });
+  it("authorizing still offers an enabled explicit SDK approval gesture", () => {
+    const h = fixture({status: "authorizing"});
+    render(<SdkWriterRoot sdk={h.sdk} />);
+    const signIn = screen.getByRole("button", {name: "Sign in"});
+    expect(signIn.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(signIn);
+    expect(h.controls.observedActions().filter(call => call.action === "approve")).toHaveLength(1);
+  });
   it("StrictMode starts once, unsubscribes/aborts caller and never closes the borrowed singleton", async () => {
     const h = fixture({status: "not_started"});
     const view = render(<StrictMode><SdkWriterRoot sdk={h.sdk} /></StrictMode>);

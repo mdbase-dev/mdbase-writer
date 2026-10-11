@@ -30,7 +30,8 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
   const application = sdk.application();
   const snapshot = useSyncExternalStore(listener => application.subscribe(listener), () => application.getSnapshot(), () => application.getSnapshot());
   const caller = useRef<AbortController | null>(null);
-  const busy = useRef(false);
+  const busy = useRef(0);
+  const latestAction = useRef(0);
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState<MdbaseErrorDescription | null>(null);
   const [review, setReview] = useState<{readonly id: string | null} | null>(null);
@@ -50,13 +51,15 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
       try { if (application.getSnapshot().status !== "closed") application.setForeground(false); } catch { /* No owner replacement/physical-close claim. */ }
     };
   }, [application]);
-  const act = async (action: (signal: AbortSignal) => Promise<unknown>) => {
+  const act = async (action: (signal: AbortSignal) => Promise<unknown>, signIn = false) => {
     const scope = caller.current;
-    if (!scope || scope.signal.aborted || busy.current) return;
-    busy.current = true; setWorking(true); setProblem(null);
+    if (!scope || scope.signal.aborted || (busy.current > 0 && !signIn)) return;
+    // Sign-in gestures go to the SDK even while authorizing; it owns renewal.
+    const ordinal = ++latestAction.current;
+    busy.current++; setWorking(true); setProblem(null);
     try { await action(scope.signal); }
-    catch (error: unknown) { if (!scope.signal.aborted) setProblem(describeError(error) ?? describeError("internal")); }
-    finally { if (!scope.signal.aborted) { busy.current = false; setWorking(false); } }
+    catch (error: unknown) { if (!scope.signal.aborted && ordinal === latestAction.current) setProblem(describeError(error) ?? describeError("internal")); }
+    finally { busy.current--; if (!scope.signal.aborted) setWorking(busy.current > 0); }
   };
   const selected = snapshot.selection.usable?.collectionId === snapshot.selectedCollectionId ? snapshot.selection.usable : null;
   const connection = selected && snapshot.status === "ready" ? sdk.connection(selected.collectionId) : null;

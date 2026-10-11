@@ -8,7 +8,7 @@ import { ConnectLayout } from "@mdbase-dev/ui/screens";
 
 type Run = (signal: AbortSignal) => Promise<unknown>;
 type Recovery =
-  | { readonly label: string; readonly run: Run }
+  | { readonly label: string; readonly run: Run; readonly signIn?: true }
   | { readonly label: string; readonly href: string }
   | { readonly label: string; readonly reload: true };
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
   readonly snapshot: MdbaseApplicationSnapshot;
   readonly problem: MdbaseErrorDescription | null;
   readonly working: boolean;
-  readonly act: (action: Run) => Promise<void>;
+  readonly act: (action: Run, signIn?: boolean) => Promise<void>;
   readonly onSignedOut: (() => void) | undefined;
   readonly requestSetup: () => void;
 }
@@ -51,12 +51,15 @@ function stateOf(
     !readinessProblem &&
     assessment === null;
   // Do not describe a cached assessment as a settled failure while a new check runs.
+  const sdkDescription = describeError(snapshot);
   const described =
     actionProblem ??
-    (settled
-      ? (describeError(snapshot) ??
-        (snapshot.status === "blocked" ? describeError("open_failed") : null))
-      : null);
+    (sdkDescription?.action === "sign_in"
+      ? sdkDescription
+      : settled
+        ? (sdkDescription ??
+          (snapshot.status === "blocked" ? describeError("open_failed") : null))
+        : null);
   const unavailable = snapshot.problem === "application_not_yet_available";
   const invalid = snapshot.selection.state === "invalid";
   const approval = snapshot.selection.state === "approval_required";
@@ -102,7 +105,7 @@ function recoveryFor(
   const label = description.actionLabel ?? "Try again";
   switch (description.action) {
     case "sign_in":
-      return { label, run: (signal) => application.authorize({ signal }) };
+      return { label, signIn: true, run: (signal) => application.approve(undefined, { signal }) };
     case "approve":
       return {
         label,
@@ -277,7 +280,7 @@ function OrdinaryActions({
   const requested = snapshot.selection.requested.collectionId;
   return (
     <>
-      {state.settled &&
+      {(state.settled || state.waiting) &&
       !state.unavailable &&
       !state.invalid &&
       !recovery &&
@@ -285,16 +288,18 @@ function OrdinaryActions({
         <button
           type="button"
           className="mdbase-button is-primary"
-          disabled={working}
+          disabled={working && signedIn && !state.waiting}
           onClick={() =>
-            void act((signal) => application.approve(requested, { signal }))
+            void act((signal) => application.approve(requested, { signal }), !signedIn || state.waiting)
           }
         >
-          {requested
-            ? "Approve collection"
-            : signedIn
-              ? "Add a collection"
-              : "Sign in"}
+          {state.waiting
+            ? "Sign in"
+            : requested
+              ? "Approve collection"
+              : signedIn
+                ? "Add a collection"
+                : "Sign in"}
         </button>
       ) : null}
       {signedIn ? (
@@ -377,9 +382,9 @@ function RecoveryControl({
     <button
       type="button"
       className={className}
-      disabled={working}
+      disabled={working && !("signIn" in recovery && recovery.signIn)}
       onClick={() =>
-        "reload" in recovery ? window.location.reload() : void act(recovery.run)
+        "reload" in recovery ? window.location.reload() : void act(recovery.run, recovery.signIn)
       }
     >
       {recovery.label}
