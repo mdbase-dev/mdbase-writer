@@ -39,11 +39,14 @@ and export continue through the existing application components.
 Discovery checks Writer's exact declared native contracts and actual type field
 mappings. Domain metadata comes from `queryContract` projections, not an
 application-side field-map projector. Complete bounded pages preserve the original
-record identities and snapshot; changed digests, revisions, repeated cursors,
-invalid projections and omitted records fail rather than falling back to raw
-fields. Unrelated definition diagnostics do not block usable Writer records;
-exact required contracts and domain projections still must pass. Untyped Markdown
-notes remain in the complete index and can be read without inventing a type.
+record identities and snapshot; changed digests, revisions, repeated cursors and
+omitted records fail rather than falling back to raw fields. A record whose
+projection has an error stays listed without projected fields; it never blocks
+the collection. Unrelated definition diagnostics do not block usable Writer
+records, and an error on one of Writer's own type definitions makes only that type
+unavailable, with plain copy on Home. Exact required contracts still must pass.
+Untyped Markdown notes remain in the complete index and are listed on Home with a
+"No type" label.
 Starter type names are not recognised as native implementations.
 Bodies are loaded lazily using their original UUID/revision; protected or changed
 records are not treated as confirmed current content. Files are read by original
@@ -70,10 +73,12 @@ writes. A contract-scoped lease is a post-launch improvement, not an application
 session/recovery engine to implement. Writer translates display values and explicit
 patches only. Scope retirement fences edits/flush completion and releases
 its owned or late-delivered leases; it never closes the borrowed client or a peer's
-lease. Repository disposal stops only its watches and owned scope. A subsequent
-discovery recreates Writer's own stale or failed change watch through the public
-SDK, fencing retired callbacks. A failed replacement fails the pending read rather
-than creating an automatic retry loop; it never closes the borrowed client.
+lease. Repository disposal stops only its watches, its reconnect timer and owned
+scope. When Writer's own change watch goes stale, fails or closes, Writer recreates it
+through the public SDK. A discovery read does this at once; otherwise one background
+reconnect waits 0.5 s, doubling to 30 s, and the wait resets once a watch is
+active. Retired callbacks are fenced and there is never more than one watch or timer.
+A reconnected watch reloads the collection, and it never closes the borrowed client.
 
 ## Development package and evidence
 

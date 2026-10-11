@@ -177,6 +177,11 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .home-drafts li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .home-draft-text { display: grid; gap: 0.05rem; min-width: 0; }
 .home-drafts p { margin: 0; }
+/* Untyped records and unusable types: calm, informational, never alerts. */
+.home-untyped { display: grid; gap: 0.5rem; margin-top: 1.25rem; }
+.home-untyped h2 { margin: 0; }
+.home-unavailable { display: grid; gap: 0.25rem; margin-top: 1rem; }
+.home-unavailable p { margin: 0; }
 .home { width: 100%; max-width: 50rem; margin: 0 auto; padding: 2rem 16px; display: grid; gap: 2rem; align-content: start; overflow: auto; }
 .home-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .home-header p { margin: 0; }

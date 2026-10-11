@@ -24,6 +24,7 @@ interface NativeMetadata {
   readonly files: ReadonlyMap<string, wire.FileView>;
   readonly generation: number;
 }
+const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000;
 function unprotected(record: wire.RecordView): boolean {
   return record.state.state === "confirmed" && !record.state.hold && !(record.state.unresolved ?? 0);
 }
@@ -42,6 +43,9 @@ export class NativeWriterBackend implements WriterBackend {
   private watch: ReturnType<MdbaseClient["watchChanges"]>;
   private stopWatchState: () => void = () => {};
   private watchEpoch = 0;
+  /** One pending background reconnect at most; its delay doubles to a cap. */
+  private reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  private reconnectDelay = RECONNECT_MIN_MS;
   private readonly external = new Set<(paths: readonly string[]) => void>();
   private readonly collection = new Set<(delta: CollectionDelta) => void>();
   private readonly abort = () => this.dispose();
@@ -67,29 +71,54 @@ export class NativeWriterBackend implements WriterBackend {
     if (this.signal.aborted) this.dispose();
   }
   get setupStatus() {return this.cached?.schema.setupStatus;}
-  private startWatch(reconnecting = false): ReturnType<MdbaseClient["watchChanges"]> {
+  private startWatch(reconnecting = false, background = false): ReturnType<MdbaseClient["watchChanges"]> {
     const epoch = ++this.watchEpoch;
-    // A failed replacement reports through the pending read, not a recursive
-    // invalidation/retry loop. SDK still owns transport and watch registration.
+    // A failed replacement does not invalidate again (no recursive reload
+    // loop); it schedules one bounded, backed-off reconnect instead.
     let notifyFailure = !reconnecting;
     const current = () => !this.disposed && epoch === this.watchEpoch;
     const watch = this.client.watchChanges(undefined, batch => {
       if (current()) this.invalidate(batch.reset ? [] : batch.changes.map(change => change.path));
     });
+    const ended = () => {
+      if (notifyFailure) this.invalidate([]);
+      notifyFailure = false;
+      this.scheduleReconnect();
+    };
     this.stopWatchState = watch.subscribe(state => {
       if (!current()) return;
-      if (state === "active") notifyFailure = true;
-      if (notifyFailure && (state === "stale" || state === "failed" || state === "closed")) this.invalidate([]);
+      if (state === "active") {
+        this.reconnectDelay = RECONNECT_MIN_MS; notifyFailure = true;
+        // Changes made while disconnected were never delivered: reload.
+        if (background) {background = false; this.invalidate([]);}
+      }
+      if (state === "stale" || state === "failed" || state === "closed") ended();
     });
-    void watch.ready.catch(() => {if (current() && notifyFailure) this.invalidate([]);});
+    void watch.ready.catch(() => {if (current()) ended();});
     return watch;
   }
+  private ended(watch: ReturnType<MdbaseClient["watchChanges"]>): boolean {
+    return watch.state === "stale" || watch.state === "failed" || watch.state === "closed";
+  }
+  /** Replace our own ended handle: fence its callbacks, retire it, start one. */
+  private replaceWatch(background: boolean): void {
+    clearTimeout(this.reconnectTimer); this.reconnectTimer = undefined;
+    ++this.watchEpoch;
+    this.stopWatchState(); this.watch();
+    this.watch = this.startWatch(true, background);
+  }
+  private scheduleReconnect(): void {
+    if (this.disposed || this.reconnectTimer !== undefined) return;
+    const delay = this.reconnectDelay;
+    this.reconnectDelay = Math.min(delay * 2, RECONNECT_MAX_MS);
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = undefined;
+      if (this.disposed || !this.connection.isCurrent() || !this.ended(this.watch)) return;
+      this.replaceWatch(true);
+    }, delay);
+  }
   private discoveryWatch(): ReturnType<MdbaseClient["watchChanges"]> {
-    if (this.watch.state === "stale" || this.watch.state === "failed" || this.watch.state === "closed") {
-      ++this.watchEpoch; // Fence callbacks before retiring only our own handle.
-      this.stopWatchState(); this.watch();
-      this.watch = this.startWatch(true);
-    }
+    if (this.ended(this.watch)) this.replaceWatch(false);
     return this.watch;
   }
   private check(generation?: number): void {
@@ -202,9 +231,12 @@ export class NativeWriterBackend implements WriterBackend {
           const binding = schema.roles(row.types).get(domain);
           const implementations = projected.implementations.filter(candidate => candidate.typeName === binding?.name);
           const implementation = implementations[0];
-          if (implementations.length !== 1 || !implementation || implementation.issues.some(issue => issue.severity === "error")) throw new Error("Writer's contract metadata projection is invalid or ambiguous.");
-          rows.set(projected.id, {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
+          if (implementations.length !== 1 || !implementation) throw new Error("Writer's contract metadata projection is ambiguous.");
           seen.add(projected.id);
+          // One invalid record stays listed without its projected fields;
+          // it never blocks the rest of the collection.
+          if (implementation.issues.some(issue => issue.severity === "error")) continue;
+          rows.set(projected.id, {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
         }
         cursor = result.page.cursor;
         if (cursor) {
@@ -226,7 +258,13 @@ export class NativeWriterBackend implements WriterBackend {
     if (!first) throw new Error("Writer has no native type for this operation.");
     return first;
   }
-  listManuscripts(): Promise<Result<ManuscriptSummary[]>> {return this.safely(async () => (await this.metadata()).store.manuscripts);}
+  listManuscripts(): Promise<Result<ManuscriptSummary[]>> {return this.safely(async () => this.available(await this.metadata(), "manuscript").store.manuscripts);}
+  /** Fails with plain copy when every Writer type for the domain is unusable. */
+  private available(metadata: NativeMetadata, domain: Domain): NativeMetadata {
+    const message = metadata.schema.unavailableMessage(domain);
+    if (message) throw new Error(message);
+    return metadata;
+  }
   index(): Promise<Result<CollectionIndex>> {return this.safely(async () => (await this.metadata()).store.index);}
   library(): Promise<Result<LibraryEntry[]>> {return this.safely(async () => (await this.metadata()).store.library);}
   annotationPaths(): Promise<Result<readonly string[]>> {return this.safely(async () => [...(await this.metadata()).store.annotations.keys()]);}
@@ -250,7 +288,7 @@ export class NativeWriterBackend implements WriterBackend {
   }
   comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>> {
     return this.safelyResult(async () => {
-      const metadata = await this.metadata();
+      const metadata = this.available(await this.metadata(), "comment");
       const result = await this.bodies(metadata).commentsForScope(scope); this.check(metadata.generation);
       return result;
     });
@@ -460,7 +498,8 @@ export class NativeWriterBackend implements WriterBackend {
   reconcile(): Promise<Result<void>> {this.invalidate([]); return this.flushChanges();}
   dispose(): void {
     if (this.disposed) return;
-    this.disposed = true; ++this.watchEpoch; this.signal.removeEventListener("abort", this.abort); this.stopWatchState(); this.watch();
+    this.disposed = true; ++this.watchEpoch; clearTimeout(this.reconnectTimer); this.reconnectTimer = undefined;
+    this.signal.removeEventListener("abort", this.abort); this.stopWatchState(); this.watch();
     this.lifetime.abort(); if (this.ownedRecords) this.records.dispose();
     this.external.clear(); this.collection.clear(); this.cached = undefined;
   }

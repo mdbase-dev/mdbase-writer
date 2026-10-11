@@ -6,7 +6,7 @@ import { signalMdbaseMark } from "@mdbase-dev/ui/mark-activity";
 import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { bodySummary, fail, type ManuscriptSummary, type Result, type WriterBackend } from "../backend/types.js";
+import { bodySummary, fail, type ManuscriptSummary, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
 import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
@@ -22,6 +22,8 @@ import { ChevronRight, PenIcon } from "./icons.js";
 const SEARCH_FROM = 6;
 /** Notes listed at once in the note picker. */
 const NOTES_SHOWN = 8;
+/** Notes without a type listed before "Show all". */
+const UNTYPED_SHOWN = 20;
 const TEMPLATE_OPTIONS = TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const STYLE_OPTIONS = STYLES.map((s) => ({ value: s.id, label: s.title }));
 
@@ -31,6 +33,9 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   const [backgroundProblem, setBackgroundProblem] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   const [recordPaths, setRecordPaths] = useState<readonly string[] | null>(null);
+  const [untyped, setUntyped] = useState<readonly string[]>([]);
+  const [unavailable, setUnavailable] = useState<readonly UnavailableType[]>([]);
+  const [allUntyped, setAllUntyped] = useState(false);
   const [summaries, setSummaries] = useState<ReadonlyMap<string, Pick<ManuscriptSummary, "words" | "embeds" | "chapters">>>(new Map());
   const [visiblePaths, setVisiblePaths] = useState<ReadonlySet<string>>(new Set());
   const [reload, setReload] = useState(0);
@@ -69,6 +74,8 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       if (!live) return;
       if (!r.ok) { setBackgroundProblem(`Index could not be loaded: ${r.message}`); return; }
       setNotes([...r.value.notePaths].sort());
+      setUntyped([...r.value.untypedPaths ?? []].sort());
+      setUnavailable(r.value.unavailableTypes ?? []);
       setRecordPaths(r.value.recordPaths);
     }).catch((error: unknown) => { if (live) setBackgroundProblem(errorMessage(error)); });
     return () => {
@@ -123,6 +130,10 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
     return notes.filter((p) => !manuscriptPaths.has(p));
   }, [notes, manuscripts]);
+  const untypedShown = useMemo(() => {
+    const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
+    return untyped.filter((p) => !manuscriptPaths.has(p));
+  }, [untyped, manuscripts]);
   const shown = useMemo(() => {
     const words = filter.toLowerCase().split(/\s+/).filter(Boolean);
     const sorted = byRecentlyEdited(manuscripts ?? []);
@@ -255,7 +266,22 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
         )}
         {shown.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}>Show 50 more manuscripts · {shown.length}</button>}
         {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted">No manuscript matches “{filter}”.</p>}
-        {problem && !dialog && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}>Retry loading</button></div>}
+        {unavailable.length > 0 && <div className="home-unavailable" role="status">
+          {unavailable.map((t) => <p key={t.name} className="muted">{t.message}</p>)}
+        </div>}
+        {untypedShown.length > 0 && <section className="home-untyped" aria-label="Notes without a type">
+          <h2>Notes without a type</h2>
+          <ul className="manuscripts">
+            {(allUntyped ? untypedShown : untypedShown.slice(0, UNTYPED_SHOWN)).map((path) => <li key={path}>
+              <button type="button" className="manuscript-row" onClick={() => onOpen(path)} title={path}>
+                <span className="manuscript-title">{noteName(path)}</span>
+                <span className="manuscript-meta">No type · {path}</span>
+              </button>
+            </li>)}
+          </ul>
+          {!allUntyped && untypedShown.length > UNTYPED_SHOWN && <button type="button" className="sidebar-more" onClick={() => setAllUntyped(true)}>Show all {untypedShown.length} notes without a type</button>}
+        </section>}
+        {problem && !dialog && !unavailable.some((t) => t.message === problem) && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}>Retry loading</button></div>}
       </section>
 
       <NewManuscriptDialog backend={backend} open={dialog} onClose={() => setDialog(false)} onOpen={onOpen} candidates={candidates} />

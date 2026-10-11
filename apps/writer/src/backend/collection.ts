@@ -4,7 +4,7 @@ import { annotationSourceLink } from "@mdbase-writer/core/annotations";
 import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
 import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { personKey, toContract } from "./comments.js";
-import { fail, libraryEntry, ok, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary } from "./types.js";
+import { fail, libraryEntry, ok, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type UnavailableType } from "./types.js";
 
 export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2" } as const;
 export const sourceContract = { id: "dev.mdbase.reader.source", version: "1.0.0-beta.1" } as const;
@@ -38,6 +38,13 @@ export interface WriterSchemaDescription {
     readonly implementations: readonly { readonly typeName: string; readonly fields: Readonly<Record<string, string>> }[];
   }[];
   readonly configuration?: JsonObject;
+  /** Types left out of `contracts` because their definition has an error. */
+  readonly unavailableTypes?: readonly (UnavailableType & { readonly domain: Domain })[];
+}
+const DOMAIN_NAMES: Record<Domain, string> = { manuscript: "Manuscripts", source: "Sources", annotation: "Annotations", comment: "Comments", person: "People" };
+/** Copy for a Writer type whose definition has an error: only that type is affected. */
+export function unavailableTypeMessage(name: string, domain: Domain): string {
+  return `Writer can't use the "${name}" type because its definition has an error. ${DOMAIN_NAMES[domain]} that use it are unavailable until the type is fixed; everything else still works.`;
 }
 export interface Binding { readonly name: string; readonly fields: Readonly<Record<string, string>>; readonly typeKey: string }
 interface RoleBinding extends Binding { readonly active: boolean }
@@ -60,6 +67,7 @@ export interface StoreDelta extends CollectionDelta {
 }
 interface Classified {
   note: boolean;
+  untyped: boolean;
   effective: boolean;
   source?: LibraryEntry;
   manuscript?: ManuscriptSummary;
@@ -101,11 +109,26 @@ export class CollectionSchema {
     const contract = this.description.contracts.find((c) => c.id === rule.contract.id);
     const implementations = contract?.implementations ?? [];
     if (implementations.length) return ok(implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey: this.typeKey })));
+    const unavailable = this.unavailableMessage(domain);
+    if (unavailable) return fail<Binding[]>(unavailable);
     if (required || (contract && domain === "annotation")) return fail<Binding[]>(`This collection has no type for ${domain}s. Set it up again from mdbase connect.`);
     if (contract || !this.starterFallback) return ok<Binding[]>([]);
     if (domain === "comment" || domain === "person") return ok<Binding[]>([]);
     const starter = this.description.types.some((t) => t.name === rule.starter);
     return ok(starter ? [{ name: rule.starter, fields: {}, typeKey: this.typeKey }] : []);
+  }
+  get unavailableTypes(): readonly UnavailableType[] {
+    return ("unavailableTypes" in this.description ? this.description.unavailableTypes ?? [] : []).map(({ name, message }) => ({ name, message }));
+  }
+  /** Set only when every type for the domain is unavailable. */
+  unavailableMessage(domain: Domain): string | undefined {
+    const listed = "unavailableTypes" in this.description ? this.description.unavailableTypes ?? [] : [];
+    const contract = this.description.contracts.find((c) => c.id === domains[domain].contract.id);
+    if (contract?.implementations.length) return undefined;
+    return listed.find((t) => t.domain === domain)?.message;
+  }
+  isUnavailableType(type: string): boolean {
+    return "unavailableTypes" in this.description && !!this.description.unavailableTypes?.some((t) => t.name === type);
   }
   roles(types: readonly string[]): ReadonlyMap<Domain, RoleBinding> {
     const key = types.join("\0"), cached = this.roleCache.get(key);
@@ -165,7 +188,8 @@ export class CollectionStore {
   constructor(public schema: CollectionSchema) {}
 
   get index(): CollectionIndex {
-    return this.indexValue ??= { recordPaths: [...this.records.keys()], notePaths: [...this.records].filter(([, r]) => r.note).map(([p]) => p), filePaths: [...this.binaries] };
+    return this.indexValue ??= { recordPaths: [...this.records.keys()], notePaths: [...this.records].filter(([, r]) => r.note).map(([p]) => p),
+      untypedPaths: [...this.records].filter(([, r]) => r.untyped).map(([p]) => p), unavailableTypes: this.schema.unavailableTypes, filePaths: [...this.binaries] };
   }
   get library(): LibraryEntry[] { return this.libraryValue ??= [...this.sources.values()].sort((a, b) => a.path.localeCompare(b.path)); }
   get manuscripts(): ManuscriptSummary[] { return this.manuscriptValue ??= [...this.papers.values()].sort((a, b) => a.title.localeCompare(b.title) || a.path.localeCompare(b.path)); }
@@ -178,7 +202,8 @@ export class CollectionStore {
     // Independent discovery queries can finish in any order. Persisted index rows
     // must not overwrite defaults already learned from effective domain queries.
     const retainEffective = discovery && row.effectiveFrontmatter === undefined && row.contractFields === undefined && previous?.effective;
-    const next: Classified = { note: /\.md$/i.test(row.path), effective: row.effectiveFrontmatter !== undefined || row.contractFields !== undefined || !!retainEffective };
+    // A record of an unusable Writer type is not someone's free writing.
+    const next: Classified = { note: /\.md$/i.test(row.path) && !row.types.some((type) => this.schema.isUnavailableType(type)), untyped: row.types.length === 0, effective: row.effectiveFrontmatter !== undefined || row.contractFields !== undefined || !!retainEffective };
     for (const [domain, binding] of this.schema.roles(row.types)) {
       if (!domains[domain].note) next.note = false;
       if (!binding.active) continue;
@@ -252,7 +277,7 @@ export class CollectionStore {
     for (const [path, row] of changes) {
       const old = this.records.get(path);
       const next = row && this.classify(row, old, discovery);
-      index ||= !!old !== !!next || old?.note !== next?.note;
+      index ||= !!old !== !!next || old?.note !== next?.note || old?.untyped !== next?.untyped;
       if (old?.source || next?.source) library ||= !equal(old?.source, next?.source);
       if (old?.manuscript || next?.manuscript) manuscripts ||= !equal(old?.manuscript, next?.manuscript);
       membership ||= !!old?.source !== !!next?.source;

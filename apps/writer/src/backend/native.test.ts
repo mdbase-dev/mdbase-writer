@@ -82,6 +82,72 @@ describe("native Writer domain backend", () => {
     first.digest = "f".repeat(64);
     expect(() => nativeWriterSchema(h.description)).toThrow("exact native contracts");
   });
+  it("lists untyped records as untyped notes rather than dropping them", async () => {
+    const h = await fixture();
+    const index = await h.backend.index();
+    expect(index.ok && index.value.untypedPaths).toEqual(["notes/chapter.md"]);
+    expect(index.ok && index.value.notePaths).toContain("notes/chapter.md");
+  });
+  it("an error in one of Writer's own types makes only that type unavailable", async () => {
+    const h = await fixture();
+    h.description.issues.push({code: "type_invalid", severity: "error", message: "Bad comment type", details: new Map([["path", "_types/native-comment.md"]])});
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
+    expect((await h.backend.library()).ok).toBe(true);
+    const index = await h.backend.index();
+    expect(index).toMatchObject({ok: true, value: {notePaths: expect.arrayContaining(["notes/chapter.md"]),
+      unavailableTypes: [{name: "native-comment", message: expect.stringContaining("Comments")}]}});
+    expect(await h.backend.comments()).toMatchObject({ok: false, message: expect.stringContaining("native-comment")});
+    expect(await h.backend.createComment({document: "manuscripts/original.md", text: "Hi"})).toMatchObject({ok: false, message: expect.stringContaining("native-comment")});
+  });
+  it("an error in the manuscript type leaves notes and sources usable", async () => {
+    const h = await fixture();
+    h.description.issues.push({code: "type_invalid", severity: "error", message: "Bad manuscript type", details: new Map([["path", "_types/native-manuscript.md"]])});
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: false, message: expect.stringContaining("native-manuscript")});
+    expect(await h.backend.library()).toMatchObject({ok: true, value: [{key: "paper"}]});
+    const index = await h.backend.index();
+    expect(index.ok && index.value.notePaths).not.toContain("manuscripts/original.md");
+    expect(index.ok && index.value.notePaths).toContain("notes/chapter.md");
+    expect(await h.backend.readBody("notes/chapter.md")).toEqual({ok: true, value: "# A chapter\n"});
+  });
+  it("one record with an invalid projection does not block the collection", async () => {
+    const h = await fixture();
+    const original = h.client.queryContract.bind(h.client);
+    vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
+      const result = await original(contract, options);
+      return {...result, records: result.records.map(record => ({...record, implementations: record.implementations.map(implementation => ({...implementation, issues: [{code: "field_invalid", severity: "error" as const, message: "bad"}]}))}))};
+    });
+    expect((await h.backend.index()).ok).toBe(true);
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
+  });
+  it("recreates an ended watch in the background with backoff and never duplicates it", async () => {
+    const initial = controlledWatch(), second = controlledWatch("starting"), third = controlledWatch("starting");
+    const h = await fixture(client => {vi.spyOn(client, "watchChanges").mockReturnValueOnce(initial.watch).mockReturnValueOnce(second.watch).mockReturnValueOnce(third.watch);});
+    const watch = vi.mocked(h.client.watchChanges);
+    expect((await h.backend.index()).ok).toBe(true);
+    const notified = vi.fn(); h.backend.onExternalChange(notified);
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+    try {
+      initial.publish("stale");
+      expect(notified).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(499); expect(watch).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1); expect(watch).toHaveBeenCalledTimes(2);
+      expect(initial.stop).toHaveBeenCalledOnce(); expect(initial.listeners.size).toBe(0);
+      second.publish("active");
+      expect(notified).toHaveBeenCalledTimes(2); // Reconnected: reload what changed meanwhile.
+      second.publish("failed");
+      expect(notified).toHaveBeenCalledTimes(3);
+      await vi.advanceTimersByTimeAsync(500); expect(watch).toHaveBeenCalledTimes(3);
+      third.publish("failed"); // Never active: retry later, doubling the wait.
+      await vi.advanceTimersByTimeAsync(999); expect(watch).toHaveBeenCalledTimes(3);
+      // A read while a retry is pending recreates once and cancels the timer.
+      const read = h.backend.index(); await vi.advanceTimersByTimeAsync(0);
+      expect((await read).ok).toBe(true);
+      expect(watch).toHaveBeenCalledTimes(4); expect(third.stop).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(60_000); expect(watch).toHaveBeenCalledTimes(4);
+      h.backend.dispose();
+      await vi.advanceTimersByTimeAsync(120_000); expect(watch).toHaveBeenCalledTimes(4);
+    } finally {vi.useRealTimers();}
+  });
   it.each(["stale", "failed"] as const)("recreates its own %s watch on discovery and fences its retired callbacks", async state => {
     const initial = controlledWatch();
     const h = await fixture(client => {vi.spyOn(client, "watchChanges").mockReturnValueOnce(initial.watch);});

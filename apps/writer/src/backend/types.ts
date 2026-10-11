@@ -56,6 +56,15 @@ export interface CollectionIndex {
    * manuscript: not comments, people, or Reader's sources and annotations.
    */
   readonly notePaths: readonly string[];
+  /** Records with no type at all: shown as notes with a calm "No type" label. */
+  readonly untypedPaths?: readonly string[];
+  /** Writer's types that can't be used because their definition has an error. */
+  readonly unavailableTypes?: readonly UnavailableType[];
+}
+export interface UnavailableType {
+  readonly name: string;
+  /** Plain copy naming the type and what is unavailable; the rest still works. */
+  readonly message: string;
 }
 
 export interface CollectionDelta {
