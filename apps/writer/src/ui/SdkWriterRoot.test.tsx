@@ -208,6 +208,31 @@ describe("Writer public SDK fixture boundary", () => {
     expect(screen.getByRole("button", {name: "Set up Writer"})).toBeTruthy();
     expect(count(h, "applySetup")).toBe(1); expect(count(h, "configure")).toBe(0);
   });
+  it("an unconfirmed setup outcome re-assesses and never claims nothing changed", async () => {
+    const {h} = reviewSetup();
+    h.controls.setHandler("applySetup", () => { throw mdbaseError("outcome_unknown", "lost reply"); });
+    fireEvent.click(await screen.findByRole("button", {name: "Confirm"}));
+    expect(await screen.findByText(/couldn't confirm whether setup finished/)).toBeTruthy();
+    await waitFor(() => expect(count(h, "planSetup")).toBe(2));
+    expect(screen.queryByText(/Nothing was changed/)).toBeNull();
+    expect(await screen.findByText(setupPlan.summary)).toBeTruthy();
+  });
+  it("a plan with nothing to review keeps the plain configure path", async () => {
+    const h = fixture({status: "setup_required", signIn: paired, selectedCollectionId: "c1", collections: [{collectionId: "c1", displayName: "Drafts", role: "owner"}]});
+    h.controls.setSetupPlan({...setupPlan, status: "current", canApply: false, summary: "Already set up.", changes: []});
+    render(<SdkWriterRoot sdk={h.sdk} />);
+    fireEvent.click(screen.getByRole("button", {name: "Set up Writer"}));
+    await waitFor(() => expect(count(h, "configure")).toBe(1));
+    expect(count(h, "applySetup")).toBe(0); expect(screen.queryByText("Already set up.")).toBeNull();
+  });
+  it("shows the plan's refusal message plainly", async () => {
+    const h = fixture({status: "setup_required", signIn: paired, selectedCollectionId: "c1", collections: [{collectionId: "c1", displayName: "Drafts", role: "owner"}]});
+    h.controls.setSetupPlan({...setupPlan, status: "conflict", canApply: false, changes: [], refusal: {code: "setup_forbidden", message: "Only the collection's owner can set up Writer."}});
+    render(<SdkWriterRoot sdk={h.sdk} />);
+    fireEvent.click(screen.getByRole("button", {name: "Set up Writer"}));
+    expect(await screen.findByText("Only the collection's owner can set up Writer.")).toBeTruthy();
+    expect(screen.getByRole("button", {name: "Confirm"}).hasAttribute("disabled")).toBe(true);
+  });
   it("unknown readiness and retired connection cannot invoke native domain UI", async () => {
     const h = await readyFixture(); const native = vi.fn(() => <p>Not permitted</p>);
     h.current.mockReturnValue(false);
