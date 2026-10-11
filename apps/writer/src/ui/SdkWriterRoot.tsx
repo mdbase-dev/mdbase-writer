@@ -55,14 +55,14 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
     catch { if (!scope.signal.aborted) setProblem(true); }
     finally { if (!scope.signal.aborted) { busy.current = false; setWorking(false); } }
   };
-  const selected = snapshot.collections.find(c => c.collectionId === snapshot.selectedCollectionId);
+  const selected = snapshot.selection.usable?.collectionId === snapshot.selectedCollectionId ? snapshot.selection.usable : null;
   const connection = selected && snapshot.status === "ready" ? sdk.connection(selected.collectionId) : null;
   const ready = connection && connection.id === selected?.collectionId && connection.records.hello.collection === connection.id && connection.isCurrent()
     && !snapshot.readiness.checking && snapshot.readiness.problem === null && snapshot.readiness.assessment?.status === "ready" && snapshot.readiness.assessment.problem === null;
   if (ready && connection) {
     const picker = <span className="native-signin-actions">
       <span>{connection.displayName}</span>
-      <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.clearSelection({ signal }))}>Choose another collection</button>
+      <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.chooseAnother({ signal }))}>Choose another collection</button>
       <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(async signal => { await application.close(); signal.throwIfAborted(); onSignedOut?.(); })}>Sign out</button>
       {problem ? <span role="alert">This action could not be completed. Please try again.</span> : null}
     </span>;
@@ -70,27 +70,32 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
   }
   const unavailable = snapshot.problem === "application_not_yet_available";
   const closed = snapshot.status === "closed";
-  const waiting = snapshot.status === "authorizing";
-  const opening = ["starting", "opening"].includes(snapshot.status) || snapshot.readiness.checking;
+  const waiting = snapshot.status === "authorizing" || snapshot.selection.state === "approving";
+  const opening = ["starting", "opening"].includes(snapshot.status) || snapshot.selection.state === "opening" || snapshot.readiness.checking;
+  const requested = snapshot.selection.requested.collectionId;
+  const approvalRequired = snapshot.selection.state === "approval_required";
+  const invalidSelection = snapshot.selection.state === "invalid";
   const signIn = !closed && snapshot.signIn?.state === "paired" ? snapshot.signIn : null;
   const identity = signIn?.accountEmail ? `Signed in as ${signIn.accountEmail}` : signIn?.accountProvider === "github" && signIn.accountLogin ? `Signed in as ${signIn.accountLogin} on GitHub` : null;
-  const error = problem || snapshot.status === "blocked";
+  const error = problem || snapshot.status === "blocked" || snapshot.selection.problem !== null;
   const message = unavailable ? "Opening collections isn't available in this build yet." : closed ? "Writer has signed out. Reload to sign in again."
-    : error ? "This action could not be completed. Please try again." : waiting ? "Waiting for approval in the mdbase tab…"
+    : invalidSelection ? "This collection link isn't valid. Choose another collection." : error ? "This action could not be completed. Please try again." : waiting ? "Waiting for approval in the mdbase tab…"
+    : approvalRequired ? "This collection needs your approval before Writer can open it."
     : snapshot.status === "setup_required" ? "This collection needs Writer setup before writing." : opening || snapshot.status === "ready" ? `Opening ${selected?.displayName ?? "your collection"}…`
     : signIn ? "Choose a collection to start writing." : "Sign in with your mdbase account to sync mdbase writer across your devices.";
   return <ConnectLayout app="writer" title="Write from your collection">
     {identity ? <p>{identity}</p> : null}<p role={error ? "alert" : "status"} aria-live="polite">{message}</p>
     <div className="native-signin-actions">
-      {!closed && !unavailable && !waiting && !opening ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => void act(signal => application.authorize({ signal }))}>Sign in</button> : null}
+      {!closed && !unavailable && !waiting && !opening && !invalidSelection ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => void act(signal => application.approve(requested, { signal }))}>{requested ? "Approve collection" : signIn ? "Add a collection" : "Sign in"}</button> : null}
+      {signIn && !waiting && !opening && (snapshot.status === "blocked" || snapshot.selection.state === "blocked") ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.reauthorize({ signal }))}>Review access</button> : null}
       {signIn ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(async signal => { await application.close(); signal.throwIfAborted(); onSignedOut?.(); })}>Sign out</button> : null}
       {!closed && !unavailable && (snapshot.status === "setup_required" || snapshot.readiness.assessment?.status === "setup_required") ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => void act(signal => application.configure({ signal }))}>Set up Writer</button> : null}
       {snapshot.selectedCollectionId && !closed ? <>
         <button type="button" className="mdbase-button" disabled={working} onClick={() => { const id = snapshot.selectedCollectionId; if (id) void act(signal => application.forget(id, { signal })); }}>Forget collection</button>
-        <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.clearSelection({ signal }))}>Choose another collection</button>
       </> : null}
+      {!closed && (snapshot.selectedCollectionId || requested || invalidSelection) ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.chooseAnother({ signal }))}>Choose another collection</button> : null}
     </div>
-    {!closed && !unavailable ? <div className="native-signin-actions">{snapshot.collections.map(c => <button key={c.collectionId} type="button" className="mdbase-button" disabled={working || waiting || opening} onClick={() => void act(signal => application.select(c.collectionId, { signal }))}>{c.displayName}</button>)}</div> : null}
+    {!closed && !unavailable && !invalidSelection && !approvalRequired ? <div className="native-signin-actions">{snapshot.collections.map(c => <button key={c.collectionId} type="button" className="mdbase-button" disabled={working || waiting || opening} onClick={() => void act(signal => application.select(c.collectionId, { signal }))}>{c.displayName}</button>)}</div> : null}
   </ConnectLayout>;
 }
 function NativeScopeView({ connection, application, renderNative, collectionPicker }: { connection: MdbaseApplicationConnection; application: MdbaseApplication; renderNative?: SdkWriterRootProps["renderNative"]; collectionPicker: ReactNode }) {

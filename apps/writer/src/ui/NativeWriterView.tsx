@@ -14,7 +14,7 @@ export function NativeWriterView({scope, collectionPicker}: {scope: WriterNative
     try {
       backend = new NativeWriterBackend(scope.connection, {
         collectionName: scope.connection.displayName, signal: scope.signal, records: scope.records,
-        authorize: () => scope.application.authorize({signal: scope.signal}),
+        authorize: () => scope.application.reauthorize({signal: scope.signal}),
       });
       const owned = backend;
       queueMicrotask(() => {if (active) setView({scope, backend: owned});});

@@ -15,7 +15,8 @@ function fixture(initial: Partial<MdbaseApplicationSnapshot> = {}) {
   const sdkFixture = createApplicationFixture({
     declaration: {id: "writer.fixture", name: "Writer fixture", origin: "https://writer.mdbase.dev", environment: "lab", manifest},
     connections: [], initialSnapshot: {status: "signed_out", signIn: null, collections: [], selectedCollectionId: null, problem: null, timing: null,
-      readiness: {...facet, facets: {capabilities: facet, contracts: facet, configuration: facet, files: facet, people: facet, notifications: facet}}, ...initial},
+      readiness: {...facet, facets: {capabilities: facet, contracts: facet, configuration: facet, files: facet, people: facet, notifications: facet}},
+      selection: {state: "none", requested: {collectionId: null, source: "none", displayName: null, approved: false}, usable: null, problem: null}, ...initial},
   }); fixtures.push(sdkFixture);
   const application = sdkFixture.entry.application();
   // Public subscription instrumentation ONLY. All state/actions remain owned by
@@ -61,7 +62,9 @@ async function readyFixture() {
   const replica = new MemoryReplica({confirmDelayMs: 0});
   replica.seed({path: "writing/main.md", frontmatter: {title: "Original manuscript"}, body: "Original manuscript", types: ["manuscript"]});
   const client = await connect({connector: replica.connector(), app: {name: "writer-ui-test", version: "test"}, reconnect: false}); clients.push(client);
-  const h = fixture({status: "ready", selectedCollectionId: replica.collection, collections: [{collectionId: replica.collection, displayName: "Writing", role: "owner"}]});
+  const selected: MdbaseApplicationSnapshot["collections"][number] = {collectionId: replica.collection, displayName: "Writing", role: "owner"};
+  const h = fixture({status: "ready", selectedCollectionId: replica.collection, collections: [selected],
+    selection: {state: "usable", requested: {collectionId: replica.collection, source: "user", displayName: "Writing", approved: true}, usable: selected, problem: null}});
   h.publish({readiness: {...h.application.getSnapshot().readiness, assessment: {status: "ready", problem: null}}});
   const metadata = vi.fn(async () => {throw new Error("No inferred metadata permission");});
   const current = vi.fn(() => true);
@@ -84,11 +87,11 @@ describe("Writer public SDK fixture boundary", () => {
     view.unmount(); expect(signal?.aborted).toBe(true); expect(h.subscriptions.size).toBe(0);
     expect(h.controls.observedActions().some(call => call.action === "close")).toBe(false);
   });
-  it("authorize is synchronous in the gesture, with no app popup or startup sequencing", () => {
+  it("approve is synchronous in the gesture, with no app popup or startup sequencing", () => {
     const h = fixture(); const open = vi.spyOn(window, "open");
     render(<SdkWriterRoot sdk={h.sdk} />);
     fireEvent.click(screen.getByRole("button", {name: "Sign in"}));
-    expect(h.controls.observedActions().filter(call => call.action === "authorize")).toHaveLength(1);
+    expect(h.controls.observedActions().filter(call => call.action === "approve")).toHaveLength(1);
     expect(h.controls.observedActions().some(call => call.action === "start")).toBe(false); expect(open).not.toHaveBeenCalled();
   });
   it("uses canonical SDK GitHub login and selects the original collection ID", () => {
@@ -98,6 +101,28 @@ describe("Writer public SDK fixture boundary", () => {
     fireEvent.click(screen.getByRole("button", {name: "Writing"}));
     expect(h.controls.observedActions().find(call => call.action === "select")).toMatchObject({collectionId: "selected-id", signal: expect.any(AbortSignal)});
     expect(screen.queryByText(/fixture-account/)).toBeNull();
+  });
+  it("unapproved URL request delegates approval without substituting another approved collection", () => {
+    const h = fixture({status: "unselected", signIn: paired, collections: [{collectionId: "other-id", displayName: "Other collection", role: "owner"}],
+      selection: {state: "approval_required", requested: {collectionId: "requested-id", source: "url", displayName: null, approved: false}, usable: null, problem: null}});
+    render(<SdkWriterRoot sdk={h.sdk} />);
+    expect(screen.queryByRole("button", {name: "Other collection"})).toBeNull();
+    fireEvent.click(screen.getByRole("button", {name: "Approve collection"}));
+    expect(h.controls.observedActions().find(call => call.action === "approve")).toMatchObject({collectionId: "requested-id", signal: expect.any(AbortSignal)});
+    expect(h.controls.observedActions().some(call => call.action === "select")).toBe(false);
+  });
+  it("blocked access delegates reauthorization to the SDK", () => {
+    const h = fixture({status: "blocked", signIn: paired});
+    render(<SdkWriterRoot sdk={h.sdk} />);
+    fireEvent.click(screen.getByRole("button", {name: "Review access"}));
+    expect(h.controls.observedActions().find(call => call.action === "reauthorize")).toMatchObject({signal: expect.any(AbortSignal)});
+  });
+  it("invalid collection request delegates choosing another without app URL parsing", () => {
+    const h = fixture({selection: {state: "invalid", requested: {collectionId: null, source: "url", displayName: null, approved: false}, usable: null, problem: "application_selection_invalid"}});
+    render(<SdkWriterRoot sdk={h.sdk} />);
+    fireEvent.click(screen.getByRole("button", {name: "Choose another collection"}));
+    expect(h.controls.observedActions().find(call => call.action === "chooseAnother")).toMatchObject({signal: expect.any(AbortSignal)});
+    expect(screen.queryByRole("button", {name: "Sign in"})).toBeNull();
   });
   it("failed physical-close outcome cannot publish sign-out or leak diagnostics", async () => {
     const h = fixture({status: "unselected", signIn: paired}); const signedOut = vi.fn();
@@ -148,7 +173,7 @@ describe("Writer public SDK fixture boundary", () => {
     await screen.findByText("Original manuscript");
     expect(screen.queryByText(/workspace integration isn't available/)).toBeNull();
     fireEvent.click(screen.getByRole("button", {name: "Choose another collection"}));
-    await waitFor(() => expect(h.controls.observedActions().some(call => call.action === "clearSelection")).toBe(true));
+    await waitFor(() => expect(h.controls.observedActions().some(call => call.action === "chooseAnother")).toBe(true));
     expect(close).not.toHaveBeenCalled();
   });
   it("explicit setup delegates to SDK configure without treating its success as READY", async () => {

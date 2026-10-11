@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { connect, MdbasePeopleClient, type MdbaseApplicationConnection, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
+import { connect, MdbaseError, MdbasePeopleClient, type MdbaseApplicationConnection, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
 import { MemoryReplica } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { NativeWriterBackend } from "./native.js";
@@ -141,7 +141,7 @@ describe("native Writer domain backend", () => {
     const changed = await h.backend.changeComment(created.value, {kind: "resolve"});
     expect(changed.ok && changed.value.status).toBe("resolved");
   });
-  it("recovers a lost create reply by the original SDK MID without creating a duplicate", async () => {
+  it.each(["untyped", "sdk-mid", "mismatched-sdk-mid"])("recovers a %s lost create reply by the original SDK MID without creating a duplicate", async mode => {
     const h = await fixture();
     const original = h.client.create.bind(h.client);
     const submitted: string[] = [];
@@ -149,9 +149,13 @@ describe("native Writer domain backend", () => {
       if (!options?.mutationId) throw new Error("Missing original MID");
       submitted.push(options.mutationId);
       const write = await original(input, options); await write.confirmed;
-      throw new Error("Lost original reply");
+      if (mode === "untyped") throw new Error("Lost original reply");
+      throw new MdbaseError({code: "outcome_unknown", recovery: "resolve_outcome", message: "Lost original reply"},
+        {mutationId: mode === "sdk-mid" ? write.mutationId : crypto.randomUUID()});
     });
-    expect((await h.backend.createRecord("notes/unknown.md", "Original intent\n")).ok).toBe(false);
+    const lost = await h.backend.createRecord("notes/unknown.md", "Original intent\n");
+    expect(lost.ok).toBe(false);
+    if (mode === "mismatched-sdk-mid") expect(lost).toMatchObject({message: "Writer lost the original mutation identity."});
     const receipt = vi.spyOn(h.client, "awaitReceipt");
     const recover = await h.backend.createRecord("notes/unknown.md", "Fresh retry must not submit\n");
     expect(recover).toMatchObject({ok: false, message: expect.stringContaining("recovered the original operation")});

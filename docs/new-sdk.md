@@ -11,7 +11,11 @@ reserve an app-owned popup.
 an explicit registered application ID and environment, and supplies Writer's
 unchanged declaration to `MdbaseConnect`. A logical manifest ID is not a native
 registration receipt. SDK startup, authorization, collection selection,
-configuration, foreground state and physical shutdown stay SDK-owned.
+configuration, foreground state and physical shutdown stay SDK-owned. The live
+entry's `selection` distinguishes a requested collection from the usable native
+scope. Approval, access review and choosing another collection delegate directly
+to `approve`, `reauthorize` and `chooseAnother`; an unapproved URL request is never
+silently replaced with another approved collection.
 
 `SdkWriterRoot` requires the selected original connection, matching native client
 collection, current connection and current successful aggregate readiness before
@@ -42,8 +46,8 @@ for native extension-based media classification.
 Manuscript/chapter creation, note adoption and comment edits use the public SDK's
 native writes and CAS. Success requires the original confirmed receipt and
 current unheld, unresolved-free native readback. A lost submit reply retains its
-original SDK MID; another click reconciles that original operation and does not
-submit a new record. The SDK owns durable capture, journals and receipt recovery.
+original SDK MID; typed `error.mutationId` must match that same operation. Another
+click reconciles the original operation and does not submit a new record. The SDK owns durable capture, journals and receipt recovery.
 People access uses the existing SDK directory with members omitted. Failed
 identity access may leave comments unsigned, never signed by a guessed account.
 
@@ -56,12 +60,14 @@ lease. Repository disposal stops only its watches and owned scope.
 ## Development package and evidence
 
 The normal original development archive from source
-`8a557ad68290e04146e456df94c4946d6f033ea7` is pinned in
+`d53d7d761c1a7caf100e065a1378384dcc5f6449` is pinned in
 `vendor/mdbase-next-sdk.json`. Its required original browser-safe protocol archive
 is in the workspace consumer's `apps/writer/vendor/`, with an ordinary direct
 file dependency. Both SHA256 and SHA512 values were checked independently. There
 are no aliases, package rewrites, private SDK imports or installed-module swaps.
-The historical SDK837 archive remains preserved.
+The historical SDK837, ad69 and 8a557 archives remain preserved. The current cut
+includes the live singleton, SDK-owned selection and Vite native-asset emission
+fix; no application loader workaround is supplied.
 
 Root tests now use `createApplicationFixture` from `@mdbase-dev/sdk/testing` and
 its public structural entry, not hidden hooks on a production constructor.
@@ -72,8 +78,9 @@ lease, file, receipt and readback tests run through the real public SDK over
 This is **development intake, not release qualification**. This packet includes
 its original native runtime (3,427,675 bytes), including `rt_app_resources`;
 `native.available` is now true for packaged integrity inputs. Runtime bytes and
-passing source tests do not establish the completed application singleton,
-native launch, registration, custody or live authentication acceptance.
+passing source tests do not establish native launch, registration, custody or
+live authentication acceptance. The public browser entry constructs in its cold
+`not_started` state; Node/SSR keeps the explicit unavailable-host shell.
 Production defaults, LAB pins and deployment remain unchanged pending the
 separately authorized qualification and cutover.
 

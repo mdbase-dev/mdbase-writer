@@ -282,9 +282,19 @@ export class NativeWriterBackend implements WriterBackend {
   private async nativeWrite(start: (mutationId: string) => Promise<Write>): Promise<Write> {
     const mutationId = crypto.randomUUID();
     this.unresolvedMutation = mutationId;
-    const write = await start(mutationId); this.check();
-    if (write.mutationId !== mutationId) throw new Error("Writer lost the original mutation identity.");
-    return write;
+    try {
+      const write = await start(mutationId); this.check();
+      if (write.mutationId !== mutationId) throw new Error("Writer lost the original mutation identity.");
+      return write;
+    } catch (error) {
+      if (isMdbaseError(error) && error.mutationId) {
+        if (error.mutationId !== mutationId) throw new Error("Writer lost the original mutation identity.", {cause: error});
+        this.unresolvedMutation = error.mutationId;
+      }
+      // Retain the captured original even for an untyped lost transport reply.
+      // A receipt lookup, never a new submit, resolves the next user action.
+      throw error;
+    }
   }
   private async confirmed(write: Write, id: string): Promise<wire.RecordView> {
     await write.confirmed; this.check();
