@@ -11,7 +11,7 @@ const changedNote = "This collection changed while you were reviewing. Nothing w
 const unknownNote = "Writer couldn't confirm whether setup finished. Here is the collection as it is now.";
 /** Only a known refusal proves nothing was written. A lost reply after the
  * request was sent, or an error that isn't an SDK error, may have applied. */
-export function setupOutcome(error: unknown): "changed" | "unknown" | "failed" {
+function setupOutcome(error: unknown): "changed" | "unknown" | "failed" {
   if (!isMdbaseError(error)) return "unknown";
   if (error.reason === "setup_changed") return "changed";
   return error.code === "outcome_unknown" || error.mutationId !== undefined ? "unknown" : "failed";
