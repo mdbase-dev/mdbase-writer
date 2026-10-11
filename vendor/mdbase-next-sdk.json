@@ -1,10 +1,10 @@
 {
   "package": "@mdbase-dev/sdk",
   "version": "0.0.0",
-  "artifact": "mdbase-dev-sdk-dev-ad69a506.tgz",
-  "sourceCommit": "ad69a506471764ad85bf2044c3429ba44428147d",
-  "sha256": "118a027331d4511fb8d1d382dc559734f39382347da35d943e6953a614fbe732",
-  "integrity": "sha512-c27Z3oUPQw6o2WnAUxC1Sw8gEjeWBGKKfmYngvWD6u7HClH/zlmVoLw4F1msEPrqi3MvHa6SNGUtP7ymIdyE3w==",
+  "artifact": "mdbase-dev-sdk-dev-8a557ad6.tgz",
+  "sourceCommit": "8a557ad68290e04146e456df94c4946d6f033ea7",
+  "sha256": "773126b8414b0d2b9b4afd3ec5b94b32b1b5fef51707a01e9db0ea324fbcfdae",
+  "integrity": "sha512-dsEQQtqBl2ldASBamlGpynsPEC4qHSbgo8vjRR/H2svC1yqsmR3mPbILuuN6On59A+z07c7hrQL02MQ5K5ayAA==",
   "qualification": "dev intake, not release-qualified",
   "includesPublicEntryAndFixture": true,
   "protocol": {
@@ -22,7 +22,13 @@
   "includesProviderReceipt827": true,
   "includesProblemDetail832": true,
   "includesCallerSignalRootFix837": true,
-  "sourceOnly": true,
+  "sourceOnly": false,
+  "native": {
+    "available": true,
+    "bytes": 3427675,
+    "sha256": "6c4ea51534b785c5165bfb671d40116535b1a60fafad035bd384708ea288de83",
+    "resourcesExportPresent": true
+  },
   "nativeFilesProducerQualified": false,
   "peopleProducerCompatibilityQualified": false,
   "perAppRuntimeTrustOriginAndOperationsQualified": false

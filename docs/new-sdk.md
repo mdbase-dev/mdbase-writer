@@ -56,7 +56,7 @@ lease. Repository disposal stops only its watches and owned scope.
 ## Development package and evidence
 
 The normal original development archive from source
-`ad69a506471764ad85bf2044c3429ba44428147d` is pinned in
+`8a557ad68290e04146e456df94c4946d6f033ea7` is pinned in
 `vendor/mdbase-next-sdk.json`. Its required original browser-safe protocol archive
 is in the workspace consumer's `apps/writer/vendor/`, with an ordinary direct
 file dependency. Both SHA256 and SHA512 values were checked independently. There
@@ -69,11 +69,13 @@ Catalog/type and lifecycle/readiness metadata stand-ins are explicit; record,
 lease, file, receipt and readback tests run through the real public SDK over
 `MemoryReplica`.
 
-This is **development intake, not release qualification**. The supplied public
-constructor still exposes its unavailable shell. Worker source and passing source
-tests do not establish native launch, registration, custody or live authentication
-acceptance. Production defaults, LAB pins and deployment are unchanged until the
-real entry and the separately authorized qualification/cutover are delivered.
+This is **development intake, not release qualification**. This packet includes
+its original native runtime (3,427,675 bytes), including `rt_app_resources`;
+`native.available` is now true for packaged integrity inputs. Runtime bytes and
+passing source tests do not establish the completed application singleton,
+native launch, registration, custody or live authentication acceptance.
+Production defaults, LAB pins and deployment remain unchanged pending the
+separately authorized qualification and cutover.
 
 ## Historical low-level sign-in UI
 
