@@ -41,7 +41,10 @@ mappings. Domain metadata comes from `queryContract` projections, not an
 application-side field-map projector. Complete bounded pages preserve the original
 record identities and snapshot; changed digests, revisions, repeated cursors,
 invalid projections and omitted records fail rather than falling back to raw
-fields. Starter type names are not recognised as native implementations.
+fields. Unrelated definition diagnostics do not block usable Writer records;
+exact required contracts and domain projections still must pass. Untyped Markdown
+notes remain in the complete index and can be read without inventing a type.
+Starter type names are not recognised as native implementations.
 Bodies are loaded lazily using their original UUID/revision; protected or changed
 records are not treated as confirmed current content. Files are read by original
 file UUID/digest with current readback checks. **Image upload is unavailable in
@@ -67,7 +70,10 @@ writes. A contract-scoped lease is a post-launch improvement, not an application
 session/recovery engine to implement. Writer translates display values and explicit
 patches only. Scope retirement fences edits/flush completion and releases
 its owned or late-delivered leases; it never closes the borrowed client or a peer's
-lease. Repository disposal stops only its watches and owned scope.
+lease. Repository disposal stops only its watches and owned scope. A subsequent
+discovery recreates Writer's own stale or failed change watch through the public
+SDK, fencing retired callbacks. A failed replacement fails the pending read rather
+than creating an automatic retry loop; it never closes the borrowed client.
 
 ## Development package and evidence
 

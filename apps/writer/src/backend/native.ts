@@ -39,8 +39,9 @@ export class NativeWriterBackend implements WriterBackend {
   private readonly lifetime = new AbortController();
   private readonly signal: AbortSignal;
   private readonly ownedRecords: boolean;
-  private readonly watch: ReturnType<MdbaseClient["watchChanges"]>;
-  private readonly stopWatchState: () => void;
+  private watch: ReturnType<MdbaseClient["watchChanges"]>;
+  private stopWatchState: () => void = () => {};
+  private watchEpoch = 0;
   private readonly external = new Set<(paths: readonly string[]) => void>();
   private readonly collection = new Set<(delta: CollectionDelta) => void>();
   private readonly abort = () => this.dispose();
@@ -61,13 +62,36 @@ export class NativeWriterBackend implements WriterBackend {
     this.signal = AbortSignal.any([options.signal, this.lifetime.signal]);
     this.ownedRecords = !options.records;
     this.records = options.records ?? new NextWriterRecords(this.client, this.signal, () => connection.isCurrent());
-    this.watch = this.client.watchChanges(undefined, batch => this.invalidate(batch.reset ? [] : batch.changes.map(change => change.path)));
-    this.stopWatchState = this.watch.subscribe(state => {if (state === "stale" || state === "failed") this.invalidate([]);});
-    void this.watch.ready.catch(() => {if (!this.disposed) this.invalidate([]);});
+    this.watch = this.startWatch();
     this.signal.addEventListener("abort", this.abort, {once: true});
     if (this.signal.aborted) this.dispose();
   }
   get setupStatus() {return this.cached?.schema.setupStatus;}
+  private startWatch(reconnecting = false): ReturnType<MdbaseClient["watchChanges"]> {
+    const epoch = ++this.watchEpoch;
+    // A failed replacement reports through the pending read, not a recursive
+    // invalidation/retry loop. SDK still owns transport and watch registration.
+    let notifyFailure = !reconnecting;
+    const current = () => !this.disposed && epoch === this.watchEpoch;
+    const watch = this.client.watchChanges(undefined, batch => {
+      if (current()) this.invalidate(batch.reset ? [] : batch.changes.map(change => change.path));
+    });
+    this.stopWatchState = watch.subscribe(state => {
+      if (!current()) return;
+      if (state === "active") notifyFailure = true;
+      if (notifyFailure && (state === "stale" || state === "failed" || state === "closed")) this.invalidate([]);
+    });
+    void watch.ready.catch(() => {if (current() && notifyFailure) this.invalidate([]);});
+    return watch;
+  }
+  private discoveryWatch(): ReturnType<MdbaseClient["watchChanges"]> {
+    if (this.watch.state === "stale" || this.watch.state === "failed" || this.watch.state === "closed") {
+      ++this.watchEpoch; // Fence callbacks before retiring only our own handle.
+      this.stopWatchState(); this.watch();
+      this.watch = this.startWatch(true);
+    }
+    return this.watch;
+  }
   private check(generation?: number): void {
     this.signal.throwIfAborted();
     if (this.disposed || !this.connection.isCurrent()) throw new Error("Writer's collection has changed.");
@@ -93,16 +117,18 @@ export class NativeWriterBackend implements WriterBackend {
   }
   private metadata(): Promise<NativeMetadata> {
     this.check();
-    if (this.cached) return Promise.resolve(this.cached);
+    if (this.cached && this.watch.state === "active") return Promise.resolve(this.cached);
+    this.cached = undefined;
     if (this.metadataJob) return this.metadataJob;
     const job = this.loadMetadata(); this.metadataJob = job;
     void job.then(() => {if (this.metadataJob === job) this.metadataJob = undefined;}, () => {if (this.metadataJob === job) this.metadataJob = undefined;});
     return job;
   }
   private async loadMetadata(): Promise<NativeMetadata> {
-    await this.watch.ready; this.check();
+    const watch = this.discoveryWatch();
+    await watch.ready; this.check();
     const generation = this.generation;
-    if (this.watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
+    if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
     const catalog = await this.client.describe(this.signal); this.check(generation);
     const schema = nativeWriterSchema(catalog);
     const store = new CollectionStore(schema);
@@ -150,7 +176,7 @@ export class NativeWriterBackend implements WriterBackend {
     } while (cursor);
     store.files([...files.keys()]);
     this.check(generation);
-    if (this.watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
+    if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
     return this.cached = {schema, store, identities, files, generation};
   }
   private async projectMetadata(catalog: wire.DescribeResult, schema: CollectionSchema, rows: Map<string, CollectionRow>, identities: ReadonlyMap<string, {id: string; revision: string}>, asOf: number, generation: number): Promise<void> {
@@ -434,7 +460,7 @@ export class NativeWriterBackend implements WriterBackend {
   reconcile(): Promise<Result<void>> {this.invalidate([]); return this.flushChanges();}
   dispose(): void {
     if (this.disposed) return;
-    this.disposed = true; this.signal.removeEventListener("abort", this.abort); this.stopWatchState(); this.watch();
+    this.disposed = true; ++this.watchEpoch; this.signal.removeEventListener("abort", this.abort); this.stopWatchState(); this.watch();
     this.lifetime.abort(); if (this.ownedRecords) this.records.dispose();
     this.external.clear(); this.collection.clear(); this.cached = undefined;
   }

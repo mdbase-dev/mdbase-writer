@@ -33,7 +33,8 @@ export function manifestContractDigest(id: string, version: string): string | un
  * The SDK remains responsible for root readiness and configuration/provisioning.
  */
 export function nativeWriterSchema(catalog: wire.DescribeResult): CollectionSchema {
-  if (catalog.issues.some(issue => issue.severity === "error")) throw new Error("Writer definitions need attention.");
+  // Aggregate readiness belongs to the SDK. An unrelated definition diagnostic
+  // must not hide usable Writer records; exact domain bindings remain checked.
   const required = manifest.requirements.contracts;
   for (const expected of required) {
     const matching = catalog.contracts.filter(contract => contract.id === expected.id && contract.version === expected.version);

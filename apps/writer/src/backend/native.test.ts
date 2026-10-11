@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { connect, MdbaseError, MdbasePeopleClient, type MdbaseApplicationConnection, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
+import { connect, MdbaseError, MdbasePeopleClient, type ChangesWatch, type MdbaseApplicationConnection, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
 import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { NativeWriterBackend } from "./native.js";
@@ -21,7 +21,7 @@ function catalog(): wire.DescribeResult {
     contracts: definitions.map(({contract, type}) => ({...contract, digest: contract.digest.replace(/^sha256:/, ""), path: `_contracts/${contract.id}.md`, contractType: "record", implementedBy: [type]})),
     types: definitions.map(({contract, type}) => ({name: type, path: `_types/${type}.md`, implements: [{contract: contract.id, version: contract.version, fields: new Map(Object.entries(mappings[type] ?? {}))}]}))};
 }
-async function fixture() {
+async function fixture(beforeBackend?: (client: MdbaseClient) => void) {
   const description = catalog();
   const contracts: MemoryContract[] = description.types.flatMap(type => (type.implements ?? []).map(implementation => {
     const contract = description.contracts.find(candidate => candidate.id === implementation.contract && candidate.version === implementation.version);
@@ -39,8 +39,20 @@ async function fixture() {
   const connection: MdbaseApplicationConnection = {id: client.collection, displayName: "Writing", scope: {account: "fixture-account", installation: "fixture-installation", collection: client.collection}, generation: "fixture-generation", records: client, files: client.files,
     people: new MdbasePeopleClient(client, {collection: client.collection, request: metadata, isCurrent: current}), isCurrent: current};
   const caller = new AbortController();
+  beforeBackend?.(client);
   const backend = new NativeWriterBackend(connection, {collectionName: "Writing", signal: caller.signal}); backends.push(backend);
   return {replica, client, description, metadata, current, caller, backend, manuscript};
+}
+
+// Public watch lifecycle stand-ins only; no private SDK fault hooks.
+function controlledWatch(initialState: ChangesWatch["state"] = "active", ready: Promise<void> = Promise.resolve()) {
+  let state = initialState;
+  const listeners = new Set<Parameters<ChangesWatch["subscribe"]>[0]>();
+  const stop = vi.fn(() => {state = "closed";});
+  const watch: ChangesWatch = Object.assign(stop, {ready, state, error: null,
+    subscribe: (listener: Parameters<ChangesWatch["subscribe"]>[0]) => {listeners.add(listener); return () => {listeners.delete(listener);};}});
+  Object.defineProperty(watch, "state", {get: () => state});
+  return {watch, stop, listeners, publish(next: ChangesWatch["state"]) {state = next; for (const listener of listeners) listener(next, null);}};
 }
 
 describe("native Writer domain backend", () => {
@@ -59,6 +71,44 @@ describe("native Writer domain backend", () => {
     expect(query.mock.calls.every(call => !call[1]?.body && !call[1]?.document)).toBe(true);
     expect(get).not.toHaveBeenCalled(); expect(h.metadata).not.toHaveBeenCalled();
     expect("writeFile" in h.backend).toBe(false);
+  });
+  it("unrelated invalid definitions do not hide Writer records or untyped notes", async () => {
+    const h = await fixture();
+    h.description.issues.push({code: "type_invalid", severity: "error", message: "An unrelated custom type is invalid", details: new Map([["path", "_types/unrelated.md"]])});
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
+    expect(await h.backend.index()).toMatchObject({ok: true, value: {notePaths: expect.arrayContaining(["notes/chapter.md"])}});
+    expect(await h.backend.readBody("notes/chapter.md")).toEqual({ok: true, value: "# A chapter\n"});
+    const first = h.description.contracts[0]; if (!first) throw new Error("Missing original contract");
+    first.digest = "f".repeat(64);
+    expect(() => nativeWriterSchema(h.description)).toThrow("exact native contracts");
+  });
+  it.each(["stale", "failed"] as const)("recreates its own %s watch on discovery and fences its retired callbacks", async state => {
+    const initial = controlledWatch();
+    const h = await fixture(client => {vi.spyOn(client, "watchChanges").mockReturnValueOnce(initial.watch);});
+    const watch = vi.mocked(h.client.watchChanges); const close = vi.spyOn(h.client, "close");
+    expect((await h.backend.index()).ok).toBe(true);
+    const notified = vi.fn(); h.backend.onExternalChange(notified);
+    initial.publish(state);
+    expect((await h.backend.index()).ok).toBe(true);
+    expect(watch).toHaveBeenCalledTimes(2); expect(initial.stop).toHaveBeenCalledOnce(); expect(initial.listeners.size).toBe(0);
+    const old = watch.mock.calls[0]?.[1]; if (!old) throw new Error("Missing original watch callback");
+    const calls = notified.mock.calls.length;
+    old({changes: [], cursor: "retired-watch", reset: true});
+    expect(notified).toHaveBeenCalledTimes(calls);
+    const current = watch.mock.results[1]?.value;
+    h.backend.dispose(); expect(current.state).toBe("closed"); expect(close).not.toHaveBeenCalled();
+  });
+  it("a replacement watch failure fails the pending read without an invalidation/retry loop", async () => {
+    const initial = controlledWatch(); let reject!: (error: Error) => void;
+    const replacement = controlledWatch("starting", new Promise<void>((_, failed) => {reject = failed;}));
+    const h = await fixture(client => {vi.spyOn(client, "watchChanges").mockReturnValueOnce(initial.watch).mockReturnValueOnce(replacement.watch);});
+    expect((await h.backend.index()).ok).toBe(true);
+    const notified = vi.fn(); h.backend.onExternalChange(notified);
+    initial.publish("failed");
+    const read = h.backend.index();
+    replacement.publish("failed"); reject(new Error("Replacement watch refused"));
+    expect(await read).toMatchObject({ok: false});
+    expect(notified).toHaveBeenCalledOnce(); expect(h.client.watchChanges).toHaveBeenCalledTimes(2);
   });
   it("refuses unsupported contract metadata without projecting raw fields locally", async () => {
     const h = await fixture();
