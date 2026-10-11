@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connect, mdbaseError, MdbasePeopleClient, type MdbaseSetupPlan, type MdbaseApplication, type MdbaseApplicationConnection, type MdbaseApplicationSnapshot, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
+import { connect, mdbaseError, describeError, summarizeStatus, MdbasePeopleClient, type MdbaseSetupPlan, type MdbaseApplication, type MdbaseApplicationConnection, type MdbaseApplicationSnapshot, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
 import { createApplicationFixture, MemoryReplica } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { SdkWriterRoot, type WriterNativeScope, type WriterSdk } from "./SdkWriterRoot.js";
@@ -112,9 +112,9 @@ describe("Writer public SDK fixture boundary", () => {
     expect(h.controls.observedActions().some(call => call.action === "select")).toBe(false);
   });
   it("blocked access delegates reauthorization to the SDK", () => {
-    const h = fixture({status: "blocked", signIn: paired});
+    const h = fixture({status: "blocked", signIn: paired, problem: "forbidden"});
     render(<SdkWriterRoot sdk={h.sdk} />);
-    fireEvent.click(screen.getByRole("button", {name: "Review access"}));
+    fireEvent.click(screen.getByRole("button", {name: describeError("forbidden")?.actionLabel ?? "Approve"}));
     expect(h.controls.observedActions().find(call => call.action === "reauthorize")).toMatchObject({signal: expect.any(AbortSignal)});
   });
   it("invalid collection request delegates choosing another without app URL parsing", () => {
@@ -149,6 +149,7 @@ describe("Writer public SDK fixture boundary", () => {
     const scopes: WriterNativeScope[] = []; const publish = (scope: WriterNativeScope) => scopes.push(scope);
     render(<StrictMode><SdkWriterRoot sdk={h.sdk} renderNative={scope => <Capture scope={scope} publish={publish} />} /></StrictMode>);
     await screen.findByText("Native test consumer");
+    await waitFor(() => expect(scopes.length).toBeGreaterThan(0));
     const scope = scopes.at(-1); if (!scope) throw new Error("Missing public native scope");
     expect(scope.connection.records).toBe(h.client);
     const opened = await scope.records.open("writing/main.md", {autosave: false}); if (!opened.ok) throw new Error(opened.problem.code);
@@ -183,7 +184,7 @@ describe("Writer public SDK fixture boundary", () => {
     const h = fixture({status: "setup_required", signIn: paired, selectedCollectionId: "c1", collections: [{collectionId: "c1", displayName: "Drafts", role: "owner"}]});
     h.controls.setSetupPlan(setupPlan); const native = vi.fn(() => <p>Never ready</p>);
     render(<StrictMode><SdkWriterRoot sdk={h.sdk} renderNative={native} /></StrictMode>);
-    fireEvent.click(screen.getByRole("button", {name: "Set up Writer"}));
+    fireEvent.click(screen.getByRole("button", {name: describeError("setup_required")?.actionLabel ?? "Missing SDK setup label"}));
     return {h, native};
   }
   it("setup shows the SDK review and only Confirm applies that plan, without treating success as READY", async () => {
@@ -195,7 +196,7 @@ describe("Writer public SDK fixture boundary", () => {
     await waitFor(() => expect(count(h, "applySetup")).toBe(1));
     expect(h.controls.observedActions().find(call => call.action === "applySetup")?.signal).toBeInstanceOf(AbortSignal);
     expect(count(h, "configure")).toBe(0);
-    await waitFor(() => expect(screen.getByText("This collection needs Writer setup before writing.")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(describeError("setup_required")?.message ?? "Missing SDK setup copy")).toBeTruthy());
     expect(native).not.toHaveBeenCalled();
   });
   it("a collection that changed during review is planned again, and Cancel writes nothing", async () => {
@@ -205,7 +206,7 @@ describe("Writer public SDK fixture boundary", () => {
     expect(await screen.findByText(/changed while you were reviewing/)).toBeTruthy();
     expect(count(h, "planSetup")).toBe(2); expect(count(h, "applySetup")).toBe(1);
     fireEvent.click(await screen.findByRole("button", {name: "Cancel"}));
-    expect(screen.getByRole("button", {name: "Set up Writer"})).toBeTruthy();
+    expect(screen.getByRole("button", {name: describeError("setup_required")?.actionLabel ?? "Missing SDK setup label"})).toBeTruthy();
     expect(count(h, "applySetup")).toBe(1); expect(count(h, "configure")).toBe(0);
   });
   it("an unconfirmed setup outcome re-assesses and never claims nothing changed", async () => {
@@ -221,7 +222,7 @@ describe("Writer public SDK fixture boundary", () => {
     const h = fixture({status: "setup_required", signIn: paired, selectedCollectionId: "c1", collections: [{collectionId: "c1", displayName: "Drafts", role: "owner"}]});
     h.controls.setSetupPlan({...setupPlan, status: "current", canApply: false, summary: "Already set up.", changes: []});
     render(<SdkWriterRoot sdk={h.sdk} />);
-    fireEvent.click(screen.getByRole("button", {name: "Set up Writer"}));
+    fireEvent.click(screen.getByRole("button", {name: describeError("setup_required")?.actionLabel ?? "Missing SDK setup label"}));
     await waitFor(() => expect(count(h, "configure")).toBe(1));
     expect(count(h, "applySetup")).toBe(0); expect(screen.queryByText("Already set up.")).toBeNull();
   });
@@ -229,14 +230,78 @@ describe("Writer public SDK fixture boundary", () => {
     const h = fixture({status: "setup_required", signIn: paired, selectedCollectionId: "c1", collections: [{collectionId: "c1", displayName: "Drafts", role: "owner"}]});
     h.controls.setSetupPlan({...setupPlan, status: "conflict", canApply: false, changes: [], refusal: {code: "setup_forbidden", message: "Only the collection's owner can set up Writer."}});
     render(<SdkWriterRoot sdk={h.sdk} />);
-    fireEvent.click(screen.getByRole("button", {name: "Set up Writer"}));
+    fireEvent.click(screen.getByRole("button", {name: describeError("setup_required")?.actionLabel ?? "Missing SDK setup label"}));
     expect(await screen.findByText("Only the collection's owner can set up Writer.")).toBeTruthy();
     expect(screen.getByRole("button", {name: "Confirm"}).hasAttribute("disabled")).toBe(true);
+  });
+  it.each([null, {code: "unavailable"}])("settled readiness %j checks again without opening native UI", async problem => {
+    const h = await readyFixture();
+    h.publish({readiness: {...h.application.getSnapshot().readiness, assessment: null, problem}});
+    const native = vi.fn(() => <p>Not yet ready</p>);
+    render(<SdkWriterRoot sdk={h.sdk} renderNative={native}/>);
+    expect(screen.queryByText(/Opening/)).toBeNull();
+    if (problem) expect(screen.getByRole("alert").textContent).toContain(describeError(problem)?.message);
+    fireEvent.click(screen.getByRole("button", {name: "Check again"}));
+    await waitFor(() => expect(h.controls.observedActions().some(call => call.action === "assess")).toBe(true));
+    expect(h.controls.observedActions().find(call => call.action === "assess")?.signal).toBeInstanceOf(AbortSignal);
+    expect(native).not.toHaveBeenCalled();
+  });
+  it("an incompatible settled collection uses SDK copy and a validated update link", async () => {
+    const h = await readyFixture();
+    h.publish({readiness: {...h.application.getSnapshot().readiness, assessment: {status: "incompatible", problem: null}}});
+    const native = vi.fn(() => <p>Not permitted</p>);
+    render(<SdkWriterRoot sdk={h.sdk} renderNative={native}/>);
+    const description = describeError(h.application.getSnapshot());
+    expect(screen.getByRole("alert").textContent).toContain(description?.message);
+    expect(screen.getByRole("link", {name: description?.actionLabel ?? "Update the app"}).getAttribute("href")).toBe(description?.updateUrl);
+    fireEvent.click(screen.getByRole("button", {name: "Choose another collection"}));
+    await waitFor(() => expect(h.controls.observedActions().some(call => call.action === "chooseAnother")).toBe(true));
+    expect(native).not.toHaveBeenCalled();
+  });
+  it("active checking ignores a stale incompatible assessment", async () => {
+    const h = await readyFixture();
+    h.publish({readiness: {...h.application.getSnapshot().readiness, checking: true, assessment: {status: "incompatible", problem: null}}});
+    render(<SdkWriterRoot sdk={h.sdk}/>);
+    expect(screen.getByRole("status").textContent).toContain("Opening Writing");
+    expect(screen.queryByRole("button", {name: "Check again"})).toBeNull();
+    expect(screen.queryByRole("link", {name: "Update the app"})).toBeNull();
+  });
+  it("a thrown registration refusal uses safe SDK copy, not raw or developer diagnostics", async () => {
+    const h = fixture();
+    h.controls.setHandler("approve", () => {throw Object.assign(new Error("private-registration-detail"), {code: "invalid_request", reason: "application_registration_refused"});});
+    render(<SdkWriterRoot sdk={h.sdk}/>);
+    fireEvent.click(screen.getByRole("button", {name: "Sign in"}));
+    const description = describeError({code: "invalid_request", reason: "application_registration_refused"});
+    expect((await screen.findByRole("alert")).textContent).toContain(description?.message);
+    expect(screen.queryByText("private-registration-detail")).toBeNull();
+    expect(description?.developerMessage).toBeTypeOf("string");
+    if (description?.developerMessage) expect(screen.queryByText(description.developerMessage)).toBeNull();
+  });
+  it.each(["collection_migrating", "update_required", "account_suspended"])("live %s preserves local edits and original record leases", async problem => {
+    const h = await readyFixture();
+    const close = vi.spyOn(h.client, "close");
+    const peer = await h.client.records.open({path: "writing/main.md"}, {autosave: false});
+    const scopes: WriterNativeScope[] = [];
+    render(<SdkWriterRoot sdk={h.sdk} renderNative={scope => <><Capture scope={scope} publish={value => scopes.push(value)}/><input aria-label="Local manuscript" defaultValue="Draft"/></>}/>);
+    await screen.findByText("Native test consumer");
+    const scope = scopes.at(-1); if (!scope) throw new Error("Missing original scope");
+    const input = screen.getByRole<HTMLInputElement>("textbox", {name: "Local manuscript"});
+    fireEvent.change(input, {target: {value: "Unsaved local edit"}});
+    await act(async () => h.publish({problem}));
+    expect(screen.getByText(summarizeStatus(h.client.status, problem).text)).toBeTruthy();
+    expect(screen.getByRole("textbox", {name: "Local manuscript"})).toBe(input);
+    expect(input.value).toBe("Unsaved local edit");
+    expect(scopes.at(-1)).toBe(scope); expect(scope.signal.aborted).toBe(false);
+    expect(peer.session.getSnapshot().body).toBe("Original manuscript");
+    expect(close).not.toHaveBeenCalled(); peer.release();
   });
   it("unknown readiness and retired connection cannot invoke native domain UI", async () => {
     const h = await readyFixture(); const native = vi.fn(() => <p>Not permitted</p>);
     h.current.mockReturnValue(false);
     render(<SdkWriterRoot sdk={h.sdk} renderNative={native} />);
     await act(async () => undefined); expect(native).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Opening/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", {name: "Choose another collection"}));
+    await waitFor(() => expect(h.controls.observedActions().some(call => call.action === "chooseAnother")).toBe(true));
   });
 });

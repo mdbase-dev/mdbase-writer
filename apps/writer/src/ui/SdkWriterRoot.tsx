@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import type { MdbaseApplication, MdbaseApplicationConnection, MdbaseApplicationEntry, MdbaseClient } from "@mdbase-dev/sdk";
+import { describeError, summarizeStatus, type MdbaseApplication, type MdbaseApplicationConnection, type MdbaseApplicationEntry, type MdbaseApplicationSnapshot, type MdbaseClient, type MdbaseErrorDescription } from "@mdbase-dev/sdk";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { NextWriterRecords } from "../backend/next-records.js";
 import { NativeWriterView } from "./NativeWriterView.js";
+import { SdkWriterConnection } from "./SdkWriterConnection.js";
 import { SetupReview } from "./SetupReview.js";
 
 export type WriterSdk = MdbaseApplicationEntry;
@@ -31,9 +32,8 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
   const caller = useRef<AbortController | null>(null);
   const busy = useRef(false);
   const [working, setWorking] = useState(false);
-  const [problem, setProblem] = useState(false);
-  // Setup always goes through one review; nothing is written before Confirm.
-  const [reviewing, setReviewing] = useState(false);
+  const [problem, setProblem] = useState<MdbaseErrorDescription | null>(null);
+  const [review, setReview] = useState<{readonly id: string | null} | null>(null);
   useEffect(() => {
     const scope = new AbortController(); caller.current = scope;
     const foreground = () => {
@@ -43,7 +43,7 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
     document.addEventListener("visibilitychange", foreground); foreground();
     queueMicrotask(() => {
       if (scope.signal.aborted || application.getSnapshot().status !== "not_started") return;
-      void application.start({ signal: scope.signal }).catch(() => { if (!scope.signal.aborted) setProblem(true); });
+      void application.start({ signal: scope.signal }).catch((error: unknown) => { if (!scope.signal.aborted) setProblem(describeError(error) ?? describeError("internal")); });
     });
     return () => {
       scope.abort(); document.removeEventListener("visibilitychange", foreground);
@@ -53,9 +53,9 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
   const act = async (action: (signal: AbortSignal) => Promise<unknown>) => {
     const scope = caller.current;
     if (!scope || scope.signal.aborted || busy.current) return;
-    busy.current = true; setWorking(true); setProblem(false);
+    busy.current = true; setWorking(true); setProblem(null);
     try { await action(scope.signal); }
-    catch { if (!scope.signal.aborted) setProblem(true); }
+    catch (error: unknown) { if (!scope.signal.aborted) setProblem(describeError(error) ?? describeError("internal")); }
     finally { if (!scope.signal.aborted) { busy.current = false; setWorking(false); } }
   };
   const selected = snapshot.selection.usable?.collectionId === snapshot.selectedCollectionId ? snapshot.selection.usable : null;
@@ -67,46 +67,18 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
       <span>{connection.displayName}</span>
       <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.chooseAnother({ signal }))}>Choose another collection</button>
       <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(async signal => { await application.close(); signal.throwIfAborted(); onSignedOut?.(); })}>Sign out</button>
-      {problem ? <span role="alert">This action could not be completed. Please try again.</span> : null}
+      {problem ? <span role="alert">{problem.message}</span> : null}
     </span>;
-    return <NativeScopeView key={`${connection.id}:${connection.generation}`} connection={connection} application={application} renderNative={renderNative} collectionPicker={picker} />;
+    return <NativeScopeView key={`${connection.id}:${connection.generation}`} connection={connection} application={application} renderNative={renderNative} collectionPicker={picker} problem={snapshot.problem} />;
   }
-  const unavailable = snapshot.problem === "application_not_yet_available";
-  const closed = snapshot.status === "closed";
-  const setup = !closed && !unavailable && (snapshot.status === "setup_required" || snapshot.readiness.assessment?.status === "setup_required");
-  if (reviewing && setup) {
-    const name = snapshot.collections.find(c => c.collectionId === snapshot.selectedCollectionId)?.displayName ?? "this collection";
-    return <SetupReview application={application} displayName={name} onCancel={() => setReviewing(false)} onApplied={() => setReviewing(false)} />;
+  const setup = snapshot.status === "setup_required" || snapshot.readiness.assessment?.status === "setup_required" || describeError(snapshot)?.action === "set_up";
+  if (review && review.id === snapshot.selectedCollectionId && setup && !snapshot.readiness.checking && snapshot.status !== "closed") {
+    const name = snapshot.collections.find(collection => collection.collectionId === review.id)?.displayName ?? "this collection";
+    return <SetupReview key={review.id} application={application} displayName={name} onCancel={() => setReview(null)} onApplied={() => setReview(null)}/>;
   }
-  const waiting = snapshot.status === "authorizing" || snapshot.selection.state === "approving";
-  const opening = ["starting", "opening"].includes(snapshot.status) || snapshot.selection.state === "opening" || snapshot.readiness.checking;
-  const requested = snapshot.selection.requested.collectionId;
-  const approvalRequired = snapshot.selection.state === "approval_required";
-  const invalidSelection = snapshot.selection.state === "invalid";
-  const signIn = !closed && snapshot.signIn?.state === "paired" ? snapshot.signIn : null;
-  const identity = signIn?.accountEmail ? `Signed in as ${signIn.accountEmail}` : signIn?.accountProvider === "github" && signIn.accountLogin ? `Signed in as ${signIn.accountLogin} on GitHub` : null;
-  const error = problem || snapshot.status === "blocked" || snapshot.selection.problem !== null;
-  const message = unavailable ? "Opening collections isn't available in this build yet." : closed ? "Writer has signed out. Reload to sign in again."
-    : invalidSelection ? "This collection link isn't valid. Choose another collection." : error ? "This action could not be completed. Please try again." : waiting ? "Waiting for approval in the mdbase tab…"
-    : approvalRequired ? "This collection needs your approval before Writer can open it."
-    : snapshot.status === "setup_required" ? "This collection needs Writer setup before writing." : opening || snapshot.status === "ready" ? `Opening ${selected?.displayName ?? "your collection"}…`
-    : signIn ? "Choose a collection to start writing." : "Sign in with your mdbase account to sync mdbase writer across your devices.";
-  return <ConnectLayout app="writer" title="Write from your collection">
-    {identity ? <p>{identity}</p> : null}<p role={error ? "alert" : "status"} aria-live="polite">{message}</p>
-    <div className="native-signin-actions">
-      {!closed && !unavailable && !waiting && !opening && !invalidSelection ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => void act(signal => application.approve(requested, { signal }))}>{requested ? "Approve collection" : signIn ? "Add a collection" : "Sign in"}</button> : null}
-      {signIn && !waiting && !opening && (snapshot.status === "blocked" || snapshot.selection.state === "blocked") ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.reauthorize({ signal }))}>Review access</button> : null}
-      {signIn ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(async signal => { await application.close(); signal.throwIfAborted(); onSignedOut?.(); })}>Sign out</button> : null}
-      {setup ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => setReviewing(true)}>Set up Writer</button> : null}
-      {snapshot.selectedCollectionId && !closed ? <>
-        <button type="button" className="mdbase-button" disabled={working} onClick={() => { const id = snapshot.selectedCollectionId; if (id) void act(signal => application.forget(id, { signal })); }}>Forget collection</button>
-      </> : null}
-      {!closed && (snapshot.selectedCollectionId || requested || invalidSelection) ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.chooseAnother({ signal }))}>Choose another collection</button> : null}
-    </div>
-    {!closed && !unavailable && !invalidSelection && !approvalRequired ? <div className="native-signin-actions">{snapshot.collections.map(c => <button key={c.collectionId} type="button" className="mdbase-button" disabled={working || waiting || opening} onClick={() => void act(signal => application.select(c.collectionId, { signal }))}>{c.displayName}</button>)}</div> : null}
-  </ConnectLayout>;
+  return <SdkWriterConnection application={application} snapshot={snapshot} problem={problem} working={working} act={act} onSignedOut={onSignedOut} requestSetup={() => setReview({id: snapshot.selectedCollectionId})}/>;
 }
-function NativeScopeView({ connection, application, renderNative, collectionPicker }: { connection: MdbaseApplicationConnection; application: MdbaseApplication; renderNative?: SdkWriterRootProps["renderNative"]; collectionPicker: ReactNode }) {
+function NativeScopeView({ connection, application, renderNative, collectionPicker, problem }: { connection: MdbaseApplicationConnection; application: MdbaseApplication; renderNative?: SdkWriterRootProps["renderNative"]; collectionPicker: ReactNode; problem: MdbaseApplicationSnapshot["problem"] }) {
   const [view, setView] = useState<{ client: MdbaseClient; scope: WriterNativeScope } | null>(null);
   const client = connection.records;
   // Parent keys by original SDK ID/generation. Snapshot publications may return
@@ -120,5 +92,12 @@ function NativeScopeView({ connection, application, renderNative, collectionPick
     return () => { active = false; lifetime.abort(); records.dispose(); };
   }, [application, client, originalConnection]);
   if (!view || view.client !== client) return <ConnectLayout app="writer" title="Opening your collection"><p role="status">Opening Writer…</p></ConnectLayout>;
-  return renderNative ? renderNative(view.scope) : <NativeWriterView scope={view.scope} collectionPicker={collectionPicker} />;
+  return <><NativeStatus connection={originalConnection} problem={problem}/>{renderNative ? renderNative(view.scope) : <NativeWriterView scope={view.scope} collectionPicker={collectionPicker} />}</>;
+}
+
+function NativeStatus({connection, problem}: {readonly connection: MdbaseApplicationConnection; readonly problem: MdbaseApplicationSnapshot["problem"]}) {
+  const status = useSyncExternalStore(listener => connection.records.onStatus(listener), () => connection.records.status, () => connection.records.status);
+  const summary = summarizeStatus(status, problem);
+  const description = describeError(problem);
+  return ["collection_migrating", "update_required", "account_suspended"].includes(summary.kind) ? <p className="mdbase-connect-status" role="status">{summary.text}{description?.action === "update_app" && description.updateUrl ? <>{" "}<a href={description.updateUrl} target="_blank" rel="noreferrer">{description.actionLabel}</a></> : null}</p> : null;
 }

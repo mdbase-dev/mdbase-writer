@@ -41,25 +41,22 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   const [reload, setReload] = useState(0);
   const bodyCache = useRef(new Map<string, Promise<Result<string>>>());
   const rows = useRef<HTMLUListElement>(null);
-  const limitReads = useMemo(() => limitConcurrency(4), [backend]);
+  const [limitReads] = useState(() => limitConcurrency(4));
   const [sources, setSources] = useState<number | null>(null);
   const [dialog, setDialog] = useState(false);
   const [filter, setFilter] = useState("");
   const [limit, setLimit] = useState(50);
   const namespace = localNamespace(backend);
   // What this browser remembers: the manuscripts opened last, and drafts not yet saved.
-  const [recent, setRecent] = useState(() => recentManuscripts(namespace));
-  const [drafts, setDrafts] = useState(() => new DraftStore(namespace).list());
-  useEffect(() => {
-    setRecent(recentManuscripts(namespace));
-    setDrafts(new DraftStore(namespace).list());
-  }, [namespace, reload]);
+  const remembered = useMemo(() => ({revision: reload, recent: recentManuscripts(namespace),
+    drafts: new DraftStore(namespace).list()}), [namespace, reload]);
+  const {recent, drafts} = remembered;
 
   useEffect(() => {
     let live = true;
-    setProblem(null);
-    setBackgroundProblem(null);
-    const pending = backend.flushChanges?.() ?? Promise.resolve();
+    const pending = (backend.flushChanges?.() ?? Promise.resolve()).then(() => {
+      if (live) {setProblem(null); setBackgroundProblem(null);}
+    });
     void pending.then(() => backend.listManuscripts()).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
@@ -81,7 +78,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     return () => {
       live = false;
     };
-  }, [backend, reload]);
+  }, [backend, remembered.revision]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -103,6 +100,9 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   }, [backend]);
 
   const recordIndex = useMemo(() => pathIndex(recordPaths ?? []), [recordPaths]);
+  const byPath = useMemo(() => new Map((manuscripts ?? []).map((m) => [m.path, m])), [manuscripts]);
+  const continuing = useMemo(() => recent.map((r) => byPath.get(r.path)).find((m): m is ManuscriptSummary => Boolean(m)), [recent, byPath]);
+  const countPaths = useMemo(() => continuing ? new Set([...visiblePaths, continuing.path]) : visiblePaths, [visiblePaths, continuing]);
 
   // Bodies are only read for visible rows, at most four concurrent manuscript traversals.
   useEffect(() => {
@@ -115,7 +115,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       return cached;
     };
     const candidates = recordIndex;
-    void mapConcurrent(manuscripts.filter((m) => visiblePaths.has(m.path)), 4, async (m) => {
+    void mapConcurrent(manuscripts.filter((m) => countPaths.has(m.path)), 4, async (m) => {
       if (!live) return;
       const body = await read(m.path);
       if (!body.ok || !live) return;
@@ -124,7 +124,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       if (live) setSummaries((known) => new Map(known).set(m.path, { ...summary, words }));
     }).catch(() => { /* Counts are optional; failed body reads never hide a title. */ });
     return () => { live = false; };
-  }, [backend, manuscripts, recordPaths, recordIndex, visiblePaths, limitReads, reload]);
+  }, [backend, manuscripts, recordPaths, recordIndex, countPaths, limitReads, remembered.revision]);
 
   const candidates = useMemo(() => {
     const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
@@ -147,16 +147,11 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     rows.current?.querySelectorAll("[data-path]").forEach((row) => observer.observe(row));
     return () => observer.disconnect();
   }, [shown, limit]);
-  const byPath = useMemo(() => new Map((manuscripts ?? []).map((m) => [m.path, m])), [manuscripts]);
-  const continuing = useMemo(() => recent.map((r) => byPath.get(r.path)).find((m): m is ManuscriptSummary => Boolean(m)), [recent, byPath]);
   // A chapter's draft belongs to the manuscript that embeds it; a stray one is still listed.
   const draftRows = useMemo(() => drafts.map((d) => {
     const manuscript = byPath.get(d.path) ?? (manuscripts ?? []).find((m) => (summaries.get(m.path)?.chapters ?? m.chapters ?? []).some((c) => c === d.path || `${c}.md` === d.path || d.path.endsWith(`/${c}.md`)));
     return { ...d, manuscript, title: byPath.get(d.path)?.title ?? noteName(d.path) };
   }), [drafts, byPath, manuscripts, summaries]);
-  useEffect(() => {
-    if (continuing) setVisiblePaths((previous) => previous.has(continuing.path) ? previous : new Set([...previous, continuing.path]));
-  }, [continuing]);
   const newButton = (
     <button type="button" className="mdbase-button is-primary" onClick={() => setDialog(true)}>
       <PlusIcon />
@@ -491,7 +486,11 @@ function ContinueCard({ manuscript, words, goal, onGoal, onOpen }: { manuscript:
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(goal ? String(goal) : "");
   const goalId = useId();
-  useEffect(() => { setDraft(goal ? String(goal) : ""); }, [goal]);
+  const [previousGoal, setPreviousGoal] = useState(goal);
+  if (previousGoal !== goal) {
+    setPreviousGoal(goal);
+    setDraft(goal ? String(goal) : "");
+  }
   const progress = goal && words !== undefined ? Math.min(1, words / goal) : null;
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -83,10 +83,10 @@ A reconnected watch reloads the collection, and it never closes the borrowed cli
 ## Development package and evidence
 
 The normal original development archive from source
-`6a576a5f25231333bd899274ad6fed91f54a19ab`, original cut
-`sdk-dev-6a576a5f`, is pinned in `vendor/mdbase-next-sdk.json` (4289200 bytes,
-SHA256 `00ee3484b4d70b9df4b9fab72c6fcadf24476c1b5834eef6d4d9a4a9281ec56f`).
-The SDK bundles the original beta129 `3c14fc913a80` protocol archive; Writer's
+`41c26ca73f6c97551ba4732c35627d626b927f03`, original cut
+`sdk-dev-41c26ca7`, is pinned in `vendor/mdbase-next-sdk.json` (3978820 bytes,
+SHA256 `f8a00e2364d6adacb8a8ddcfa219f4ae5a5451bfd817758a9022ca32fb9ef1e3`).
+The SDK bundles the original beta129 `c280cd194ffd` protocol archive; Writer's
 ordinary direct `d765e675c3da` legacy protocol dependency is unchanged. This
 archive has no vendor warnings; the earlier unused-protocol exception is not
 carried forward.
@@ -95,7 +95,12 @@ installation. There are no aliases, package rewrites, private SDK imports or
 installed-module swaps. Earlier SDK/native archives remain preserved. This cut
 includes atomic contract body updates/promotion and public explicit-digest
 `MemoryContract` fixtures, public error/status helpers and portable/native-origin
-sign-in APIs in one pin; no application loader workaround is supplied.
+sign-in APIs in one pin; no application loader workaround is supplied. The `41c`
+cut adds SDK-owned per-type readiness degradation, safe user-facing error copy
+and action labels, log-service CORS support and a thin-client entry. Writer opts
+into `{readiness: {typeIssues: "degrade"}}`; unavailable Writer types stay
+unavailable while usable types remain accessible. Packaged CORS code does not
+prove a deployed extension origin or authenticated acceptance.
 
 Root tests now use `createApplicationFixture` from `@mdbase-dev/sdk/testing` and
 its public structural entry, not hidden hooks on a production constructor.
@@ -103,9 +108,10 @@ Catalog/type and lifecycle/readiness metadata stand-ins are explicit; record,
 lease, file, receipt and readback tests run through the real public SDK over
 `MemoryReplica`.
 
-This is **DEV/LAB development intake, not release qualification**. The original `6a`
-packet carries the 3,553,905-byte native runtime matching the committed
-`08bb2dfcfd48e663147a7d1f3ebf2728b81bd82ac59183307c2cd7bc30c9ab67` pin,
+This is **DEV/LAB development intake, not release qualification**. The original `41c`
+packet carries the 3,555,291-byte native runtime matching the committed
+`9f90af73e1591cafe9c35bdd42f18ae49d5a91a0186e78695e841fecabcd833a` pin,
+including the public setup-assessment ABI and owner-binding fixes,
 including the resources export and promotion support, registration-refusal
 guidance, Private-collection availability reasons and collection deletion APIs. Its
 `native.available=true` describes packaged integrity, not native launch,
@@ -113,6 +119,26 @@ registration, custody or live authentication acceptance. The earlier source-only
 `2e2ae687` cut remains a separate immutable packet; it was not overwritten.
 Passing `MemoryReplica` tests does not establish runtime acceptance. Production
 remains legacy; this port has not been deployed or merged into Writer main.
+
+## Readiness and setup review
+
+`next/new-sdk` combines the public-entry line with settled readiness actions and
+SDK setup review. Missing or failed readiness offers **Check again** through
+`assess()`; a retired connection offers the SDK chooser. SDK `describeError`
+provides safe headings, copy and recovery actions, including validated update
+links for incompatible versions. Active checks remain loading. No native
+workspace is allocated before aggregate readiness and the original connection
+are current.
+
+Setup reads the SDK plan before showing its summary, changes, conflicts and
+refusal. Confirm applies that original object; an empty plan uses `configure()`.
+Unknown outcomes re-assess through the SDK rather than claim no changes or
+submit a fresh mutation automatically. Scope retirement fences the review.
+
+Live migration, update and suspension status uses `summarizeStatus` over the
+original client without replacing a still-current editable workspace, its local
+edits or record leases. Teardown removes only owned listeners/adapters, never the
+borrowed client.
 
 ## Historical low-level sign-in UI
 

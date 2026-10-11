@@ -9,7 +9,7 @@ export function createWriterApplication(input: {
   environment: MdbaseApplicationDeclaration["environment"];
 }) {
   return new MdbaseConnect({ id: input.registeredApplicationId ?? manifest.id, name: manifest.name,
-    origin: new URL(manifest.homepage).origin, environment: input.environment, manifest });
+    origin: new URL(manifest.homepage).origin, environment: input.environment, manifest }, {readiness: {typeIssues: "degrade"}});
 }
 
 /** LAB default only; production waits for its owner-provided trust asset. */
