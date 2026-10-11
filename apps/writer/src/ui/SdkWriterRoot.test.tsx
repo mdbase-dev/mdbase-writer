@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connect, MdbasePeopleClient, type MdbaseApplication, type MdbaseApplicationConnection, type MdbaseApplicationSnapshot, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
+import { connect, mdbaseError, MdbasePeopleClient, type MdbaseSetupPlan, type MdbaseApplication, type MdbaseApplicationConnection, type MdbaseApplicationSnapshot, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
 import { createApplicationFixture, MemoryReplica } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { SdkWriterRoot, type WriterNativeScope, type WriterSdk } from "./SdkWriterRoot.js";
@@ -176,12 +176,37 @@ describe("Writer public SDK fixture boundary", () => {
     await waitFor(() => expect(h.controls.observedActions().some(call => call.action === "chooseAnother")).toBe(true));
     expect(close).not.toHaveBeenCalled();
   });
-  it("explicit setup delegates to SDK configure without treating its success as READY", async () => {
-    const h = fixture({status: "setup_required"}); const native = vi.fn(() => <p>Never ready</p>);
-    render(<SdkWriterRoot sdk={h.sdk} renderNative={native} />);
+  const setupPlan: MdbaseSetupPlan = {status: "setup", canApply: true, digest: `sha256:${"a".repeat(64)}`, summary: "This app will make 1 change to this collection.",
+    changes: [{kind: "create", target: "_types/manuscript.md", message: 'Add the "manuscript" record type.'}], conflicts: [], adoptable: {}, packs: [], staged: [], records: []};
+  const count = (h: ReturnType<typeof fixture>, action: string) => h.controls.observedActions().filter(call => call.action === action).length;
+  function reviewSetup() {
+    const h = fixture({status: "setup_required", signIn: paired, selectedCollectionId: "c1", collections: [{collectionId: "c1", displayName: "Drafts", role: "owner"}]});
+    h.controls.setSetupPlan(setupPlan); const native = vi.fn(() => <p>Never ready</p>);
+    render(<StrictMode><SdkWriterRoot sdk={h.sdk} renderNative={native} /></StrictMode>);
     fireEvent.click(screen.getByRole("button", {name: "Set up Writer"}));
-    await waitFor(() => expect(h.controls.observedActions().some(call => call.action === "configure")).toBe(true));
+    return {h, native};
+  }
+  it("setup shows the SDK review and only Confirm applies that plan, without treating success as READY", async () => {
+    const {h, native} = reviewSetup();
+    expect(await screen.findByText(setupPlan.summary)).toBeTruthy();
+    expect(screen.getByText('Add the "manuscript" record type.')).toBeTruthy();
+    expect(count(h, "planSetup")).toBe(1); expect(count(h, "applySetup")).toBe(0);
+    fireEvent.click(screen.getByRole("button", {name: "Confirm"}));
+    await waitFor(() => expect(count(h, "applySetup")).toBe(1));
+    expect(h.controls.observedActions().find(call => call.action === "applySetup")?.signal).toBeInstanceOf(AbortSignal);
+    expect(count(h, "configure")).toBe(0);
+    await waitFor(() => expect(screen.getByText("This collection needs Writer setup before writing.")).toBeTruthy());
     expect(native).not.toHaveBeenCalled();
+  });
+  it("a collection that changed during review is planned again, and Cancel writes nothing", async () => {
+    const {h} = reviewSetup();
+    h.controls.setHandler("applySetup", () => { throw mdbaseError("conflict", "changed", "setup_changed"); });
+    fireEvent.click(await screen.findByRole("button", {name: "Confirm"}));
+    expect(await screen.findByText(/changed while you were reviewing/)).toBeTruthy();
+    expect(count(h, "planSetup")).toBe(2); expect(count(h, "applySetup")).toBe(1);
+    fireEvent.click(await screen.findByRole("button", {name: "Cancel"}));
+    expect(screen.getByRole("button", {name: "Set up Writer"})).toBeTruthy();
+    expect(count(h, "applySetup")).toBe(1); expect(count(h, "configure")).toBe(0);
   });
   it("unknown readiness and retired connection cannot invoke native domain UI", async () => {
     const h = await readyFixture(); const native = vi.fn(() => <p>Not permitted</p>);

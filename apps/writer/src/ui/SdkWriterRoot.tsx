@@ -3,6 +3,7 @@ import type { MdbaseApplication, MdbaseApplicationConnection, MdbaseApplicationE
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { NextWriterRecords } from "../backend/next-records.js";
 import { NativeWriterView } from "./NativeWriterView.js";
+import { SetupReview } from "./SetupReview.js";
 
 export type WriterSdk = MdbaseApplicationEntry;
 export interface WriterNativeScope {
@@ -31,6 +32,8 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
   const busy = useRef(false);
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState(false);
+  // Setup always goes through one review; nothing is written before Confirm.
+  const [reviewing, setReviewing] = useState(false);
   useEffect(() => {
     const scope = new AbortController(); caller.current = scope;
     const foreground = () => {
@@ -70,6 +73,11 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
   }
   const unavailable = snapshot.problem === "application_not_yet_available";
   const closed = snapshot.status === "closed";
+  const setup = !closed && !unavailable && (snapshot.status === "setup_required" || snapshot.readiness.assessment?.status === "setup_required");
+  if (reviewing && setup) {
+    const name = snapshot.collections.find(c => c.collectionId === snapshot.selectedCollectionId)?.displayName ?? "this collection";
+    return <SetupReview application={application} displayName={name} onCancel={() => setReviewing(false)} onApplied={() => setReviewing(false)} />;
+  }
   const waiting = snapshot.status === "authorizing" || snapshot.selection.state === "approving";
   const opening = ["starting", "opening"].includes(snapshot.status) || snapshot.selection.state === "opening" || snapshot.readiness.checking;
   const requested = snapshot.selection.requested.collectionId;
@@ -89,7 +97,7 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
       {!closed && !unavailable && !waiting && !opening && !invalidSelection ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => void act(signal => application.approve(requested, { signal }))}>{requested ? "Approve collection" : signIn ? "Add a collection" : "Sign in"}</button> : null}
       {signIn && !waiting && !opening && (snapshot.status === "blocked" || snapshot.selection.state === "blocked") ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.reauthorize({ signal }))}>Review access</button> : null}
       {signIn ? <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(async signal => { await application.close(); signal.throwIfAborted(); onSignedOut?.(); })}>Sign out</button> : null}
-      {!closed && !unavailable && (snapshot.status === "setup_required" || snapshot.readiness.assessment?.status === "setup_required") ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => void act(signal => application.configure({ signal }))}>Set up Writer</button> : null}
+      {setup ? <button type="button" className="mdbase-button is-primary" disabled={working} onClick={() => setReviewing(true)}>Set up Writer</button> : null}
       {snapshot.selectedCollectionId && !closed ? <>
         <button type="button" className="mdbase-button" disabled={working} onClick={() => { const id = snapshot.selectedCollectionId; if (id) void act(signal => application.forget(id, { signal })); }}>Forget collection</button>
       </> : null}
