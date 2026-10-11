@@ -78,15 +78,19 @@ than creating an automatic retry loop; it never closes the borrowed client.
 ## Development package and evidence
 
 The normal original development archive from source
-`2e2ae687f96d0a0c074ef6bc46bb77b97089f325`, distinct cut
-`sdk-dev-2e2ae687-n1`, is pinned in `vendor/mdbase-next-sdk.json`. Its original protocol archive
-is preserved byte-for-byte; the SDK producer now bundles that same protocol for
-cold npm consumers. Writer retains its ordinary direct protocol file dependency.
+`6a576a5f25231333bd899274ad6fed91f54a19ab`, original cut
+`sdk-dev-6a576a5f`, is pinned in `vendor/mdbase-next-sdk.json` (4289200 bytes,
+SHA256 `00ee3484b4d70b9df4b9fab72c6fcadf24476c1b5834eef6d4d9a4a9281ec56f`).
+The SDK bundles the original beta129 `3c14fc913a80` protocol archive; Writer's
+ordinary direct `d765e675c3da` legacy protocol dependency is unchanged. This
+archive has no vendor warnings; the earlier unused-protocol exception is not
+carried forward.
 Both SHA256 and SHA512 were checked independently, followed by ordinary and frozen
 installation. There are no aliases, package rewrites, private SDK imports or
 installed-module swaps. Earlier SDK/native archives remain preserved. This cut
 includes atomic contract body updates/promotion and public explicit-digest
-`MemoryContract` fixtures; no application loader workaround is supplied.
+`MemoryContract` fixtures, public error/status helpers and portable/native-origin
+sign-in APIs in one pin; no application loader workaround is supplied.
 
 Root tests now use `createApplicationFixture` from `@mdbase-dev/sdk/testing` and
 its public structural entry, not hidden hooks on a production constructor.
@@ -94,9 +98,11 @@ Catalog/type and lifecycle/readiness metadata stand-ins are explicit; record,
 lease, file, receipt and readback tests run through the real public SDK over
 `MemoryReplica`.
 
-This is **development intake, not release qualification**. The distinct `n1`
-packet carries the original 3,462,973-byte native runtime matching the committed
-`6762b92e…` pin, including the resources export and promotion support. Its
+This is **DEV/LAB development intake, not release qualification**. The original `6a`
+packet carries the 3,553,905-byte native runtime matching the committed
+`08bb2dfcfd48e663147a7d1f3ebf2728b81bd82ac59183307c2cd7bc30c9ab67` pin,
+including the resources export and promotion support, registration-refusal
+guidance, Private-collection availability reasons and collection deletion APIs. Its
 `native.available=true` describes packaged integrity, not native launch,
 registration, custody or live authentication acceptance. The earlier source-only
 `2e2ae687` cut remains a separate immutable packet; it was not overwritten.
