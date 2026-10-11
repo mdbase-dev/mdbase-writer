@@ -1,14 +1,14 @@
 // Writer's domain repository over one borrowed public SDK connection. No
 // legacy backend facade, SDK runtime/setup engine, copied client or app journal.
-import { isMdbaseError, type MdbaseApplicationConnection, type MdbaseClient, type Write, type wire } from "@mdbase-dev/sdk";
+import { isMdbaseError, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type Write, type wire } from "@mdbase-dev/sdk";
 import type { JsonObject } from "@mdbase-dev/connect";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
-import { CollectionStore, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
-import { changeFields, commentPath, newCommentFields, NO_PEOPLE, peopleFromDirectory, toContract, toLocal, type CommentChange, type NewComment, type People } from "./comments.js";
-import { nativeObject, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
+import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
+import { changeFields, commentPath, newCommentFields, NO_PEOPLE, peopleFromDirectory, type CommentChange, type NewComment, type People } from "./comments.js";
+import { manifestContractDigest, nativeObject, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
 import { NextWriterRecords } from "./next-records.js";
-import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, withType, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";
+import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";
 
 export interface NativeWriterOptions {
   readonly collectionName: string;
@@ -81,6 +81,10 @@ export class NativeWriterBackend implements WriterBackend {
         : error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
   }
+  private async safelyResult<T>(operation: () => Promise<Result<T>>): Promise<Result<T>> {
+    const result = await this.safely(operation);
+    return result.ok ? result.value : result;
+  }
   private invalidate(paths: readonly string[]): void {
     if (this.disposed) return;
     ++this.generation; this.cached = undefined; this.peopleJob = undefined;
@@ -99,8 +103,10 @@ export class NativeWriterBackend implements WriterBackend {
     await this.watch.ready; this.check();
     const generation = this.generation;
     if (this.watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
-    const schema = nativeWriterSchema(await this.client.describe(this.signal)); this.check(generation);
+    const catalog = await this.client.describe(this.signal); this.check(generation);
+    const schema = nativeWriterSchema(catalog);
     const store = new CollectionStore(schema);
+    const rows = new Map<string, CollectionRow>();
     const identities = new Map<string, {id: string; revision: string}>();
     const ids = new Set<string>();
     const recordCursors = new Set<string>();
@@ -114,19 +120,17 @@ export class NativeWriterBackend implements WriterBackend {
         if (recordCursors.has(page.cursor)) throw new Error("Writer's native record cursor repeated.");
         recordCursors.add(page.cursor);
       }
-      const rows: CollectionRow[] = [];
       for (const record of page.records) {
         if (identities.has(record.path) || ids.has(record.id)) throw new Error("Writer's native query repeated a record identity.");
         identities.set(record.path, {id: record.id, revision: record.revision}); ids.add(record.id);
-        const classified = schema.roles(record.types).size > 0;
-        rows.push({path: record.path, types: record.types,
-          ...(classified ? {frontmatter: nativeObject(record.frontmatter), effectiveFrontmatter: nativeObject(record.effective ?? record.frontmatter)} : {}),
+        rows.set(record.id, {path: record.path, types: record.types,
           ...(record.mtime !== undefined ? {file: {mtime: new Date(record.mtime).toISOString()}} : {})});
       }
-      store.upsert(rows, true);
       complete = page.complete && !page.cursor;
     }
-    if (!complete) throw new Error("Writer's native query did not return a complete snapshot.");
+    if (!complete || asOf === undefined) throw new Error("Writer's native query did not return a complete snapshot.");
+    await this.projectMetadata(catalog, schema, rows, identities, asOf, generation);
+    store.upsert([...rows.values()], true);
     const files = new Map<string, wire.FileView>();
     const fileIds = new Set<string>();
     const cursors = new Set<string>();
@@ -148,6 +152,42 @@ export class NativeWriterBackend implements WriterBackend {
     this.check(generation);
     if (this.watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
     return this.cached = {schema, store, identities, files, generation};
+  }
+  private async projectMetadata(catalog: wire.DescribeResult, schema: CollectionSchema, rows: Map<string, CollectionRow>, identities: ReadonlyMap<string, {id: string; revision: string}>, asOf: number, generation: number): Promise<void> {
+    for (const domain of ["manuscript", "source", "annotation", "comment", "person"] as const) {
+      const selected = new Map([...rows].filter(([, row]) => schema.roles(row.types).get(domain)?.active));
+      if (!selected.size) continue;
+      const contract = domainContract(domain);
+      const declared = catalog.contracts.find(candidate => candidate.id === contract.id && candidate.version === contract.version);
+      if (!declared) throw new Error("Writer's metadata lost its exact contract.");
+      const seen = new Set<string>();
+      const cursors = new Set<string>();
+      let cursor: string | undefined;
+      do {
+        const result = await this.client.queryContract(contract, {pageSize: 128, ...(cursor ? {cursor} : {}), signal: this.signal}); this.check(generation);
+        if (result.contractDigest !== `sha256:${declared.digest}` || result.page.asOf !== asOf) throw new Error("Writer's contract metadata snapshot or digest changed.");
+        const witnesses = new Map(result.page.records.map(record => [record.id, record]));
+        if (witnesses.size !== result.page.records.length) throw new Error("Writer's contract query repeated a record identity.");
+        for (const projected of result.records) {
+          const row = selected.get(projected.id);
+          const witness = witnesses.get(projected.id);
+          const identity = row && identities.get(row.path);
+          if (!row || !witness || !identity || witness.path !== row.path || witness.revision !== identity.revision || seen.has(projected.id)) throw new Error("Writer's contract metadata identity changed or repeated.");
+          const binding = schema.roles(row.types).get(domain);
+          const implementations = projected.implementations.filter(candidate => candidate.typeName === binding?.name);
+          const implementation = implementations[0];
+          if (implementations.length !== 1 || !implementation || implementation.issues.some(issue => issue.severity === "error")) throw new Error("Writer's contract metadata projection is invalid or ambiguous.");
+          rows.set(projected.id, {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
+          seen.add(projected.id);
+        }
+        cursor = result.page.cursor;
+        if (cursor) {
+          if (cursors.has(cursor)) throw new Error("Writer's contract metadata cursor repeated.");
+          cursors.add(cursor);
+        } else if (!result.page.complete) throw new Error("Writer's contract metadata query is incomplete.");
+      } while (cursor);
+      if (seen.size !== selected.size) throw new Error("Writer's contract metadata omitted an original record.");
+    }
   }
   manuscriptBindings(): Promise<Result<readonly Binding[]>> {return this.safely(async () => this.bindingList((await this.metadata()).schema, "manuscript"));}
   private bindingList(schema: CollectionSchema, domain: Domain): Binding[] {
@@ -175,25 +215,25 @@ export class NativeWriterBackend implements WriterBackend {
         if (!identity) throw new Error("Writer lost the original record identity.");
         const record = await this.client.get(identity.id, {body: true}, this.signal); this.check(metadata.generation);
         if (record.id !== identity.id || record.path !== path || record.revision !== identity.revision || !record.types.includes(entry.type) || !unprotected(record)) throw new Error("Writer's selected record changed or is protected.");
-        rows.push({path: record.path, types: record.types, frontmatter: nativeObject(record.frontmatter), body: record.body ?? ""});
+        const contract = metadata.store.comments.has(path) ? commentContract : annotationContract;
+        const projected = await this.contractRecord(record, {...contract, type: entry.type}); this.check(metadata.generation);
+        rows.push({path: record.path, types: record.types, contractFields: nativeObject(projected.fields), body: record.body ?? ""});
       }
       return rows;
     }));
   }
   comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>> {
-    return this.safely(async () => {
+    return this.safelyResult(async () => {
       const metadata = await this.metadata();
       const result = await this.bodies(metadata).commentsForScope(scope); this.check(metadata.generation);
-      if (!result.ok) throw new Error(result.message);
-      return result.value;
+      return result;
     });
   }
   annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>> {
-    return this.safely(async () => {
+    return this.safelyResult(async () => {
       const metadata = await this.metadata();
       const result = await this.bodies(metadata).annotationsForSource(path); this.check(metadata.generation);
-      if (!result.ok) throw new Error(result.message);
-      return result.value;
+      return result;
     });
   }
   readBody(path: string): Promise<Result<string>> {
@@ -296,31 +336,43 @@ export class NativeWriterBackend implements WriterBackend {
       throw error;
     }
   }
-  private async confirmed(write: Write, id: string): Promise<wire.RecordView> {
+  private async contractRecord(original: wire.RecordView, contract: ContractSelector): Promise<ContractRecordView> {
+    const projected = await this.client.getContract(original.id, contract, this.signal); this.check();
+    const expected = (await this.metadata()).schema.description.contracts.find(candidate => candidate.id === contract.id);
+    const digest = manifestContractDigest(contract.id, contract.version);
+    if (!expected || projected.id !== original.id || projected.path !== original.path || projected.revision !== original.revision
+      || projected.contract.id !== contract.id || projected.contract.version !== contract.version || projected.contract.type !== contract.type
+      || (digest !== undefined && projected.contract.digest !== digest)) throw new Error("Writer's contract record binding changed.");
+    const current = await this.client.get(original.id, {body: true, document: true}, this.signal); this.check();
+    if (!unprotected(current) || current.id !== original.id || current.path !== original.path || current.revision !== original.revision) throw new Error("Writer's contract record changed or is protected.");
+    return projected;
+  }
+  private async confirmed(write: Write, id: string, contract?: ContractSelector): Promise<wire.RecordView> {
     await write.confirmed; this.check();
     if (write.receipt.mutation !== write.mutationId || write.receipt.state !== "confirmed") throw new Error("Writer lost the original confirmed receipt.");
     const witnessed = write.records.find(record => record.id === id);
     if (!witnessed || !unprotected(witnessed)) throw new Error("Writer's original receipt did not confirm an unprotected record.");
     const current = await this.client.get(id, {body: true, document: true}, this.signal); this.check();
     if (!unprotected(current) || current.id !== id || current.revision !== witnessed.revision || current.path !== witnessed.path) throw new Error("Writer's confirmed record changed or is protected.");
+    if (contract) await this.contractRecord(current, contract);
     if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = undefined;
     return current;
   }
-  private async create(path: string, body: string, frontmatter: JsonObject, type?: string): Promise<wire.RecordView> {
+  private async create(path: string, body: string, frontmatter: JsonObject, contract?: ContractSelector): Promise<wire.RecordView> {
     const target = await this.availablePath(path); this.check();
     const id = crypto.randomUUID();
     // Exactly one submit. A taken path/unknown outcome is not a fresh retry.
     const fields = nativeWriteFields(frontmatter);
-    const write = await this.nativeWrite(mutationId => this.client.create({id, path: target, body, frontmatter: fields, ...(type ? {type} : {})}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
-    this.check(); return this.confirmed(write, id);
+    const write = await this.nativeWrite(mutationId => this.client.create({id, path: target, body, frontmatter: fields, ...(contract ? {contract} : {})}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
+    this.check(); return this.confirmed(write, id, contract);
   }
   createManuscript(input: NewManuscript): Promise<Result<string>> {
     return this.write(async () => {
       const binding = await this.binding("manuscript");
       const library = input.starter ? (await this.metadata()).store.library : [];
       const body = manuscriptBody(input.starter, library[0]?.key);
-      const frontmatter = {[binding.typeKey]: binding.name, ...toLocal({title: input.title, template: input.template, csl: input.style}, binding.fields)};
-      const created = await this.create(`manuscripts/${manuscriptSlug(input.title)}.md`, body, frontmatter, binding.name);
+      const frontmatter = {title: input.title, template: input.template, csl: input.style};
+      const created = await this.create(`manuscripts/${manuscriptSlug(input.title)}.md`, body, frontmatter, {...manuscriptContract, type: binding.name});
       if (created.body !== body) throw new Error("Writer's manuscript readback differs from the original operation.");
       return created.path;
     });
@@ -333,13 +385,10 @@ export class NativeWriterBackend implements WriterBackend {
       const binding = await this.binding("manuscript");
       const original = await this.client.get({path}, {body: true, document: true}, this.signal); this.check();
       if (!unprotected(original) || original.document === undefined) throw new Error("Writer's note is protected or lacks its full source.");
-      const fields = nativeObject(original.frontmatter);
-      const title = binding.fields["title"] ?? "title";
-      const patch: JsonObject = {[binding.typeKey]: withType(fields[binding.typeKey], binding.name)};
-      if (typeof fields[title] !== "string" || !fields[title]) patch[title] = titleFromNote(path, original.body ?? "");
-      const changes = nativeWriteFields(patch);
-      const write = await this.nativeWrite(mutationId => this.client.update(original, {patch: changes, ifRevision: original.revision}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
-      const current = await this.confirmed(write, original.id);
+      const contract = {...manuscriptContract, type: binding.name};
+      const patch = {title: titleFromNote(path, original.body ?? "")};
+      const write = await this.nativeWrite(mutationId => this.client.update(original, {contract, promote: true, patch, ifRevision: original.revision}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
+      const current = await this.confirmed(write, original.id, {...manuscriptContract, type: binding.name});
       if (current.body !== original.body || !current.types.includes(binding.name)) throw new Error("Writer's adopted note did not confirm the original content and type.");
       return current.path;
     });
@@ -349,8 +398,10 @@ export class NativeWriterBackend implements WriterBackend {
       const binding = await this.binding("comment"); const now = new Date();
       const fields = newCommentFields(input, now, (await this.people()).me?.link); this.check();
       const body = input.text.trim() ? `${input.text.trim()}\n` : "";
-      const current = await this.create(commentPath(now), body, {[binding.typeKey]: binding.name, ...toLocal(fields, binding.fields)}, binding.name);
-      const comment = commentFromRecord(current.path, toContract(nativeObject(current.frontmatter), binding.fields), current.body ?? "");
+      const contract = {...commentContract, type: binding.name};
+      const current = await this.create(commentPath(now), body, fields, contract);
+      const projected = await this.contractRecord(current, contract);
+      const comment = commentFromRecord(current.path, nativeObject(projected.fields), current.body ?? "");
       if (!comment || current.body !== body) throw new Error("Writer's comment could not be confirmed from its native readback.");
       return comment;
     });
@@ -363,13 +414,16 @@ export class NativeWriterBackend implements WriterBackend {
       if (!unprotected(original) || original.document === undefined || original.path !== comment.path) throw new Error("Writer's original comment is protected or has moved.");
       const binding = this.bindingList(metadata.schema, "comment").find(candidate => original.types.includes(candidate.name));
       if (!binding) throw new Error("Writer's comment lost its native contract binding.");
-      const currentComment = commentFromRecord(original.path, toContract(nativeObject(original.frontmatter), binding.fields), original.body ?? "");
+      const contract = {...commentContract, type: binding.name};
+      const projected = await this.contractRecord(original, contract);
+      const currentComment = commentFromRecord(original.path, nativeObject(projected.fields), original.body ?? "");
       if (!currentComment || JSON.stringify(currentComment) !== JSON.stringify(comment)) throw new Error("Writer's comment changed before this operation.");
       const {fields, body} = changeFields(currentComment, change, new Date(), (await this.people()).me?.link); this.check();
-      const patch = nativeWriteFields(toLocal(fields, binding.fields));
-      const write = await this.nativeWrite(mutationId => this.client.update(original, {patch, ...(body !== undefined ? {body} : {}), ifRevision: original.revision}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
-      const current = await this.confirmed(write, original.id);
-      const next = commentFromRecord(current.path, toContract(nativeObject(current.frontmatter), binding.fields), current.body ?? "");
+      const patch = nativeWriteFields(fields);
+      const write = await this.nativeWrite(mutationId => this.client.update(original, {contract, patch, ...(body !== undefined ? {body} : {}), ifRevision: original.revision}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
+      const current = await this.confirmed(write, original.id, contract);
+      const nextView = await this.contractRecord(current, contract);
+      const next = commentFromRecord(current.path, nativeObject(nextView.fields), current.body ?? "");
       if (!next) throw new Error("Writer's changed comment could not be confirmed from native readback.");
       return next;
     });

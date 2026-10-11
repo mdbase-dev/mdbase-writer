@@ -24,7 +24,7 @@ afterEach(async () => {await workspace?.dispose(); backend?.dispose(); client?.c
 it("runs existing manuscript/chapter editing and mapped settings on one borrowed native SDK client", async () => {
   const storage = new Map<string, string>();
   vi.stubGlobal("localStorage", {getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key)});
-  const replica = new MemoryReplica({confirmDelayMs: 0});
+  const replica = new MemoryReplica({confirmDelayMs: 0, contracts: manifest.requirements.contracts.map((contract, index) => ({id: contract.id, version: contract.version, contractDigest: contract.digest, type: `fixture-${["manuscript", "source", "comment"][index]}`, fields: {title: "heading", template: "layout", csl: "style"}}))});
   const main = replica.seed({path: "manuscripts/main.md", types: ["fixture-manuscript"], frontmatter: {type: "fixture-manuscript", heading: "Native title", unrelated: "preserved"}, body: "# Main\n\n![[chapters/first]]\n"});
   const chapter = replica.seed({path: "chapters/first.md", body: "Native chapter\n"});
   const native = await connect({connector: replica.connector(), app: {name: "native-workspace-test", version: "test"}, reconnect: false}); client = native;

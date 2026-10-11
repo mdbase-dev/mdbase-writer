@@ -37,8 +37,11 @@ collection URL handling. Theme, feedback, recent manuscripts, drafts, compilatio
 and export continue through the existing application components.
 
 Discovery checks Writer's exact declared native contracts and actual type field
-mappings. It uses complete bounded metadata pages, rejects changed/repeated
-snapshots and does not recognise starter type names as native implementations.
+mappings. Domain metadata comes from `queryContract` projections, not an
+application-side field-map projector. Complete bounded pages preserve the original
+record identities and snapshot; changed digests, revisions, repeated cursors,
+invalid projections and omitted records fail rather than falling back to raw
+fields. Starter type names are not recognised as native implementations.
 Bodies are loaded lazily using their original UUID/revision; protected or changed
 records are not treated as confirmed current content. Files are read by original
 file UUID/digest with current readback checks. **Image upload is unavailable in
@@ -46,8 +49,10 @@ SDK mode:** Writer's existing declaration grants files list/read, not files add.
 No adapter silently widens that permission or substitutes caller MIME metadata
 for native extension-based media classification.
 
-Manuscript/chapter creation, note adoption and comment edits use the public SDK's
-native writes and CAS. Success requires the original confirmed receipt and
+Manuscript and comment creation/edits use public contract selectors; generic
+chapters remain generic. Note adoption uses one `promote:true` contract update
+with its mapped title and original revision. Comment withdrawal changes the body
+and mapped fields in one update, preserving nested sibling fields. Success requires the original confirmed receipt and
 current unheld, unresolved-free native readback. A lost submit reply retains its
 original SDK MID; typed `error.mutationId` must match that same operation. Another
 click reconciles the original operation and does not submit a new record. The SDK owns durable capture, journals and receipt recovery.
@@ -55,22 +60,27 @@ People access uses the existing SDK directory with members omitted. Failed
 identity access may leave comments unsigned, never signed by a guessed account.
 
 `NextWriterRecords` delegates leases, autosave, drafts, conflict handling and
-original recovery to `client.records.open`. Writer translates display values and
-explicit patches only. Scope retirement fences edits/flush completion and releases
+original recovery to the existing generic `client.records.open` session. For
+launch, shared workspace settings/body edits stay on that original generic session
+and its atomic flush. Contract APIs handle metadata reads and discrete repository
+writes. A contract-scoped lease is a post-launch improvement, not an application
+session/recovery engine to implement. Writer translates display values and explicit
+patches only. Scope retirement fences edits/flush completion and releases
 its owned or late-delivered leases; it never closes the borrowed client or a peer's
 lease. Repository disposal stops only its watches and owned scope.
 
 ## Development package and evidence
 
 The normal original development archive from source
-`d53d7d761c1a7caf100e065a1378384dcc5f6449` is pinned in
-`vendor/mdbase-next-sdk.json`. Its required original browser-safe protocol archive
-is in the workspace consumer's `apps/writer/vendor/`, with an ordinary direct
-file dependency. Both SHA256 and SHA512 values were checked independently. There
-are no aliases, package rewrites, private SDK imports or installed-module swaps.
-The historical SDK837, ad69 and 8a557 archives remain preserved. The current cut
-includes the live singleton, SDK-owned selection and Vite native-asset emission
-fix; no application loader workaround is supplied.
+`2e2ae687f96d0a0c074ef6bc46bb77b97089f325`, distinct cut
+`sdk-dev-2e2ae687-n1`, is pinned in `vendor/mdbase-next-sdk.json`. Its original protocol archive
+is preserved byte-for-byte; the SDK producer now bundles that same protocol for
+cold npm consumers. Writer retains its ordinary direct protocol file dependency.
+Both SHA256 and SHA512 were checked independently, followed by ordinary and frozen
+installation. There are no aliases, package rewrites, private SDK imports or
+installed-module swaps. Earlier SDK/native archives remain preserved. This cut
+includes atomic contract body updates/promotion and public explicit-digest
+`MemoryContract` fixtures; no application loader workaround is supplied.
 
 Root tests now use `createApplicationFixture` from `@mdbase-dev/sdk/testing` and
 its public structural entry, not hidden hooks on a production constructor.
@@ -78,14 +88,14 @@ Catalog/type and lifecycle/readiness metadata stand-ins are explicit; record,
 lease, file, receipt and readback tests run through the real public SDK over
 `MemoryReplica`.
 
-This is **development intake, not release qualification**. This packet includes
-its original native runtime (3,427,675 bytes), including `rt_app_resources`;
-`native.available` is now true for packaged integrity inputs. Runtime bytes and
-passing source tests do not establish native launch, registration, custody or
-live authentication acceptance. The public browser entry constructs in its cold
-`not_started` state; Node/SSR keeps the explicit unavailable-host shell.
-Production defaults, LAB pins and deployment remain unchanged pending the
-separately authorized qualification and cutover.
+This is **development intake, not release qualification**. The distinct `n1`
+packet carries the original 3,462,973-byte native runtime matching the committed
+`6762b92e…` pin, including the resources export and promotion support. Its
+`native.available=true` describes packaged integrity, not native launch,
+registration, custody or live authentication acceptance. The earlier source-only
+`2e2ae687` cut remains a separate immutable packet; it was not overwritten.
+Passing `MemoryReplica` tests does not establish runtime acceptance. Production
+remains legacy; this port has not been deployed or merged into Writer main.
 
 ## Historical low-level sign-in UI
 

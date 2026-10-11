@@ -24,6 +24,10 @@ export function nativeObject(value: wire.Value): JsonObject {
   return json;
 }
 
+export function manifestContractDigest(id: string, version: string): string | undefined {
+  return manifest.requirements.contracts.find(contract => contract.id === id && contract.version === version)?.digest;
+}
+
 /** Read the original native catalog. Never invent legacy schema/type metadata or
  * recognise a starter name without its actual native contract implementation.
  * The SDK remains responsible for root readiness and configuration/provisioning.

@@ -19,6 +19,7 @@ const domains = {
   person: { contract: { id: "mdbase.person", version: "2.0.0" }, starter: "person", note: false },
 } as const;
 export type Domain = keyof typeof domains;
+export function domainContract(domain: Domain) { return domains[domain].contract; }
 /** The demo's starter definitions, derived from the same domain table. */
 export function starterSchema(): CollectionSchema {
   return new CollectionSchema({
@@ -45,6 +46,8 @@ export interface CollectionRow {
   readonly types: readonly string[];
   readonly frontmatter?: JsonObject;
   readonly effectiveFrontmatter?: JsonObject;
+  /** Logical fields projected by the public SDK/Core, not a local field map. */
+  readonly contractFields?: Partial<Record<Domain, JsonObject>>;
   /** Narrow query values are partial metadata, never a full record/frontmatter. */
   readonly values?: JsonObject;
   readonly file?: { readonly mtime?: string };
@@ -65,7 +68,7 @@ interface Classified {
   person?: string;
 }
 const equal = (a: unknown, b: unknown) => a === b || (a !== undefined && b !== undefined && JSON.stringify(a) === JSON.stringify(b));
-const fieldsOf = (fm: JsonObject, binding: Binding) => Object.keys(binding.fields).length ? toContract(fm, binding.fields) : fm;
+const fieldsOf = (fm: JsonObject, binding: Binding, projected?: JsonObject) => projected ?? (Object.keys(binding.fields).length ? toContract(fm, binding.fields) : fm);
 
 /** One binding table serves discovery, writes, sessions and incremental classification. */
 export class CollectionSchema {
@@ -174,20 +177,20 @@ export class CollectionStore {
     const effective = row.effectiveFrontmatter ?? fm;
     // Independent discovery queries can finish in any order. Persisted index rows
     // must not overwrite defaults already learned from effective domain queries.
-    const retainEffective = discovery && row.effectiveFrontmatter === undefined && previous?.effective;
-    const next: Classified = { note: /\.md$/i.test(row.path), effective: row.effectiveFrontmatter !== undefined || !!retainEffective };
+    const retainEffective = discovery && row.effectiveFrontmatter === undefined && row.contractFields === undefined && previous?.effective;
+    const next: Classified = { note: /\.md$/i.test(row.path), effective: row.effectiveFrontmatter !== undefined || row.contractFields !== undefined || !!retainEffective };
     for (const [domain, binding] of this.schema.roles(row.types)) {
       if (!domains[domain].note) next.note = false;
       if (!binding.active) continue;
       switch (domain) {
         case "source": {
           const written = row.values?.["file_mtime"] ?? row.file?.mtime;
-          const source = retainEffective && previous.source ? previous.source : libraryEntry(row.path, fieldsOf(effective, binding), typeof written === "string" ? written : undefined);
+          const source = retainEffective && previous.source ? previous.source : libraryEntry(row.path, fieldsOf(effective, binding, row.contractFields?.source), typeof written === "string" ? written : undefined);
           if (source) next.source = equal(previous?.source, source) ? previous!.source! : source;
           break;
         }
         case "manuscript": {
-          const fields = fieldsOf(effective, binding);
+          const fields = fieldsOf(effective, binding, row.contractFields?.manuscript);
           const modified = row.values?.["file_mtime"] ?? row.file?.mtime;
           const manuscript = retainEffective && previous.manuscript ? previous.manuscript : {
             path: row.path, title: typeof fields["title"] === "string" ? fields["title"] : row.path,
@@ -199,12 +202,12 @@ export class CollectionStore {
           break;
         }
         case "annotation": {
-          const target = fm[binding.fields["source"] ?? "source"];
+          const target = fieldsOf(fm, binding, row.contractFields?.annotation)["source"];
           next.annotation = { path: row.path, type: binding.name, fields: binding.fields, source: typeof target === "string" ? annotationSourceLink(target) ?? "" : "" };
           break;
         }
         case "comment": {
-          const comment = commentFromRecord(row.path, fieldsOf(fm, binding), "");
+          const comment = commentFromRecord(row.path, fieldsOf(fm, binding, row.contractFields?.comment), "");
           if (comment) {
             const metadata = { type: binding.name, fields: binding.fields,
               comment: { document: comment.document, ...(comment.inReplyTo ? { inReplyTo: comment.inReplyTo } : {}) } };
@@ -213,7 +216,7 @@ export class CollectionStore {
           break;
         }
         case "person": {
-          const name = fieldsOf(effective, binding)["name"];
+          const name = fieldsOf(effective, binding, row.contractFields?.person)["name"];
           if (typeof name === "string") next.person = name;
           break;
         }

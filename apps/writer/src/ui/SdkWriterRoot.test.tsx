@@ -59,7 +59,7 @@ afterEach(() => {
   if (dialogShowModal) Object.defineProperty(HTMLDialogElement.prototype, "showModal", dialogShowModal); else Reflect.deleteProperty(HTMLDialogElement.prototype, "showModal");
 });
 async function readyFixture() {
-  const replica = new MemoryReplica({confirmDelayMs: 0});
+  const replica = new MemoryReplica({confirmDelayMs: 0, contracts: manifest.requirements.contracts.map((contract, index) => ({id: contract.id, version: contract.version, contractDigest: contract.digest, type: ["manuscript", "source", "comment"][index] ?? "unknown", fields: {title: "title", template: "template", csl: "csl"}}))});
   replica.seed({path: "writing/main.md", frontmatter: {title: "Original manuscript"}, body: "Original manuscript", types: ["manuscript"]});
   const client = await connect({connector: replica.connector(), app: {name: "writer-ui-test", version: "test"}, reconnect: false}); clients.push(client);
   const selected: MdbaseApplicationSnapshot["collections"][number] = {collectionId: replica.collection, displayName: "Writing", role: "owner"};

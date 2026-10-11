@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { connect, MdbaseError, MdbasePeopleClient, type MdbaseApplicationConnection, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
-import { MemoryReplica } from "@mdbase-dev/sdk/testing";
+import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { NativeWriterBackend } from "./native.js";
-import { nativeWriterSchema } from "./native-schema.js";
+import { nativeObject, nativeWriterSchema } from "./native-schema.js";
 
 // Native catalog/type metadata are explicit stand-ins. All record/file/session
 // operations use actual public SDK over MemoryReplica, not native acceptance.
@@ -13,21 +13,27 @@ afterEach(() => {for (const backend of backends.splice(0)) backend.dispose(); fo
 function catalog(): wire.DescribeResult {
   const definitions = manifest.requirements.contracts.map((contract, index) => ({contract, type: ["native-manuscript", "native-source", "native-comment"][index] ?? "unknown"}));
   const mappings: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-    "native-manuscript": {title: "heading", template: "layout", csl: "style"},
+    "native-manuscript": {title: "/meta/heading", template: "layout", csl: "style"},
     "native-source": {title: "heading", csl: "citation"},
-    "native-comment": {document: "document", motivation: "motivation", status: "status", created_at: "created_at", created_by: "created_by", in_reply_to: "in_reply_to", target: "target", suggestion: "suggestion", resolved_at: "resolved_at", resolved_by: "resolved_by", modified_at: "modified_at", deleted_at: "deleted_at"},
+    "native-comment": {document: "document", motivation: "motivation", status: "/review/state", created_at: "created_at", created_by: "created_by", in_reply_to: "in_reply_to", target: "target", suggestion: "suggestion", resolved_at: "resolved_at", resolved_by: "resolved_by", modified_at: "/review/modified", deleted_at: "/review/deleted"},
   };
   return {specVersion: "0.3.0", settings: new Map([["explicit_type_keys", ["type"]]]), inclusion: {include: ["image"]}, issues: [],
     contracts: definitions.map(({contract, type}) => ({...contract, digest: contract.digest.replace(/^sha256:/, ""), path: `_contracts/${contract.id}.md`, contractType: "record", implementedBy: [type]})),
     types: definitions.map(({contract, type}) => ({name: type, path: `_types/${type}.md`, implements: [{contract: contract.id, version: contract.version, fields: new Map(Object.entries(mappings[type] ?? {}))}]}))};
 }
 async function fixture() {
-  const replica = new MemoryReplica({confirmDelayMs: 0});
-  const manuscript = replica.seed({path: "manuscripts/original.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", heading: "Original", layout: "article", style: "apa"}, body: "Original manuscript\n"});
+  const description = catalog();
+  const contracts: MemoryContract[] = description.types.flatMap(type => (type.implements ?? []).map(implementation => {
+    const contract = description.contracts.find(candidate => candidate.id === implementation.contract && candidate.version === implementation.version);
+    if (!contract || !implementation.version) throw new Error("Missing exact fixture contract");
+    return {id: contract.id, version: implementation.version, type: type.name, contractDigest: `sha256:${contract.digest}`, fields: Object.fromEntries(implementation.fields ?? new Map())};
+  }));
+  const replica = new MemoryReplica({confirmDelayMs: 0, contracts});
+  const manuscript = replica.seed({path: "manuscripts/original.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "Original"]]), layout: "article", style: "apa"}, body: "Original manuscript\n"});
   replica.seed({path: "sources/paper.md", types: ["native-source"], frontmatter: {type: "native-source", heading: "Citation source", citation: new Map([["id", "paper"], ["type", "article-journal"], ["title", "Citation source"]])}, body: "Lazy source body\n"});
   replica.seed({path: "notes/chapter.md", frontmatter: {custom: "keep"}, body: "# A chapter\n"});
   const client = await connect({connector: replica.connector(), app: {name: "writer-native-test", version: "test"}, reconnect: false}); clients.push(client);
-  const description = catalog(); vi.spyOn(client, "describe").mockResolvedValue(description);
+  vi.spyOn(client, "describe").mockResolvedValue(description);
   const metadata = vi.fn(async () => {throw new Error("Identity was not approved");});
   const current = vi.fn(() => true);
   const connection: MdbaseApplicationConnection = {id: client.collection, displayName: "Writing", scope: {account: "fixture-account", installation: "fixture-installation", collection: client.collection}, generation: "fixture-generation", records: client, files: client.files,
@@ -40,6 +46,8 @@ async function fixture() {
 describe("native Writer domain backend", () => {
   it("discovers mapped manuscripts/library/index without bodies or identity requests", async () => {
     const h = await fixture(); const query = vi.spyOn(h.client, "query"); const get = vi.spyOn(h.client, "get");
+    const projected = await h.client.queryContract({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, {pageSize: 128});
+    expect(projected.records[0]?.implementations[0]?.fields.get("title")).toBe("Original");
     const manuscripts = await h.backend.listManuscripts();
     expect(manuscripts).toEqual({ok: true, value: [{path: "manuscripts/original.md", title: "Original", template: "article", style: "apa"}]});
     const library = await h.backend.library();
@@ -52,12 +60,24 @@ describe("native Writer domain backend", () => {
     expect(get).not.toHaveBeenCalled(); expect(h.metadata).not.toHaveBeenCalled();
     expect("writeFile" in h.backend).toBe(false);
   });
+  it("refuses unsupported contract metadata without projecting raw fields locally", async () => {
+    const h = await fixture();
+    const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "upgrade_required", recovery: "upgrade", message: "Contract queries unsupported", reason: "contract_query_unsupported"}));
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: false, message: expect.stringContaining("upgrade_required")});
+    expect(query).toHaveBeenCalledWith({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, expect.objectContaining({pageSize: 128, signal: expect.any(AbortSignal)}));
+  });
   it("discovers all records across actual SDK pages rather than truncating the native index", async () => {
     const h = await fixture();
     for (let index = 0; index < 501; index++) h.replica.seed({path: `notes/page-${index}.md`, body: `Note ${index}`});
+    for (let index = 0; index < 129; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
+    const query = vi.spyOn(h.client, "queryContract");
     const result = await h.backend.index();
-    expect(result.ok && result.value.recordPaths).toHaveLength(504);
+    expect(result.ok && result.value.recordPaths).toHaveLength(633);
     expect(result.ok && result.value.recordPaths).toContain("notes/page-500.md");
+    const manuscripts = await h.backend.listManuscripts();
+    expect(manuscripts.ok && manuscripts.value).toHaveLength(130);
+    expect(manuscripts.ok && manuscripts.value.some(book => book.path === "manuscripts/page-128.md" && book.title === "Book 128")).toBe(true);
+    expect(query.mock.calls.some(call => call[1]?.cursor !== undefined)).toBe(true);
   });
   it.each(["changed snapshot", "repeated cursor"]) ("refuses unsafe metadata pagination: %s", async failure => {
     const h = await fixture(); const actual = await h.client.query({}, {effective: true});
@@ -97,32 +117,33 @@ describe("native Writer domain backend", () => {
     h.backend.dispose(); expect(close).not.toHaveBeenCalled();
     peer.session.setBody("Peer still active\n"); expect((await peer.session.flush()).ok).toBe(true); peer.release();
   });
+  it("refuses unsupported contract projection without using raw comment fields as a fallback", async () => {
+    const h = await fixture();
+    const row = h.replica.seed({path: "comments/unsupported.md", types: ["native-comment"], frontmatter: {type: "native-comment", document: "manuscripts/original.md", motivation: "commenting", status: "open", created_at: "2026-06-10T12:00:00Z"}, body: "Unconfirmed contract text\n"});
+    const read = vi.spyOn(h.client, "getContract").mockRejectedValue(new MdbaseError({code: "upgrade_required", recovery: "upgrade", message: "Contract records unsupported", reason: "contract_records_unsupported"}));
+    expect(await h.backend.comments()).toMatchObject({ok: false, message: expect.stringContaining("upgrade_required")});
+    expect(read).toHaveBeenCalledWith(row.id, {id: "mdbase.comment", version: "1.0.0", type: "native-comment"}, expect.any(AbortSignal));
+  });
   it("creates a mapped manuscript and chapter only after confirmed current native readback", async () => {
     const h = await fixture();
     const created = await h.backend.createManuscript({title: "Launch", template: "article", style: "apa"});
     expect(created).toEqual({ok: true, value: "manuscripts/launch.md"});
     const actual = await h.client.get({path: "manuscripts/launch.md"}, {body: true});
-    expect(actual.frontmatter.get("heading")).toBe("Launch"); expect(actual.state.state).toBe("confirmed");
+    expect(nativeObject(actual.frontmatter)["meta"]).toMatchObject({heading: "Launch"}); expect(actual.state.state).toBe("confirmed");
     const chapter = await h.backend.createRecord("notes/chapter.md", "# New chapter\n");
     expect(chapter).toEqual({ok: true, value: "notes/chapter-2.md"});
   });
   it("adopts a note with original UUID/body/custom metadata preserved by native CAS", async () => {
     const h = await fixture();
-    // MemoryReplica stores explicit seed types; it does not run native Core's
-    // catalog reclassification. Only this returned type metadata is a stand-in;
-    // UUID/revision/full source/CAS/receipt/readback stay actual public SDK data.
-    const get = h.client.get.bind(h.client);
-    vi.spyOn(h.client, "get").mockImplementation(async (...args) => {
-      const record = await get(...args);
-      const declared = record.frontmatter.get("type");
-      if (typeof declared === "string") record.types = [...new Set([...record.types, declared])];
-      return record;
-    });
     const original = await h.client.get({path: "notes/chapter.md"}, {body: true, document: true});
+    const update = vi.spyOn(h.client, "update");
     expect(await h.backend.adoptManuscript(original.path)).toEqual({ok: true, value: original.path});
     const changed = await h.client.get(original.id, {body: true});
     expect(changed.id).toBe(original.id); expect(changed.body).toBe(original.body);
     expect(changed.frontmatter.get("custom")).toBe("keep"); expect(changed.types).toContain("native-manuscript");
+    expect(nativeObject(changed.frontmatter)["meta"]).toMatchObject({heading: "A chapter"});
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0]?.[1]).toMatchObject({contract: {id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2", type: "native-manuscript"}, promote: true, patch: {title: "A chapter"}, ifRevision: original.revision});
   });
   it("reads native files by original file UUID/digest and keeps upload unavailable", async () => {
     const h = await fixture(); const bytes = new Uint8Array([1, 2, 3]);
@@ -140,6 +161,18 @@ describe("native Writer domain backend", () => {
     expect(listed.ok && listed.value.map(comment => comment.path)).toContain(created.value.path);
     const changed = await h.backend.changeComment(created.value, {kind: "resolve"});
     expect(changed.ok && changed.value.status).toBe("resolved");
+    if (!changed.ok) throw new Error(changed.message);
+    const update = vi.spyOn(h.client, "update");
+    const withdrawn = await h.backend.changeComment(changed.value, {kind: "withdraw"});
+    expect(withdrawn.ok).toBe(true);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0]?.[1]).toMatchObject({body: "", contract: {id: "mdbase.comment", version: "1.0.0", type: "native-comment"}});
+    const raw = await h.client.get({path: changed.value.path}, {body: true});
+    expect(raw.body).toBe("");
+    expect(raw.frontmatter.get("review")).toBeInstanceOf(Map);
+    const review = nativeObject(raw.frontmatter)["review"];
+    expect(review).toMatchObject({state: "resolved", deleted: expect.any(String), modified: expect.any(String)});
+    expect(raw.frontmatter.has("deleted_at")).toBe(false);
   });
   it.each(["untyped", "sdk-mid", "mismatched-sdk-mid"])("recovers a %s lost create reply by the original SDK MID without creating a duplicate", async mode => {
     const h = await fixture();
