@@ -6,6 +6,7 @@
   "scripts": {
     "icons": "node scripts/write-pwa-icons.mjs",
     "build": "pnpm manifest && pnpm manifest:validate && vite build",
+    "build:lab": "VITE_MDBASE_ENV=lab pnpm build",
     "dev": "pnpm manifest && vite --host 127.0.0.1",
     "manifest": "node scripts/write-manifest.mjs",
     "manifest:validate": "mdbase-connect-dev validate-manifest public/.well-known/mdbase-app.json",

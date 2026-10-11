@@ -2,15 +2,18 @@
 
 ## Public application boundary
 
-`App` accepts an optional public `MdbaseApplicationEntry`. Without it, Writer
-continues to use its existing Connect/demo entry. SDK mode lazily isolates that
-legacy entry and does not create a legacy session, parse collection URLs or
-reserve an app-owned popup.
+LAB builds (`VITE_MDBASE_ENV=lab`, or `pnpm build:lab` from `apps/writer`) create
+one declaration-only public SDK singleton outside React and pass it to `App`.
+Production builds keep the existing Connect/demo entry until the production
+trust asset and cutover are approved. SDK mode lazily isolates the legacy entry
+and does not create a legacy session, parse collection URLs or reserve an
+app-owned popup.
 
-`createWriterApplication` in `apps/writer/src/connect/sdk-application.ts` takes
-an explicit registered application ID and environment, and supplies Writer's
-unchanged declaration to `MdbaseConnect`. A logical manifest ID is not a native
-registration receipt. SDK startup, authorization, collection selection,
+`createWriterApplication` in `apps/writer/src/connect/sdk-application.ts` supplies
+Writer's unchanged manifest and explicit environment to `MdbaseConnect`. The
+logical manifest ID is a declaration, not a native registration receipt; the SDK
+resolves the genuine native ID. An optional explicit registered ID must match
+that SDK binding. SDK startup, authorization, collection selection,
 configuration, foreground state and physical shutdown stay SDK-owned. The live
 entry's `selection` distinguishes a requested collection from the usable native
 scope. Approval, access review and choosing another collection delegate directly

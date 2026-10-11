@@ -1,9 +1,19 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { createWriterApplication } from "./sdk-application.js";
+import { createWriterApplication, writerApplicationForBuild } from "./sdk-application.js";
 import manifest from "../generated/mdbase-app.json";
 
 afterEach(() => {vi.restoreAllMocks(); vi.unstubAllGlobals();});
+
+it("defaults only LAB builds to the SDK entry while production keeps the legacy entry", () => {
+  expect(writerApplicationForBuild("production")).toBeUndefined();
+  expect(writerApplicationForBuild(undefined)).toBeUndefined();
+  const entry = writerApplicationForBuild("lab");
+  expect(entry).toBeDefined();
+  // Node/jsdom need not host a native Worker to prove the selected entry.
+  expect(entry?.application().getSnapshot().readiness.assessment).toBeNull();
+  expect(entry?.connection("unopened")).toBeNull();
+});
 
 it("constructs the actual live public entry without registration, Worker or popup IO", async () => {
   const worker = vi.fn(() => {throw new Error("No test Worker allocation");});
