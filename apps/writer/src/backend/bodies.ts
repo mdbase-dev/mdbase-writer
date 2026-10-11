@@ -1,12 +1,13 @@
 // Lazy hydration on top of classified metadata. No discovery or watch ownership.
-import type { JsonObject, QueryRecord } from "@mdbase-dev/connect";
+import type { JsonObject } from "@mdbase-dev/connect";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 import { CollectionCache } from "./cache.js";
 import type { CollectionStore, StoreDelta } from "./collection.js";
 import { toContract } from "./comments.js";
 import { ok, sourceAnnotation, type Result, type SourceAnnotation } from "./types.js";
 
-type ReadSelected = (metadata: ReadonlyMap<string, { readonly type: string }>) => Promise<Result<QueryRecord<JsonObject>[]>>;
+export interface WriterBodyRow { readonly path: string; readonly types: readonly string[]; readonly frontmatter?: JsonObject; readonly body?: string }
+type ReadSelected = (metadata: ReadonlyMap<string, { readonly type: string }>) => Promise<Result<WriterBodyRow[]>>;
 export class CollectionBodies {
   private readonly comments = new Map<string, CommentRecord>();
   private readonly sources = new Map<string, CollectionCache<SourceAnnotation[]>>();

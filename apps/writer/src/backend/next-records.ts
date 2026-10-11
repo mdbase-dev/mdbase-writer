@@ -18,7 +18,20 @@ export type NextWriterOpenOptions = RecordOpenOptions & Pick<NativeOpenOptions, 
 /** Thin application value/Result translation over the public SDK lease. No
  * app autosave, session factory, protocol, receipt/recovery or lease engine. */
 export class NextWriterRecords implements WriterRecords {
-  constructor(private readonly client: Pick<MdbaseClient, "records">, private readonly signal: AbortSignal) {}
+  private readonly releases = new Set<() => void>();
+  private disposed = false;
+  private readonly stop = () => this.dispose();
+  constructor(private readonly client: Pick<MdbaseClient, "records">, private readonly signal: AbortSignal, private readonly isCurrent: () => boolean = () => true) {
+    signal.addEventListener("abort", this.stop, { once: true });
+  }
+
+  /** Release this UI's borrowed leases only; SDK owns sessions, recovery and client. */
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.signal.removeEventListener("abort", this.stop);
+    for (const release of [...this.releases]) release();
+  }
 
   async open(path: string, options: NextWriterOpenOptions = {}): Promise<
     { readonly ok: true; readonly value: NextWriterLease } |
@@ -26,29 +39,43 @@ export class NextWriterRecords implements WriterRecords {
   > {
     try {
       this.signal.throwIfAborted();
+      if (this.disposed || !this.isCurrent()) return { ok: false, problem: { code: "cancelled" } };
       const lease = await this.client.records.open({ path }, { ...options, signal: this.signal });
-      if (this.signal.aborted) {
+      if (this.signal.aborted || this.disposed || !this.isCurrent()) {
         lease.release();
         this.signal.throwIfAborted();
+        return { ok: false, problem: { code: "cancelled" } };
       }
       const native = lease.session;
+      let released = false;
+      const release = () => {
+        if (released) return;
+        released = true;
+        this.releases.delete(release);
+        lease.release();
+      };
+      const check = () => {
+        this.signal.throwIfAborted();
+        if (released || this.disposed || !this.isCurrent()) throw new DOMException("Writer view has closed", "AbortError");
+      };
+      this.releases.add(release);
       return { ok: true, value: {
-        release: () => lease.release(),
+        release,
         session: {
           getNativeSnapshot: () => native.getSnapshot(),
           getSnapshot: () => snapshot(native.getSnapshot()),
           subscribe: listener => native.subscribe(listener),
-          setBody: body => native.setBody(body),
-          patchFrontmatter: patch => native.patchFrontmatter(Object.fromEntries(Object.entries(patch).map(([key, value]) => [key, value === undefined ? undefined : plain(value)]))),
-          resolve: choice => native.resolve(choice),
+          setBody: body => { check(); native.setBody(body); },
+          patchFrontmatter: patch => { check(); native.patchFrontmatter(Object.fromEntries(Object.entries(patch).map(([key, value]) => [key, value === undefined ? undefined : plain(value)]))); },
+          resolve: choice => { check(); native.resolve(choice); },
           flush: async flushOptions => {
             try {
-              this.signal.throwIfAborted();
+              check();
               const result = await native.flush({ ...flushOptions, signal: this.signal });
-              this.signal.throwIfAborted();
+              check();
               return result.ok ? { ok: true } : { ok: false, problem: result.problem };
             } catch (error) {
-              return { ok: false, problem: problem(error, this.signal) };
+              return { ok: false, problem: !this.signal.aborted && (released || this.disposed || !this.isCurrent()) ? { code: "cancelled" } : problem(error, this.signal) };
             }
           },
         },

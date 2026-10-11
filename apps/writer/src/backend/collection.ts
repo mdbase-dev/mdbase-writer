@@ -29,6 +29,15 @@ export function starterSchema(): CollectionSchema {
     })),
   });
 }
+/** Domain metadata, not a legacy connection or fabricated legacy catalog. */
+export interface WriterSchemaDescription {
+  readonly types: readonly { readonly name: string }[];
+  readonly contracts: readonly {
+    readonly id: string;
+    readonly implementations: readonly { readonly typeName: string; readonly fields: Readonly<Record<string, string>> }[];
+  }[];
+  readonly configuration?: JsonObject;
+}
 export interface Binding { readonly name: string; readonly fields: Readonly<Record<string, string>>; readonly typeKey: string }
 interface RoleBinding extends Binding { readonly active: boolean }
 export interface CollectionRow {
@@ -62,13 +71,13 @@ const fieldsOf = (fm: JsonObject, binding: Binding) => Object.keys(binding.field
 export class CollectionSchema {
   private readonly byType = new Map<string, Map<Domain, RoleBinding>>();
   private readonly roleCache = new Map<string, ReadonlyMap<Domain, RoleBinding>>();
-  constructor(readonly description: Pick<CollectionDescription, "types" | "contracts" | "configuration">) {
+  constructor(readonly description: WriterSchemaDescription | Pick<CollectionDescription, "types" | "contracts" | "configuration">, private readonly starterFallback = true) {
     for (const domain of Object.keys(domains) as Domain[]) {
       const rule = domains[domain];
       const implementations = description.contracts.find((c) => c.id === rule.contract.id)?.implementations ?? [];
       const bindings = implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey: this.typeKey }));
       // Recognise starter records even when their type isn't installed/described yet.
-      if (!bindings.some((b) => b.name === rule.starter)) bindings.push({ name: rule.starter, fields: {}, typeKey: this.typeKey });
+      if (this.starterFallback && !bindings.some((b) => b.name === rule.starter)) bindings.push({ name: rule.starter, fields: {}, typeKey: this.typeKey });
       const loaded = this.bindings(domain, domain === "manuscript");
       const active = new Set(loaded.ok ? loaded.value.map((b) => b.name) : []);
       for (const binding of bindings) {
@@ -90,7 +99,7 @@ export class CollectionSchema {
     const implementations = contract?.implementations ?? [];
     if (implementations.length) return ok(implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey: this.typeKey })));
     if (required || (contract && domain === "annotation")) return fail<Binding[]>(`This collection has no type for ${domain}s. Set it up again from mdbase connect.`);
-    if (contract) return ok<Binding[]>([]);
+    if (contract || !this.starterFallback) return ok<Binding[]>([]);
     if (domain === "comment" || domain === "person") return ok<Binding[]>([]);
     const starter = this.description.types.some((t) => t.name === rule.starter);
     return ok(starter ? [{ name: rule.starter, fields: {}, typeKey: this.typeKey }] : []);
@@ -129,7 +138,7 @@ export class CollectionSchema {
     return binding?.fields ?? {};
   }
   get setupStatus() {
-    const configured = (domain: Domain) => this.description.contracts.some((c) => c.id === domains[domain].contract.id) || this.description.types.some((t) => t.name === domains[domain].starter);
+    const configured = (domain: Domain) => this.description.contracts.some((c) => c.id === domains[domain].contract.id) || (this.starterFallback && this.description.types.some((t) => t.name === domains[domain].starter));
     const comments = this.bindings("comment");
     return { sources: configured("source"), annotations: configured("annotation"), comments: comments.ok && comments.value.length > 0 };
   }
