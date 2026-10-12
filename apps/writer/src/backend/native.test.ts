@@ -266,6 +266,18 @@ describe("native Writer domain backend", () => {
     const chapter = await h.backend.createRecord("notes/chapter.md", "# New chapter\n");
     expect(chapter).toEqual({ok: true, value: "notes/chapter-2.md"});
   });
+  it("creates a manuscript when the confirmed receipt still carries the optimistic pending view", async () => {
+    // UX-001 (LAB): the confirmed receipt had no records, so write.records kept the
+    // submit-time pending view and Writer reported a failed create that had succeeded.
+    const h = await fixture(); const create = h.client.create.bind(h.client);
+    vi.spyOn(h.client, "create").mockImplementation(async (...args: Parameters<typeof create>) => {
+      const write = await create(...args);
+      const pending = write.records.map(record => ({...record, state: {state: "pending" as const, confirmedSeq: 0}}));
+      Object.defineProperty(write, "confirmed", {value: write.confirmed.then(receipt => { write.receipt = {...write.receipt, records: pending}; return receipt; })});
+      return write;
+    });
+    expect(await h.backend.createManuscript({title: "Pending view", template: "article", style: "apa"})).toEqual({ok: true, value: "manuscripts/pending-view.md"});
+  });
   it("adopts a note with original UUID/body/custom metadata preserved by native CAS", async () => {
     const h = await fixture();
     const original = await h.client.get({path: "notes/chapter.md"}, {body: true, document: true});

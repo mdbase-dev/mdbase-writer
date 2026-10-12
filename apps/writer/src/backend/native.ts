@@ -372,7 +372,8 @@ export class NativeWriterBackend implements WriterBackend {
     if (receipt.mutation !== mutationId || receipt.state !== "confirmed" || !receipt.records?.length) throw new Error("Writer must recover the original operation before starting another.");
     for (const witnessed of receipt.records) {
       const current = await this.client.get(witnessed.id, {document: true}, this.signal); this.check();
-      if (!unprotected(witnessed) || !unprotected(current) || current.id !== witnessed.id || current.revision !== witnessed.revision || current.path !== witnessed.path) throw new Error("Writer's original operation is protected or changed.");
+      if (!unprotected(current) || current.id !== witnessed.id || current.path !== witnessed.path
+        || (witnessed.state.state === "confirmed" && current.revision !== witnessed.revision)) throw new Error("Writer's original operation is protected or changed.");
     }
   }
   private async availablePath(path: string): Promise<string> {
@@ -414,10 +415,14 @@ export class NativeWriterBackend implements WriterBackend {
   private async confirmed(write: Write, id: string, contract?: ContractSelector): Promise<wire.RecordView> {
     await write.confirmed; this.check();
     if (write.receipt.mutation !== write.mutationId || write.receipt.state !== "confirmed") throw new Error("Writer lost the original confirmed receipt.");
+    // A confirmed receipt may carry no records, so `write.records` can still be the
+    // optimistic (pending) view from submit. It proves identity and path; the
+    // confirmed read below proves protection and the current revision.
     const witnessed = write.records.find(record => record.id === id);
-    if (!witnessed || !unprotected(witnessed)) throw new Error("Writer's original receipt did not confirm an unprotected record.");
+    if (!witnessed) throw new Error("Writer's original receipt did not name the record.");
     const current = await this.client.get(id, {body: true, document: true}, this.signal); this.check();
-    if (!unprotected(current) || current.id !== id || current.revision !== witnessed.revision || current.path !== witnessed.path) throw new Error("Writer's confirmed record changed or is protected.");
+    if (!unprotected(current) || current.id !== id || current.path !== witnessed.path
+      || (witnessed.state.state === "confirmed" && current.revision !== witnessed.revision)) throw new Error("Writer's confirmed record changed or is protected.");
     if (contract) await this.contractRecord(current, contract);
     if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = undefined;
     return current;
