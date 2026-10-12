@@ -143,23 +143,20 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     expect((await f.client.pendingWrites())).toEqual([]);
   });
 
-  it("keeps native mutation/recovery evidence when confirmation is not yet available", async () => {
+  it("keeps an unconfirmed write saved on this device with its mutation, then settles it without resubmitting", async () => {
     const f = await fixture(true);
     const lease = await open(f);
     const update = vi.spyOn(f.client, "update");
     lease.session.setBody("Pending draft\n");
-    const result = await lease.session.flush({ timeoutMs: 25 });
-    expect(result.ok).toBe(false);
-    expect(lease.session.getSnapshot().body).toBe("Pending draft\n");
+    // The receipt wait runs out before the flush deadline: kept on device, not recovery.
+    expect(await lease.session.flush({ timeoutMs: 25 })).toEqual({ ok: true });
+    expect(lease.session.getNativeSnapshot()).toMatchObject({ state: "saved_on_device", recovery: null, body: "Pending draft\n" });
     const pending = await f.client.pendingWrites();
     expect(pending).toHaveLength(1);
     const mid = pending[0]!.receipt.mutation;
     expect(update).toHaveBeenCalledTimes(1);
-    const recovery = lease.session.getNativeSnapshot().recovery;
-    expect(recovery?.mutationId).toBe(mid);
-    expect(recovery?.recordId).toBe(f.record.id);
     f.replica.confirmAll();
-    expect(await lease.session.flush({ timeoutMs: 1000 })).toEqual({ ok: true });
+    await vi.waitFor(() => expect(lease.session.getNativeSnapshot()).toMatchObject({ state: "saved", recovery: null }));
     expect(update).toHaveBeenCalledTimes(1);
     expect(lease.session.getNativeSnapshot().lastReceipt?.mutation).toBe(mid);
   });
