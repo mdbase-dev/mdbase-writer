@@ -66,7 +66,8 @@ with its mapped title and original revision. Comment withdrawal changes the body
 and mapped fields in one update, preserving nested sibling fields. Success requires the original confirmed receipt and
 current unheld, unresolved-free native readback. A lost submit reply retains its
 original SDK MID; typed `error.mutationId` must match that same operation. Another
-click reconciles the original operation and does not submit a new record. The SDK owns durable capture, journals and receipt recovery.
+click reconciles the original operation and does not submit a new record. The SDK owns durable capture, journals and receipt recovery;
+its write ledger keeps and settles writes from earlier sessions, so Writer keeps no ledger of its own.
 People access uses the existing SDK directory with members omitted. Failed
 identity access may leave comments unsigned, never signed by a guessed account.
 

@@ -55,7 +55,8 @@ export class NativeWriterBackend implements WriterBackend {
   private metadataJob: Promise<NativeMetadata> | undefined;
   private peopleJob: Promise<People> | undefined;
   private writing = false;
-  /** Original public SDK MID only; SDK owns its durable journal/receipt engine. */
+  /** This session's write whose reply was lost, so a repeated click can't duplicate it.
+   * Writes from earlier sessions are the SDK write ledger's to keep and settle. */
   private unresolvedMutation: string | undefined;
 
   constructor(private readonly connection: MdbaseApplicationConnection, private readonly options: NativeWriterOptions) {
@@ -357,13 +358,6 @@ export class NativeWriterBackend implements WriterBackend {
           this.unresolvedMutation = undefined;
           throw new Error("Writer recovered the original operation. Review it before starting another.");
         }
-        // Recover SDK-retained mutations from earlier owners/reloads as well.
-        const pending = await this.client.pendingWrites(this.signal); this.check();
-        for (const original of pending) {
-          const receipt = await this.client.awaitReceipt(original.receipt.mutation, 5_000, this.signal); this.check();
-          await this.recovered(original.receipt.mutation, receipt);
-        }
-        if (pending.length) throw new Error("Writer recovered an earlier operation. Review it before starting another.");
         return operation();
       });
     } finally {this.writing = false;}
