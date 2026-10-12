@@ -85,9 +85,9 @@ A reconnected watch reloads the collection, and it never closes the borrowed cli
 ## Development package and evidence
 
 The normal original development archive from source
-`a965bd261c4aac1c2b69d4a31c3e2226d59dd627`, original cut
-`sdk-dev-a965bd26`, is pinned in `vendor/mdbase-next-sdk.json` (4024265 bytes,
-SHA256 `01e76f1a24e27f3521c5a730c5598cd69f4caea8903195151cc9b8c583d5ccce`).
+`5f2c3d5df5d5b0d5752998ed8ec9116695e0a141`, original cut
+`sdk-dev-5f2c3d5d`, is pinned in `vendor/mdbase-next-sdk.json` (4034149 bytes,
+SHA256 `b36fd8a5c84c27c9c32458d401d17a9cbf2ebe779fabe33fb659b2ad6bf74e26`).
 The SDK bundles the original beta129 `c280cd194ffd` protocol archive; Writer's
 ordinary direct `d765e675c3da` legacy protocol dependency is unchanged. This
 archive has no vendor warnings; the earlier unused-protocol exception is not
