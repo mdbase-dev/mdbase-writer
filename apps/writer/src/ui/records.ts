@@ -5,7 +5,7 @@ import type { RecordView, SessionSnapshot } from "../workspace/workspace.js";
 
 export const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
   saved: "Saved",
-  saved_on_device: "Saved on this device",
+  saved_on_device: "Saved on this device; waiting for sync",
   unsaved: "Unsaved",
   saving: "Saving…",
   conflict: "Changed elsewhere",
