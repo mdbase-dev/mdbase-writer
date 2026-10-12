@@ -1,13 +1,13 @@
 {
   "package": "@mdbase-dev/ui",
-  "version": "0.1.0-beta.129-dev.25f3b96a",
-  "artifact": "mdbase-dev-ui-dev-25f3b96a.tgz",
-  "cutIdentity": "ui-dev-25f3b96a",
-  "sourceCommit": "25f3b96aa59eaac0a29ff0c801df1f600d271129",
-  "mergedAs": "2da74a44543ee0749f0899f8421f088cc51b7d50",
+  "version": "0.1.0-beta.129-dev.5df37dc9",
+  "artifact": "mdbase-dev-ui-dev-5df37dc9.tgz",
+  "cutIdentity": "ui-dev-5df37dc9",
+  "sourceCommit": "5df37dc9788e0f2a086f767345a747c53f6046d6",
+  "mergedAs": "5df37dc9788e0f2a086f767345a747c53f6046d6",
   "label": "dev intake, not release-qualified",
-  "sha256": "af232f04ec70c29520869bd27be6551b50318c49c5833bd466d97bcb3655fefd",
-  "integrity": "sha512-dxtVCMl/pSsTUy8khTG1Tr3aZeqBWpG+tr6qsH1XHW4WKnRicvifdz9m6rp+p9lwZTGD7s4MK0ggogZTuRSI0Q==",
-  "bytes": 80125,
+  "sha256": "bc552e43d12746fcec69d019c298deb52b002108121ffa0535162185770f8652",
+  "integrity": "sha512-4FmA0cfQ+jZULmb3jYar9DCLkE/M2oTSZa3se3in3UhtvclhNRAkwMtH8b+6PA0rKu7tqtZZsrYcxJg84UH6Mg==",
+  "bytes": 87453,
   "releaseQualified": false
 }
