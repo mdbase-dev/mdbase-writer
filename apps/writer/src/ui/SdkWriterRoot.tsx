@@ -68,8 +68,8 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
   if (ready && connection) {
     const picker = <span className="native-signin-actions">
       <span>{connection.displayName}</span>
-      <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(signal => application.chooseAnother({ signal }))}>Choose another collection</button>
-      <button type="button" className="mdbase-button" disabled={working} onClick={() => void act(async signal => { await application.close(); signal.throwIfAborted(); onSignedOut?.(); })}>Sign out</button>
+      <button type="button" className="mdbase-button is-small" disabled={working} onClick={() => void act(signal => application.chooseAnother({ signal }))}>Choose another collection</button>
+      <button type="button" className="mdbase-button is-small" disabled={working} onClick={() => void act(async signal => { await application.close(); signal.throwIfAborted(); onSignedOut?.(); })}>Sign out</button>
       {problem ? <span role="alert">{problem.message}</span> : null}
     </span>;
     return <NativeScopeView key={`${connection.id}:${connection.generation}`} connection={connection} application={application} renderNative={renderNative} collectionPicker={picker} problem={snapshot.problem} />;
