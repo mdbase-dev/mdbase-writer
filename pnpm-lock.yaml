@@ -57,8 +57,8 @@ importers:
         specifier: file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz
         version: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz
       '@mdbase-dev/sdk':
-        specifier: file:../../vendor/mdbase-dev-sdk-dev-1f7b4f7a.tgz
-        version: file:vendor/mdbase-dev-sdk-dev-1f7b4f7a.tgz
+        specifier: file:../../vendor/mdbase-dev-sdk-dev-8bc12525.tgz
+        version: file:vendor/mdbase-dev-sdk-dev-8bc12525.tgz
       '@mdbase-dev/ui':
         specifier: 0.1.0-beta.125
         version: 0.1.0-beta.125(@codemirror/view@6.43.13)(react@19.3.0)
@@ -408,8 +408,8 @@ packages:
   '@mdbase-dev/connect@0.1.0-beta.125':
     resolution: {integrity: sha512-vEH4NQfu3dBQgMw0YQxG7LDtOOLxDyxET4DQhrWuHqtgr9qoch/H0QLzel9tFSqkyH+QWxuvW3Bet6ae1+qVyQ==}
 
-  '@mdbase-dev/sdk@file:vendor/mdbase-dev-sdk-dev-1f7b4f7a.tgz':
-    resolution: {integrity: sha512-ZIqE26BBveBbUS+PTCg5vR843puqA/j41SD99xgsCVQfzbAeda4aJaCg+u9rTq94mQfjcywePjuc69DR5BNw6A==, tarball: file:vendor/mdbase-dev-sdk-dev-1f7b4f7a.tgz}
+  '@mdbase-dev/sdk@file:vendor/mdbase-dev-sdk-dev-8bc12525.tgz':
+    resolution: {integrity: sha512-doymuVblaa19cYOU25FkCL4kwAGMYcCH17CXpabolGF0UTIkZRYFposY9xmA56WsNgPl5TqGTI3HWEoQ2PP8XQ==, tarball: file:vendor/mdbase-dev-sdk-dev-8bc12525.tgz}
     version: 0.0.0
     engines: {node: '>=20'}
     bundledDependencies:
@@ -1631,7 +1631,7 @@ snapshots:
     dependencies:
       '@mdbase-dev/connect-protocol': 0.1.0-beta.125
 
-  '@mdbase-dev/sdk@file:vendor/mdbase-dev-sdk-dev-1f7b4f7a.tgz':
+  '@mdbase-dev/sdk@file:vendor/mdbase-dev-sdk-dev-8bc12525.tgz':
     dependencies:
       '@noble/ciphers': 2.4.0
       '@noble/curves': 2.4.0
