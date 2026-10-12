@@ -34,7 +34,7 @@
     "@lezer/markdown": "^1.4.3",
     "@mdbase-dev/connect": "0.1.0-beta.125",
     "@mdbase-dev/connect-protocol": "file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz",
-    "@mdbase-dev/sdk": "file:../../vendor/mdbase-dev-sdk-dev-cf294bdb.tgz",
+    "@mdbase-dev/sdk": "file:../../vendor/mdbase-dev-sdk-dev-a965bd26.tgz",
     "@mdbase-dev/ui": "0.1.0-beta.125",
     "@mdbase-writer/core": "workspace:*",
     "@myriaddreamin/typst-ts-renderer": "0.7.0",
