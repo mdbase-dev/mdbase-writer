@@ -94,7 +94,7 @@ export interface NewManuscript {
 // This is the workspace's application port, not a concrete SDK class. The
 // current Connect sessions satisfy it unchanged; the new SDK adapter must keep
 // receipt confirmation, drafts, conflict and exact-recovery behavior intact.
-export type RecordSessionState = "saved" | "unsaved" | "saving" | "conflict" | "recovery" | "error" | "deleted";
+export type RecordSessionState = "saved" | "saved_on_device" | "unsaved" | "saving" | "conflict" | "recovery" | "error" | "deleted";
 
 export interface SessionProblem {
   readonly code: string;

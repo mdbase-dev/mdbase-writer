@@ -5,6 +5,7 @@ import type { RecordView, SessionSnapshot } from "../workspace/workspace.js";
 
 export const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
   saved: "Saved",
+  saved_on_device: "Saved on this device",
   unsaved: "Unsaved",
   saving: "Saving…",
   conflict: "Changed elsewhere",
@@ -19,7 +20,7 @@ export const STATE_SHORT_LABEL: Partial<Record<SessionSnapshot["state"], string>
   deleted: "Deleted",
 };
 export const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
-  saved: "saved", unsaved: "pending", saving: "saving", conflict: "attention", recovery: "saving", error: "attention", deleted: "attention",
+  saved: "saved", saved_on_device: "pending", unsaved: "pending", saving: "saving", conflict: "attention", recovery: "saving", error: "attention", deleted: "attention",
 };
 
 export function recordTitle(view: RecordView | undefined, path: string): string {
