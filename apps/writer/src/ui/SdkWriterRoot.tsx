@@ -18,14 +18,10 @@ export interface SdkWriterRootProps {
   renderNative?(scope: WriterNativeScope): ReactNode;
 }
 
-/** Writer over the SDK's mdbase entry. The shared collection gate owns sign-in,
- * choosing, approval, setup and problems; Writer opens only the connection the
+/** Writer over the SDK's mdbase entry. The shared collection gate starts it and
+ * owns sign-in, choosing, approval, setup and problems; Writer opens only the connection the
  * gate hands over in phase `ready`, and never closes the entry. */
 export function SdkWriterRoot({ sdk, renderNative }: SdkWriterRootProps) {
-  useEffect(() => {
-    // Safe to call again (StrictMode); failures surface as the snapshot's phase.
-    sdk.start().catch(() => undefined);
-  }, [sdk]);
   return <WriterCollectionGate mdbase={sdk}>
     {connection => <>
       <WriterCollectionSwitcher mdbase={sdk} />
