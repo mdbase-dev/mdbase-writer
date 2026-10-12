@@ -91,6 +91,14 @@ describe("native Writer domain backend", () => {
     expect((await h.backend.index()).ok).toBe(true);
     expect((await h.backend.library()).ok).toBe(true);
   });
+  it("opens a collection whose catalog has no settings (null)", async () => {
+    // UX-001: a fresh collection without mdbase.yaml settings reports `settings: null`;
+    // Writer failed "Writer requires a native field map." and loaded nothing.
+    const h = await fixture();
+    (h.description as {settings: unknown}).settings = null;
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
+    expect((await h.backend.index()).ok).toBe(true);
+  });
   it("lists untyped records as untyped notes rather than dropping them", async () => {
     const h = await fixture();
     const index = await h.backend.index();

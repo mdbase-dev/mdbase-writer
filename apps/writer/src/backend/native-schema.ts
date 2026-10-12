@@ -80,7 +80,8 @@ export function nativeWriterSchema(catalog: wire.DescribeResult): CollectionSche
       return [{typeName: type.name, fields: Object.fromEntries(binding.fields)}];
     })}));
   const schema = new CollectionSchema({types: catalog.types.map(type => ({name: type.name})), contracts,
-    configuration: {settings: nativeObject(catalog.settings)}, unavailableTypes}, false);
+    // A collection without settings reports null: that is no settings, not an error.
+    configuration: {settings: catalog.settings === null ? {} : nativeObject(catalog.settings)}, unavailableTypes}, false);
   const manuscripts = schema.bindings("manuscript", true);
   if (!manuscripts.ok && !schema.unavailableMessage("manuscript")) throw new Error(manuscripts.message);
   return schema;
