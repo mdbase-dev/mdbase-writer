@@ -9,23 +9,26 @@ trust asset and cutover are approved. SDK mode lazily isolates the legacy entry
 and does not create a legacy session, parse collection URLs or reserve an
 app-owned popup.
 
-`createWriterApplication` in `apps/writer/src/connect/sdk-application.ts` supplies
-Writer's unchanged manifest and explicit environment to `MdbaseConnect`. The
-logical manifest ID is a declaration, not a native registration receipt; the SDK
-resolves the genuine native ID. An optional explicit registered ID must match
-that SDK binding. SDK startup, authorization, collection selection,
-configuration, foreground state and physical shutdown stay SDK-owned. The live
-entry's `selection` distinguishes a requested collection from the usable native
-scope. Approval, access review and choosing another collection delegate directly
-to `approve`, `reauthorize` and `chooseAnother`; an unapproved URL request is never
-silently replaced with another approved collection.
+`createWriterMdbase` in `apps/writer/src/connect/sdk-application.ts` supplies
+Writer's unchanged manifest and explicit environment to the SDK's `createMdbase`
+front door, with `readiness: {typeIssues: "degrade"}`. The logical manifest ID is
+a declaration, not a native registration receipt; the SDK resolves the genuine
+native ID. An optional explicit registered ID must match that SDK binding. SDK
+startup, authorization, collection selection, configuration, foreground state and
+physical shutdown stay SDK-owned.
 
-`SdkWriterRoot` requires the selected original connection, matching native client
-collection, current connection and current successful aggregate readiness before
-opening the domain UI. Configuration success alone does not open Writer. Sign-out
-waits for SDK close; failed close retains the current view. Retired caller actions
-cannot sign out or navigate a replacement. Canonical SDK email or GitHub login is
-shown without inventing an email address or using an account UUID as a label.
+The collection screens come from `@mdbase-dev/ui/collections`, vendored as
+`vendor/mdbase-dev-ui-dev-25f3b96a.tgz` (pin: `vendor/mdbase-ui-dev.json`). Its
+optional `@mdbase-dev/sdk` peer resolves to Writer's own SDK dependency.
+`SdkWriterRoot` calls `start()` and renders the shared `CollectionGate`, which
+owns sign-in, choosing, approval, setup review, problems and sign-out (always
+`signOut()`, never `close()`). Writer opens its domain UI only for the
+connection the gate hands over in phase `ready`, keyed by collection ID and
+generation; leaving that phase retires the scope's leases. The shared
+`CollectionSwitcher` sits in the top bar on the manuscript list and is hidden
+inside a manuscript, where leaving goes through the manuscript's own save guard.
+The `--mdbase-collections-*` properties map onto Writer's tokens in
+`apps/writer/src/ui/writer-collections.css`.
 
 ## Native domain repository
 

@@ -14,7 +14,7 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App.js";
 import { FeedbackRoot } from "./FeedbackRoot.js";
-import { writerApplicationForBuild } from "./connect/sdk-application.js";
+import { writerMdbaseForBuild } from "./connect/sdk-application.js";
 
 import { setupPwaInstall } from "./pwa-install.js";
 import "./pwa-install.css";
@@ -23,7 +23,7 @@ const stopPwaInstall = setupPwaInstall("mdbase writer");
 if (import.meta.hot) import.meta.hot.dispose(stopPwaInstall);
 
 // One declaration-only singleton outside React/StrictMode. SDK owns its runtime.
-const sdk = writerApplicationForBuild(import.meta.env.VITE_MDBASE_ENV);
+const sdk = writerMdbaseForBuild(import.meta.env.VITE_MDBASE_ENV);
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root");
 createRoot(root).render(

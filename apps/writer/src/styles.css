@@ -86,12 +86,6 @@ label > .mdbase-select { width: 100%; }
 /* Writer's top bar already carries the wordmark on the screens before a collection opens. */
 .app .mdbase-connect-screen section > .wordmark { display: none; }
 
-/* Collection controls on the gate and in the Manuscripts header. Interim spacing
- * until the shared @mdbase-dev/ui collection switcher replaces both. */
-.native-signin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.home-header .native-signin-actions { display: inline-flex; vertical-align: middle; margin: 0.15rem 0.35rem; }
-.home-header .native-signin-actions > span:first-child { font-weight: 600; color: var(--ink); }
-
 .icon { width: 18px; height: 18px; flex: none; }
 /* Writer's compact icon buttons, and the chevron in a menu button. */
 .mdbase-icon-button.is-small { width: 26px; height: 26px; }
