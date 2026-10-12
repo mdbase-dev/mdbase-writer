@@ -220,6 +220,19 @@ describe("Writer public SDK fixture boundary", () => {
     await waitFor(() => expect(screen.getByText(describeError("setup_required")?.message ?? "Missing SDK setup copy")).toBeTruthy());
     expect(native).not.toHaveBeenCalled();
   });
+  it("a readiness re-check while setup applies keeps the review and its apply running", async () => {
+    const {h} = reviewSetup(); const application = h.sdk.application(); let finish!: () => void;
+    h.controls.setHandler("applySetup", () => {
+      const now = application.getSnapshot();
+      h.controls.publishSnapshot({...now, status: "opening", readiness: {...now.readiness, checking: true}});
+      return new Promise<void>(resolve => { finish = resolve; });
+    });
+    fireEvent.click(await screen.findByRole("button", {name: "Confirm"}));
+    await waitFor(() => expect(count(h, "applySetup")).toBe(1));
+    expect(screen.getByText(setupPlan.summary)).toBeTruthy();
+    expect(h.controls.observedActions().find(call => call.action === "applySetup")?.signal?.aborted).toBe(false);
+    await act(async () => finish());
+  });
   it("a collection that changed during review is planned again, and Cancel writes nothing", async () => {
     const {h} = reviewSetup();
     h.controls.setHandler("applySetup", () => { throw mdbaseError("conflict", "changed", "setup_changed"); });

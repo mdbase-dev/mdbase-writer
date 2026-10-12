@@ -74,8 +74,9 @@ function ApplicationView({ sdk, renderNative, onSignedOut }: SdkWriterRootProps)
     </span>;
     return <NativeScopeView key={`${connection.id}:${connection.generation}`} connection={connection} application={application} renderNative={renderNative} collectionPicker={picker} problem={snapshot.problem} />;
   }
-  const setup = snapshot.status === "setup_required" || snapshot.readiness.assessment?.status === "setup_required" || describeError(snapshot)?.action === "set_up";
-  if (review && review.id === snapshot.selectedCollectionId && setup && !snapshot.readiness.checking && snapshot.status !== "closed") {
+  // The review stays until it finishes or is cancelled: status and readiness
+  // changes while setup is applying must not unmount it and abort the apply.
+  if (review && review.id === snapshot.selectedCollectionId && snapshot.status !== "closed") {
     const name = snapshot.collections.find(collection => collection.collectionId === review.id)?.displayName ?? "this collection";
     return <SetupReview key={review.id} application={application} displayName={name} onCancel={() => setReview(null)} onApplied={() => setReview(null)}/>;
   }
