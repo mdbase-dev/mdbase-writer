@@ -33,6 +33,13 @@ export function nativeObject(value: wire.Value): JsonObject {
   return json;
 }
 
+/** The wire reports contract digests as `sha256:<hex>` (as the manifest does).
+ * Compare in that canonical form so neither side's spelling can mismatch. */
+export function sameDigest(a: string | undefined, b: string | undefined): boolean {
+  const canonical = (digest: string) => digest.startsWith("sha256:") ? digest : `sha256:${digest}`;
+  return a !== undefined && b !== undefined && canonical(a) === canonical(b);
+}
+
 export function manifestContractDigest(id: string, version: string): string | undefined {
   return manifest.requirements.contracts.find(contract => contract.id === id && contract.version === version)?.digest;
 }
@@ -48,7 +55,7 @@ export function nativeWriterSchema(catalog: wire.DescribeResult): CollectionSche
   for (const expected of required) {
     const matching = catalog.contracts.filter(contract => contract.id === expected.id && contract.version === expected.version);
     const actual = matching[0];
-    if (matching.length !== 1 || !actual || actual.contractType !== "record" || actual.digest !== expected.digest.replace(/^sha256:/, "")) {
+    if (matching.length !== 1 || !actual || actual.contractType !== "record" || !sameDigest(actual.digest, expected.digest)) {
       throw new Error("This collection does not have Writer's exact native contracts.");
     }
   }

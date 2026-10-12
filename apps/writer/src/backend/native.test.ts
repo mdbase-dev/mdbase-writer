@@ -18,7 +18,7 @@ function catalog(): wire.DescribeResult {
     "native-comment": {document: "document", motivation: "motivation", status: "/review/state", created_at: "created_at", created_by: "created_by", in_reply_to: "in_reply_to", target: "target", suggestion: "suggestion", resolved_at: "resolved_at", resolved_by: "resolved_by", modified_at: "/review/modified", deleted_at: "/review/deleted"},
   };
   return {specVersion: "0.3.0", settings: new Map([["explicit_type_keys", ["type"]]]), inclusion: {include: ["image"]}, issues: [],
-    contracts: definitions.map(({contract, type}) => ({...contract, digest: contract.digest.replace(/^sha256:/, ""), path: `_contracts/${contract.id}.md`, contractType: "record", implementedBy: [type]})),
+    contracts: definitions.map(({contract, type}) => ({...contract, path: `_contracts/${contract.id}.md`, contractType: "record", implementedBy: [type]})),
     types: definitions.map(({contract, type}) => ({name: type, path: `_types/${type}.md`, implements: [{contract: contract.id, version: contract.version, fields: new Map(Object.entries(mappings[type] ?? {}))}]}))};
 }
 async function fixture(beforeBackend?: (client: MdbaseClient) => void) {
@@ -26,7 +26,7 @@ async function fixture(beforeBackend?: (client: MdbaseClient) => void) {
   const contracts: MemoryContract[] = description.types.flatMap(type => (type.implements ?? []).map(implementation => {
     const contract = description.contracts.find(candidate => candidate.id === implementation.contract && candidate.version === implementation.version);
     if (!contract || !implementation.version) throw new Error("Missing exact fixture contract");
-    return {id: contract.id, version: implementation.version, type: type.name, contractDigest: `sha256:${contract.digest}`, fields: Object.fromEntries(implementation.fields ?? new Map())};
+    return {id: contract.id, version: implementation.version, type: type.name, contractDigest: contract.digest, fields: Object.fromEntries(implementation.fields ?? new Map())};
   }));
   const replica = new MemoryReplica({confirmDelayMs: 0, contracts});
   const manuscript = replica.seed({path: "manuscripts/original.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "Original"]]), layout: "article", style: "apa"}, body: "Original manuscript\n"});
@@ -79,8 +79,17 @@ describe("native Writer domain backend", () => {
     expect(await h.backend.index()).toMatchObject({ok: true, value: {notePaths: expect.arrayContaining(["notes/chapter.md"])}});
     expect(await h.backend.readBody("notes/chapter.md")).toEqual({ok: true, value: "# A chapter\n"});
     const first = h.description.contracts[0]; if (!first) throw new Error("Missing original contract");
-    first.digest = "f".repeat(64);
+    first.digest = `sha256:${"f".repeat(64)}`;
     expect(() => nativeWriterSchema(h.description)).toThrow("exact native contracts");
+  });
+  it("opens a catalog whose contract digests use the wire's sha256: form", async () => {
+    // UX-001: a fresh collection's describe reports `sha256:<hex>` digests,
+    // the same form as the manifest. Writer must not require bare hex.
+    const h = await fixture();
+    expect(h.description.contracts.every(contract => contract.digest.startsWith("sha256:"))).toBe(true);
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
+    expect((await h.backend.index()).ok).toBe(true);
+    expect((await h.backend.library()).ok).toBe(true);
   });
   it("lists untyped records as untyped notes rather than dropping them", async () => {
     const h = await fixture();
@@ -215,9 +224,9 @@ describe("native Writer domain backend", () => {
   });
   it("refuses changed exact contract digest and never uses starter-name fallback", async () => {
     const h = await fixture(); const first = h.description.contracts[0]; if (!first) throw new Error("Missing fixture contract");
-    first.digest = "f".repeat(64);
+    first.digest = `sha256:${"f".repeat(64)}`;
     expect((await h.backend.listManuscripts()).ok).toBe(false);
-    first.digest = manifest.requirements.contracts[0]?.digest.replace(/^sha256:/, "") ?? "";
+    first.digest = manifest.requirements.contracts[0]?.digest ?? "";
     const schema = nativeWriterSchema(h.description);
     expect(schema.roles(["writer-manuscript"]).size).toBe(0);
     expect(schema.roles(["native-manuscript"]).has("manuscript")).toBe(true);

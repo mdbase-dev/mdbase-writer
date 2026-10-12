@@ -6,7 +6,7 @@ import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comme
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
 import { changeFields, commentPath, newCommentFields, NO_PEOPLE, peopleFromDirectory, type CommentChange, type NewComment, type People } from "./comments.js";
-import { manifestContractDigest, nativeObject, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
+import { manifestContractDigest, nativeObject, sameDigest, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
 import { NextWriterRecords } from "./next-records.js";
 import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";
 
@@ -220,7 +220,7 @@ export class NativeWriterBackend implements WriterBackend {
       let cursor: string | undefined;
       do {
         const result = await this.client.queryContract(contract, {pageSize: 128, ...(cursor ? {cursor} : {}), signal: this.signal}); this.check(generation);
-        if (result.contractDigest !== `sha256:${declared.digest}` || result.page.asOf !== asOf) throw new Error("Writer's contract metadata snapshot or digest changed.");
+        if (!sameDigest(result.contractDigest, declared.digest) || result.page.asOf !== asOf) throw new Error("Writer's contract metadata snapshot or digest changed.");
         const witnesses = new Map(result.page.records.map(record => [record.id, record]));
         if (witnesses.size !== result.page.records.length) throw new Error("Writer's contract query repeated a record identity.");
         for (const projected of result.records) {
@@ -406,7 +406,7 @@ export class NativeWriterBackend implements WriterBackend {
     const digest = manifestContractDigest(contract.id, contract.version);
     if (!expected || projected.id !== original.id || projected.path !== original.path || projected.revision !== original.revision
       || projected.contract.id !== contract.id || projected.contract.version !== contract.version || projected.contract.type !== contract.type
-      || (digest !== undefined && projected.contract.digest !== digest)) throw new Error("Writer's contract record binding changed.");
+      || (digest !== undefined && !sameDigest(projected.contract.digest, digest))) throw new Error("Writer's contract record binding changed.");
     const current = await this.client.get(original.id, {body: true, document: true}, this.signal); this.check();
     if (!unprotected(current) || current.id !== original.id || current.path !== original.path || current.revision !== original.revision) throw new Error("Writer's contract record changed or is protected.");
     return projected;
