@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { offlineShellPlugin } from "@mdbase-dev/sdk/offline-shell/build";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -11,7 +12,7 @@ const pandocWasm = resolve(dirname(fileURLToPath(import.meta.url)), "node_module
 const pandocVersion = (JSON.parse(readFileSync(resolve(pandocWasm, "package.json"), "utf8")) as { version: string }).version;
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), offlineShellPlugin()],
   worker: { format: "es" },
   define: { __PANDOC_WASM_VERSION__: JSON.stringify(pandocVersion) },
   optimizeDeps: {
