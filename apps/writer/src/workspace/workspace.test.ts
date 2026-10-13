@@ -67,6 +67,17 @@ function fixture() {
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
 
 describe("workspace reliability", () => {
+  it("retries a failed comment under the same intent", async () => {
+    const { backend, open } = fixture();
+    const createComment = vi.fn<WriterBackend["createComment"]>(async () => fail("Reply lost"));
+    backend.createComment = createComment;
+    const workspace = open();
+    await workspace.addComment({ record: "main.md" }, "Hi");
+    await workspace.addComment({ record: "main.md" }, "Hi");
+    const [first, retry] = createComment.mock.calls.map(([input]) => input.intent);
+    expect(retry).toEqual(expect.any(String));
+    expect(retry).toBe(first);
+  });
   it("sends only worker deltas and no unchanged collection data for unrelated edits", async () => {
     const { backend, open } = fixture();
     const known = { key: "known", path: "sources/known.md", title: "Known", item: { id: "known", type: "book", title: "Known" } };

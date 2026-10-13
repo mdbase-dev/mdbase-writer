@@ -13,7 +13,7 @@ import { isAnnotation } from "@mdbase-writer/core/annotations";
 import { IMAGE_EXTENSION, PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
-import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
+import { NO_PEOPLE, type CommentChange, type NewComment, type People } from "../backend/comments.js";
 import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
@@ -128,6 +128,8 @@ export class ManuscriptWorkspace {
   private readonly leases = new Map<string, { lease: RecordLease; unsubscribe: () => void }>();
   private readonly opening = new Map<string, Promise<boolean>>();
   private readonly sent = new Map<string, string>();
+  /** One intent per unconfirmed comment (by its content): a retry after a lost reply re-sends it, so it lands once. */
+  private readonly commentIntents = new Map<string, string>();
   private readonly translations = new Map<string, { body: string; translated: ReturnType<typeof translateRecord> }>();
   private lastOrder: readonly string[] = [];
   private readonly requestedAssets = new Set<string>();
@@ -864,15 +866,24 @@ export class ManuscriptWorkspace {
   /** A new thread on a passage (a suggestion when `replacement` is given), or on the whole record. */
   async addComment(draft: CommentDraft | { record: string }, text: string, replacement?: string): Promise<Result<CommentRecord>> {
     const target = "body" in draft ? targetFor(draft.body, draft.from, draft.to, await bodyHash(draft.body)) : undefined;
-    const created = await this.backend.createComment({ document: draft.record, text, ...(target ? { target } : {}), ...(replacement !== undefined ? { replacement } : {}) });
+    const key = JSON.stringify([draft.record, "body" in draft ? [draft.from, draft.to] : null, text, replacement ?? null]);
+    const created = await this.createComment(key, { document: draft.record, text, ...(target ? { target } : {}), ...(replacement !== undefined ? { replacement } : {}) });
     if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
+    return created;
+  }
+
+  private async createComment(key: string, input: NewComment): Promise<Result<CommentRecord>> {
+    let intent = this.commentIntents.get(key);
+    if (!intent) this.commentIntents.set(key, intent = crypto.randomUUID());
+    const created = await this.backend.createComment({ ...input, intent });
+    if (created.ok) this.commentIntents.delete(key);
     return created;
   }
 
   async reply(thread: CommentThread, text: string): Promise<Result<CommentRecord>> {
     // A reply repeats its thread's document.
     const document = resolveLinkTarget(linkPath(thread.root.document), thread.root.path, this.current.recordIndex) ?? linkPath(thread.root.document);
-    const created = await this.backend.createComment({ document, text, thread: thread.root });
+    const created = await this.createComment(JSON.stringify([thread.root.path, text]), { document, text, thread: thread.root });
     if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
     return created;
   }

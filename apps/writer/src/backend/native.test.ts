@@ -360,6 +360,19 @@ describe("native Writer domain backend", () => {
     const queried = await h.client.query({}, {});
     expect(queried.records.filter(record => record.path.startsWith("manuscripts/launch"))).toHaveLength(1);
   });
+  it("retries a lost comment reply under the same intent into the one original comment", async () => {
+    const h = await fixture();
+    const original = h.client.create.bind(h.client);
+    vi.spyOn(h.client, "create").mockImplementationOnce(async (input, options) => {
+      const write = await original(input, options); await write.confirmed; throw new Error("Lost original reply");
+    });
+    const input = {document: "manuscripts/original.md", text: "Once", intent: "new-comment-1"};
+    expect((await h.backend.createComment(input)).ok).toBe(false);
+    const created = await h.backend.createComment(input);
+    if (!created.ok) throw new Error(created.message);
+    const listed = await h.backend.comments(["manuscripts/original.md"]);
+    expect(listed.ok && listed.value.filter(comment => comment.text === "Once").map(comment => comment.path)).toEqual([created.value.path]);
+  });
   it("fences late retired data and aborts only the repository watch/scope", async () => {
     const h = await fixture(); const close = vi.spyOn(h.client, "close");
     const pending = h.backend.listManuscripts(); h.current.mockReturnValue(false);

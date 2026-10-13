@@ -487,12 +487,12 @@ export class NativeWriterBackend implements WriterBackend {
       const fields = newCommentFields(input, now, (await this.people()).me?.link); this.check();
       const body = input.text.trim() ? `${input.text.trim()}\n` : "";
       const contract = {...commentContract, type: binding.name};
-      const current = await this.create(commentPath(now), body, fields, contract);
+      const current = await this.create(commentPath(now), body, fields, contract, input.intent);
       const projected = await this.contractRecord(current, contract);
       const comment = commentFromRecord(current.path, nativeObject(projected.fields), current.body ?? "");
       if (!comment || current.body !== body) throw new Error("Writer's comment could not be confirmed from its native readback.");
       return comment;
-    });
+    }, input.intent);
   }
   changeComment(comment: CommentRecord, change: CommentChange): Promise<Result<CommentRecord>> {
     return this.write(async () => {
