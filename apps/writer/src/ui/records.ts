@@ -23,6 +23,13 @@ export const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
   saved: "saved", saved_on_device: "pending", unsaved: "pending", saving: "saving", conflict: "attention", recovery: "saving", error: "attention", deleted: "attention",
 };
 
+/** A recovered checkpoint is not an acknowledged save until it is reviewed. */
+export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecoveredDrafts: boolean): { tone: SaveTone; label: string; shortLabel: string | undefined } {
+  return hasRecoveredDrafts
+    ? { tone: "attention", label: "Review local drafts", shortLabel: "Review drafts" }
+    : { tone: STATE_TONE[state], label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
+}
+
 export function recordTitle(view: RecordView | undefined, path: string): string {
   const fm = view?.snapshot.frontmatter;
   if (typeof fm?.["title"] === "string") return fm["title"];

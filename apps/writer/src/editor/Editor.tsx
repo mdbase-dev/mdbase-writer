@@ -159,6 +159,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           EditorView.lineWrapping,
           joining.current.of(joinLines ? joinLinesExtension() : []),
           EditorState.readOnly.of(readOnly),
+          EditorView.editable.of(!readOnly),
           placeholder("Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."),
           EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
           EditorView.updateListener.of((u) => {

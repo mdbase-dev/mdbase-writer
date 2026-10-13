@@ -62,7 +62,7 @@ import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
-import { plural, recordTitle, STATE_LABEL, STATE_SHORT_LABEL, STATE_TONE } from "./records.js";
+import { plural, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
 import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
@@ -334,6 +334,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
   if (snap.pendingSettings) states.push("unsaved");
   const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
+  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0);
   const connection = useContext(ConnectionNoticeContext);
 
   useEffect(() => {
@@ -857,11 +858,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
-          {connection && STATE_TONE[overall] !== "attention"
+          {connection && saveNotice.tone !== "attention"
             ? <SaveNotice tone="pending" label={connectionNoticeLabels[connection]} className="is-long" />
-            : <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} className="is-long" />}
+            : <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />}
           <CollectionSaveWarning />
-          {STATE_SHORT_LABEL[overall] && <SaveNotice tone="attention" label={STATE_SHORT_LABEL[overall]} className="is-short" />}
+          {saveNotice.shortLabel && <SaveNotice tone="attention" label={saveNotice.shortLabel} className="is-short" />}
           <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
             {plural(stats.words, "word")}
           </span>
@@ -985,7 +986,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         })}
         {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button></div>}
         {snap.recoveredDrafts.size > 0 && <div className="banner" role="alert">
-          <span>{snap.recoveredDrafts.size} recovered local draft(s) need review before writing in those records.</span>
+          <span>Review {plural(snap.recoveredDrafts.size, "recovered local draft")}. Editing is paused in {snap.recoveredDrafts.size === 1 ? "that record" : "those records"} until you restore the local draft or use the collection version.</span>
           {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}>Review {recordTitle(snap.records.get(path), path)}</button>)}
         </div>}
         {activeView?.snapshot.state === "conflict" && (
