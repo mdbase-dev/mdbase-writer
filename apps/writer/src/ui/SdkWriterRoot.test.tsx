@@ -51,7 +51,8 @@ it("hands Writer the gate's ready connection and retires that scope when the col
   const scopes: WriterNativeScope[] = []; const publish = (scope: WriterNativeScope) => scopes.push(scope);
   render(<StrictMode><SdkWriterRoot sdk={h.mdbase} renderNative={scope => <Capture scope={scope} publish={publish} />} /></StrictMode>);
   await screen.findByText("Native test consumer");
-  const scope = scopes.at(-1); if (!scope) throw new Error("Missing native scope");
+  // The consumer publishes its scope from an effect, which can run after its text is on screen.
+  const scope = await waitFor(() => { const latest = scopes.at(-1); if (!latest) throw new Error("Missing native scope"); return latest; });
   expect(scope.connection.records).toBe(h.client());
   await act(async () => h.set("choosing"));
   expect(screen.queryByText("Native test consumer")).toBeNull();
