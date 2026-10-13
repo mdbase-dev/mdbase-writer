@@ -563,7 +563,6 @@ blockquote.thread-quote::after { content: "”"; }
 .editor .cm-editor { height: 100%; font-size: 15px; background: var(--canvas); color: var(--ink); }
 .editor .cm-scroller { font-family: "Atkinson Hyperlegible", sans-serif; line-height: 1.65; }
 .editor .cm-content { max-width: 72ch; margin: 0 auto; padding: 1.5rem 1.25rem 40vh; caret-color: var(--ink); }
-.editor .cm-soft-break::after { content: " "; }
 .editor .cm-activeLine { background: transparent; }
 .editor .cm-focused { outline: none; }
 .editor .cm-gutters { background: var(--canvas); border: 0; }

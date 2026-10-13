@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { EditorView } from "@codemirror/view";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Editor, type EditorProps, type RetainedEditor } from "./Editor.js";
+import { DEFAULT_LAYOUT } from "../ui/layout.js";
 
 beforeEach(() => {
   // Layout is exercised in the real-browser recovery regression. This test
@@ -32,4 +33,20 @@ it("advertises paused editing and becomes editable after recovery is reviewed", 
   expect(editor().state.readOnly).toBe(false);
   expect(editor().contentDOM.getAttribute("contenteditable")).toBe("true");
   expect(editor().state.doc.toString()).toBe("Collection text");
+});
+
+it("keeps every source line visible with workspace defaults, wherever the caret is", () => {
+  const text = "first\nsecond\n\nthird\nfourth";
+  const props: EditorProps = {
+    ...DEFAULT_LAYOUT, path: "lines.md", text, readOnly: false, diagnostics: [],
+    completion: { library: [], labels: [], recordPaths: [] },
+    insight: { library: new Map(), references: new Map(), labels: new Map() }, onChange: vi.fn(),
+  };
+  const rendered = render(<Editor {...props} />);
+  const view = EditorView.findFromDOM(rendered.container.querySelector<HTMLElement>(".cm-editor")!)!;
+  const lines = () => [...view.contentDOM.querySelectorAll(".cm-line")].map(el => el.textContent);
+  expect(lines()).toEqual(text.split("\n"));
+  act(() => view.dispatch({ selection: { anchor: text.length } }));
+  expect(lines()).toEqual(text.split("\n"));
+  expect(view.state.doc.toString()).toBe(text);
 });

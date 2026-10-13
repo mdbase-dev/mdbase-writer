@@ -238,7 +238,7 @@ try {
     }
     if (list) await page.keyboard.press("Enter");
     await page.keyboard.type("After"); await page.keyboard.press("Enter");
-    const expected = `# [test] typing\n\n${list ? "- One\n- Two\n- Three" : "One\nTwo\nThree"}\nAfter\n`;
+    const expected = `# [test] typing\n\n${list ? "- One\n- Two\n- Three\n" : "One\nTwo\nThree"}\nAfter\n`;
     assert.equal(await body(page, main), expected);
     const lines = await page.locator(".cm-line").allTextContents();
     assert.ok(lines.includes(list ? "- Three" : "Three"), "the third line must not merge with After");
@@ -255,6 +255,21 @@ try {
       await page.keyboard.press("Control+z"); assert.equal(await body(page, main), expected);
       await page.keyboard.press("Control+y"); assert.equal(await body(page, main), `${expected}Undo marker.`);
     }
+    // Reload starts with the caret elsewhere. Moving it away must never make
+    // a stored Enter vanish from the displayed lines (the old folding bug).
+    await page.keyboard.press("ControlOrMeta+Home");
+    assert.ok((await page.locator(".cm-line").allTextContents()).includes("After"));
+    assert.ok((await page.locator(".cm-line").allTextContents()).includes(list ? "- Three" : "Three"));
+    assert.equal(await body(page, main), `${expected}Undo marker.`);
+  });
+
+  await scenario("explicit bullet after automatic continuation is not doubled", async (page) => {
+    await open(page);
+    await page.evaluate((path) => window.writer.workspace.setBody(path, "# [test] manual markers\n\n"), main);
+    await page.locator(".cm-content").click(); await page.keyboard.press("ControlOrMeta+End");
+    await page.keyboard.type("- Staghorn corals"); await page.keyboard.press("Enter");
+    await page.keyboard.type("- Brain corals");
+    assert.equal(await body(page, main), "# [test] manual markers\n\n- Staghorn corals\n- Brain corals");
   });
 
   await scenario("chapter switching retains undo redo selection and scroll", async (page) => {

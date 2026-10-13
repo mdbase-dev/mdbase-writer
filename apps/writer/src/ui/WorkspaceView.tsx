@@ -220,7 +220,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       return next;
     });
   }, []);
-  const toggleJoinLines = useCallback(() => setLayout((l) => ({ ...l, joinLines: !l.joinLines })), [setLayout]);
   const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => {
     rememberedTabs.set(workspace.main, tab);
@@ -1011,7 +1010,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             path={active}
             text={activeView.snapshot.body}
             readOnly={activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)}
-            joinLines={layout.joinLines}
             livePreview={layout.livePreview}
             {...(workspace.canStoreFiles ? { onImageFiles: (files: readonly File[]) => void addFigures(files) } : {})}
             diagnostics={byRecord.get(active) ?? NO_DIAGNOSTICS}
@@ -1155,9 +1153,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         open={settingsOpen}
         onClose={closeSettings}
         focus={settingsFocus}
-        joinLines={layout.joinLines}
         livePreview={layout.livePreview}
-        onJoinLines={toggleJoinLines}
         onLivePreview={toggleLivePreview}
       />
       <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} />
@@ -1185,7 +1181,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: () => void requestClose() },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
-          { id: "join-lines", group: "View", label: layout.joinLines ? "Show line breaks as written" : "Join hard-wrapped lines", keywords: "wrap reflow soft line breaks", run: toggleJoinLines },
           { id: "live-preview", group: "View", label: layout.livePreview ? "Show Markdown as written" : "Read as the manuscript", keywords: "source markup raw live preview chips", run: toggleLivePreview },
           { id: "problems", group: "Manuscript", label: problemsOpen ? "Hide problems" : "Show problems", keywords: "errors warnings list", run: () => setProblemsOpen(!problemsOpen) },
           ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),

@@ -1,6 +1,8 @@
 # Unreleased
 
 - Keep the optional install prompt above the phone's Sidebar, Write and Preview controls.
+- Keep every typed line break visible in the editor, including after reload or moving the cursor. Remove the hard-wrap display-folding preference; PDF and preview keep ordinary Markdown semantics.
+- End an empty list item with a blank separator so following text is outside the list. Avoid duplicate bullets when an explicit marker follows automatic continuation, without changing manually authored nested lists.
 
 - Clearly pause editing while a recovered local draft awaits review, instead of allowing typing that is ignored or reporting “Saved”. The comparison opens at the highlighted changed passage, even in long records.
 
