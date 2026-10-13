@@ -11,7 +11,7 @@ import { embeddedQuotation, isAnnotation } from "./annotations.js";
 import type { CiteItem } from "./cite-items.js";
 import { Citeproc, type Bibliography, type CitationRequest, type CiteprocMode, type CslItem } from "./citeproc.js";
 import { typstLabel, typstString } from "./escape.js";
-import { IMAGE_EXTENSION, resolveLinkTarget, type WriterRecord } from "./records.js";
+import { IMAGE_EXTENSION, missingImageMessage, resolveLinkTarget, type WriterRecord } from "./records.js";
 import { HEADER, PLACEHOLDER, translateInline, translateRecord, type Diagnostic, type TranslatedRecord } from "./translate.js";
 
 import { manuscriptMeta, typstLanguage, type ManuscriptMeta, type MetaField } from "./meta.js";
@@ -310,7 +310,7 @@ export class ManuscriptAssembler {
           to: ref.to,
           severity: "error",
           ...(remote ? {} : { metadata: "index" as const }),
-          message: remote ? `Images must be files in the collection (${ref.target}).` : `No file in the collection matches the image ${ref.target}.`,
+          message: remote ? `Images must be files in the collection (${ref.target}).` : missingImageMessage(ref.target),
         });
         return `missing-image(${typstString(ref.target)})`;
       }

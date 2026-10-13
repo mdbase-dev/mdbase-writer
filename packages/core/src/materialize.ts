@@ -11,7 +11,7 @@ import { resolveCrossReferences } from "./crossref.js";
 import { manuscriptMeta } from "./meta.js";
 import type { CslItem } from "./citeproc.js";
 import { CITEKEY, markdownParser } from "./markdown.js";
-import { IMAGE_EXTENSION, resolveLinkTarget, type WriterRecord } from "./records.js";
+import { IMAGE_EXTENSION, missingImageMessage, resolveLinkTarget, type WriterRecord } from "./records.js";
 
 export interface MaterializeInput {
   readonly main: string;
@@ -80,7 +80,7 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
           if (IMAGE_EXTENSION.test(target)) {
             const file = resolveLinkTarget(target, path, input.filePaths, "");
             edits.push({ from: node.from, to: node.to, text: file ? `![](${mediaPath(file)})${m?.[3] ?? ""}` : raw });
-            if (!file) problems.push(`No file matches the image ${target} in ${path}.`);
+            if (!file) problems.push(`${path}: ${missingImageMessage(target)}`);
           } else {
             const resolved = resolveLinkTarget(target, path, input.recordPaths);
             if (!resolved || resolved === path || stack.includes(resolved)) {
@@ -105,7 +105,7 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
           if (/^[a-z]+:\/\//i.test(target)) return;
           const file = resolveLinkTarget(target, path, input.filePaths, "");
           if (file) edits.push({ from: url.from, to: url.to, text: mediaPath(file) });
-          else problems.push(`No file matches the image ${target} in ${path}.`);
+          else problems.push(`${path}: ${missingImageMessage(target)}`);
           return;
         }
         case "Wikilink": {

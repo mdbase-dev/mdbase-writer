@@ -1217,7 +1217,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
       </Dialog>
       <Dialog open={Boolean(pendingExport)} onClose={cancelExport} title="Review export problems">
-        <p>No file has been downloaded yet. This export may be incomplete or differ from the PDF preview.</p>
+        <p>No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it.</p>
         <ul className="export-problems">{pendingExport?.problems.map((problem, index) => <li key={index}>{problem}</li>)}</ul>
         <div className="compare-actions">
           <button type="button" className="mdbase-button is-primary" onClick={cancelExport}>Cancel and fix problems</button>

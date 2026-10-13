@@ -349,6 +349,16 @@ describe("workspace reliability", () => {
     expect(workspace.dependencyDiagnostics()).toEqual([]);
     expect((await workspace.exportBundle()).problems).toEqual([]);
   });
+  it("reports the same actionable missing-image problem once in PDF, Word and bundles", async () => {
+    const { authority, open } = fixture();
+    authority.editElsewhere("main.md", { body: "# Introduction\n\n![Figure](gone.png){#fig-gone}\n\nRefer to @fig-gone.\n" });
+    const workspace = open();
+    await ready(workspace);
+    const problem = "main.md: Image “gone.png” is missing. Add it to the collection or correct its path.";
+    expect((await workspace.exportPdf()).problems).toEqual([problem]);
+    expect((await workspace.exportDocx()).problems).toEqual([problem]);
+    expect((await workspace.exportBundle()).problems).toEqual([problem]);
+  });
   it("warns that a custom PDF template does not carry over to Word", async () => {
     const { backend, open } = fixture();
     const index = backend.index;
