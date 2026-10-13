@@ -45,6 +45,7 @@ import { readerSourceHref } from "../apps.js";
 import { errorMessage } from "../async.js";
 import { zip } from "../export/zip.js";
 import { CompareDialog, type Comparison } from "./CompareDialog.js";
+import { ExportReview, type PendingExport } from "./ExportReview.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
 import { anchorsFor, threadIsNew, ThreadPlacement, when, type PlacedThread } from "./comments.js";
@@ -198,7 +199,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [comparisonPath, setComparisonPath] = useState<string | null>(null);
   const [leaveProblem, setLeaveProblem] = useState<string | null>(null);
   const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
-  const [pendingExport, setPendingExport] = useState<{ bytes: Uint8Array; type: string; name: string; problems: readonly string[] } | null>(null);
+  const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const exportJob = useRef<AbortController | null>(null);
   const lastExport = useRef<ExportFormat>(exportFormat);
   useEffect(() => () => exportJob.current?.abort(), []);
@@ -1212,18 +1213,16 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}>Leave without saving</button>
         </div>
       </Dialog>
-      <Dialog open={Boolean(pendingExport)} onClose={cancelExport} title="Review export problems">
-        <p>No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it.</p>
-        <ul className="export-problems">{pendingExport?.problems.map((problem, index) => <li key={index}>{problem}</li>)}</ul>
-        <div className="compare-actions">
-          <button type="button" className="mdbase-button is-primary" onClick={cancelExport}>Cancel and fix problems</button>
-          <button type="button" className="mdbase-button" onClick={() => {
-            const pending = pendingExport;
-            setPendingExport(null);
-            if (pending) { download(pending.bytes, pending.type, pending.name); exported(EXPORT_NAME[lastExport.current], pending.problems); signalMdbaseMark("saved"); }
-          }}>Export anyway</button>
-        </div>
-      </Dialog>
+      <ExportReview pending={pendingExport} onCancel={cancelExport} onExport={(pending) => {
+        setPendingExport(null);
+        download(pending.bytes, pending.type, pending.name);
+        exported(EXPORT_NAME[lastExport.current], pending.problems);
+        signalMdbaseMark("saved");
+      }} onError={(error) => {
+        reportError({ code: "unknown_error" });
+        setNotice({ tone: "problem", text: `The file could not be downloaded. ${errorMessage(error)}` });
+        signalMdbaseMark("error");
+      }} />
       {notice && (
         <div className={`toast tone-${notice.tone}${notice.tone === "ok" ? " mdbase-settle" : ""}`} role={notice.tone === "problem" ? "alert" : "status"}>
           {notice.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : notice.tone === "ok" ? <CheckIcon /> : <AlertIcon />}

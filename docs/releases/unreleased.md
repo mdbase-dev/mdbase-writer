@@ -1,5 +1,7 @@
 # Unreleased
 
+- Keep the export result visible after “Export anyway” closes the review dialog, and report download failures instead of leaving them silent.
+
 - Keep the optional install prompt above the phone's Sidebar, Write and Preview controls.
 - Keep every typed line break visible in the editor, including after reload or moving the cursor. Remove the hard-wrap display-folding preference; PDF and preview keep ordinary Markdown semantics.
 - End an empty list item with a blank separator so following text is outside the list. Avoid duplicate bullets when an explicit marker follows automatic continuation, without changing manually authored nested lists.
