@@ -1,6 +1,7 @@
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
+import { CollectionSaveWarning } from "@mdbase-dev/ui/collections";
 import { annotationSourcePath, blockQuotation, sourceAnnotation } from "@mdbase-writer/core/annotations";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
@@ -859,6 +860,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           {connection && STATE_TONE[overall] !== "attention"
             ? <SaveNotice tone="pending" label={connectionNoticeLabels[connection]} className="is-long" />
             : <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} className="is-long" />}
+          <CollectionSaveWarning />
           {STATE_SHORT_LABEL[overall] && <SaveNotice tone="attention" label={STATE_SHORT_LABEL[overall]} className="is-short" />}
           <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
             {plural(stats.words, "word")}
