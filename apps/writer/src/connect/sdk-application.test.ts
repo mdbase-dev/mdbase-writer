@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { createWriterMdbase, writerMdbaseForBuild } from "./sdk-application.js";
+import { createWriterMdbase, deliverWriterGrantReturn, isWriterGrantReturn, writerMdbaseForBuild } from "./sdk-application.js";
 import manifest from "../generated/mdbase-app.json";
 
 afterEach(() => {vi.restoreAllMocks(); vi.unstubAllGlobals();});
@@ -31,4 +31,20 @@ it("constructs the actual live public entry without registration, Worker or popu
   expect(worker).not.toHaveBeenCalled(); expect(channel).not.toHaveBeenCalled();
   expect(fetch).not.toHaveBeenCalled(); expect(popup).not.toHaveBeenCalled();
   await entry.close();
+});
+
+it("recognises the Private collection consent return at the redirect URI, in the SDK entry only", async () => {
+  const home = manifest.redirect_uris[0]!;
+  expect(isWriterGrantReturn("lab", `${home}?state=s1&code=c1`)).toBe(true);
+  expect(isWriterGrantReturn("lab", `${home}?state=s1&error=access_denied`)).toBe(true);
+  expect(isWriterGrantReturn("lab", `${home}?collection=x`)).toBe(false);
+  expect(isWriterGrantReturn("lab", `${new URL("manuscripts", home).href}?state=s1&code=c1`)).toBe(false);
+  // The legacy entry's own OAuth callback shares the root: never intercepted there.
+  expect(isWriterGrantReturn("production", `${home}?state=s1&code=c1`)).toBe(false);
+
+  const posted: unknown[] = [];
+  class Channel { constructor(readonly name: string) {} postMessage(value: unknown) {posted.push([this.name, value]);} close() {} }
+  vi.stubGlobal("BroadcastChannel", Channel);
+  await deliverWriterGrantReturn(`${home}?state=s1&code=c1`);
+  expect(posted).toEqual([["mdbase.app-grant.v1", {type: "callback", url: `${home}?state=s1&code=c1`}]]);
 });
