@@ -561,6 +561,10 @@ blockquote.thread-quote::after { content: "”"; }
 
 .editor { min-height: 0; overflow: hidden; }
 .editor .cm-editor { height: 100%; font-size: 15px; background: var(--canvas); color: var(--ink); }
+/* Search options are inline choices, not the full-width fields used in forms. */
+.editor .cm-search label { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 28px; vertical-align: middle; white-space: nowrap; }
+.editor .cm-search input[type="checkbox"] { width: auto; flex: none; margin: 0; }
+@media (max-width: 900px) { .editor .cm-search label { min-height: 44px; } }
 .editor .cm-scroller { font-family: "Atkinson Hyperlegible", sans-serif; line-height: 1.65; }
 .editor .cm-content { max-width: 72ch; margin: 0 auto; padding: 1.5rem 1.25rem 40vh; caret-color: var(--ink); }
 .editor .cm-activeLine { background: transparent; }

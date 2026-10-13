@@ -1,5 +1,7 @@
 # Unreleased
 
+- Keep Find options beside their checkboxes, with larger clickable labels on phones.
+
 - Keep the export result visible after “Export anyway” closes the review dialog, and report download failures instead of leaving them silent.
 
 - Keep the optional install prompt above the phone's Sidebar, Write and Preview controls.
