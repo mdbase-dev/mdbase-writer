@@ -18,7 +18,7 @@ startup, authorization, collection selection, configuration, foreground state an
 physical shutdown stay SDK-owned.
 
 The collection screens come from `@mdbase-dev/ui/collections`, vendored as
-`vendor/mdbase-dev-ui-dev-975fc4a0.tgz` (pin: `vendor/mdbase-ui-dev.json`). Its
+`vendor/mdbase-dev-ui-dev-7ff0ce02.tgz` (pin: `vendor/mdbase-ui-dev.json`). Its
 optional `@mdbase-dev/sdk` peer resolves to Writer's own SDK dependency.
 `SdkWriterRoot` calls `start()` and renders the shared `CollectionGate`, which
 owns sign-in, choosing, approval, setup review, problems and sign-out (always
