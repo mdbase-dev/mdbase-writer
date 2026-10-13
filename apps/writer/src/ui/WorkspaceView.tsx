@@ -62,6 +62,7 @@ import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activit
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { plural, recordTitle, STATE_LABEL, STATE_SHORT_LABEL, STATE_TONE } from "./records.js";
+import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
@@ -332,6 +333,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
   if (snap.pendingSettings) states.push("unsaved");
   const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
+  const connection = useContext(ConnectionNoticeContext);
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -854,7 +856,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
-          <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} className="is-long" />
+          {connection && STATE_TONE[overall] !== "attention"
+            ? <SaveNotice tone="pending" label={connectionNoticeLabels[connection]} className="is-long" />
+            : <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} className="is-long" />}
           {STATE_SHORT_LABEL[overall] && <SaveNotice tone="attention" label={STATE_SHORT_LABEL[overall]} className="is-short" />}
           <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
             {plural(stats.words, "word")}

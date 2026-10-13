@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Mdbase, MdbaseApplicationConnection, MdbaseClient } from "@mdbase-dev/sdk";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { NextWriterRecords } from "../backend/next-records.js";
+import { ConnectionNoticeContext, useConnectionNotice } from "./connection-notice.js";
 import { NativeWriterView } from "./NativeWriterView.js";
 import { WriterCollectionGate, WriterCollectionSwitcher } from "./writer-collections.js";
 
@@ -22,12 +23,15 @@ export interface SdkWriterRootProps {
  * owns sign-in, choosing, approval, setup and problems; Writer opens only the connection the
  * gate hands over in phase `ready`, and never closes the entry. */
 export function SdkWriterRoot({ sdk, renderNative }: SdkWriterRootProps) {
-  return <WriterCollectionGate mdbase={sdk}>
-    {connection => <>
-      <WriterCollectionSwitcher mdbase={sdk} />
-      <NativeScopeView key={`${connection.id}:${connection.generation}`} mdbase={sdk} connection={connection} renderNative={renderNative} />
-    </>}
-  </WriterCollectionGate>;
+  const notice = useConnectionNotice(sdk);
+  return <ConnectionNoticeContext.Provider value={notice}>
+    <WriterCollectionGate mdbase={sdk}>
+      {connection => <>
+        <WriterCollectionSwitcher mdbase={sdk} />
+        <NativeScopeView key={`${connection.id}:${connection.generation}`} mdbase={sdk} connection={connection} renderNative={renderNative} />
+      </>}
+    </WriterCollectionGate>
+  </ConnectionNoticeContext.Provider>;
 }
 
 function NativeScopeView({ mdbase, connection, renderNative }: { mdbase: Mdbase; connection: MdbaseApplicationConnection; renderNative?: SdkWriterRootProps["renderNative"] }) {

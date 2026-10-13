@@ -17,7 +17,8 @@
   border-left: 1px solid var(--line);
   --mdbase-collections-control-height: 32px;
 }
-.app:has(.workspace) .writer-collection-switcher { display: none; }
+.app:has(.workspace) .writer-collection-switcher,
+.app:has(.workspace) .writer-connection-notice { display: none; }
 
 @media (max-width: 640px) {
   .topbar-slot .writer-collection-switcher { padding-left: 0; border-left: 0; }
