@@ -1,7 +1,8 @@
 // Hard-wrapped paragraphs shown as flowing text. A line break inside a
 // paragraph or footnote reads as a space in Markdown, so it is drawn as one
 // and the editor wraps the paragraph to its own width. The text keeps its
-// breaks; only how they are shown changes.
+// breaks; only how they are shown changes. While a paragraph is being edited,
+// keep its breaks visible so Enter, cursor movement and Undo read as written.
 import { syntaxTree } from "@codemirror/language";
 import { RangeSetBuilder, StateField, type EditorState, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
@@ -35,13 +36,16 @@ export function joinSoftBreaks(text: string): string {
   return out;
 }
 
-/** Where each soft line break in a paragraph or footnote runs to (the next line's text, past its indent). */
+/** Soft breaks in inactive paragraphs/footnotes (past the next line's indent). */
 export function softBreaks(state: EditorState): { from: number; to: number }[] {
   const doc = state.doc;
   const out: { from: number; to: number }[] = [];
   syntaxTree(state).iterate({
     enter(node) {
       if (node.name !== "Paragraph" && node.name !== "FootnoteDefinition") return;
+      // The caret just after Enter is on the following empty line. Keep the
+      // paragraph unfolded there too, not only after the next character arrives.
+      if (state.selection.ranges.some(range => range.from <= node.to + 1 && range.to >= node.from)) return false;
       const last = doc.lineAt(node.to).number;
       for (let n = doc.lineAt(node.from).number; n < last; n++) {
         const line = doc.line(n);
@@ -78,7 +82,7 @@ export function joinLines(): Extension {
     create: build,
     update(value, tr) {
       // The tree grows as the parser catches up, as well as on edits.
-      return tr.docChanged || syntaxTree(tr.state) !== syntaxTree(tr.startState) ? build(tr.state) : value;
+      return tr.docChanged || tr.selection || syntaxTree(tr.state) !== syntaxTree(tr.startState) ? build(tr.state) : value;
     },
     // Replacing across line breaks has to come from state, not a view plugin.
     provide: (f) => [
