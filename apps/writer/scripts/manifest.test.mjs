@@ -47,7 +47,7 @@ test("identity is optional: comments are unsigned without it", async () => {
 test("image insertion declares add OPTIONAL without widening startup file access", async () => {
   const manifest = await buildWriterManifest();
   assert.deepEqual(manifest.requirements.files, {
-    required: ["list", "read"], optional: ["add"], scope: { kind: "collection" },
+    required: ["list", "read", "replace", "move"], optional: ["add"], scope: { kind: "collection" },
   });
 });
 

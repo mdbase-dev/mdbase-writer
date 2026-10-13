@@ -100,7 +100,9 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
       },
       // Add is requested only at image insertion through SDK incremental consent.
       // Native upload stays disabled until that public capability is available.
-      files: { required: ["list", "read"], optional: ["add"], scope: { kind: "collection" } },
+      // Next accounts approve each record capability together with its file
+      // actions, so editing records also declares replace and move.
+      files: { required: ["list", "read", "replace", "move"], optional: ["add"], scope: { kind: "collection" } },
       // The signed-in account, to sign comments with its person record. Optional:
       // without it, comments are unsigned.
       people: { version: 1, optional: ["identity"] },
