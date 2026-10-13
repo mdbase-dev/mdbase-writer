@@ -21,6 +21,7 @@
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --scrollbar-thumb-current: var(--scrollbar-thumb-rest);
   --scrollbar-size: 2px;
+  --pane-tab-height: 54px;
   font-family: var(--sans);
   font-size: 14px;
   line-height: 1.5;
@@ -694,7 +695,7 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .bar .mdbase-button { padding: 0 0.55rem; min-height: 32px; }
   .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "main" "tabs"; }
   .pane-tabs { grid-area: tabs; display: flex; border-top: 1px solid var(--line); background: var(--canvas); padding-bottom: env(safe-area-inset-bottom); }
-  .pane-tabs button { flex: 1; display: grid; justify-items: center; gap: 2px; height: 54px; padding: 6px 0 4px; border: 0; background: none; font: inherit; font-size: 11.5px; color: var(--muted); }
+  .pane-tabs button { flex: 1; display: grid; justify-items: center; gap: 2px; height: var(--pane-tab-height); padding: 6px 0 4px; border: 0; background: none; font: inherit; font-size: 11.5px; color: var(--muted); }
   .pane-tabs button .icon { width: 20px; height: 20px; }
   .pane-tabs button[aria-pressed="true"] { color: var(--ink); font-weight: 700; }
   .pane-tabs button[aria-pressed="true"] .icon { color: var(--app-writer); }

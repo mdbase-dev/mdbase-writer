@@ -1,5 +1,7 @@
 # Unreleased
 
+- Keep the optional install prompt above the phone's Sidebar, Write and Preview controls.
+
 - Clearly pause editing while a recovered local draft awaits review, instead of allowing typing that is ignored or reporting “Saved”. The comparison opens at the highlighted changed passage, even in long records.
 
 - Keep figure captions and cross-references labelled as figures when an image is missing, instead of switching them to listings.

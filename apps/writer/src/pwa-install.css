@@ -14,6 +14,12 @@
   box-shadow: 0 4px 24px #0002;
   font: 14px/1.5 system-ui, sans-serif;
 }
+/* The optional invitation must not cover the phone's primary navigation. */
+@media (max-width: 900px) {
+  body:has(.workspace .pane-tabs) .pwa-install {
+    bottom: calc(var(--pane-tab-height, 54px) + 1px + env(safe-area-inset-bottom) + 16px);
+  }
+}
 .pwa-install p { margin: 0 0 10px; font: inherit; color: inherit; }
 .pwa-install button {
   display: inline-block;
