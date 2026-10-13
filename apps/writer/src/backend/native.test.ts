@@ -343,6 +343,23 @@ describe("native Writer domain backend", () => {
     const records = queried.records.filter(record => record.path === "notes/unknown.md");
     expect(records).toHaveLength(1); expect(records[0]?.body).toBe("Original intent\n");
   });
+  it("retries a lost create reply under the same intent into the one original record", async () => {
+    const h = await fixture();
+    const original = h.client.create.bind(h.client);
+    const submitted: string[] = [];
+    vi.spyOn(h.client, "create").mockImplementation(async (input, options) => {
+      if (options?.mutationId !== undefined) return original(input, options); // the SDK's own MID-bound step
+      const write = await original(input, options); submitted.push(write.mutationId);
+      if (submitted.length > 1) return write;
+      await write.confirmed; throw new Error("Lost original reply");
+    });
+    const intent = "new-manuscript-1";
+    expect((await h.backend.createManuscript({title: "Launch", template: "article", style: "apa", intent})).ok).toBe(false);
+    expect(await h.backend.createManuscript({title: "Launch", template: "article", style: "apa", intent})).toEqual({ok: true, value: "manuscripts/launch.md"});
+    expect(submitted).toHaveLength(2); expect(submitted[1]).toBe(submitted[0]);
+    const queried = await h.client.query({}, {});
+    expect(queried.records.filter(record => record.path.startsWith("manuscripts/launch"))).toHaveLength(1);
+  });
   it("fences late retired data and aborts only the repository watch/scope", async () => {
     const h = await fixture(); const close = vi.spyOn(h.client, "close");
     const pending = h.backend.listManuscripts(); h.current.mockReturnValue(false);

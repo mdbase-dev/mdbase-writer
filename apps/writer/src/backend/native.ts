@@ -58,6 +58,11 @@ export class NativeWriterBackend implements WriterBackend {
   /** This session's write whose reply was lost, so a repeated click can't duplicate it.
    * Writes from earlier sessions are the SDK write ledger's to keep and settle. */
   private unresolvedMutation: string | undefined;
+  /** The SDK intent `unresolvedMutation` was submitted under, if any. */
+  private unresolvedIntent: string | undefined;
+  /** Each user creation action's first submit (record ID, path, SDK intent), so its
+   * retry re-sends the same create. A rejected attempt renews the SDK intent. */
+  private readonly creations = new Map<string, {attempt: number; id?: string; target?: string}>();
 
   constructor(private readonly connection: MdbaseApplicationConnection, private readonly options: NativeWriterOptions) {
     this.client = connection.records;
@@ -340,22 +345,23 @@ export class NativeWriterBackend implements WriterBackend {
   reviewIdentityAccess(): Promise<Result<void>> {
     return this.safely(async () => {if (!this.options.authorize) throw new Error("Writer cannot request identity access here."); await this.options.authorize(); this.check(); this.peopleJob = undefined;});
   }
-  private async write<T>(operation: () => Promise<T>): Promise<Result<T>> {
+  private async write<T>(operation: () => Promise<T>, intent?: string): Promise<Result<T>> {
     if (this.writing) return fail("Writer is still confirming the original operation.");
     this.writing = true;
     try {
       return await this.safely(async () => {
         // A lost submit result never admits a fresh retry. Reconcile the same
         // captured MID through SDK receipt/read APIs; this click does no write.
-        if (this.unresolvedMutation) {
+        // A retry of the same creation re-sends its original intent, which lands once.
+        if (this.unresolvedMutation && (intent === undefined || this.sdkIntent(intent) !== this.unresolvedIntent)) {
           const receipt = await this.client.awaitReceipt(this.unresolvedMutation, 5_000, this.signal); this.check();
           if (receipt.mutation !== this.unresolvedMutation) throw new Error("Writer lost the original receipt identity.");
           if (receipt.state === "rejected") {
-            this.unresolvedMutation = undefined;
+            this.unresolvedMutation = this.unresolvedIntent = undefined;
             throw new Error("Writer's original operation was rejected. Review it before starting another.");
           }
           await this.recovered(this.unresolvedMutation, receipt);
-          this.unresolvedMutation = undefined;
+          this.unresolvedMutation = this.unresolvedIntent = undefined;
           throw new Error("Writer recovered the original operation. Review it before starting another.");
         }
         return operation();
@@ -378,16 +384,19 @@ export class NativeWriterBackend implements WriterBackend {
     }
     throw new Error("Writer could not find an unused path.");
   }
-  private async nativeWrite(start: (mutationId: string) => Promise<Write>): Promise<Write> {
-    const mutationId = crypto.randomUUID();
-    this.unresolvedMutation = mutationId;
+  private async nativeWrite(start: (ids: {mutationId: string} | {intent: string}) => Promise<Write>, intent?: string): Promise<Write> {
+    // With an intent the SDK derives the MID; a retry of it keeps the one already captured.
+    const ids = intent === undefined ? {mutationId: crypto.randomUUID()} : {intent};
+    const mutationId = "mutationId" in ids ? ids.mutationId : intent === this.unresolvedIntent ? this.unresolvedMutation : undefined;
+    this.unresolvedMutation = mutationId; this.unresolvedIntent = intent;
     try {
-      const write = await start(mutationId); this.check();
-      if (write.mutationId !== mutationId) throw new Error("Writer lost the original mutation identity.");
+      const write = await start(ids);
+      if (mutationId !== undefined && write.mutationId !== mutationId) throw new Error("Writer lost the original mutation identity.");
+      this.unresolvedMutation = write.mutationId; this.check();
       return write;
     } catch (error) {
       if (isMdbaseError(error) && error.mutationId) {
-        if (error.mutationId !== mutationId) throw new Error("Writer lost the original mutation identity.", {cause: error});
+        if (mutationId !== undefined && error.mutationId !== mutationId) throw new Error("Writer lost the original mutation identity.", {cause: error});
         this.unresolvedMutation = error.mutationId;
       }
       // Retain the captured original even for an untyped lost transport reply.
@@ -418,16 +427,32 @@ export class NativeWriterBackend implements WriterBackend {
     if (!unprotected(current) || current.id !== id || current.path !== witnessed.path
       || (witnessed.state.state === "confirmed" && current.revision !== witnessed.revision)) throw new Error("Writer's confirmed record changed or is protected.");
     if (contract) await this.contractRecord(current, contract);
-    if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = undefined;
+    if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = this.unresolvedIntent = undefined;
     return current;
   }
-  private async create(path: string, body: string, frontmatter: JsonObject, contract?: ContractSelector): Promise<wire.RecordView> {
-    const target = await this.availablePath(path); this.check();
-    const id = crypto.randomUUID();
+  private sdkIntent(intent: string): string {
+    const attempt = this.creations.get(intent)?.attempt ?? 0;
+    return attempt ? `${intent}/${attempt}` : intent;
+  }
+  private async create(path: string, body: string, frontmatter: JsonObject, contract?: ContractSelector, intent?: string): Promise<wire.RecordView> {
+    const creation = intent === undefined ? {attempt: 0} : this.creations.get(intent) ?? {attempt: 0};
+    const target = creation.target ?? await this.availablePath(path); this.check();
+    const id = creation.id ?? crypto.randomUUID();
+    if (intent !== undefined) this.creations.set(intent, {...creation, id, target});
+    const sdkIntent = intent === undefined ? undefined : this.sdkIntent(intent);
     // Exactly one submit. A taken path/unknown outcome is not a fresh retry.
     const fields = nativeWriteFields(frontmatter);
-    const write = await this.nativeWrite(mutationId => this.client.create({id, path: target, body, frontmatter: fields, ...(contract ? {contract} : {})}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
-    this.check(); return this.confirmed(write, id, contract);
+    const write = await this.nativeWrite(ids => this.client.create({id, path: target, body, frontmatter: fields, ...(contract ? {contract} : {})}, {...ids, signal: this.signal, include: {body: true, document: true}}), sdkIntent);
+    this.check();
+    try {return await this.confirmed(write, id, contract);}
+    catch (error) {
+      // Nothing landed: the action's next retry is a fresh create under a renewed intent.
+      if (intent !== undefined && write.state === "rejected") {
+        this.creations.set(intent, {attempt: creation.attempt + 1});
+        if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = this.unresolvedIntent = undefined;
+      }
+      throw error;
+    }
   }
   createManuscript(input: NewManuscript): Promise<Result<string>> {
     return this.write(async () => {
@@ -435,13 +460,13 @@ export class NativeWriterBackend implements WriterBackend {
       const library = input.starter ? (await this.metadata()).store.library : [];
       const body = manuscriptBody(input.starter, library[0]?.key);
       const frontmatter = {title: input.title, template: input.template, csl: input.style};
-      const created = await this.create(`manuscripts/${manuscriptSlug(input.title)}.md`, body, frontmatter, {...manuscriptContract, type: binding.name});
+      const created = await this.create(`manuscripts/${manuscriptSlug(input.title)}.md`, body, frontmatter, {...manuscriptContract, type: binding.name}, input.intent);
       if (created.body !== body) throw new Error("Writer's manuscript readback differs from the original operation.");
       return created.path;
-    });
+    }, input.intent);
   }
-  createRecord(path: string, body: string): Promise<Result<string>> {
-    return this.write(async () => {const created = await this.create(path, body, {}); if (created.body !== body) throw new Error("Writer's record readback differs from the original operation."); return created.path;});
+  createRecord(path: string, body: string, intent?: string): Promise<Result<string>> {
+    return this.write(async () => {const created = await this.create(path, body, {}, undefined, intent); if (created.body !== body) throw new Error("Writer's record readback differs from the original operation."); return created.path;}, intent);
   }
   adoptManuscript(path: string): Promise<Result<string>> {
     return this.write(async () => {
@@ -450,7 +475,7 @@ export class NativeWriterBackend implements WriterBackend {
       if (!unprotected(original) || original.document === undefined) throw new Error("Writer's note is protected or lacks its full source.");
       const contract = {...manuscriptContract, type: binding.name};
       const patch = {title: titleFromNote(path, original.body ?? "")};
-      const write = await this.nativeWrite(mutationId => this.client.update(original, {contract, promote: true, patch, ifRevision: original.revision}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
+      const write = await this.nativeWrite(ids => this.client.update(original, {contract, promote: true, patch, ifRevision: original.revision}, {...ids, signal: this.signal, include: {body: true, document: true}}));
       const current = await this.confirmed(write, original.id, {...manuscriptContract, type: binding.name});
       if (current.body !== original.body || !current.types.includes(binding.name)) throw new Error("Writer's adopted note did not confirm the original content and type.");
       return current.path;
@@ -483,7 +508,7 @@ export class NativeWriterBackend implements WriterBackend {
       if (!currentComment || JSON.stringify(currentComment) !== JSON.stringify(comment)) throw new Error("Writer's comment changed before this operation.");
       const {fields, body} = changeFields(currentComment, change, new Date(), (await this.people()).me?.link); this.check();
       const patch = nativeWriteFields(fields);
-      const write = await this.nativeWrite(mutationId => this.client.update(original, {contract, patch, ...(body !== undefined ? {body} : {}), ifRevision: original.revision}, {mutationId, signal: this.signal, include: {body: true, document: true}}));
+      const write = await this.nativeWrite(ids => this.client.update(original, {contract, patch, ...(body !== undefined ? {body} : {}), ifRevision: original.revision}, {...ids, signal: this.signal, include: {body: true, document: true}}));
       const current = await this.confirmed(write, original.id, contract);
       const nextView = await this.contractRecord(current, contract);
       const next = commentFromRecord(current.path, nativeObject(nextView.fields), current.body ?? "");

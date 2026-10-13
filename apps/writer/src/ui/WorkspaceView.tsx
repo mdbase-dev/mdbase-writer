@@ -787,7 +787,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               }}
               onJump={jump}
               onMove={(from, to) => workspace.moveChapter(from, to)}
-              onAdd={async (title) => signalFailure(await workspace.addChapter(title))}
+              onAdd={async (title, intent) => signalFailure(await workspace.addChapter(title, intent))}
               onRename={(path, title) => signalFailure(workspace.renameChapter(path, title))}
               commentOffsets={commentOffsets}
             />

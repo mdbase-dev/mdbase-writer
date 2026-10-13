@@ -89,6 +89,8 @@ export interface NewManuscript {
   readonly style: StyleId;
   /** An optional worked example, without invented library sources. */
   readonly starter?: boolean;
+  /** A stable name for this one creation, reused by its retries so it lands once. */
+  readonly intent?: string;
 }
 
 // This is the workspace's application port, not a concrete SDK class. The
@@ -157,8 +159,9 @@ export interface WriterBackend {
   createManuscript(input: NewManuscript): Promise<Result<string>>;
   /** Marks an existing note as a manuscript (adds the manuscript type; keeps its other types). */
   adoptManuscript(path: string): Promise<Result<string>>;
-  /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path. */
-  createRecord(path: string, body: string): Promise<Result<string>>;
+  /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path.
+   * `intent` names this one creation; a retry with the same `intent` lands once. */
+  createRecord(path: string, body: string, intent?: string): Promise<Result<string>>;
   index(): Promise<Result<CollectionIndex>>;
   library(): Promise<Result<LibraryEntry[]>>;
   /** Annotation identity discovery, without reading any bodies. */

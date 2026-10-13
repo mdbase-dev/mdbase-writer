@@ -303,6 +303,8 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
   const [untitled, setUntitled] = useState(false);
   const [adoptOpen, setAdoptOpen] = useState(false);
   const titleField = useRef<HTMLInputElement>(null);
+  // One name per new manuscript: a retry re-sends it, so the manuscript lands once.
+  const intent = useRef(crypto.randomUUID());
 
   useEffect(() => {
     if (open) titleField.current?.focus();
@@ -319,8 +321,11 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
     setCreating(true);
     setProblem(null);
     try {
-      const created = await backend.createManuscript({ title: title.trim(), template, style, starter });
-      if (created.ok) onOpen(created.value);
+      const created = await backend.createManuscript({ title: title.trim(), template, style, starter, intent: intent.current });
+      if (created.ok) {
+        intent.current = crypto.randomUUID();
+        onOpen(created.value);
+      }
       else {
         setProblem(created.message);
         signalMdbaseMark("error");

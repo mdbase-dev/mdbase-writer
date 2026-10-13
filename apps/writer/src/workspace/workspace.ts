@@ -733,12 +733,12 @@ export class ManuscriptWorkspace {
    * Creates a record for a new chapter beside the existing chapters (or in
    * chapters/) and embeds it after the last one. Resolves to its path.
    */
-  async addChapter(title: string): Promise<Result<string>> {
+  async addChapter(title: string, intent?: string): Promise<Result<string>> {
     const name = title.trim();
     if (!name) return fail("A chapter needs a title.");
     const first = this.chapterPaths().find((p): p is string => Boolean(p));
     const folder = first?.includes("/") ? first.slice(0, first.lastIndexOf("/")) : "chapters";
-    const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`);
+    const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`, intent);
     if (!created.ok) return created;
     const path = created.value;
     // The index learns the new record (no need to list the collection again), so the embed resolves.
