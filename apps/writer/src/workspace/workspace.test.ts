@@ -105,12 +105,57 @@ describe("workspace reliability", () => {
     expect(send).toHaveBeenCalledWith({ type: "collection-delta", recordUpsert: [], recordRemove: [added.path], fileUpsert: [], fileRemove: [] });
   });
 
+  it("keeps ready discovery visible across save echoes, atomically replaces it, and reports real refresh failures", async () => {
+    const { backend, open } = fixture();
+    let changed!: (delta: CollectionDelta) => void;
+    backend.onCollectionChange = (listener) => { changed = listener; return () => {}; };
+    const workspace = open();
+    expect(workspace.getSnapshot()).toMatchObject({ indexLoad: { phase: "loading" }, libraryLoad: { phase: "loading" }, annotationsLoad: { phase: "loading" } });
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot()).toMatchObject({ indexLoad: { phase: "ready" }, libraryLoad: { phase: "ready" }, annotationsLoad: { phase: "ready" } }));
+    const previous = workspace.getSnapshot();
+    const states: string[][] = [];
+    workspace.subscribe(() => { const snapshot = workspace.getSnapshot(); states.push([snapshot.indexLoad.phase, snapshot.libraryLoad.phase, snapshot.annotationsLoad.phase]); });
+    let finishIndex!: (value: Awaited<ReturnType<WriterBackend["index"]>>) => void;
+    let finishLibrary!: (value: Awaited<ReturnType<WriterBackend["library"]>>) => void;
+    let finishAnnotations!: (value: Awaited<ReturnType<WriterBackend["annotationPaths"]>>) => void;
+    backend.index = () => new Promise(resolve => { finishIndex = resolve; });
+    backend.library = () => new Promise(resolve => { finishLibrary = resolve; });
+    backend.annotationPaths = () => new Promise(resolve => { finishAnnotations = resolve; });
+    changed({ paths: ["main.md"], reset: true });
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    expect(workspace.getSnapshot().recordIndex).toBe(previous.recordIndex);
+    expect(workspace.getSnapshot().library).toBe(previous.library);
+    expect(workspace.getSnapshot().annotationPaths).toBe(previous.annotationPaths);
+    finishIndex(ok({ recordPaths: ["main.md"], filePaths: [], notePaths: [] }));
+    const source = { key: "new", path: "sources/new.md", title: "New", item: { id: "new", type: "book", title: "New" } };
+    finishLibrary(ok([source]));
+    finishAnnotations(ok(["annotations/new.md"]));
+    await vi.waitFor(() => expect(workspace.getSnapshot()).toMatchObject({ recordPaths: ["main.md"], library: [source] }));
+    expect(workspace.getSnapshot().annotationPaths).toEqual(new Set(["annotations/new.md"]));
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    const latest = workspace.getSnapshot();
+    backend.index = async () => fail("Discovery unavailable");
+    backend.library = async () => ok([source]);
+    backend.annotationPaths = async () => ok(["annotations/new.md"]);
+    changed({ paths: [], reset: true });
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad).toEqual({ phase: "failed", problem: "Discovery unavailable" }));
+    expect(workspace.getSnapshot().recordIndex).toBe(latest.recordIndex);
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    backend.index = async () => ok({ recordPaths: ["main.md"], filePaths: [], notePaths: [] });
+    changed({ paths: [], reset: true });
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad.phase).toBe("ready"));
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    const differentIdentity = fixture().open();
+    expect(differentIdentity.getSnapshot()).toMatchObject({ indexLoad: { phase: "loading" }, libraryLoad: { phase: "loading" }, annotationsLoad: { phase: "loading" } });
+  });
+
   it("expands comment scope when a late nested chapter opens", async () => {
     const { backend, authority, open } = fixture();
     const index = backend.index;
     backend.index = async () => { const result = await index(); return result.ok ? ok({ ...result.value, recordPaths: [...result.value.recordPaths, "chapters/late.md"] }) : result; };
     authority.seed("chapters/late.md", { body: "New chapter" });
-    const comments = vi.fn(async (_scope?: readonly string[]) => ok([]));
+    const comments = vi.fn<WriterBackend["comments"]>(async () => ok([]));
     backend.comments = comments;
     const workspace = open(); await ready(workspace);
     await vi.waitFor(() => expect(workspace.getSnapshot().records.has("chapters/two.md")).toBe(true));

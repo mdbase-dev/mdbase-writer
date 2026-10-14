@@ -146,6 +146,9 @@ export class ManuscriptWorkspace {
   private workerAnnotationPaths: ReadonlySet<string> = new Set();
   private workerSourceKeys: ReadonlyMap<string, string> = new Map();
   private commentsScope = "";
+  // Bound to this original workspace/collection. Refreshes retain the last
+  // complete snapshot; a new workspace starts with no ready discovery.
+  private readonly readyMetadata = new Set<MetadataDomain>();
   private metadataJobs: Partial<Record<MetadataDomain, Promise<void>>> = {};
   private metadataGeneration = 0;
   private commentsGeneration = 0;
@@ -206,6 +209,9 @@ export class ManuscriptWorkspace {
 
   private update(patch: Partial<WorkspaceSnapshot>): void {
     if (this.disposed) return;
+    for (const domain of ["indexLoad", "libraryLoad", "annotationsLoad"] as const) {
+      if (patch[domain]?.phase === "ready") this.readyMetadata.add(domain);
+    }
     if (patch.recordPaths) patch = { ...patch, recordIndex: pathIndex(patch.recordPaths) };
     if (patch.filePaths) patch = { ...patch, fileIndex: pathIndex(patch.filePaths) };
     this.current = { ...this.current, ...patch };
@@ -256,7 +262,9 @@ export class ManuscriptWorkspace {
     };
     for (const domain of Object.keys(jobs) as MetadataDomain[]) {
       if (!fresh && this.metadataJobs[domain]) continue;
-      this.update({ [domain]: LOADING });
+      if (!this.readyMetadata.has(domain)) this.update({ [domain]: LOADING });
+      // Keep ready data (or a genuine refresh failure) until the new complete
+      // result replaces data and readiness together. Export still waits on jobs.
       // A superseded load must not overwrite a newer snapshot.
       const job = jobs[domain]();
       this.metadataJobs[domain] = job;
@@ -678,7 +686,7 @@ export class ManuscriptWorkspace {
     }
     const annotations = new Set(paths.filter((path) => this.current.annotationPaths.has(path)));
     if (annotations.size) {
-      this.update({ annotationVersion: this.current.annotationVersion + 1, annotationsLoad: LOADING });
+      this.update({ annotationVersion: this.current.annotationVersion + 1, ...(!this.readyMetadata.has("annotationsLoad") ? { annotationsLoad: LOADING } : {}) });
       this.metadataJobs.annotationsLoad = this.loadAnnotationPaths(this.metadataGeneration);
     }
     // An image, style or template the document uses changed: send its new bytes.

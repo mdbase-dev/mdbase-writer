@@ -1,5 +1,7 @@
 # Unreleased
 
+- Keep collection, source and annotation discovery steady after a save instead of briefly flashing loading banners. Initial loading and genuine refresh failures remain visible.
+
 - Keep Find options beside their checkboxes, with larger clickable labels on phones.
 
 - Keep the export result visible after “Export anyway” closes the review dialog, and report download failures instead of leaving them silent.
