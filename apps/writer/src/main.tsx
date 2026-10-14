@@ -25,7 +25,7 @@ if (import.meta.hot) import.meta.hot.dispose(stopPwaInstall);
 // The Private collection consent popup returns here: hand its result to the
 // waiting Writer tab and close, without starting a second SDK owner.
 const grantReturn = isWriterGrantReturn(import.meta.env.VITE_MDBASE_ENV, location.href);
-if (grantReturn) void deliverWriterGrantReturn(location.href).catch(() => {}).finally(() => window.close());
+if (grantReturn) void deliverWriterGrantReturn(location.href).catch(() => {});
 // One declaration-only singleton outside React/StrictMode. SDK owns its runtime.
 const sdk = grantReturn ? undefined : writerMdbaseForBuild(import.meta.env.VITE_MDBASE_ENV);
 const root = document.getElementById("root");
