@@ -1,10 +1,16 @@
 # New SDK migration
 
-## Current unified SDK intake — 2026-10-14
+## Current declared Private setup SDK intake — 2026-10-15
 
-SDK `72f8ea6caeafa4b089d3ee14c3b38ce492511a2c` replaces the prior
-`3f417b6d` intake below. Original archive SHA256:
-`d58ee0fb78f2a3bfb49cc70e92bea69fe2292eb2b1cfff0cd9c222efba6d9374`.
+SDK `9a033b252860ec8624da0abb5ffdecbac56332d2` replaces the prior
+`72f8ea6c` intake. Original archive SHA256:
+`90ef67523dfa11cb36efe0d996475f1a1c82ac71074e4cd4e95c6fbe02c18be9`.
+Native mediates the exact signed setup and publishes multi-pack lock changes
+atomically with the original CAS. The SDK retains only the protected original
+MID when capture is uncertain and gives classified setup conflicts actionable
+copy. No manifest, scope, grant custody or Hosted fallback is introduced.
+The packaged runtime remains actual source `a4331ad466a0d16e87ab3bedeb0963a1e0d1867e`,
+SHA256 `3c803e83f81a05855f6e30ca79036d6b19383048a6b11ba5c9a0b5ebf3a1bbe2`.
 The ordinary Sign in / Add chooser owns one popup and the original Native
 preparation, callback and custody ACK. The callback page delivers only; the
 original SDK closes after completion. No app-side alternate protocol, scope,
