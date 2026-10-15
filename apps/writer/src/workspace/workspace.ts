@@ -5,7 +5,7 @@
 // (autosave, conflict detection, exact recovery — all from the SDK). Every
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
-import type { JsonObject, MdbaseRecordLease, MdbaseRecordSessionSnapshot, RecordDocument } from "@mdbase-dev/connect";
+import type { JsonObject } from "@mdbase-dev/connect";
 import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
@@ -13,8 +13,8 @@ import { isAnnotation } from "@mdbase-writer/core/annotations";
 import { IMAGE_EXTENSION, PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
-import { NO_PEOPLE, type CommentChange, type People } from "../backend/comments.js";
-import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type Result, type WriterBackend } from "../backend/types.js";
+import { NO_PEOPLE, type CommentChange, type NewComment, type People } from "../backend/comments.js";
+import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
 import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
@@ -51,7 +51,7 @@ export function sourceKeys(library: readonly LibraryEntry[]): ReadonlyMap<string
   return keys;
 }
 
-export type SessionSnapshot = MdbaseRecordSessionSnapshot<RecordDocument<JsonObject>>;
+export type SessionSnapshot = RecordSessionSnapshot;
 
 export interface RecordView {
   readonly path: string;
@@ -125,9 +125,11 @@ export class ManuscriptWorkspace {
   private readonly assetJobs = new Map<string, Promise<void>>();
   private readonly assetAttempts = new Map<string, number>();
   private readonly retryTimers = new Set<ReturnType<typeof setTimeout>>();
-  private readonly leases = new Map<string, { lease: MdbaseRecordLease<JsonObject>; unsubscribe: () => void }>();
+  private readonly leases = new Map<string, { lease: RecordLease; unsubscribe: () => void }>();
   private readonly opening = new Map<string, Promise<boolean>>();
   private readonly sent = new Map<string, string>();
+  /** One intent per unconfirmed comment (by its content): a retry after a lost reply re-sends it, so it lands once. */
+  private readonly commentIntents = new Map<string, string>();
   private readonly translations = new Map<string, { body: string; translated: ReturnType<typeof translateRecord> }>();
   private lastOrder: readonly string[] = [];
   private readonly requestedAssets = new Set<string>();
@@ -144,6 +146,9 @@ export class ManuscriptWorkspace {
   private workerAnnotationPaths: ReadonlySet<string> = new Set();
   private workerSourceKeys: ReadonlyMap<string, string> = new Map();
   private commentsScope = "";
+  // Bound to this original workspace/collection. Refreshes retain the last
+  // complete snapshot; a new workspace starts with no ready discovery.
+  private readonly readyMetadata = new Set<MetadataDomain>();
   private metadataJobs: Partial<Record<MetadataDomain, Promise<void>>> = {};
   private metadataGeneration = 0;
   private commentsGeneration = 0;
@@ -204,6 +209,9 @@ export class ManuscriptWorkspace {
 
   private update(patch: Partial<WorkspaceSnapshot>): void {
     if (this.disposed) return;
+    for (const domain of ["indexLoad", "libraryLoad", "annotationsLoad"] as const) {
+      if (patch[domain]?.phase === "ready") this.readyMetadata.add(domain);
+    }
     if (patch.recordPaths) patch = { ...patch, recordIndex: pathIndex(patch.recordPaths) };
     if (patch.filePaths) patch = { ...patch, fileIndex: pathIndex(patch.filePaths) };
     this.current = { ...this.current, ...patch };
@@ -254,7 +262,9 @@ export class ManuscriptWorkspace {
     };
     for (const domain of Object.keys(jobs) as MetadataDomain[]) {
       if (!fresh && this.metadataJobs[domain]) continue;
-      this.update({ [domain]: LOADING });
+      if (!this.readyMetadata.has(domain)) this.update({ [domain]: LOADING });
+      // Keep ready data (or a genuine refresh failure) until the new complete
+      // result replaces data and readiness together. Export still waits on jobs.
       // A superseded load must not overwrite a newer snapshot.
       const job = jobs[domain]();
       this.metadataJobs[domain] = job;
@@ -676,7 +686,7 @@ export class ManuscriptWorkspace {
     }
     const annotations = new Set(paths.filter((path) => this.current.annotationPaths.has(path)));
     if (annotations.size) {
-      this.update({ annotationVersion: this.current.annotationVersion + 1, annotationsLoad: LOADING });
+      this.update({ annotationVersion: this.current.annotationVersion + 1, ...(!this.readyMetadata.has("annotationsLoad") ? { annotationsLoad: LOADING } : {}) });
       this.metadataJobs.annotationsLoad = this.loadAnnotationPaths(this.metadataGeneration);
     }
     // An image, style or template the document uses changed: send its new bytes.
@@ -733,12 +743,12 @@ export class ManuscriptWorkspace {
    * Creates a record for a new chapter beside the existing chapters (or in
    * chapters/) and embeds it after the last one. Resolves to its path.
    */
-  async addChapter(title: string): Promise<Result<string>> {
+  async addChapter(title: string, intent?: string): Promise<Result<string>> {
     const name = title.trim();
     if (!name) return fail("A chapter needs a title.");
     const first = this.chapterPaths().find((p): p is string => Boolean(p));
     const folder = first?.includes("/") ? first.slice(0, first.lastIndexOf("/")) : "chapters";
-    const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`);
+    const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`, intent);
     if (!created.ok) return created;
     const path = created.value;
     // The index learns the new record (no need to list the collection again), so the embed resolves.
@@ -864,15 +874,24 @@ export class ManuscriptWorkspace {
   /** A new thread on a passage (a suggestion when `replacement` is given), or on the whole record. */
   async addComment(draft: CommentDraft | { record: string }, text: string, replacement?: string): Promise<Result<CommentRecord>> {
     const target = "body" in draft ? targetFor(draft.body, draft.from, draft.to, await bodyHash(draft.body)) : undefined;
-    const created = await this.backend.createComment({ document: draft.record, text, ...(target ? { target } : {}), ...(replacement !== undefined ? { replacement } : {}) });
+    const key = JSON.stringify([draft.record, "body" in draft ? [draft.from, draft.to] : null, text, replacement ?? null]);
+    const created = await this.createComment(key, { document: draft.record, text, ...(target ? { target } : {}), ...(replacement !== undefined ? { replacement } : {}) });
     if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
+    return created;
+  }
+
+  private async createComment(key: string, input: NewComment): Promise<Result<CommentRecord>> {
+    let intent = this.commentIntents.get(key);
+    if (!intent) this.commentIntents.set(key, intent = crypto.randomUUID());
+    const created = await this.backend.createComment({ ...input, intent });
+    if (created.ok) this.commentIntents.delete(key);
     return created;
   }
 
   async reply(thread: CommentThread, text: string): Promise<Result<CommentRecord>> {
     // A reply repeats its thread's document.
     const document = resolveLinkTarget(linkPath(thread.root.document), thread.root.path, this.current.recordIndex) ?? linkPath(thread.root.document);
-    const created = await this.backend.createComment({ document, text, thread: thread.root });
+    const created = await this.createComment(JSON.stringify([thread.root.path, text]), { document, text, thread: thread.root });
     if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
     return created;
   }

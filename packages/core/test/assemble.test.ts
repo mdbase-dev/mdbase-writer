@@ -53,7 +53,7 @@ describe("ManuscriptAssembler", () => {
     expect(a.diagnostics.map((d) => d.message)).toEqual([
       "No source in the library has the citekey nosuch2020.",
       "Nothing is labelled fig-missing.",
-      "No file in the collection matches the image gone.png.",
+      "Image “gone.png” is missing. Add it to the collection or correct its path.",
     ]);
     const src = a.sources.get("/doc.typ") ?? "";
     expect(src).toContain('#missing("nosuch2020");');

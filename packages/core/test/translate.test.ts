@@ -52,6 +52,17 @@ describe("translateRecord", () => {
     expect(tr.rawBlocks).toHaveLength(1);
   });
 
+  it.each([
+    "![Caption](missing.png){#fig-missing}",
+    "![](missing.png){#fig-missing}",
+    "![[missing.png]]{#fig-missing}",
+  ])("keeps image figures typed as images even when their body is a missing-image fallback: %s", (body) => {
+    const translated = translateRecord(body);
+    expect(translated.typst).toContain("#figure(kind: image, ");
+    expect(translated.images).toEqual([expect.objectContaining({ target: "missing.png" })]);
+    expect(translated.labels).toEqual(["fig-missing"]);
+  });
+
   it("records the raw Typst block span exactly", () => {
     const block = tr.rawBlocks[0];
     expect(block && tr.typst.slice(block.typstFrom, block.typstTo)).toBe(

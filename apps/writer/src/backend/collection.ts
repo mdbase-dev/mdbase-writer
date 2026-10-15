@@ -4,7 +4,7 @@ import { annotationSourceLink } from "@mdbase-writer/core/annotations";
 import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
 import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { personKey, toContract } from "./comments.js";
-import { fail, libraryEntry, ok, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary } from "./types.js";
+import { fail, libraryEntry, ok, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type UnavailableType } from "./types.js";
 
 export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2" } as const;
 export const sourceContract = { id: "dev.mdbase.reader.source", version: "1.0.0-beta.1" } as const;
@@ -19,6 +19,7 @@ const domains = {
   person: { contract: { id: "mdbase.person", version: "2.0.0" }, starter: "person", note: false },
 } as const;
 export type Domain = keyof typeof domains;
+export function domainContract(domain: Domain) { return domains[domain].contract; }
 /** The demo's starter definitions, derived from the same domain table. */
 export function starterSchema(): CollectionSchema {
   return new CollectionSchema({
@@ -29,6 +30,22 @@ export function starterSchema(): CollectionSchema {
     })),
   });
 }
+/** Domain metadata, not a legacy connection or fabricated legacy catalog. */
+export interface WriterSchemaDescription {
+  readonly types: readonly { readonly name: string }[];
+  readonly contracts: readonly {
+    readonly id: string;
+    readonly implementations: readonly { readonly typeName: string; readonly fields: Readonly<Record<string, string>> }[];
+  }[];
+  readonly configuration?: JsonObject;
+  /** Types left out of `contracts` because their definition has an error. */
+  readonly unavailableTypes?: readonly (UnavailableType & { readonly domain: Domain })[];
+}
+const DOMAIN_NAMES: Record<Domain, string> = { manuscript: "Manuscripts", source: "Sources", annotation: "Annotations", comment: "Comments", person: "People" };
+/** Copy for a Writer type whose definition has an error: only that type is affected. */
+export function unavailableTypeMessage(name: string, domain: Domain): string {
+  return `Writer can't use the "${name}" type because its definition has an error. ${DOMAIN_NAMES[domain]} that use it are unavailable until the type is fixed; everything else still works.`;
+}
 export interface Binding { readonly name: string; readonly fields: Readonly<Record<string, string>>; readonly typeKey: string }
 interface RoleBinding extends Binding { readonly active: boolean }
 export interface CollectionRow {
@@ -36,6 +53,8 @@ export interface CollectionRow {
   readonly types: readonly string[];
   readonly frontmatter?: JsonObject;
   readonly effectiveFrontmatter?: JsonObject;
+  /** Logical fields projected by the public SDK/Core, not a local field map. */
+  readonly contractFields?: Partial<Record<Domain, JsonObject>>;
   /** Narrow query values are partial metadata, never a full record/frontmatter. */
   readonly values?: JsonObject;
   readonly file?: { readonly mtime?: string };
@@ -48,6 +67,7 @@ export interface StoreDelta extends CollectionDelta {
 }
 interface Classified {
   note: boolean;
+  untyped: boolean;
   effective: boolean;
   source?: LibraryEntry;
   manuscript?: ManuscriptSummary;
@@ -56,19 +76,19 @@ interface Classified {
   person?: string;
 }
 const equal = (a: unknown, b: unknown) => a === b || (a !== undefined && b !== undefined && JSON.stringify(a) === JSON.stringify(b));
-const fieldsOf = (fm: JsonObject, binding: Binding) => Object.keys(binding.fields).length ? toContract(fm, binding.fields) : fm;
+const fieldsOf = (fm: JsonObject, binding: Binding, projected?: JsonObject) => projected ?? (Object.keys(binding.fields).length ? toContract(fm, binding.fields) : fm);
 
 /** One binding table serves discovery, writes, sessions and incremental classification. */
 export class CollectionSchema {
   private readonly byType = new Map<string, Map<Domain, RoleBinding>>();
   private readonly roleCache = new Map<string, ReadonlyMap<Domain, RoleBinding>>();
-  constructor(readonly description: Pick<CollectionDescription, "types" | "contracts" | "configuration">) {
+  constructor(readonly description: WriterSchemaDescription | Pick<CollectionDescription, "types" | "contracts" | "configuration">, private readonly starterFallback = true) {
     for (const domain of Object.keys(domains) as Domain[]) {
       const rule = domains[domain];
       const implementations = description.contracts.find((c) => c.id === rule.contract.id)?.implementations ?? [];
       const bindings = implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey: this.typeKey }));
       // Recognise starter records even when their type isn't installed/described yet.
-      if (!bindings.some((b) => b.name === rule.starter)) bindings.push({ name: rule.starter, fields: {}, typeKey: this.typeKey });
+      if (this.starterFallback && !bindings.some((b) => b.name === rule.starter)) bindings.push({ name: rule.starter, fields: {}, typeKey: this.typeKey });
       const loaded = this.bindings(domain, domain === "manuscript");
       const active = new Set(loaded.ok ? loaded.value.map((b) => b.name) : []);
       for (const binding of bindings) {
@@ -89,11 +109,26 @@ export class CollectionSchema {
     const contract = this.description.contracts.find((c) => c.id === rule.contract.id);
     const implementations = contract?.implementations ?? [];
     if (implementations.length) return ok(implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey: this.typeKey })));
+    const unavailable = this.unavailableMessage(domain);
+    if (unavailable) return fail<Binding[]>(unavailable);
     if (required || (contract && domain === "annotation")) return fail<Binding[]>(`This collection has no type for ${domain}s. Set it up again from mdbase connect.`);
-    if (contract) return ok<Binding[]>([]);
+    if (contract || !this.starterFallback) return ok<Binding[]>([]);
     if (domain === "comment" || domain === "person") return ok<Binding[]>([]);
     const starter = this.description.types.some((t) => t.name === rule.starter);
     return ok(starter ? [{ name: rule.starter, fields: {}, typeKey: this.typeKey }] : []);
+  }
+  get unavailableTypes(): readonly UnavailableType[] {
+    return ("unavailableTypes" in this.description ? this.description.unavailableTypes ?? [] : []).map(({ name, message }) => ({ name, message }));
+  }
+  /** Set only when every type for the domain is unavailable. */
+  unavailableMessage(domain: Domain): string | undefined {
+    const listed = "unavailableTypes" in this.description ? this.description.unavailableTypes ?? [] : [];
+    const contract = this.description.contracts.find((c) => c.id === domains[domain].contract.id);
+    if (contract?.implementations.length) return undefined;
+    return listed.find((t) => t.domain === domain)?.message;
+  }
+  isUnavailableType(type: string): boolean {
+    return "unavailableTypes" in this.description && !!this.description.unavailableTypes?.some((t) => t.name === type);
   }
   roles(types: readonly string[]): ReadonlyMap<Domain, RoleBinding> {
     const key = types.join("\0"), cached = this.roleCache.get(key);
@@ -129,7 +164,7 @@ export class CollectionSchema {
     return binding?.fields ?? {};
   }
   get setupStatus() {
-    const configured = (domain: Domain) => this.description.contracts.some((c) => c.id === domains[domain].contract.id) || this.description.types.some((t) => t.name === domains[domain].starter);
+    const configured = (domain: Domain) => this.description.contracts.some((c) => c.id === domains[domain].contract.id) || (this.starterFallback && this.description.types.some((t) => t.name === domains[domain].starter));
     const comments = this.bindings("comment");
     return { sources: configured("source"), annotations: configured("annotation"), comments: comments.ok && comments.value.length > 0 };
   }
@@ -153,7 +188,8 @@ export class CollectionStore {
   constructor(public schema: CollectionSchema) {}
 
   get index(): CollectionIndex {
-    return this.indexValue ??= { recordPaths: [...this.records.keys()], notePaths: [...this.records].filter(([, r]) => r.note).map(([p]) => p), filePaths: [...this.binaries] };
+    return this.indexValue ??= { recordPaths: [...this.records.keys()], notePaths: [...this.records].filter(([, r]) => r.note).map(([p]) => p),
+      untypedPaths: [...this.records].filter(([, r]) => r.untyped).map(([p]) => p), unavailableTypes: this.schema.unavailableTypes, filePaths: [...this.binaries] };
   }
   get library(): LibraryEntry[] { return this.libraryValue ??= [...this.sources.values()].sort((a, b) => a.path.localeCompare(b.path)); }
   get manuscripts(): ManuscriptSummary[] { return this.manuscriptValue ??= [...this.papers.values()].sort((a, b) => a.title.localeCompare(b.title) || a.path.localeCompare(b.path)); }
@@ -165,20 +201,21 @@ export class CollectionStore {
     const effective = row.effectiveFrontmatter ?? fm;
     // Independent discovery queries can finish in any order. Persisted index rows
     // must not overwrite defaults already learned from effective domain queries.
-    const retainEffective = discovery && row.effectiveFrontmatter === undefined && previous?.effective;
-    const next: Classified = { note: /\.md$/i.test(row.path), effective: row.effectiveFrontmatter !== undefined || !!retainEffective };
+    const retainEffective = discovery && row.effectiveFrontmatter === undefined && row.contractFields === undefined && previous?.effective;
+    // A record of an unusable Writer type is not someone's free writing.
+    const next: Classified = { note: /\.md$/i.test(row.path) && !row.types.some((type) => this.schema.isUnavailableType(type)), untyped: row.types.length === 0, effective: row.effectiveFrontmatter !== undefined || row.contractFields !== undefined || !!retainEffective };
     for (const [domain, binding] of this.schema.roles(row.types)) {
       if (!domains[domain].note) next.note = false;
       if (!binding.active) continue;
       switch (domain) {
         case "source": {
           const written = row.values?.["file_mtime"] ?? row.file?.mtime;
-          const source = retainEffective && previous.source ? previous.source : libraryEntry(row.path, fieldsOf(effective, binding), typeof written === "string" ? written : undefined);
+          const source = retainEffective && previous.source ? previous.source : libraryEntry(row.path, fieldsOf(effective, binding, row.contractFields?.source), typeof written === "string" ? written : undefined);
           if (source) next.source = equal(previous?.source, source) ? previous!.source! : source;
           break;
         }
         case "manuscript": {
-          const fields = fieldsOf(effective, binding);
+          const fields = fieldsOf(effective, binding, row.contractFields?.manuscript);
           const modified = row.values?.["file_mtime"] ?? row.file?.mtime;
           const manuscript = retainEffective && previous.manuscript ? previous.manuscript : {
             path: row.path, title: typeof fields["title"] === "string" ? fields["title"] : row.path,
@@ -190,12 +227,12 @@ export class CollectionStore {
           break;
         }
         case "annotation": {
-          const target = fm[binding.fields["source"] ?? "source"];
+          const target = fieldsOf(fm, binding, row.contractFields?.annotation)["source"];
           next.annotation = { path: row.path, type: binding.name, fields: binding.fields, source: typeof target === "string" ? annotationSourceLink(target) ?? "" : "" };
           break;
         }
         case "comment": {
-          const comment = commentFromRecord(row.path, fieldsOf(fm, binding), "");
+          const comment = commentFromRecord(row.path, fieldsOf(fm, binding, row.contractFields?.comment), "");
           if (comment) {
             const metadata = { type: binding.name, fields: binding.fields,
               comment: { document: comment.document, ...(comment.inReplyTo ? { inReplyTo: comment.inReplyTo } : {}) } };
@@ -204,7 +241,7 @@ export class CollectionStore {
           break;
         }
         case "person": {
-          const name = fieldsOf(effective, binding)["name"];
+          const name = fieldsOf(effective, binding, row.contractFields?.person)["name"];
           if (typeof name === "string") next.person = name;
           break;
         }
@@ -240,7 +277,7 @@ export class CollectionStore {
     for (const [path, row] of changes) {
       const old = this.records.get(path);
       const next = row && this.classify(row, old, discovery);
-      index ||= !!old !== !!next || old?.note !== next?.note;
+      index ||= !!old !== !!next || old?.note !== next?.note || old?.untyped !== next?.untyped;
       if (old?.source || next?.source) library ||= !equal(old?.source, next?.source);
       if (old?.manuscript || next?.manuscript) manuscripts ||= !equal(old?.manuscript, next?.manuscript);
       membership ||= !!old?.source !== !!next?.source;

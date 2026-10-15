@@ -14,6 +14,7 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App.js";
 import { FeedbackRoot } from "./FeedbackRoot.js";
+import { deliverWriterGrantReturn, isWriterGrantReturn, writerMdbaseForBuild } from "./connect/sdk-application.js";
 
 import { setupPwaInstall } from "./pwa-install.js";
 import "./pwa-install.css";
@@ -21,10 +22,17 @@ import "./pwa-install.css";
 const stopPwaInstall = setupPwaInstall("mdbase writer");
 if (import.meta.hot) import.meta.hot.dispose(stopPwaInstall);
 
+// The Private collection consent popup returns here: hand its result to the
+// waiting Writer tab and close, without starting a second SDK owner.
+const grantReturn = isWriterGrantReturn(import.meta.env.VITE_MDBASE_ENV, location.href);
+if (grantReturn) void deliverWriterGrantReturn(location.href).catch(() => {});
+// One declaration-only singleton outside React/StrictMode. SDK owns its runtime.
+const sdk = grantReturn ? undefined : writerMdbaseForBuild(import.meta.env.VITE_MDBASE_ENV);
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root");
 createRoot(root).render(
   <StrictMode>
-    <FeedbackRoot><App /></FeedbackRoot>
+    {grantReturn ? <p className="grant-return">You can close this window.</p>
+      : <FeedbackRoot><App {...(sdk ? {sdk} : {})} /></FeedbackRoot>}
   </StrictMode>,
 );

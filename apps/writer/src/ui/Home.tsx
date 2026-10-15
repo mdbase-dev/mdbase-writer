@@ -6,7 +6,7 @@ import { signalMdbaseMark } from "@mdbase-dev/ui/mark-activity";
 import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { bodySummary, fail, type ManuscriptSummary, type Result, type WriterBackend } from "../backend/types.js";
+import { bodySummary, fail, type ManuscriptSummary, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
 import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
@@ -22,6 +22,8 @@ import { ChevronRight, PenIcon } from "./icons.js";
 const SEARCH_FROM = 6;
 /** Notes listed at once in the note picker. */
 const NOTES_SHOWN = 8;
+/** Notes without a type listed before "Show all". */
+const UNTYPED_SHOWN = 20;
 const TEMPLATE_OPTIONS = TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const STYLE_OPTIONS = STYLES.map((s) => ({ value: s.id, label: s.title }));
 
@@ -31,30 +33,30 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   const [backgroundProblem, setBackgroundProblem] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   const [recordPaths, setRecordPaths] = useState<readonly string[] | null>(null);
+  const [untyped, setUntyped] = useState<readonly string[]>([]);
+  const [unavailable, setUnavailable] = useState<readonly UnavailableType[]>([]);
+  const [allUntyped, setAllUntyped] = useState(false);
   const [summaries, setSummaries] = useState<ReadonlyMap<string, Pick<ManuscriptSummary, "words" | "embeds" | "chapters">>>(new Map());
   const [visiblePaths, setVisiblePaths] = useState<ReadonlySet<string>>(new Set());
   const [reload, setReload] = useState(0);
   const bodyCache = useRef(new Map<string, Promise<Result<string>>>());
   const rows = useRef<HTMLUListElement>(null);
-  const limitReads = useMemo(() => limitConcurrency(4), [backend]);
+  const [limitReads] = useState(() => limitConcurrency(4));
   const [sources, setSources] = useState<number | null>(null);
   const [dialog, setDialog] = useState(false);
   const [filter, setFilter] = useState("");
   const [limit, setLimit] = useState(50);
   const namespace = localNamespace(backend);
   // What this browser remembers: the manuscripts opened last, and drafts not yet saved.
-  const [recent, setRecent] = useState(() => recentManuscripts(namespace));
-  const [drafts, setDrafts] = useState(() => new DraftStore(namespace).list());
-  useEffect(() => {
-    setRecent(recentManuscripts(namespace));
-    setDrafts(new DraftStore(namespace).list());
-  }, [namespace, reload]);
+  const remembered = useMemo(() => ({revision: reload, recent: recentManuscripts(namespace),
+    drafts: new DraftStore(namespace).list()}), [namespace, reload]);
+  const {recent, drafts} = remembered;
 
   useEffect(() => {
     let live = true;
-    setProblem(null);
-    setBackgroundProblem(null);
-    const pending = backend.flushChanges?.() ?? Promise.resolve();
+    const pending = (backend.flushChanges?.() ?? Promise.resolve()).then(() => {
+      if (live) {setProblem(null); setBackgroundProblem(null);}
+    });
     void pending.then(() => backend.listManuscripts()).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
@@ -69,12 +71,14 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       if (!live) return;
       if (!r.ok) { setBackgroundProblem(`Index could not be loaded: ${r.message}`); return; }
       setNotes([...r.value.notePaths].sort());
+      setUntyped([...r.value.untypedPaths ?? []].sort());
+      setUnavailable(r.value.unavailableTypes ?? []);
       setRecordPaths(r.value.recordPaths);
     }).catch((error: unknown) => { if (live) setBackgroundProblem(errorMessage(error)); });
     return () => {
       live = false;
     };
-  }, [backend, reload]);
+  }, [backend, remembered.revision]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -96,6 +100,9 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   }, [backend]);
 
   const recordIndex = useMemo(() => pathIndex(recordPaths ?? []), [recordPaths]);
+  const byPath = useMemo(() => new Map((manuscripts ?? []).map((m) => [m.path, m])), [manuscripts]);
+  const continuing = useMemo(() => recent.map((r) => byPath.get(r.path)).find((m): m is ManuscriptSummary => Boolean(m)), [recent, byPath]);
+  const countPaths = useMemo(() => continuing ? new Set([...visiblePaths, continuing.path]) : visiblePaths, [visiblePaths, continuing]);
 
   // Bodies are only read for visible rows, at most four concurrent manuscript traversals.
   useEffect(() => {
@@ -108,7 +115,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       return cached;
     };
     const candidates = recordIndex;
-    void mapConcurrent(manuscripts.filter((m) => visiblePaths.has(m.path)), 4, async (m) => {
+    void mapConcurrent(manuscripts.filter((m) => countPaths.has(m.path)), 4, async (m) => {
       if (!live) return;
       const body = await read(m.path);
       if (!body.ok || !live) return;
@@ -117,12 +124,16 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       if (live) setSummaries((known) => new Map(known).set(m.path, { ...summary, words }));
     }).catch(() => { /* Counts are optional; failed body reads never hide a title. */ });
     return () => { live = false; };
-  }, [backend, manuscripts, recordPaths, recordIndex, visiblePaths, limitReads, reload]);
+  }, [backend, manuscripts, recordPaths, recordIndex, countPaths, limitReads, remembered.revision]);
 
   const candidates = useMemo(() => {
     const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
     return notes.filter((p) => !manuscriptPaths.has(p));
   }, [notes, manuscripts]);
+  const untypedShown = useMemo(() => {
+    const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
+    return untyped.filter((p) => !manuscriptPaths.has(p));
+  }, [untyped, manuscripts]);
   const shown = useMemo(() => {
     const words = filter.toLowerCase().split(/\s+/).filter(Boolean);
     const sorted = byRecentlyEdited(manuscripts ?? []);
@@ -136,16 +147,11 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     rows.current?.querySelectorAll("[data-path]").forEach((row) => observer.observe(row));
     return () => observer.disconnect();
   }, [shown, limit]);
-  const byPath = useMemo(() => new Map((manuscripts ?? []).map((m) => [m.path, m])), [manuscripts]);
-  const continuing = useMemo(() => recent.map((r) => byPath.get(r.path)).find((m): m is ManuscriptSummary => Boolean(m)), [recent, byPath]);
   // A chapter's draft belongs to the manuscript that embeds it; a stray one is still listed.
   const draftRows = useMemo(() => drafts.map((d) => {
     const manuscript = byPath.get(d.path) ?? (manuscripts ?? []).find((m) => (summaries.get(m.path)?.chapters ?? m.chapters ?? []).some((c) => c === d.path || `${c}.md` === d.path || d.path.endsWith(`/${c}.md`)));
     return { ...d, manuscript, title: byPath.get(d.path)?.title ?? noteName(d.path) };
   }), [drafts, byPath, manuscripts, summaries]);
-  useEffect(() => {
-    if (continuing) setVisiblePaths((previous) => previous.has(continuing.path) ? previous : new Set([...previous, continuing.path]));
-  }, [continuing]);
   const newButton = (
     <button type="button" className="mdbase-button is-primary" onClick={() => setDialog(true)}>
       <PlusIcon />
@@ -255,7 +261,22 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
         )}
         {shown.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}>Show 50 more manuscripts · {shown.length}</button>}
         {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted">No manuscript matches “{filter}”.</p>}
-        {problem && !dialog && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}>Retry loading</button></div>}
+        {unavailable.length > 0 && <div className="home-unavailable" role="status">
+          {unavailable.map((t) => <p key={t.name} className="muted">{t.message}</p>)}
+        </div>}
+        {untypedShown.length > 0 && <section className="home-untyped" aria-label="Notes without a type">
+          <h2>Notes without a type</h2>
+          <ul className="manuscripts">
+            {(allUntyped ? untypedShown : untypedShown.slice(0, UNTYPED_SHOWN)).map((path) => <li key={path}>
+              <button type="button" className="manuscript-row" onClick={() => onOpen(path)} title={path}>
+                <span className="manuscript-title">{noteName(path)}</span>
+                <span className="manuscript-meta">No type · {path}</span>
+              </button>
+            </li>)}
+          </ul>
+          {!allUntyped && untypedShown.length > UNTYPED_SHOWN && <button type="button" className="sidebar-more" onClick={() => setAllUntyped(true)}>Show all {untypedShown.length} notes without a type</button>}
+        </section>}
+        {problem && !dialog && !unavailable.some((t) => t.message === problem) && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}>Retry loading</button></div>}
       </section>
 
       <NewManuscriptDialog backend={backend} open={dialog} onClose={() => setDialog(false)} onOpen={onOpen} candidates={candidates} />
@@ -282,6 +303,8 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
   const [untitled, setUntitled] = useState(false);
   const [adoptOpen, setAdoptOpen] = useState(false);
   const titleField = useRef<HTMLInputElement>(null);
+  // One name per new manuscript: a retry re-sends it, so the manuscript lands once.
+  const intent = useRef(crypto.randomUUID());
 
   useEffect(() => {
     if (open) titleField.current?.focus();
@@ -298,8 +321,11 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
     setCreating(true);
     setProblem(null);
     try {
-      const created = await backend.createManuscript({ title: title.trim(), template, style, starter });
-      if (created.ok) onOpen(created.value);
+      const created = await backend.createManuscript({ title: title.trim(), template, style, starter, intent: intent.current });
+      if (created.ok) {
+        intent.current = crypto.randomUUID();
+        onOpen(created.value);
+      }
       else {
         setProblem(created.message);
         signalMdbaseMark("error");
@@ -465,7 +491,11 @@ function ContinueCard({ manuscript, words, goal, onGoal, onOpen }: { manuscript:
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(goal ? String(goal) : "");
   const goalId = useId();
-  useEffect(() => { setDraft(goal ? String(goal) : ""); }, [goal]);
+  const [previousGoal, setPreviousGoal] = useState(goal);
+  if (previousGoal !== goal) {
+    setPreviousGoal(goal);
+    setDraft(goal ? String(goal) : "");
+  }
   const progress = goal && words !== undefined ? Math.min(1, words / goal) : null;
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

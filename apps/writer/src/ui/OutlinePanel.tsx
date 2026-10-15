@@ -48,7 +48,7 @@ export function OutlinePanel({
   onJump(path: string, offset: number): void;
   /** Moves the chapter embed at index `from` to index `to`. */
   onMove(from: number, to: number): void;
-  onAdd(title: string): Promise<Result<string>>;
+  onAdd(title: string, intent: string): Promise<Result<string>>;
 }) {
   const [dragging, setDragging] = useState<number | null>(null);
   const [drop, setDrop] = useState<{ index: number; after: boolean } | null>(null);
@@ -309,12 +309,14 @@ const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump
   );
 });
 
-function AddChapter({ onAdd, onAdded }: { onAdd(title: string): Promise<Result<string>>; onAdded(path: string): void }) {
+function AddChapter({ onAdd, onAdded }: { onAdd(title: string, intent: string): Promise<Result<string>>; onAdded(path: string): void }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const opener = useRef<HTMLButtonElement>(null);
+  // One name per new chapter: a retry re-sends it, so the chapter lands once.
+  const intent = useRef(crypto.randomUUID());
 
   if (!editing) {
     return (
@@ -336,9 +338,10 @@ function AddChapter({ onAdd, onAdded }: { onAdd(title: string): Promise<Result<s
         e.preventDefault();
         if (!title.trim() || busy) return;
         setBusy(true);
-        const added = await onAdd(title);
+        const added = await onAdd(title, intent.current);
         setBusy(false);
         if (!added.ok) return setProblem(added.message);
+        intent.current = crypto.randomUUID();
         close();
         onAdded(added.value);
       }}

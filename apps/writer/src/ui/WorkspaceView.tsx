@@ -1,20 +1,20 @@
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
+import { CollectionSaveWarning } from "@mdbase-dev/ui/collections";
 import { annotationSourcePath, blockQuotation, sourceAnnotation } from "@mdbase-writer/core/annotations";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
-import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import type { BlockPosition, SourceMark, WriterDiagnostic } from "../compile/protocol.js";
 import type { ChapterCards } from "../editor/chapter-cards.js";
-import type { CommentAnchor } from "../editor/comments.js";
 import { Editor, type EditorHandle, type RetainedEditor } from "../editor/Editor.js";
 import { equationSnippet, figureSnippet, tableSnippet } from "../editor/snippets.js";
 import type { InsertCommand } from "../editor/slash.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
 import { authorYear } from "../editor/library-search.js";
-import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget, type LabelTarget } from "../editor/insight.js";
+import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
@@ -45,6 +45,7 @@ import { readerSourceHref } from "../apps.js";
 import { errorMessage } from "../async.js";
 import { zip } from "../export/zip.js";
 import { CompareDialog, type Comparison } from "./CompareDialog.js";
+import { ExportReview, type PendingExport } from "./ExportReview.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
 import { anchorsFor, threadIsNew, ThreadPlacement, when, type PlacedThread } from "./comments.js";
@@ -56,13 +57,14 @@ import type { CitationSite } from "./SourcesPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { ProblemsStrip } from "./ProblemsStrip.js";
-import { CommandPalette } from "@mdbase-dev/ui/command-palette";
+import { CommandPalette, type Command } from "@mdbase-dev/ui/command-palette";
 import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
-import { plural, recordTitle, STATE_LABEL, STATE_SHORT_LABEL, STATE_TONE } from "./records.js";
+import { plural, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
+import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
@@ -101,6 +103,14 @@ const NO_DIAGNOSTICS: readonly WriterDiagnostic[] = [];
 const SETTLE_MS = 1500;
 const NO_POSITIONS: readonly BlockPosition[] = [];
 const NO_MARKS: readonly SourceMark[] = [];
+const INSERTION_SPECS: readonly Omit<InsertCommand, "run">[] = [
+  { id: "citation", label: "Citation", syntax: "[@citekey, p. 12]", keywords: "cite source reference" },
+  { id: "footnote", label: "Footnote", syntax: "[^1] … with its text at the end", keywords: "note" },
+  { id: "crossref", label: "Cross-reference", syntax: "@sec-intro, @fig-plan", keywords: "refer section figure table label" },
+  { id: "figure", label: "Figure from an image…", syntax: "![Caption](figures/plan.png){#fig-plan}", keywords: "image picture photo upload" },
+  { id: "table", label: "Table", syntax: "| … | … | with : Caption {#tbl-x}", keywords: "grid columns rows" },
+  { id: "equation", label: "Equation", syntax: "$$ … $$ {#eq-x}", keywords: "math formula display" },
+];
 
 const THEME_NAME: Record<ThemePreference, string> = { system: "System", light: "Light", dark: "Dark" };
 
@@ -133,15 +143,17 @@ const isTextEntry = (target: EventTarget | null) =>
 /** True once `flag` has held for `delay` ms, so a quick flicker of work never shows. */
 function useSustained(flag: boolean, delay: number): boolean {
   const [held, setHeld] = useState(false);
+  const [observed, setObserved] = useState(flag);
+  if (observed !== flag) {
+    setObserved(flag);
+    setHeld(false);
+  }
   useEffect(() => {
-    if (!flag) {
-      setHeld(false);
-      return;
-    }
+    if (!flag) return;
     const t = setTimeout(() => setHeld(true), delay);
     return () => clearTimeout(t);
   }, [flag, delay]);
-  return flag && held;
+  return flag && observed && held;
 }
 
 export function WorkspaceView({ workspace, since, onClose }: { workspace: ManuscriptWorkspace; /** When this manuscript was last opened here, so what others wrote since can be marked. */ since?: string | undefined; onClose(force?: boolean): void }) {
@@ -183,11 +195,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
   const [activeComment, setActiveComment] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
-  const editorStates = useRef(new Map<string, RetainedEditor>());
+  const [editorStates] = useState(() => new Map<string, RetainedEditor>());
   const [comparisonPath, setComparisonPath] = useState<string | null>(null);
   const [leaveProblem, setLeaveProblem] = useState<string | null>(null);
   const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
-  const [pendingExport, setPendingExport] = useState<{ bytes: Uint8Array; type: string; name: string; problems: readonly string[] } | null>(null);
+  const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const exportJob = useRef<AbortController | null>(null);
   const lastExport = useRef<ExportFormat>(exportFormat);
   useEffect(() => () => exportJob.current?.abort(), []);
@@ -198,7 +210,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const grid = useRef<HTMLDivElement>(null);
   // Where the cursor is now (the cursor state above trails it slightly), and
   // whether typing has paused, for holding back problems on the line being typed.
-  const liveCursor = useRef<{ record: string; offset: number } | null>(null);
+  const [liveCursor, setLiveCursor] = useState<{ record: string; offset: number } | null>(null);
   const [typing, setTyping] = useState(false);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -209,7 +221,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       return next;
     });
   }, []);
-  const toggleJoinLines = useCallback(() => setLayout((l) => ({ ...l, joinLines: !l.joinLines })), [setLayout]);
   const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => {
     rememberedTabs.set(workspace.main, tab);
@@ -219,14 +230,16 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const setLowerTab = useCallback((lowerTab: SidebarTab | null) => setLayout((l) => ({ ...l, lowerTab: lowerTab === l.tab ? null : lowerTab })), [setLayout]);
   const toggleLower = useCallback(() => setLayout((l) => ({ ...l, lowerTab: l.lowerTab ? null : l.tab === "comments" ? "outline" : "comments" })), [setLayout]);
 
-  const order = useMemo(() => workspace.readingOrder(), [workspace, snap.records, snap.recordPaths, snap.annotationPaths]);
+  const order = workspace.readingOrder();
+  const citationNavRef = useRef({ order, snap, cursor, active });
+  useLayoutEffect(() => { citationNavRef.current = { order, snap, cursor, active }; }, [order, snap, cursor, active]);
   const activeView = snap.records.get(active);
-  const dependencyDiagnostics = useMemo(() => workspace.dependencyDiagnostics(), [workspace, snap.assetProblems, snap.recordProblems, snap.records]);
-  const allDiagnostics = useMemo(() => [...discoveredDiagnostics(snap.result?.diagnostics ?? NO_DIAGNOSTICS, snap), ...dependencyDiagnostics], [snap.result?.diagnostics, snap.indexLoad, snap.libraryLoad, snap.annotationsLoad, dependencyDiagnostics]);
+  const dependencyDiagnostics = workspace.dependencyDiagnostics();
+  const allDiagnostics = useMemo(() => [...discoveredDiagnostics(snap.result?.diagnostics ?? NO_DIAGNOSTICS, snap), ...dependencyDiagnostics], [snap, dependencyDiagnostics]);
   // A citation or label half typed is not a problem yet: problems on the line
   // being typed wait until typing pauses or the cursor leaves the line.
   const diagnostics = useMemo(() => {
-    const at = liveCursor.current;
+    const at = liveCursor;
     const body = at && typing ? snap.records.get(at.record)?.snapshot.body : undefined;
     if (!at || body === undefined) return allDiagnostics;
     const from = body.lastIndexOf("\n", at.offset - 1) + 1;
@@ -234,8 +247,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     const to = end < 0 ? body.length : end;
     const shown = allDiagnostics.filter((d) => d.field || d.record !== at.record || d.from < from || d.from > to);
     return shown.length === allDiagnostics.length ? allDiagnostics : shown;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the live cursor is a ref; the trailing cursor says when it moved
-  }, [allDiagnostics, typing, snap.records, cursor]);
+  }, [allDiagnostics, typing, snap.records, liveCursor]);
   // Problems on the line being typed, held back until typing pauses.
   const heldProblems = allDiagnostics.length - diagnostics.length;
   const byRecord = useMemo(() => {
@@ -248,7 +260,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   // Counts and lookups over every record's text trail typing slightly (deferred).
   const records = useDeferredValue(snap.records);
-  const statsCache = useMemo(() => new ManuscriptStats(), [workspace]);
+  const [statsCache] = useState(() => new ManuscriptStats());
   const stats = useMemo(() => statsCache.derive(order, records, snap.library), [statsCache, records, snap.library, order]);
   const completion = useMemo(
     () => ({ library: snap.library, labels: snap.result?.labels ?? [], recordPaths: snap.recordPaths, cited: stats.cited }),
@@ -266,20 +278,20 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   );
 
   // Threads on the manuscript's records, placed in their (slightly deferred) text.
-  const threadPlacement = useMemo(() => new ThreadPlacement(), [workspace]);
+  const [threadPlacement] = useState(() => new ThreadPlacement());
   const placed = useMemo(
     () => threadPlacement.place(snap.comments, order, (path) => records.get(path)?.snapshot.body, snap.recordIndex),
     [threadPlacement, snap.comments, records, snap.recordIndex, order],
   );
   // Threads are placed again after every edit, but the editor's anchors follow
   // edits themselves: it is only given new ones when they change.
-  const shownAnchors = useRef<{ key: string; anchors: CommentAnchor[] } | null>(null);
-  const anchors = useMemo(() => {
-    const next = anchorsFor(placed, active);
-    const key = JSON.stringify([active, next]);
-    if (shownAnchors.current?.key !== key) shownAnchors.current = { key, anchors: next };
-    return shownAnchors.current.anchors;
-  }, [placed, active]);
+  const nextAnchors = anchorsFor(placed, active);
+  const anchorKey = JSON.stringify([active, nextAnchors]);
+  const [shownAnchors, setShownAnchors] = useState({ key: anchorKey, anchors: nextAnchors });
+  if (shownAnchors.key !== anchorKey) {
+    setShownAnchors({ key: anchorKey, anchors: nextAnchors });
+  }
+  const anchors = shownAnchors.key === anchorKey ? shownAnchors.anchors : nextAnchors;
 
   const showComments = useCallback(() => {
     setLayout((l) => (l.sidebar && (l.tab === "comments" || l.lowerTab === "comments") ? l : { ...l, sidebar: true, tab: "comments", lowerTab: l.lowerTab === "comments" ? l.tab : l.lowerTab }));
@@ -317,17 +329,13 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     return map;
   }, [placed]);
   const openThreads = useMemo(() => placed.filter((p) => p.thread.root.status === "open"), [placed]);
-  const selectThread = useCallback((p: PlacedThread) => {
-    setActiveComment(p.thread.root.path);
-    if (p.at && p.at !== "whole") jump(p.record, p.at.from);
-    else if (p.record !== active) jump(p.record, 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- jump is declared below
-  }, [active]);
 
   const manuscriptTitle = recordTitle(snap.records.get(workspace.main), workspace.main);
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
   if (snap.pendingSettings) states.push("unsaved");
   const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
+  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0);
+  const connection = useContext(ConnectionNoticeContext);
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -340,7 +348,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   // The preview follows the cursor's block (after the cursor rests briefly).
   const onCursor = useCallback((offset: number) => {
-    liveCursor.current = { record: active, offset };
+    setLiveCursor({ record: active, offset });
     clearTimeout(cursorTimer.current);
     cursorTimer.current = setTimeout(() => setCursor({ record: active, offset }), 120);
   }, [active]);
@@ -368,6 +376,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       setActive(record);
     }
   }, [active, setLayout]);
+  const selectThread = useCallback((p: PlacedThread) => {
+    setActiveComment(p.thread.root.path);
+    if (p.at && p.at !== "whole") jump(p.record, p.at.from);
+    else if (p.record !== active) jump(p.record, 0);
+  }, [active, jump]);
 
   // Stable handlers, so the editor and preview only render when what they show changes.
   const onEditorChange = useCallback((text: string) => {
@@ -433,7 +446,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   // The next or previous open comment, in reading order from the cursor (F7 / Shift-F7).
   const stepComment = useCallback((direction: 1 | -1) => {
-    const { order, cursor, active } = citationNav.current;
+    const { order, cursor, active } = citationNavRef.current;
     const located = openThreads.filter((p) => p.at && p.at !== "whole");
     if (!located.length) return;
     const here = cursor ?? { record: active, offset: -1 };
@@ -448,7 +461,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   // Where a source is cited, named by section, for the Sources panel.
   const sitesFor = useCallback((key: string): readonly CitationSite[] => {
-    const { order, snap } = citationNav.current;
+    const { order, snap } = citationNavRef.current;
     const out: CitationSite[] = [];
     const seen = new Set<string>();
     for (const record of order) {
@@ -466,10 +479,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   }, []);
 
   // The next or previous citation of a source, in reading order from the cursor.
-  const citationNav = useRef({ order, snap, cursor, active });
-  citationNav.current = { order, snap, cursor, active };
   const stepCitation = useCallback((key: string, direction: 1 | -1) => {
-    const { order, snap, cursor, active } = citationNav.current;
+    const { order, snap, cursor, active } = citationNavRef.current;
     const uses = order.flatMap((record) => referenceOffsets(snap.records.get(record)?.snapshot.body ?? "", key).map((offset) => ({ record, offset })));
     if (!uses.length) return;
     const here = cursor ?? { record: active, offset: -1 };
@@ -529,7 +540,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const figureInput = useRef<HTMLInputElement>(null);
   const labelSet = useMemo(() => new Set(snap.result?.labels ?? []), [snap.result?.labels]);
   const labels = useRef(labelSet);
-  labels.current = labelSet;
+  useLayoutEffect(() => { labels.current = labelSet; }, [labelSet]);
   /** Stores each image in the collection and writes a figure for it at the cursor. */
   const addFigures = useCallback(async (files: readonly File[]) => {
     for (const file of files) {
@@ -542,7 +553,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     }
   }, [workspace]);
   const insertFigure = useCallback(() => {
-    if (!workspace.canStoreFiles) { setNotice({ tone: "problem", text: "This collection does not accept files from Writer. Add the image to the collection, then write ![Caption](path){#fig-name}." }); return; }
+    if (!workspace.canStoreFiles) { setNotice({ tone: "problem", text: "Image upload is coming soon. Existing image links still work." }); return; }
     figureInput.current?.click();
   }, [workspace]);
   const insertTable = useCallback(() => { setPane("write"); editor.current?.insertBlock(tableSnippet(labelSet)); }, [labelSet]);
@@ -550,19 +561,25 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const insertReference = useCallback(() => { setPane("write"); editor.current?.insert("@", { complete: true }); }, []);
   const insertFootnote = useCallback(() => { setPane("write"); editor.current?.insertFootnote(); }, []);
   /** What can be inserted, offered by "/" in the editor, the Insert menu and the command palette alike. */
-  const inserts = useMemo<readonly InsertCommand[]>(() => [
-    { id: "citation", label: "Citation", syntax: "[@citekey, p. 12]", keywords: "cite source reference", run: () => showSources() },
-    { id: "footnote", label: "Footnote", syntax: "[^1] … with its text at the end", keywords: "note", run: insertFootnote },
-    { id: "crossref", label: "Cross-reference", syntax: "@sec-intro, @fig-plan", keywords: "refer section figure table label", run: insertReference },
-    { id: "figure", label: "Figure from an image…", syntax: "![Caption](figures/plan.png){#fig-plan}", keywords: "image picture photo upload", run: insertFigure },
-    { id: "table", label: "Table", syntax: "| … | … | with : Caption {#tbl-x}", keywords: "grid columns rows", run: insertTable },
-    { id: "equation", label: "Equation", syntax: "$$ … $$ {#eq-x}", keywords: "math formula display", run: insertEquation },
-  ], [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
+  const canStoreFiles = workspace.canStoreFiles;
+  const insertionSpecs = useMemo(() => INSERTION_SPECS.filter((spec) => spec.id !== "figure" || canStoreFiles), [canStoreFiles]);
+  const runInsertion = useCallback((id: string) => {
+    switch (id) {
+      case "citation": showSources(); break;
+      case "footnote": insertFootnote(); break;
+      case "crossref": insertReference(); break;
+      case "figure": insertFigure(); break;
+      case "table": insertTable(); break;
+      case "equation": insertEquation(); break;
+    }
+  }, [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
+  const inserts = useMemo<readonly InsertCommand[]>(() => insertionSpecs.map((spec) => ({ ...spec, run: () => runInsertion(spec.id) })), [insertionSpecs, runInsertion]);
+  const paletteInserts: Command[] = insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: "Insert", label: spec.label, detail: spec.syntax, keywords: spec.keywords, run: () => runInsertion(spec.id) }));
   const [insertOpen, setInsertOpen] = useState(false);
   const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);
-  const changeComment = useCallback(async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change)), [workspace]);
+  const changeComment = async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change));
   const acceptSuggestion = useCallback(async (p: PlacedThread) => signalFailure(await workspace.acceptSuggestion(p.record, p.thread.root)), [workspace]);
-  const commentDrafts = useRef<CommentDrafts>(new Map());
+  const [commentDrafts] = useState<CommentDrafts>(() => new Map());
   const sidebarPanel = useRef<HTMLDivElement>(null);
   const sidebarScroll = useRef(new Map<SidebarTab, number>());
   useEffect(() => {
@@ -688,7 +705,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   // Keyboard shortcuts (listed in the shortcuts dialog).
   const shortcuts = useRef<(e: KeyboardEvent) => void>(() => {});
-  shortcuts.current = (e: KeyboardEvent) => {
+  useLayoutEffect(() => {
+    shortcuts.current = (e: KeyboardEvent) => {
     if (e.target instanceof Element && e.target.closest("dialog[open]")) return;
     if (document.querySelector("dialog[open]") && e.key !== "F8") return;
     const mod = isMod(e);
@@ -699,7 +717,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     else if (mod && e.shiftKey && e.code === "KeyE") showSources();
     else if (mod && e.shiftKey && e.code === "KeyM") showComments();
     else if (e.key === "F7" && !mod) stepComment(e.shiftKey ? -1 : 1);
-    else if (mod && !e.shiftKey && e.key === ",") (settingsOpen ? closeSettings() : setSettingsOpen(true));
+    else if (mod && !e.shiftKey && e.key === ",") { if (settingsOpen) closeSettings(); else setSettingsOpen(true); }
     else if (mod && e.altKey && e.code === "KeyM") startComment("comment");
     else if (mod && e.altKey && e.code === "KeyS") startComment("suggest");
     else if (mod && e.altKey && e.code === "KeyF") insertFootnote();
@@ -714,7 +732,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       e.preventDefault();
       e.stopPropagation();
     }
-  };
+    };
+  });
   useEffect(() => {
     const listener = (e: KeyboardEvent) => shortcuts.current(e);
     window.addEventListener("keydown", listener, true);
@@ -772,7 +791,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               }}
               onJump={jump}
               onMove={(from, to) => workspace.moveChapter(from, to)}
-              onAdd={async (title) => signalFailure(await workspace.addChapter(title))}
+              onAdd={async (title, intent) => signalFailure(await workspace.addChapter(title, intent))}
               onRename={(path, title) => signalFailure(workspace.renameChapter(path, title))}
               commentOffsets={commentOffsets}
             />
@@ -783,7 +802,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           loading={snap.commentsLoad.phase === "loading" || snap.indexLoad.phase === "loading"}
           onRetry={() => void workspace.loadComments()}
           placed={placed}
-          drafts={commentDrafts.current}
+          drafts={commentDrafts}
           grouped={order.length > 1}
           people={snap.people}
           problem={snap.commentsProblem}
@@ -839,8 +858,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
-          <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} className="is-long" />
-          {STATE_SHORT_LABEL[overall] && <SaveNotice tone="attention" label={STATE_SHORT_LABEL[overall]} className="is-short" />}
+          {connection && saveNotice.tone !== "attention"
+            ? <SaveNotice tone="pending" label={connectionNoticeLabels[connection]} className="is-long" />
+            : <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />}
+          <CollectionSaveWarning />
+          {saveNotice.shortLabel && <SaveNotice tone="attention" label={saveNotice.shortLabel} className="is-short" />}
           <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
             {plural(stats.words, "word")}
           </span>
@@ -964,7 +986,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         })}
         {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button></div>}
         {snap.recoveredDrafts.size > 0 && <div className="banner" role="alert">
-          <span>{snap.recoveredDrafts.size} recovered local draft(s) need review before writing in those records.</span>
+          <span>Review {plural(snap.recoveredDrafts.size, "recovered local draft")}. Editing is paused in {snap.recoveredDrafts.size === 1 ? "that record" : "those records"} until you restore the local draft or use the collection version.</span>
           {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}>Review {recordTitle(snap.records.get(path), path)}</button>)}
         </div>}
         {activeView?.snapshot.state === "conflict" && (
@@ -985,13 +1007,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         {activeView ? (
           <Editor
             key={active}
-            states={editorStates.current}
+            states={editorStates}
             path={active}
             text={activeView.snapshot.body}
             readOnly={activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)}
-            joinLines={layout.joinLines}
             livePreview={layout.livePreview}
-            onImageFiles={(files) => void addFigures(files)}
+            {...(workspace.canStoreFiles ? { onImageFiles: (files: readonly File[]) => void addFigures(files) } : {})}
             diagnostics={byRecord.get(active) ?? NO_DIAGNOSTICS}
             completion={completion}
             inserts={inserts}
@@ -1133,9 +1154,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         open={settingsOpen}
         onClose={closeSettings}
         focus={settingsFocus}
-        joinLines={layout.joinLines}
         livePreview={layout.livePreview}
-        onJoinLines={toggleJoinLines}
         onLivePreview={toggleLivePreview}
       />
       <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} />
@@ -1153,7 +1172,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           { id: "italic", group: "Format", label: "Italic", shortcut: "mod+i", run: () => editor.current?.format("italic") },
           { id: "code", group: "Format", label: "Inline code", run: () => editor.current?.format("code") },
           { id: "link", group: "Format", label: "Link", shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
-          ...inserts.map((c) => ({ id: `insert-${c.id}`, group: "Insert", label: c.label, detail: c.syntax, keywords: c.keywords, run: c.run })),
+          ...paletteInserts,
           { id: "comment", group: "Comments", label: "Comment on the selection", shortcut: "mod+alt+m", run: () => startComment("comment") },
           { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
           { id: "comments", group: "Comments", label: "Show comments", shortcut: "mod+shift+m", run: showComments },
@@ -1163,7 +1182,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
           { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: () => void requestClose() },
           { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
-          { id: "join-lines", group: "View", label: layout.joinLines ? "Show line breaks as written" : "Join hard-wrapped lines", keywords: "wrap reflow soft line breaks", run: toggleJoinLines },
           { id: "live-preview", group: "View", label: layout.livePreview ? "Show Markdown as written" : "Read as the manuscript", keywords: "source markup raw live preview chips", run: toggleLivePreview },
           { id: "problems", group: "Manuscript", label: problemsOpen ? "Hide problems" : "Show problems", keywords: "errors warnings list", run: () => setProblemsOpen(!problemsOpen) },
           ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
@@ -1178,7 +1196,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       />
       <CompareDialog comparison={comparison} canRestore={compared?.state !== "deleted"} onClose={() => setComparisonPath(null)} onDownload={downloadDrafts} onResolve={(choice) => {
         if (!comparisonPath) return;
-        if (recovered) choice === "theirs" ? workspace.discardDraft(comparisonPath) : workspace.restoreDraft(comparisonPath);
+        if (recovered) {
+          if (choice === "theirs") workspace.discardDraft(comparisonPath);
+          else workspace.restoreDraft(comparisonPath);
+        }
         else workspace.resolveConflict(comparisonPath, choice);
         setComparisonPath(null);
       }} />
@@ -1192,18 +1213,16 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}>Leave without saving</button>
         </div>
       </Dialog>
-      <Dialog open={Boolean(pendingExport)} onClose={cancelExport} title="Review export problems">
-        <p>No file has been downloaded yet. This export may be incomplete or differ from the PDF preview.</p>
-        <ul className="export-problems">{pendingExport?.problems.map((problem, index) => <li key={index}>{problem}</li>)}</ul>
-        <div className="compare-actions">
-          <button type="button" className="mdbase-button is-primary" onClick={cancelExport}>Cancel and fix problems</button>
-          <button type="button" className="mdbase-button" onClick={() => {
-            const pending = pendingExport;
-            setPendingExport(null);
-            if (pending) { download(pending.bytes, pending.type, pending.name); exported(EXPORT_NAME[lastExport.current], pending.problems); signalMdbaseMark("saved"); }
-          }}>Export anyway</button>
-        </div>
-      </Dialog>
+      <ExportReview pending={pendingExport} onCancel={cancelExport} onExport={(pending) => {
+        setPendingExport(null);
+        download(pending.bytes, pending.type, pending.name);
+        exported(EXPORT_NAME[lastExport.current], pending.problems);
+        signalMdbaseMark("saved");
+      }} onError={(error) => {
+        reportError({ code: "unknown_error" });
+        setNotice({ tone: "problem", text: `The file could not be downloaded. ${errorMessage(error)}` });
+        signalMdbaseMark("error");
+      }} />
       {notice && (
         <div className={`toast tone-${notice.tone}${notice.tone === "ok" ? " mdbase-settle" : ""}`} role={notice.tone === "problem" ? "alert" : "status"}>
           {notice.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : notice.tone === "ok" ? <CheckIcon /> : <AlertIcon />}

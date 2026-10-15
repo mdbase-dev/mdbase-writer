@@ -6,7 +6,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
+import { Annotation, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
 import { memo, useEffect, useLayoutEffect, useRef } from "react";
 
@@ -17,7 +17,6 @@ import { writerCompletions, type CompletionData } from "./completions.js";
 import { fixesFor } from "./fixes.js";
 import { formattingKeymap, makeLink, toggleBold, toggleCode, toggleItalic, type InlineFormat } from "./formatting.js";
 import { collapseToEnd, selectionBar, type SelectionAction } from "./selection-bar.js";
-import { joinLines as joinLinesExtension } from "./join-lines.js";
 import { writerInsight, type EditorInsight, type FollowTarget } from "./insight.js";
 import { writerLanguage } from "./language.js";
 import { livePreview as livePreviewExtension, refreshLivePreview } from "./live-preview.js";
@@ -56,8 +55,6 @@ export interface EditorProps {
   path: string;
   text: string;
   readOnly: boolean;
-  /** Draws a paragraph's soft line breaks as spaces, so hard-wrapped text flows. */
-  joinLines?: boolean;
   /** Draws citations, figures, tables and marks as the manuscript reads, rather than as Markdown source. */
   livePreview?: boolean;
   /** Images pasted or dropped into the text, to store in the collection as figures. */
@@ -88,7 +85,7 @@ export interface EditorProps {
   onSelectionAction?(action: SelectionAction, selected: string): void;
 }
 
-export const Editor = memo(function Editor({ states, path, text, readOnly, joinLines = false, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
+export const Editor = memo(function Editor({ states, path, text, readOnly, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -98,7 +95,6 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
   // Only a real change to the problems is dispatched: redrawing lint marks
   // replaces the line's DOM, which would cancel a hover in progress.
   const shownDiagnostics = useRef("");
-  const joining = useRef(new Compartment());
   const preview = useRef<ReturnType<typeof livePreviewExtension> | null>(null);
   const latest = useRef({ onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, anchorCard, onSelectionAction, onImageFiles });
   latest.current = { onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, anchorCard, onSelectionAction, onImageFiles };
@@ -157,8 +153,8 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
             latest.current.onSelectionAction?.(action, selected);
           }),
           EditorView.lineWrapping,
-          joining.current.of(joinLines ? joinLinesExtension() : []),
           EditorState.readOnly.of(readOnly),
+          EditorView.editable.of(!readOnly),
           placeholder("Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."),
           EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
           EditorView.updateListener.of((u) => {
@@ -281,10 +277,6 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
     }
     v.dispatch({ changes: { from, to: endA, insert: text.slice(from, endB) }, annotations: [remote.of(true), Transaction.addToHistory.of(false)] });
   }, [text]);
-
-  useEffect(() => {
-    view.current?.dispatch({ effects: joining.current.reconfigure(joinLines ? joinLinesExtension() : []) });
-  }, [joinLines]);
 
   useEffect(() => {
     if (view.current) preview.current?.set(view.current, livePreview);

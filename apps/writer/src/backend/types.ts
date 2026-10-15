@@ -1,6 +1,6 @@
 // What the writer needs from a collection. Two implementations: Connect (real
 // collections) and a demo on the SDK's in-memory record authority.
-import type { JsonObject, MdbaseRecords } from "@mdbase-dev/connect";
+import type { JsonObject } from "@mdbase-dev/connect";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
 import type { SourceAnnotation } from "@mdbase-writer/core/annotations";
 import type { CommentRecord } from "@mdbase-writer/core/comments";
@@ -56,6 +56,15 @@ export interface CollectionIndex {
    * manuscript: not comments, people, or Reader's sources and annotations.
    */
   readonly notePaths: readonly string[];
+  /** Records with no type at all: shown as notes with a calm "No type" label. */
+  readonly untypedPaths?: readonly string[];
+  /** Writer's types that can't be used because their definition has an error. */
+  readonly unavailableTypes?: readonly UnavailableType[];
+}
+export interface UnavailableType {
+  readonly name: string;
+  /** Plain copy naming the type and what is unavailable; the rest still works. */
+  readonly message: string;
 }
 
 export interface CollectionDelta {
@@ -80,6 +89,62 @@ export interface NewManuscript {
   readonly style: StyleId;
   /** An optional worked example, without invented library sources. */
   readonly starter?: boolean;
+  /** A stable name for this one creation, reused by its retries so it lands once. */
+  readonly intent?: string;
+}
+
+// This is the workspace's application port, not a concrete SDK class. The
+// current Connect sessions satisfy it unchanged; the new SDK adapter must keep
+// receipt confirmation, drafts, conflict and exact-recovery behavior intact.
+export type RecordSessionState = "saved" | "saved_on_device" | "unsaved" | "saving" | "conflict" | "recovery" | "error" | "deleted";
+
+export interface SessionProblem {
+  readonly code: string;
+  readonly message?: string;
+}
+
+export interface SessionRecord {
+  readonly path: string;
+  readonly revision: string;
+  readonly types: readonly string[];
+  readonly frontmatter: JsonObject;
+  readonly body?: string;
+}
+
+export interface RecordSessionSnapshot {
+  readonly state: RecordSessionState;
+  readonly body: string;
+  readonly frontmatter: JsonObject;
+  readonly record: SessionRecord;
+  readonly remote: SessionRecord | null;
+  readonly dirty: boolean;
+  readonly problem: SessionProblem | null;
+}
+
+export type RecordResolution = { readonly keep: "mine" | "theirs" } | { readonly body: string };
+
+export interface RecordSession {
+  getSnapshot(): RecordSessionSnapshot;
+  subscribe(listener: () => void): () => void;
+  setBody(body: string): void;
+  patchFrontmatter(patch: JsonObject): void;
+  resolve(choice: RecordResolution): void;
+  /** Flush until acknowledged, or preserve the draft with an actionable problem. */
+  flush(options?: { timeoutMs?: number }): Promise<{ readonly ok: true } | { readonly ok: false; readonly problem: SessionProblem }>;
+}
+
+export interface RecordLease {
+  readonly session: RecordSession;
+  release(): void;
+}
+
+export interface RecordOpenOptions {
+  readonly autosave?: { readonly idleMs: number } | false;
+  readonly timeoutMs?: number;
+}
+
+export interface WriterRecords {
+  open(path: string, options?: RecordOpenOptions): Promise<{ readonly ok: true; readonly value: RecordLease } | { readonly ok: false; readonly problem: SessionProblem }>;
 }
 
 export interface WriterBackend {
@@ -89,13 +154,14 @@ export interface WriterBackend {
   /** Stable, non-secret collection identity for local draft isolation. */
   readonly draftNamespace?: string;
   manuscriptBindings?(): Promise<Result<readonly ManuscriptBinding[]>>;
-  readonly records: Pick<MdbaseRecords<JsonObject>, "open">;
+  readonly records: WriterRecords;
   listManuscripts(): Promise<Result<ManuscriptSummary[]>>;
   createManuscript(input: NewManuscript): Promise<Result<string>>;
   /** Marks an existing note as a manuscript (adds the manuscript type; keeps its other types). */
   adoptManuscript(path: string): Promise<Result<string>>;
-  /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path. */
-  createRecord(path: string, body: string): Promise<Result<string>>;
+  /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path.
+   * `intent` names this one creation; a retry with the same `intent` lands once. */
+  createRecord(path: string, body: string, intent?: string): Promise<Result<string>>;
   index(): Promise<Result<CollectionIndex>>;
   library(): Promise<Result<LibraryEntry[]>>;
   /** Annotation identity discovery, without reading any bodies. */

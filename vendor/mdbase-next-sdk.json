@@ -1,0 +1,55 @@
+{
+  "package": "@mdbase-dev/sdk",
+  "version": "0.0.0",
+  "artifact": "mdbase-dev-sdk-dev-9a033b25.tgz",
+  "cutIdentity": "sdk-dev-9a033b25",
+  "sourceCommit": "9a033b252860ec8624da0abb5ffdecbac56332d2",
+  "sha256": "90ef67523dfa11cb36efe0d996475f1a1c82ac71074e4cd4e95c6fbe02c18be9",
+  "integrity": "sha512-Th4bgqvvgDPQQ7hkEwyo6ZG2SFQ7L7J6qdeaoTVjsOTyop2vmEmuUpMZ/EkUPZA0Fo0oq6wbOcsRk+en5vQEOQ==",
+  "bytes": 4420118,
+  "qualification": "dev intake, not release-qualified",
+  "bundledOriginalDependencies": [
+    {
+      "name": "@mdbase-dev/connect-protocol",
+      "file": "vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz",
+      "bytes": 107322,
+      "sha256": "cd1e15236ab7e25c511a4ba13af6a9df23f4b41715161479bba97b0445e1c138",
+      "sri": "sha512-c0iOOWEcNJRstdyUJ6aqJ3puVR5C9jXW4MBHmQnHI2c4vgOeKi5VWfiuueWx3ArvtwB3nPuAaXHhll/OKH/+Yw=="
+    }
+  ],
+  "vendorWarnings": [],
+  "includesPublicEntryAndFixture": true,
+  "includesLiveSingletonAndSelection": true,
+  "includesViteNativeAssetEmissionFix": true,
+  "includesPublicContractRecords": true,
+  "includesAtomicContractBodyAndPromotion": true,
+  "includesExplicitMemoryContractDigests": true,
+  "coldNpmEmptyRootCacheProducerCheckPassed": true,
+  "nativeContractOperationsQualified": false,
+  "protocol": {
+    "artifact": "apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz",
+    "sourceCommit": "d765e675c3da29fe1693deab53c4c2a922bb86f1",
+    "sha256": "2769616d8ba1a9cbb3dd689fa1ca0b1e2b42e5442634635f2cd4a87f5ec9020f",
+    "integrity": "sha512-PFG1qmAzmcyJjmZLmGz4eoOOZRDgvTvDZATf6IGBccNHRc1eGZtMm7ZUA7gNAxuO5KerrN6mDIB9qQnpojyOAg=="
+  },
+  "includesSessionFix808": true,
+  "includesRecordLeases809": true,
+  "includesMemoryDocumentCreate811": true,
+  "includesReadHelpers814": true,
+  "includesEnvironment816": true,
+  "includesSharedNativeFactory819": true,
+  "includesProviderReceipt827": true,
+  "includesProblemDetail832": true,
+  "includesCallerSignalRootFix837": true,
+  "sourceOnly": false,
+  "native": {
+    "available": true,
+    "sourceCommit": "a4331ad466a0d16e87ab3bedeb0963a1e0d1867e",
+    "bytes": 3655948,
+    "sha256": "3c803e83f81a05855f6e30ca79036d6b19383048a6b11ba5c9a0b5ebf3a1bbe2",
+    "resourcesExportPresent": true
+  },
+  "nativeFilesProducerQualified": false,
+  "peopleProducerCompatibilityQualified": false,
+  "perAppRuntimeTrustOriginAndOperationsQualified": false
+}

@@ -1,0 +1,14 @@
+{
+  "package": "@mdbase-dev/ui",
+  "version": "0.1.0-beta.129",
+  "artifact": "mdbase-dev-ui-dev-9553ad66.tgz",
+  "cutIdentity": "ui-dev-9553ad66",
+  "sourceCommit": "9553ad660d0c05e035f3ca53b67cd799d3ece1d5",
+  "mergedAs": null,
+  "label": "dev intake, not release-qualified",
+  "sha256": "5e388db28365cf6a966017851ece1c32223ea8b55bc6015d2f1b4113d86a3206",
+  "integrity": "sha512-PqMWvJ2ZbNaLxWTum2m7vmcCbOGdM5qldnphPwqyGBo/mcpvjfk5tHkil/vXLc+LuG7HEyZOLh+tZyUXtMv7QQ==",
+  "bytes": 85693,
+  "releaseQualified": false,
+  "repository": "mdbase-dev/mdbase-connect"
+}

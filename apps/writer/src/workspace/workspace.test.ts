@@ -67,6 +67,17 @@ function fixture() {
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
 
 describe("workspace reliability", () => {
+  it("retries a failed comment under the same intent", async () => {
+    const { backend, open } = fixture();
+    const createComment = vi.fn<WriterBackend["createComment"]>(async () => fail("Reply lost"));
+    backend.createComment = createComment;
+    const workspace = open();
+    await workspace.addComment({ record: "main.md" }, "Hi");
+    await workspace.addComment({ record: "main.md" }, "Hi");
+    const [first, retry] = createComment.mock.calls.map(([input]) => input.intent);
+    expect(retry).toEqual(expect.any(String));
+    expect(retry).toBe(first);
+  });
   it("sends only worker deltas and no unchanged collection data for unrelated edits", async () => {
     const { backend, open } = fixture();
     const known = { key: "known", path: "sources/known.md", title: "Known", item: { id: "known", type: "book", title: "Known" } };
@@ -94,12 +105,57 @@ describe("workspace reliability", () => {
     expect(send).toHaveBeenCalledWith({ type: "collection-delta", recordUpsert: [], recordRemove: [added.path], fileUpsert: [], fileRemove: [] });
   });
 
+  it("keeps ready discovery visible across save echoes, atomically replaces it, and reports real refresh failures", async () => {
+    const { backend, open } = fixture();
+    let changed!: (delta: CollectionDelta) => void;
+    backend.onCollectionChange = (listener) => { changed = listener; return () => {}; };
+    const workspace = open();
+    expect(workspace.getSnapshot()).toMatchObject({ indexLoad: { phase: "loading" }, libraryLoad: { phase: "loading" }, annotationsLoad: { phase: "loading" } });
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot()).toMatchObject({ indexLoad: { phase: "ready" }, libraryLoad: { phase: "ready" }, annotationsLoad: { phase: "ready" } }));
+    const previous = workspace.getSnapshot();
+    const states: string[][] = [];
+    workspace.subscribe(() => { const snapshot = workspace.getSnapshot(); states.push([snapshot.indexLoad.phase, snapshot.libraryLoad.phase, snapshot.annotationsLoad.phase]); });
+    let finishIndex!: (value: Awaited<ReturnType<WriterBackend["index"]>>) => void;
+    let finishLibrary!: (value: Awaited<ReturnType<WriterBackend["library"]>>) => void;
+    let finishAnnotations!: (value: Awaited<ReturnType<WriterBackend["annotationPaths"]>>) => void;
+    backend.index = () => new Promise(resolve => { finishIndex = resolve; });
+    backend.library = () => new Promise(resolve => { finishLibrary = resolve; });
+    backend.annotationPaths = () => new Promise(resolve => { finishAnnotations = resolve; });
+    changed({ paths: ["main.md"], reset: true });
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    expect(workspace.getSnapshot().recordIndex).toBe(previous.recordIndex);
+    expect(workspace.getSnapshot().library).toBe(previous.library);
+    expect(workspace.getSnapshot().annotationPaths).toBe(previous.annotationPaths);
+    finishIndex(ok({ recordPaths: ["main.md"], filePaths: [], notePaths: [] }));
+    const source = { key: "new", path: "sources/new.md", title: "New", item: { id: "new", type: "book", title: "New" } };
+    finishLibrary(ok([source]));
+    finishAnnotations(ok(["annotations/new.md"]));
+    await vi.waitFor(() => expect(workspace.getSnapshot()).toMatchObject({ recordPaths: ["main.md"], library: [source] }));
+    expect(workspace.getSnapshot().annotationPaths).toEqual(new Set(["annotations/new.md"]));
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    const latest = workspace.getSnapshot();
+    backend.index = async () => fail("Discovery unavailable");
+    backend.library = async () => ok([source]);
+    backend.annotationPaths = async () => ok(["annotations/new.md"]);
+    changed({ paths: [], reset: true });
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad).toEqual({ phase: "failed", problem: "Discovery unavailable" }));
+    expect(workspace.getSnapshot().recordIndex).toBe(latest.recordIndex);
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    backend.index = async () => ok({ recordPaths: ["main.md"], filePaths: [], notePaths: [] });
+    changed({ paths: [], reset: true });
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad.phase).toBe("ready"));
+    expect(states.every(phases => !phases.includes("loading"))).toBe(true);
+    const differentIdentity = fixture().open();
+    expect(differentIdentity.getSnapshot()).toMatchObject({ indexLoad: { phase: "loading" }, libraryLoad: { phase: "loading" }, annotationsLoad: { phase: "loading" } });
+  });
+
   it("expands comment scope when a late nested chapter opens", async () => {
     const { backend, authority, open } = fixture();
     const index = backend.index;
     backend.index = async () => { const result = await index(); return result.ok ? ok({ ...result.value, recordPaths: [...result.value.recordPaths, "chapters/late.md"] }) : result; };
     authority.seed("chapters/late.md", { body: "New chapter" });
-    const comments = vi.fn(async (_scope?: readonly string[]) => ok([]));
+    const comments = vi.fn<WriterBackend["comments"]>(async () => ok([]));
     backend.comments = comments;
     const workspace = open(); await ready(workspace);
     await vi.waitFor(() => expect(workspace.getSnapshot().records.has("chapters/two.md")).toBe(true));
@@ -337,6 +393,16 @@ describe("workspace reliability", () => {
     await workspace.retryAssets();
     expect(workspace.dependencyDiagnostics()).toEqual([]);
     expect((await workspace.exportBundle()).problems).toEqual([]);
+  });
+  it("reports the same actionable missing-image problem once in PDF, Word and bundles", async () => {
+    const { authority, open } = fixture();
+    authority.editElsewhere("main.md", { body: "# Introduction\n\n![Figure](gone.png){#fig-gone}\n\nRefer to @fig-gone.\n" });
+    const workspace = open();
+    await ready(workspace);
+    const problem = "main.md: Image “gone.png” is missing. Add it to the collection or correct its path.";
+    expect((await workspace.exportPdf()).problems).toEqual([problem]);
+    expect((await workspace.exportDocx()).problems).toEqual([problem]);
+    expect((await workspace.exportBundle()).problems).toEqual([problem]);
   });
   it("warns that a custom PDF template does not carry over to Word", async () => {
     const { backend, open } = fixture();

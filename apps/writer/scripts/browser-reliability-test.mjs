@@ -229,6 +229,49 @@ try {
     assert.equal(await body(page, main), before);
   });
 
+  for (const list of [false, true]) await scenario(`${list ? "list" : "paragraph"} Enter stays visible while typing and undo redo retain exact source`, async (page) => {
+    await open(page);
+    await page.evaluate((main) => window.writer.workspace.setBody(main, "# [test] typing\n\n"), main);
+    await page.locator(".cm-content").click(); await page.keyboard.press("ControlOrMeta+End");
+    for (const text of [list ? "- One" : "One", "Two", "Three"]) {
+      await page.keyboard.type(text); await page.keyboard.press("Enter");
+    }
+    if (list) await page.keyboard.press("Enter");
+    await page.keyboard.type("After"); await page.keyboard.press("Enter");
+    const expected = `# [test] typing\n\n${list ? "- One\n- Two\n- Three\n" : "One\nTwo\nThree"}\nAfter\n`;
+    assert.equal(await body(page, main), expected);
+    const lines = await page.locator(".cm-line").allTextContents();
+    assert.ok(lines.includes(list ? "- Three" : "Three"), "the third line must not merge with After");
+    assert.ok(lines.includes("After"), "the new line is visible, not an atomic hidden range");
+    await page.waitForTimeout(600); // Start a separate typing history group.
+    await page.keyboard.type("Undo marker.");
+    assert.equal(await body(page, main), `${expected}Undo marker.`, "typing after Enter keeps the newline");
+    await page.keyboard.press("ControlOrMeta+z"); assert.equal(await body(page, main), expected, "Undo restores the exact prior body");
+    // A real shifted letter reports key="Z". Playwright's lowercase +Shift+z
+    // reports key="z", which CodeMirror correctly handles as the Undo binding.
+    await page.keyboard.press("ControlOrMeta+Shift+Z"); assert.equal(await body(page, main), `${expected}Undo marker.`, "Redo restores the exact typed body");
+    assert.ok((await page.locator(".cm-line").allTextContents()).includes("Undo marker."));
+    if (!await page.evaluate(() => /Mac/.test(navigator.platform))) {
+      await page.keyboard.press("Control+z"); assert.equal(await body(page, main), expected);
+      await page.keyboard.press("Control+y"); assert.equal(await body(page, main), `${expected}Undo marker.`);
+    }
+    // Reload starts with the caret elsewhere. Moving it away must never make
+    // a stored Enter vanish from the displayed lines (the old folding bug).
+    await page.keyboard.press("ControlOrMeta+Home");
+    assert.ok((await page.locator(".cm-line").allTextContents()).includes("After"));
+    assert.ok((await page.locator(".cm-line").allTextContents()).includes(list ? "- Three" : "Three"));
+    assert.equal(await body(page, main), `${expected}Undo marker.`);
+  });
+
+  await scenario("explicit bullet after automatic continuation is not doubled", async (page) => {
+    await open(page);
+    await page.evaluate((path) => window.writer.workspace.setBody(path, "# [test] manual markers\n\n"), main);
+    await page.locator(".cm-content").click(); await page.keyboard.press("ControlOrMeta+End");
+    await page.keyboard.type("- Staghorn corals"); await page.keyboard.press("Enter");
+    await page.keyboard.type("- Brain corals");
+    assert.equal(await body(page, main), "# [test] manual markers\n\n- Staghorn corals\n- Brain corals");
+  });
+
   await scenario("chapter switching retains undo redo selection and scroll", async (page) => {
     await open(page); await painted(page);
     const chapter = "chapters/worms.md";
@@ -258,7 +301,7 @@ try {
     await page.locator(".cm-content").evaluate((el) => el.focus({ preventScroll: true }));
     await page.keyboard.press("ControlOrMeta+z");
     assert.equal(await body(page, chapter), before);
-    await page.keyboard.press("ControlOrMeta+Shift+z");
+    await page.keyboard.press("ControlOrMeta+Shift+Z");
     assert.match(await body(page, chapter), /Retained history marker/);
     await page.keyboard.type(" Cursor kept.");
     assert.equal((await body(page, chapter)).endsWith("Retained history marker. Cursor kept."), true);

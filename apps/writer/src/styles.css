@@ -21,6 +21,7 @@
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --scrollbar-thumb-current: var(--scrollbar-thumb-rest);
   --scrollbar-size: 2px;
+  --pane-tab-height: 54px;
   font-family: var(--sans);
   font-size: 14px;
   line-height: 1.5;
@@ -77,6 +78,7 @@ label { display: grid; gap: 0.2rem; font-size: 13px; color: var(--ink-soft); }
 label > .mdbase-select { width: 100%; }
 
 .app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+.grant-return { margin: 2rem auto; max-width: 32rem; padding: 0 1rem; text-align: center; color: var(--color-text-soft, inherit); }
 .topbar { display: flex; align-items: center; gap: 0.75rem; height: 48px; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid var(--line); min-width: 0; }
 .topbar-slot { flex: 1; min-width: 0; display: flex; align-items: center; }
 /* The theme choice sits quietly in the bar but keeps its chevron, so it reads as a control. */
@@ -177,6 +179,11 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .home-drafts li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .home-draft-text { display: grid; gap: 0.05rem; min-width: 0; }
 .home-drafts p { margin: 0; }
+/* Untyped records and unusable types: calm, informational, never alerts. */
+.home-untyped { display: grid; gap: 0.5rem; margin-top: 1.25rem; }
+.home-untyped h2 { margin: 0; }
+.home-unavailable { display: grid; gap: 0.25rem; margin-top: 1rem; }
+.home-unavailable p { margin: 0; }
 .home { width: 100%; max-width: 50rem; margin: 0 auto; padding: 2rem 16px; display: grid; gap: 2rem; align-content: start; overflow: auto; }
 .home-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .home-header p { margin: 0; }
@@ -554,9 +561,12 @@ blockquote.thread-quote::after { content: "”"; }
 
 .editor { min-height: 0; overflow: hidden; }
 .editor .cm-editor { height: 100%; font-size: 15px; background: var(--canvas); color: var(--ink); }
+/* Search options are inline choices, not the full-width fields used in forms. */
+.editor .cm-search label { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 28px; vertical-align: middle; white-space: nowrap; }
+.editor .cm-search input[type="checkbox"] { width: auto; flex: none; margin: 0; }
+@media (max-width: 900px) { .editor .cm-search label { min-height: 44px; } }
 .editor .cm-scroller { font-family: "Atkinson Hyperlegible", sans-serif; line-height: 1.65; }
 .editor .cm-content { max-width: 72ch; margin: 0 auto; padding: 1.5rem 1.25rem 40vh; caret-color: var(--ink); }
-.editor .cm-soft-break::after { content: " "; }
 .editor .cm-activeLine { background: transparent; }
 .editor .cm-focused { outline: none; }
 .editor .cm-gutters { background: var(--canvas); border: 0; }
@@ -688,7 +698,7 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .bar .mdbase-button { padding: 0 0.55rem; min-height: 32px; }
   .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "main" "tabs"; }
   .pane-tabs { grid-area: tabs; display: flex; border-top: 1px solid var(--line); background: var(--canvas); padding-bottom: env(safe-area-inset-bottom); }
-  .pane-tabs button { flex: 1; display: grid; justify-items: center; gap: 2px; height: 54px; padding: 6px 0 4px; border: 0; background: none; font: inherit; font-size: 11.5px; color: var(--muted); }
+  .pane-tabs button { flex: 1; display: grid; justify-items: center; gap: 2px; height: var(--pane-tab-height); padding: 6px 0 4px; border: 0; background: none; font: inherit; font-size: 11.5px; color: var(--muted); }
   .pane-tabs button .icon { width: 20px; height: 20px; }
   .pane-tabs button[aria-pressed="true"] { color: var(--ink); font-weight: 700; }
   .pane-tabs button[aria-pressed="true"] .icon { color: var(--app-writer); }

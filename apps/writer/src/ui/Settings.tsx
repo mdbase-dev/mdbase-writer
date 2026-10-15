@@ -12,7 +12,6 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
-import { joinSoftBreaks } from "../editor/join-lines.js";
 import { ChevronUp, CloseIcon, MinusIcon, PlusIcon } from "./icons.js";
 import { templateName } from "./names.js";
 
@@ -44,9 +43,7 @@ export function Settings({
   open,
   onClose,
   focus,
-  joinLines = false,
   livePreview = true,
-  onJoinLines,
   onLivePreview,
 }: {
   workspace: ManuscriptWorkspace;
@@ -56,10 +53,7 @@ export function Settings({
   open: boolean;
   onClose(): void;
   focus: SettingsFocus | null;
-  /** Shows the abstract's soft line breaks as spaces, as the editor does. */
-  joinLines?: boolean;
   livePreview?: boolean;
-  onJoinLines?(): void;
   onLivePreview?(): void;
 }) {
   const titleId = useId();
@@ -137,7 +131,7 @@ export function Settings({
         </div>
         <TextField label="Date" hint="as it should appear" value={str("date")} onCommit={(v) => patch({ date: v || null })} {...props("date")} />
         <div className="span-2">
-          <TextField label="Abstract" multiline={7} grow value={joinLines ? joinSoftBreaks(str("abstract")) : str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
+          <TextField label="Abstract" multiline={7} grow value={str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
         </div>
         <SelectField
           label="Citation style"
@@ -170,22 +164,14 @@ export function Settings({
         />
       </fieldset>
       <p className="muted small dialog-note">Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them.</p>
-      {(onJoinLines || onLivePreview) && (
+      {onLivePreview && (
         <section className="editor-prefs" aria-labelledby={`${titleId}-editor`}>
           <h2 id={`${titleId}-editor`}>Editor</h2>
-          {onLivePreview && (
-            <label className="pref-row" title="Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed.">
-              <input type="checkbox" checked={livePreview} onChange={onLivePreview} />
-              <span>Read as the manuscript<span className="muted small">Off shows the Markdown as written</span></span>
-            </label>
-          )}
-          {onJoinLines && (
-            <label className="pref-row" title="A line break inside a paragraph reads as a space; show it as one, so hard-wrapped text flows to the editor's width. The text is not changed.">
-              <input type="checkbox" checked={joinLines} onChange={onJoinLines} />
-              <span>Join hard-wrapped lines<span className="muted small">Paragraphs flow to the editor’s width</span></span>
-            </label>
-          )}
-          <p className="muted small dialog-note">These apply in this browser, to every manuscript.</p>
+          <label className="pref-row" title="Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed.">
+            <input type="checkbox" checked={livePreview} onChange={onLivePreview} />
+            <span>Read as the manuscript<span className="muted small">Off shows the Markdown as written</span></span>
+          </label>
+          <p className="muted small dialog-note">This applies in this browser, to every manuscript.</p>
         </section>
       )}
     </aside>

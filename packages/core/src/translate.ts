@@ -382,11 +382,11 @@ class BodyTranslator {
     const image = this.image(path, false, img.from, img.to, attrs.kv["width"]);
     const numbering = attrs.id ? "" : ", numbering: none";
     if (altTo > altFrom) {
-      out.write(`\n#figure(${image}, caption: [`);
+      out.write(`\n#figure(kind: image, ${image}, caption: [`);
       this.inline(img, altFrom, altTo, true);
       out.write(`]${numbering})`);
     } else {
-      out.write(`\n#figure(${image}${numbering})`);
+      out.write(`\n#figure(kind: image, ${image}${numbering})`);
     }
     this.label(attrs.id);
     out.write("\n");
@@ -404,7 +404,7 @@ class BodyTranslator {
       // Obsidian's ![[img.png|300]] sets a width in pixels.
       const width = attrs.kv["width"] ?? (/^\d+$/.test(m?.[2] ?? "") ? `${m?.[2]}pt` : undefined);
       const image = this.image(target, true, node.from, node.to, width);
-      out.write(`\n#figure(${image}${attrs.id ? "" : ", numbering: none"})`);
+      out.write(`\n#figure(kind: image, ${image}${attrs.id ? "" : ", numbering: none"})`);
       this.label(attrs.id);
       out.write("\n");
       return;

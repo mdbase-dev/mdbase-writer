@@ -116,7 +116,8 @@ async function typeAtEndOfParagraph(needle, text) {
 await step("home lists the demo manuscripts", async () => {
   await page.goto(`${base}?demo`);
   await page.getByRole("heading", { name: "Manuscripts" }).waitFor();
-  const titles = await page.locator(".manuscript-title").allTextContents();
+  // Recovery drafts share the title class, but are not registered manuscripts.
+  const titles = await page.locator(".manuscript-row[data-path] .manuscript-title").allTextContents();
   assert.deepEqual(titles, ["Patient Observation", "Small Agents, Large Effects: Darwin and the Science of Slow Change"]);
 });
 
@@ -226,8 +227,9 @@ await step("an embedded Reader annotation shows and typesets as its quotation, a
 await step("a toolbar over a selection formats it and finds a source for it", async () => {
   const before = await editorText();
   const bar = page.locator(".cm-selection-bar");
-  // Double-click "Charles" (hard-wrapped lines are joined), then take "Lyell" too.
-  const charles = await page.evaluate(() => {
+  // Scrolling the larger source-line view updates CodeMirror's viewport on a
+  // frame. Wait for its text nodes, then double-click Charles and take Lyell.
+  const charles = await page.waitForFunction(() => {
     const walker = document.createTreeWalker(document.querySelector(".cm-content"), NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const at = node.textContent.indexOf("Charles Lyell, who");
@@ -240,8 +242,10 @@ await step("a toolbar over a selection formats it and finds a source for it", as
     }
     return null;
   });
-  assert.ok(charles, "found “Charles Lyell, who” in the editor");
-  await page.mouse.dblclick(charles.x, charles.y);
+  const position = await charles.jsonValue();
+  await charles.dispose();
+  assert.ok(position, "found “Charles Lyell, who” in the editor");
+  await page.mouse.dblclick(position.x, position.y);
   await page.keyboard.press("ControlOrMeta+Shift+ArrowRight");
   await bar.waitFor({ timeout: 5_000 });
   await bar.getByRole("button", { name: "Bold" }).click();

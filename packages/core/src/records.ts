@@ -26,6 +26,11 @@ export function splitFrontmatter(text: string): { body: string; frontmatter: Fro
 
 export const IMAGE_EXTENSION = /\.(png|jpe?g|gif|svg|webp)$/i;
 
+/** Shared missing-image guidance for the preview and every export format. */
+export function missingImageMessage(target: string): string {
+  return `Image “${target}” is missing. Add it to the collection or correct its path.`;
+}
+
 export function dirname(path: string): string {
   const i = path.lastIndexOf("/");
   return i < 0 ? "" : path.slice(0, i);

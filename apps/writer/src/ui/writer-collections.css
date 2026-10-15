@@ -1,0 +1,25 @@
+/* Shared collection screens (@mdbase-dev/ui/collections) on Writer's tokens. */
+:root {
+  --mdbase-collections-accent: var(--accent);
+  --mdbase-collections-surface: var(--surface);
+  --mdbase-collections-canvas: var(--canvas);
+  --mdbase-collections-text: var(--ink);
+  --mdbase-collections-text-soft: var(--muted);
+  --mdbase-collections-border: var(--line);
+  --mdbase-collections-danger: var(--danger);
+  --mdbase-collections-font: var(--sans);
+}
+
+/* In the bar the switcher sits after the app menu, set apart by a hairline. */
+.topbar-slot .writer-collection-switcher {
+  min-width: 0;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--line);
+  --mdbase-collections-control-height: 32px;
+}
+.app:has(.workspace) .writer-collection-switcher,
+.app:has(.workspace) .writer-connection-notice { display: none; }
+
+@media (max-width: 640px) {
+  .topbar-slot .writer-collection-switcher { padding-left: 0; border-left: 0; }
+}

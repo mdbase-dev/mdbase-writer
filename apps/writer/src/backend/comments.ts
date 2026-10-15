@@ -12,6 +12,8 @@ export interface NewComment {
   readonly thread?: CommentRecord;
   /** A suggested edit: the text to put in place of the target's quote. */
   readonly replacement?: string;
+  /** A stable name for this one comment, reused by its retries so it lands once. */
+  readonly intent?: string;
 }
 
 export type CommentChange =

@@ -6,6 +6,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 
 import type { WriterSession } from "../connect/session.js";
+import { NativeSignIn } from "./NativeSignIn.js";
+import type { NativeSignInBinding } from "../connect/native-signin-ui.js";
 
 const isLocalBuild = location.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
 
@@ -23,7 +25,14 @@ function Centered({ title, children }: { title: string; children: ReactNode }) {
   return <ConnectLayout app="writer" title={title}>{children}<FeedbackButton /></ConnectLayout>;
 }
 
-export function ConnectGate({ session, snapshot }: { session: WriterSession; snapshot: MdbaseApplicationSessionSnapshot }) {
+export function ConnectGate(props:
+  | { nativeSignIn: { binding: NativeSignInBinding; onSignedOut(): void } }
+  | { session: WriterSession; snapshot: MdbaseApplicationSessionSnapshot }
+) {
+  return "nativeSignIn" in props ? <NativeSignIn {...props.nativeSignIn} /> : <LegacyConnectGate session={props.session} snapshot={props.snapshot} />;
+}
+
+function LegacyConnectGate({ session, snapshot }: { session: WriterSession; snapshot: MdbaseApplicationSessionSnapshot }) {
   const { reportError } = useFeedback();
   const reportedInitialFailure = useRef(false);
   useEffect(() => {
