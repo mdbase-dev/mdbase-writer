@@ -44,6 +44,24 @@ The existing browser acceptance coverage uses the demo collection, including the
 Acceptance against a real Connect collection has not yet been recorded in the architecture notes.
 Do not treat demo coverage as proof of connected-collection behaviour.
 
+## Private feedback acceptance
+
+Build the explicit local fixture, then serve it on the feedback test's loopback port:
+
+```sh
+pnpm --filter @mdbase-writer/app build:feedback-test
+pnpm --filter @mdbase-writer/app exec vite preview --host 127.0.0.1 --port 8892 --strictPort
+# In another terminal:
+pnpm --filter @mdbase-writer/app test:feedback
+```
+
+This build opts into the in-memory demo with `?demo`, including with the LAB environment
+selected. Bootstrap does not create a native account entry for that explicit demo; ordinary
+LAB URLs still use the SDK, and grant-return callbacks take precedence. The unchanged test
+checks desktop/mobile feedback, focus and draft restoration, redacted diagnostics and
+consented payloads. All feedback delivery is intercepted. Do not deploy this fixture build:
+its feedback endpoint is loopback, and it is not connected-collection acceptance evidence.
+
 ## Against a real collection
 
 The hosted mdbase Connect service accepts applications served over HTTPS only, so a localhost

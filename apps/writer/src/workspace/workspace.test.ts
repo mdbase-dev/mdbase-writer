@@ -34,7 +34,9 @@ afterEach(async () => {
 function fixture() {
   const authority = createRecordTestAuthority();
   authority.records.follow(authority.watch);
-  authority.seed("main.md", { body: "# Main\n\n![[chapters/one]]\n", frontmatter: { type: "custom", local_title: "Mapped title", local_style: "chicago-notes-bibliography" } });
+  // Use a small real CSL style for workspace-state tests. Repeatedly parsing
+  // the much larger Chicago style dominates their CI budget; core tests cover it.
+  authority.seed("main.md", { body: "# Main\n\n![[chapters/one]]\n", frontmatter: { type: "custom", local_title: "Mapped title", local_style: "ieee" } });
   authority.seed("chapters/one.md", { body: "# First chapter\n\n![[two]]\n" });
   authority.seed("chapters/two.md", { body: "# Nested chapter\n\nComplete text.\n\n![Figure](image.svg)\n" });
   const backend: WriterBackend = {
@@ -286,6 +288,7 @@ describe("workspace reliability", () => {
     await ready(workspace);
     await vi.waitFor(() => expect(workspace["compile"].send).toHaveBeenCalledWith(expect.objectContaining({ type: "init" })));
     expect(workspace.getSnapshot().annotationsLoad.phase).toBe("ready");
+    expect(workspace.getSnapshot().records.get("main.md")?.snapshot.frontmatter["csl"]).toBe("ieee");
     expect((await workspace.exportBundle()).problems).toEqual([]);
     paths.mockImplementationOnce(async () => fail("Temporary annotation failure"));
     await workspace.retryMetadata();

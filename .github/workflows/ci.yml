@@ -68,12 +68,8 @@ jobs:
           pnpm --filter @mdbase-writer/app test:browser:reliability || result=1
           exit "$result"
       - name: Verify private feedback with demo data and intercepted delivery
-        env:
-          VITE_WRITER_DEMO: "1"
-          VITE_MDBASE_FEEDBACK_URL: http://127.0.0.1:8892/v1/feedback
-          VITE_MDBASE_ENV: lab
         run: |
-          pnpm --filter @mdbase-writer/app build
+          pnpm --filter @mdbase-writer/app build:feedback-test
           pnpm --filter @mdbase-writer/app exec vite preview --host 127.0.0.1 --port 8892 --strictPort > "$RUNNER_TEMP/writer-feedback-preview.log" 2>&1 &
           preview_pid=$!
           trap 'kill "$preview_pid" 2>/dev/null || true' EXIT

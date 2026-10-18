@@ -21,10 +21,11 @@ import { ThemeSelect } from "@mdbase-dev/ui/theme-select";
 import { ConnectLayout, OpeningScreen } from "@mdbase-dev/ui/screens";
 
 import { ManuscriptWorkspace } from "./workspace/workspace.js";
+import { writerDemoRequested } from "./demo-mode.js";
 
 
 const params = new URL(location.href).searchParams;
-const demoRequested = (import.meta.env.DEV || import.meta.env.VITE_WRITER_DEMO === "1") && params.has("demo");
+const demoRequested = writerDemoRequested();
 
 export function LegacyApp() {
   const { reportError } = useFeedback();
