@@ -40,6 +40,10 @@ jobs:
           sudo apt-get install --yes --no-install-recommends pandoc unzip
       - name: Install Chromium
         run: pnpm --filter @mdbase-writer/app exec playwright install --with-deps chromium
+      - name: Verify production editing with a real Preview canvas
+        run: |
+          pnpm --filter @mdbase-writer/app build:editing-test
+          pnpm --filter @mdbase-writer/app test:browser:editing
       - name: Run baseline and reliability suites against the demo collection
         env:
           BASE: http://127.0.0.1:5320/

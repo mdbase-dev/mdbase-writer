@@ -40,6 +40,17 @@ This runs the baseline suite and fault-injection checks for recovery, early expo
 history, conflicts, cancellation and selectable preview text. Run only the latter with
 `pnpm --filter @mdbase-writer/app test:browser:reliability`.
 
+The cursor/undo/redo regression also runs against optimized production React with a real
+compiler and Preview canvas (development React can hide update-scheduling failures):
+
+```sh
+pnpm --filter @mdbase-writer/app build:editing-test
+pnpm --filter @mdbase-writer/app test:browser:editing
+```
+
+This test starts and closes its own loopback server, serves the installed compiler WASM,
+and blocks external requests. Its demo-enabled bundle is a test fixture, not a deployment artifact.
+
 The existing browser acceptance coverage uses the demo collection, including the LAB deployment.
 Acceptance against a real Connect collection has not yet been recorded in the architecture notes.
 Do not treat demo coverage as proof of connected-collection behaviour.

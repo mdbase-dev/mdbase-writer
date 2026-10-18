@@ -270,7 +270,11 @@ const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump
   const activeRow = useRef<HTMLButtonElement>(null);
   const headingList = useRef<HTMLOListElement>(null);
   const listRanks = useMemo(() => new Map(list.map((h, i) => [h.offset, i])), [list]);
-  useEffect(() => { window.reveal(here ? list.indexOf(here) : -1); }, [here?.offset, list]);
+  // Reveal a different logical row, not every new parse of the same row.
+  // Re-enqueuing an unchanged page after each edit keeps synchronous work
+  // pending while the workspace is updating and can exhaust React's limit.
+  const activeRank = here ? listRanks.get(here.offset) ?? -1 : -1;
+  useEffect(() => { window.reveal(activeRank); }, [activeRank, window.reveal]);
   useEffect(() => {
     activeRow.current?.scrollIntoView({ block: "nearest" });
   }, [here?.offset, window.from, window.size]);
