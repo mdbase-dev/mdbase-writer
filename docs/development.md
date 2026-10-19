@@ -21,6 +21,14 @@ The `?demo` collection runs on the SDK's in-memory record authority
 same SDK paths as a real collection. It is enabled in development and LAB builds, not staging
 or production. Demo changes are not durable collection data.
 
+`?demo=next` serves the same demo collection through the opt-in mdbase-next backend
+(`src/backend/next.ts`) on the `@mdbase-dev/sdk` in-memory replica (`MemoryReplica`). Writes stay
+pending for 400 ms before they confirm. In the console, `writer.backend.replica` is the replica and
+`await writer.backend.otherClient()` is a second client for concurrent edits. `?next&collection=…&grant=…`
+connects to a real mdbase-next replica (development builds, or `VITE_WRITER_NEXT=1`); its route comes
+from a proposed control-plane endpoint (`src/connect/next-control.ts`). The SDK is vendored in
+`apps/writer/vendor/` until it is published.
+
 The browser suite needs Chromium plus the `pandoc` and `unzip` CLIs to inspect downloaded
 Word and bundle exports. CI installs all three; install the CLIs with your system package
 manager and Chromium with `pnpm --filter @mdbase-writer/app exec playwright install chromium`.
