@@ -28,6 +28,7 @@ const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const FULL_SHA = "a".repeat(40);
 
 import { trustFixture } from "../../../tests/native-originals-fixture.mjs";
+import { digestNames, protectedHashes } from "../../../scripts/lib/native-originals.mjs";
 
 test("manual dispatch is bound to literal target ref and exact workflow/source SHA", () => {
   const valid = { target: "staging", sha: FULL_SHA, eventName: "workflow_dispatch", ref: "refs/heads/release/native-staging", workflowSha: FULL_SHA };
@@ -117,9 +118,43 @@ test("four protected byte expectations, not descriptor approval, are required", 
   const f=await trustFixture("staging");t.after(()=>rm(f.repo,{recursive:true,force:true}));
   await assert.rejects(loadSdkTrust({target:"staging",repoRoot:f.repo}), /four protected/);
 });
+// SYNTHETIC UNIT fixtures, not authenticated originals or real CI identity.
+// These must refuse regardless of GITHUB_ACTIONS or valid ambient public pins.
+for (const [label,hashes] of [["undefined",undefined],["null",null],["empty",{}]]) test(label+" explicit hash input cannot borrow ambient CI pins",async t=>{
+  const f=await trustFixture("staging");t.after(()=>rm(f.repo,{recursive:true,force:true}));
+  await assert.rejects(loadSdkTrust({target:"staging",repoRoot:f.repo,hashes}),/^Error: Refusing native originals: four protected per-environment original SHA256 values required$/);
+});
+for (const target of ["staging","production"]) for (const field of digestNames) test(target+" missing "+field+" refuses without ambient fallback",async t=>{
+  const f=await trustFixture(target);t.after(()=>rm(f.repo,{recursive:true,force:true}));
+  const hashes={...f.hashes};delete hashes[field];
+  await assert.rejects(loadSdkTrust({target,repoRoot:f.repo,hashes}),/four protected/);
+});
+for (const field of digestNames) test("production "+field+" mismatch refuses",async t=>{
+  const f=await trustFixture("production");t.after(()=>rm(f.repo,{recursive:true,force:true}));
+  await assert.rejects(loadSdkTrust({target:"production",repoRoot:f.repo,hashes:{...f.hashes,[field]:"0".repeat(64)}}),/mismatch|differs/);
+});
+for (const target of ["staging","production"]) test(target+" intake cannot become the other environment by path/default",async t=>{
+  const f=await trustFixture(target);t.after(()=>rm(f.repo,{recursive:true,force:true}));
+  const other=target==="staging"?"production":"staging";
+  await writeFile(join(f.repo,"config/native-publish",other+".json"),await readFile(join(f.repo,"config/native-publish",target+".json")));
+  await assert.rejects(loadSdkTrust({target:other,repoRoot:f.repo,hashes:f.hashes}),/approved source intake input/);
+});
+for (const target of [undefined,"","lab","qa","toString","__proto__"]) test(String(target)+" target refuses; no implicit production/ambient target",async()=>{
+  await assert.rejects(loadSdkTrust({target,repoRoot:"unread-fixture-path",hashes:{}}),/unknown target; no LAB retarget/);
+});
+test("CLI environment-reader default is intentional; explicit empty input never uses it",()=>{
+  const ambient=Object.fromEntries(digestNames.map(name=>[name,process.env[name]]));
+  if(Object.values(ambient).every(value=>/^[a-f0-9]{64}$/.test(value??""))){
+    assert.deepEqual(protectedHashes(),ambient);assert.deepEqual(protectedHashes(undefined),ambient);
+  }else{
+    assert.throws(()=>protectedHashes(),/four protected/);assert.throws(()=>protectedHashes(undefined),/four protected/);
+  }
+  assert.throws(()=>protectedHashes({}),/four protected/);
+});
 for (const target of ["staging","production"]) test(target+" canonical original archives, lock, ALL installed members and raw asset bind", async t => {
   const f=await trustFixture(target);t.after(()=>rm(f.repo,{recursive:true,force:true}));
   const trust=await loadSdkTrust({target,repoRoot:f.repo,hashes:f.hashes,installed:true});
+  assert.deepEqual(trust.protectedHashes,f.hashes); // Explicit fixture inputs, never ambient CI values.
   assert.equal(trust.release.environment,target);
   assert.equal(trust.release.assetSha256,f.hashes.NATIVE_TRUST_ASSET_SHA256);
   assert.equal(trust.nativeAssets["runtime.wasm"].sha256,sha256("runtime.wasm"));
