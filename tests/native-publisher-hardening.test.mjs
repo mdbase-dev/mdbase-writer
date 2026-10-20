@@ -18,6 +18,20 @@ test('four protected original byte expectations replace descriptor authority', (
   assert.doesNotMatch(native, /WRITER_NATIVE_TRUST_SHA256/);
   for (const name of ['NATIVE_SDK_SHA256','NATIVE_UI_SHA256','NATIVE_PROTOCOL_SHA256','NATIVE_TRUST_ASSET_SHA256']) assert.match(native, new RegExp(`vars\\.${name}`));
 });
+test('only protected artifact transport receives Actions read permission', () => {
+  const build = native.split('  native-build:')[1].split('  native-deploy:')[0];
+  const upload = native.split('  native-deploy:')[1];
+  assert.match(upload, /^    permissions:\n      contents: read\n      actions: read$/m);
+  assert.doesNotMatch(build, /actions: read/);
+});
+test('served checks require successful actual deployment UUID capture', () => {
+  const upload = native.split('  native-deploy:')[1];
+  const capture = upload.split('      - name: Capture actual UUID before any served checks')[1].split('      - name: All served bytes')[0];
+  const verification = upload.split('      - name: All served bytes')[1].split('      - name: Failure receipt')[0];
+  assert.match(capture, /^        id: deployment$/m);
+  assert.match(verification, /if: always\(\) && steps\.upload\.outcome == 'success' && steps\.deployment\.outcome == 'success'/);
+  assert.match(upload, /name: Failure receipt[^\n]*\n        if: always\(\)/);
+});
 test('shared byte helper is exact reviewed bytes', async () => {
   const { createHash } = await import('node:crypto');
   const helper = await readFile(new URL('../scripts/lib/native-publish-bytes.mjs', import.meta.url));
