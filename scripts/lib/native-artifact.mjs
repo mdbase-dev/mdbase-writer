@@ -120,11 +120,22 @@ export async function download(expected,root,transport=fetch,repoRoot=resolve('.
   requireValue(blob.ok&&Number(blob.headers.get('content-length'))<=512*1024*1024,'archive size/status');
   const bytes=downloaded.bytes;
   await checkpoint('download-observed',{downloadedSha256:sha(bytes),downloadedBytes:bytes.length});
-  requireValue(`sha256:${observed.downloadedSha256}`===expected.digest,'download digest');
-  await checkpoint('archive-extract');
-  await mkdir(root,{recursive:true});
-  const zip=join(root,'../writer-native.zip');await writeFile(zip,bytes,{flag:'wx'});
-  execFileSync('python3',['-B','-c',`import pathlib,stat,sys,zipfile
+  // A complete accepted download requires BOTH post-lookups, even when digest,
+  // extraction or the first post-check refuses. Retain the first failure and
+  // classify later failures safely, never replacing it with an opaque error.
+  let primaryError;
+  const failed=async error=>{
+   const refusal={stage:observed.stage,reason:error instanceof ArtifactRefusal?error.reason:'operation-failed'};
+   if(observed.refusal===null){primaryError=error;await checkpoint(observed.stage,{refusal});}
+   else await checkpoint(observed.stage,{secondaryRefusals:[...(observed.secondaryRefusals??[]),refusal]});
+  };
+  const zip=join(root,'../writer-native.zip');
+  try{
+   requireValue(`sha256:${observed.downloadedSha256}`===expected.digest,'download digest');
+   await checkpoint('archive-extract');
+   await mkdir(root,{recursive:true});
+   await writeFile(zip,bytes,{flag:'wx'});
+   try{execFileSync('python3',['-B','-c',`import pathlib,stat,sys,zipfile
 with zipfile.ZipFile(sys.argv[1]) as z:
  seen=set(); total=0
  for i in z.infolist():
@@ -133,15 +144,21 @@ with zipfile.ZipFile(sys.argv[1]) as z:
   assert i.filename not in seen and not stat.S_ISLNK(i.external_attr >> 16)
   seen.add(i.filename); total+=i.file_size
   assert len(seen)<=20000 and total<=512*1024*1024
- z.extractall(sys.argv[2])`,zip,root]);
-  await checkpoint('after-lookup');
-  const after=await get(`/actions/artifacts/${expected.id}`,'after');
-  await checkpoint('after-observed',{after:safeArtifact(after)});
-  assertArtifactMetadata(after,expected);
-  await checkpoint('run-after-lookup');
-  const runAfter=await get(`/actions/runs/${expected.run}`,'runAfter');
-  await checkpoint('run-after-observed',{runAfter:safeRun(runAfter)});
-  assertRunIdentity(runAfter,expected,run.workflow_id);
+ z.extractall(sys.argv[2])`,zip,root],{stdio:'pipe'});}catch{throw new ArtifactRefusal('archive extraction');}
+  }catch(error){await failed(error);}
+  try{
+   await checkpoint('after-lookup');
+   const after=await get(`/actions/artifacts/${expected.id}`,'after');
+   await checkpoint('after-observed',{after:safeArtifact(after)});
+   assertArtifactMetadata(after,expected);
+  }catch(error){await failed(error);}
+  try{
+   await checkpoint('run-after-lookup');
+   const runAfter=await get(`/actions/runs/${expected.run}`,'runAfter');
+   await checkpoint('run-after-observed',{runAfter:safeRun(runAfter)});
+   assertRunIdentity(runAfter,expected,run.workflow_id);
+  }catch(error){await failed(error);}
+  if(observed.refusal!==null)throw primaryError;
   const postDownloadSha256=sha(await readFile(zip));
   await checkpoint('post-download-observed',{postDownloadSha256});
   requireValue(postDownloadSha256===expected.digest.slice(7),'post-download archive digest');
@@ -150,7 +167,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
   await checkpoint('complete');
  }catch(error){
   // Never persist untrusted error bodies/messages, request headers or URLs.
-  observed.refusal={stage:observed.stage,reason:error instanceof ArtifactRefusal?error.reason:'operation-failed'};
+  observed.refusal??={stage:observed.stage,reason:error instanceof ArtifactRefusal?error.reason:'operation-failed'};
   await writeFile(evidence,JSON.stringify(observed,null,2));throw error;
  }
 }

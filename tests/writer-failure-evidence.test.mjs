@@ -61,19 +61,25 @@ with zipfile.ZipFile(sys.argv[2],'w') as z:
  for root,dirs,files in os.walk(sys.argv[1]):
   for name in files:
    path=os.path.join(root,name);z.write(path,os.path.relpath(path,sys.argv[1]))`,root,zip]);
- const bytes=await readFile(zip);expected.digest=changes.wrongDigest?'sha256:'+'0'.repeat(64):'sha256:'+hash(bytes);
+ const bytes=changes.invalidZip?Buffer.from('SYNTHETIC UNIT DATA: complete non-ZIP bytes'):await readFile(zip);expected.digest=changes.wrongDigest?'sha256:'+'0'.repeat(64):'sha256:'+hash(bytes);
  const meta={id:42,digest:expected.digest,expired:false,name:'writer-native-build-staging-23-2',workflow_run:{id:23,repository_id:17,head_repository_id:17,head_sha:source,head_branch:'release/native-staging'},archive_download_url:'https://blob.invalid/?sig=private-metadata'};
  const run={id:23,workflow_id:7,path:'.github/workflows/deploy-writer.yml',repository:{id:17,full_name:'fixture/writer'},head_repository:{id:17,full_name:'fixture/writer'},head_sha:source,run_attempt:2,event:'workflow_dispatch',head_branch:'release/native-staging',env:{DONT:'private-context'}};
  let metadataCalls=0,runCalls=0,zipCalls=0,blobCalls=0;
+ const beforePostLookup={};
  const transport=async(url,init)=>{
   url=String(url);
   if(url.endsWith('/actions/artifacts/42')){
-   metadataCalls++;if(changes.firstLookupError&&metadataCalls===1)throw Error('private-token URL');
+   metadataCalls++;
+   if(metadataCalls===2)beforePostLookup.after=JSON.parse(await readFile(evidencePath,'utf8'));
+   if(changes.firstLookupError&&metadataCalls===1)throw Error('private-token URL');
+   if(changes.afterLookupError&&metadataCalls===2)throw Error('private-opaque-after-error URL');
    if(changes.http?.stage===(metadataCalls===1?'before':'after'))return new Response(JSON.stringify(changes.http.body),{status:changes.http.status});
    return {ok:true,status:200,json:async()=>({...structuredClone(meta),...(metadataCalls===1?changes.before:changes.after)})};
   }
   if(url.endsWith('/actions/runs/23')){
-   runCalls++;if(changes.runAfterError&&runCalls===2)throw Error('private-query');
+   runCalls++;
+   if(runCalls===2)beforePostLookup.runAfter=JSON.parse(await readFile(evidencePath,'utf8'));
+   if(changes.runAfterError&&runCalls===2)throw Error('private-query');
    if(changes.http?.stage===(runCalls===1?'run':'runAfter'))return new Response(JSON.stringify(changes.http.body),{status:changes.http.status});
    const result=structuredClone(run);
    if(runCalls===1)Object.assign(result,changes.initialRun??{});
@@ -83,12 +89,15 @@ with zipfile.ZipFile(sys.argv[2],'w') as z:
   if(url.endsWith('/zip')){zipCalls++;const headers=new Headers({location:'https://artifact.example.test/blob?sig=private-sas'});
    if(changes.redirect==='read-error'||changes.redirect==='timeout')return {status:302,headers,body:new ReadableStream({pull(c){if(changes.redirect==='read-error')c.error(Error('private-reader-error'));else return new Promise(()=>{});}})};
    return new Response(changes.redirect==='overflow'?'x'.repeat(256*1024+1):'complete non-JSON redirect body',{status:302,headers});}
-  if(url.startsWith('https://artifact.example.test/')){blobCalls++;assert.equal(init.headers,undefined);return new Response(bytes);}
+  if(url.startsWith('https://artifact.example.test/')){blobCalls++;assert.equal(init.headers,undefined);
+   if(changes.blob){let sent=false;return new Response(new ReadableStream({pull(c){if(!sent){sent=true;c.enqueue(bytes.subarray(0,16));return;}if(changes.blob==='read-error')c.error(Error('private-blob-error'));else return new Promise(()=>{});}}),{headers:{'content-length':String(bytes.length)}});}
+   return new Response(bytes);
+  }
   throw Error('unexpected mocked request');
  };
  const downloadRoot=join(f.repoRoot,'download/artifact'),evidencePath=join(f.repoRoot,'download/artifact-metadata.json');
  const evidence=async()=>{const text=await readFile(evidencePath,'utf8');assert.doesNotMatch(text,/private-|archive_download_url|Authorization|"env"/);return JSON.parse(text);};
- return {...f,expected,bytes,downloadRoot,transport,evidence,counts:()=>({metadataCalls,runCalls,zipCalls,blobCalls})};
+ return {...f,expected,bytes,downloadRoot,transport,evidence,beforePostLookup,counts:()=>({metadataCalls,runCalls,zipCalls,blobCalls})};
 }
 test('wrong INITIAL attempt persists observed run before refusing without any ZIP fetch',async t=>{
  const f=await transportFixture(t,{initialRun:{run_attempt:1}});
@@ -120,9 +129,10 @@ for(const [name,change] of Object.entries({runId:{id:24},repositoryId:{repositor
  const e=await f.evidence();assert.ok(e.runAfter);assert.equal(e.after.id,42);assert.equal(f.counts().runCalls,2);assert.ok(e.refusal.reason);
  for(const [key,value] of Object.entries(change))assert.deepEqual(e.runAfter[key],value);
 });
-test('wrong after-artifact digest is persisted before refusal and no later lookup',async t=>{
+test('wrong after-artifact digest is persisted before refusal AND independent post-run lookup',async t=>{
  const f=await transportFixture(t,{after:{digest:'sha256:'+'d'.repeat(64)}});await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));
- const e=await f.evidence();assert.equal(e.after.digest,'sha256:'+'d'.repeat(64));assert.equal(f.counts().runCalls,1);assert.ok(e.run);assert.ok(e.downloadedSha256);
+ const e=await f.evidence();assert.equal(e.after.digest,'sha256:'+'d'.repeat(64));assert.equal(f.counts().runCalls,2);assert.ok(e.run);assert.ok(e.downloadedSha256);
+ assert.equal(e.runAfter.id,23);assert.equal(f.beforePostLookup.runAfter.after.digest,e.after.digest);
 });
 for(const stage of ['before','run','after','runAfter'])for(const [status,message] of [[403,'Resource not accessible by integration'],[404,'Not Found'],[429,'API rate limit exceeded']])test(stage+' HTTP'+status+' bounded public body/status survive before refusal',async t=>{
  const body={message,documentation_url:'https://docs.github.com/rest/actions',status:String(status)};
@@ -143,8 +153,54 @@ test('oversized HTTP error body is bounded and refused, with observed status ret
 });
 for(const redirect of ['overflow','read-error','timeout'])test('otherwise-valid 302 '+redirect+' refuses BEFORE blob/ZIP/SHA and retains incomplete public status',async t=>{
  const f=await transportFixture(t,{redirect});await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot,{responseTimeoutMs:20}));
- const e=await f.evidence();assert.equal(f.counts().blobCalls,0);assert.equal(e.responses.archive.status,302);assert.equal(e.responses.archive.complete,false);assert.equal(e.downloadedSha256,undefined);await assert.rejects(readFile(join(f.downloadRoot,'../writer-native.zip')),{code:'ENOENT'});
+ const e=await f.evidence();assert.equal(e.after,undefined);assert.equal(e.runAfter,undefined);assert.equal(f.counts().metadataCalls,1);assert.equal(f.counts().runCalls,1);assert.equal(f.counts().blobCalls,0);assert.equal(e.responses.archive.status,302);assert.equal(e.responses.archive.complete,false);assert.equal(e.downloadedSha256,undefined);await assert.rejects(readFile(join(f.downloadRoot,'../writer-native.zip')),{code:'ENOENT'});
  if(redirect==='overflow')assert.equal(e.responses.archive.truncated,true);
+});
+// SYNTHETIC UNIT transport only. No GitHub/blob/API requests occur in these tests.
+for(const primary of ['digest','extraction'])test(primary+' failure still retains BOTH independent post-download observations',async t=>{
+ const f=await transportFixture(t,primary==='digest'?{wrongDigest:true}:{invalidZip:true});
+ await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();
+ assert.equal(e.downloadedSha256,hash(f.bytes));assert.equal(e.downloadedBytes,f.bytes.length);
+ assert.equal(e.after.id,42);assert.equal(e.runAfter.id,23);
+ assert.deepEqual(f.counts(),{metadataCalls:2,runCalls:2,zipCalls:1,blobCalls:1});
+ for(const prior of Object.values(f.beforePostLookup)){assert.equal(prior.downloadedSha256,hash(f.bytes));assert.equal(prior.downloadedBytes,f.bytes.length);}
+ assert.equal(e.refusal.reason,primary==='digest'?'download digest':'archive extraction');
+ if(primary==='digest')await assert.rejects(readFile(join(f.downloadRoot,'../writer-native.zip')),{code:'ENOENT'});
+});
+for(const kind of ['status','identity'])test('after '+kind+' refusal does not suppress independent runAfter observation',async t=>{
+ const f=await transportFixture(t,kind==='status'?{http:{stage:'after',status:403,body:{message:'Forbidden'}}}:{after:{digest:'sha256:'+'d'.repeat(64)}});
+ await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();
+ assert.equal(e.runAfter.id,23);assert.deepEqual(f.counts(),{metadataCalls:2,runCalls:2,zipCalls:1,blobCalls:1});
+ assert.equal(e.refusal.reason,kind==='status'?'GitHub metadata unavailable':'immutable ID/digest');
+ const prior=f.beforePostLookup.runAfter;assert.equal(prior.responses.after.status,kind==='status'?403:200);assert.equal(prior.responses.after.complete,true);assert.match(prior.responses.after.sha256,/^[a-f0-9]{64}$/);
+ if(kind==='status')assert.deepEqual(prior.responses.after.body,{message:'Forbidden'});else assert.equal(prior.after.digest,e.after.digest);
+});
+for(const primary of ['digest','extraction'])test(primary+' primary refusal survives TWO safely classified secondary post-check failures',async t=>{
+ const f=await transportFixture(t,{...(primary==='digest'?{wrongDigest:true}:{invalidZip:true}),http:{stage:'after',status:403,body:{message:'Forbidden'}},runAfterError:true});
+ await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();
+ assert.deepEqual(e.refusal,{stage:primary==='digest'?'download-observed':'archive-extract',reason:primary==='digest'?'download digest':'archive extraction'});
+ assert.deepEqual(e.secondaryRefusals,[{stage:'after-lookup',reason:'GitHub metadata unavailable'},{stage:'run-after-lookup',reason:'operation-failed'}]);
+ assert.equal(e.downloadedSha256,hash(f.bytes));assert.equal(e.downloadedBytes,f.bytes.length);assert.equal(e.responses.after.status,403);assert.equal(e.runAfter,undefined);assert.equal(e.responses.runAfter,undefined);
+ assert.deepEqual(f.counts(),{metadataCalls:2,runCalls:2,zipCalls:1,blobCalls:1});
+ assert.deepEqual(f.beforePostLookup.runAfter.refusal,e.refusal);assert.equal(f.beforePostLookup.runAfter.secondaryRefusals[0].reason,'GitHub metadata unavailable');
+});
+for(const kind of ['status','identity'])test('after '+kind+' PRIMARY stays primary when runAfter also fails with an opaque error',async t=>{
+ const f=await transportFixture(t,{...(kind==='status'?{http:{stage:'after',status:403,body:{message:'Forbidden'}}}:{after:{digest:'sha256:'+'d'.repeat(64)}}),runAfterError:true});
+ await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();
+ assert.deepEqual(e.refusal,{stage:kind==='status'?'after-lookup':'after-observed',reason:kind==='status'?'GitHub metadata unavailable':'immutable ID/digest'});
+ assert.deepEqual(e.secondaryRefusals,[{stage:'run-after-lookup',reason:'operation-failed'}]);
+ assert.equal(e.runAfter,undefined);assert.equal(e.responses.runAfter,undefined);assert.equal(f.counts().runCalls,2);
+});
+test('opaque after lookup failure still observes runAfter without inventing a metadata HTTP response',async t=>{
+ const f=await transportFixture(t,{afterLookupError:true});await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();
+ assert.deepEqual(e.refusal,{stage:'after-lookup',reason:'operation-failed'});assert.equal(e.responses.after,undefined);assert.equal(e.after,undefined);assert.equal(e.runAfter.id,23);
+ assert.deepEqual(f.counts(),{metadataCalls:2,runCalls:2,zipCalls:1,blobCalls:1});
+});
+for(const blob of ['read-error','timeout'])test('incomplete blob '+blob+' fingerprint is NOT an actual ZIP identity or post-download observation',async t=>{
+ const f=await transportFixture(t,{blob});await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot,{responseTimeoutMs:20}));const e=await f.evidence();
+ assert.equal(e.responses.blob.status,200);assert.equal(e.responses.blob.complete,false);assert.equal(e.responses.blob.sha256,hash(f.bytes.subarray(0,16)));
+ assert.equal(e.downloadedSha256,undefined);assert.equal(e.downloadedBytes,undefined);assert.equal(e.after,undefined);assert.equal(e.runAfter,undefined);
+ assert.deepEqual(f.counts(),{metadataCalls:1,runCalls:1,zipCalls:1,blobCalls:1});await assert.rejects(readFile(join(f.downloadRoot,'../writer-native.zip')),{code:'ENOENT'});
 });
 test('full positive transport preserves every observation including after-run workflow identity',async t=>{
  const f=await transportFixture(t);await download(f.expected,f.downloadRoot,f.transport,f.repoRoot);
