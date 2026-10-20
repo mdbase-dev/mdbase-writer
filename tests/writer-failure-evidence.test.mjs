@@ -69,14 +69,16 @@ with zipfile.ZipFile(sys.argv[2],'w') as z:
   url=String(url);
   if(url.endsWith('/actions/artifacts/42')){
    metadataCalls++;if(changes.firstLookupError&&metadataCalls===1)throw Error('private-token URL');
-   return {ok:true,json:async()=>({...structuredClone(meta),...(metadataCalls===1?changes.before:changes.after)})};
+   if(changes.http?.stage===(metadataCalls===1?'before':'after'))return new Response(JSON.stringify(changes.http.body),{status:changes.http.status});
+   return {ok:true,status:200,json:async()=>({...structuredClone(meta),...(metadataCalls===1?changes.before:changes.after)})};
   }
   if(url.endsWith('/actions/runs/23')){
    runCalls++;if(changes.runAfterError&&runCalls===2)throw Error('private-query');
+   if(changes.http?.stage===(runCalls===1?'run':'runAfter'))return new Response(JSON.stringify(changes.http.body),{status:changes.http.status});
    const result=structuredClone(run);
    if(runCalls===1)Object.assign(result,changes.initialRun??{});
    if(runCalls===2)Object.assign(result,changes.afterRun??{});
-   return {ok:true,json:async()=>result};
+   return {ok:true,status:200,json:async()=>result};
   }
   if(url.endsWith('/zip')){zipCalls++;return {status:302,headers:new Headers({location:'https://artifact.example.test/blob?sig=private-sas'})};}
   if(url.startsWith('https://artifact.example.test/')){assert.equal(init.headers,undefined);return new Response(bytes);}
@@ -119,6 +121,23 @@ for(const [name,change] of Object.entries({runId:{id:24},repositoryId:{repositor
 test('wrong after-artifact digest is persisted before refusal and no later lookup',async t=>{
  const f=await transportFixture(t,{after:{digest:'sha256:'+'d'.repeat(64)}});await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));
  const e=await f.evidence();assert.equal(e.after.digest,'sha256:'+'d'.repeat(64));assert.equal(f.counts().runCalls,1);assert.ok(e.run);assert.ok(e.downloadedSha256);
+});
+for(const stage of ['before','run','after','runAfter'])for(const [status,message] of [[403,'Resource not accessible by integration'],[404,'Not Found'],[429,'API rate limit exceeded']])test(stage+' HTTP'+status+' bounded public body/status survive before refusal',async t=>{
+ const body={message,documentation_url:'https://docs.github.com/rest/actions',status:String(status)};
+ const f=await transportFixture(t,{http:{stage,status,body}});await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));
+ const e=await f.evidence();assert.equal(e.responses[stage].status,status);assert.deepEqual(e.responses[stage].body,body);assert.ok(e.refusal.reason);
+ if(stage==='before')assert.equal(e.before,undefined);
+ if(stage==='run')assert.equal(e.before.id,42);
+ if(stage==='after'||stage==='runAfter'){assert.equal(e.run.id,23);assert.equal(e.downloadedSha256,hash(f.bytes));}
+ if(stage==='runAfter')assert.equal(e.after.id,42);
+});
+test('HTTP failure keeps safe status and bounded body fingerprint, never unsafe messages/docs/tokens',async t=>{
+ const f=await transportFixture(t,{http:{stage:'before',status:403,body:{message:'private-opaque-message',documentation_url:'https://docs.github.com/rest?sig=private-sas',token:'private-token'}}});
+ await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();assert.equal(e.responses.before.status,403);assert.deepEqual(e.responses.before.body,{message:null,documentation_url:null});assert.match(e.responses.before.sha256,/^[a-f0-9]{64}$/);assert.ok(e.responses.before.bytes>0);
+});
+test('oversized HTTP error body is bounded and refused, with observed status retained',async t=>{
+ const f=await transportFixture(t,{http:{stage:'before',status:429,body:{message:'private-'.repeat(50000)}}});
+ await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();assert.equal(e.responses.before.status,429);assert.equal(e.responses.before.bodyState,'oversized');assert.equal(e.responses.before.body,undefined);assert.equal(e.before,undefined);
 });
 test('full positive transport preserves every observation including after-run workflow identity',async t=>{
  const f=await transportFixture(t);await download(f.expected,f.downloadRoot,f.transport,f.repoRoot);

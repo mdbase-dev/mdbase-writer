@@ -54,18 +54,47 @@ export async function download(expected,root,transport=fetch,repoRoot=resolve('.
  const observed={expected:{id:text(expected.id,/^[1-9][0-9]*$/),digest:text(expected.digest,/^sha256:[a-f0-9]{64}$/),repository:text(expected.repository,/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),repositoryId:text(expected.repositoryId,/^[1-9][0-9]*$/),run:text(expected.run,/^[1-9][0-9]*$/),attempt:text(expected.attempt,/^[1-9][0-9]*$/),source:text(expected.source,/^[a-f0-9]{40}$/),tree:text(expected.tree,/^[a-f0-9]{40}$/),target:text(expected.target,/^(staging|production)$/),workflowPath:publisherWorkflowPath},stage:'before-lookup',refusal:null};
  const checkpoint=async(stage,fields={})=>{Object.assign(observed,fields,{stage});await writeFile(evidence,JSON.stringify(observed,null,2));};
  const base=`https://api.github.com/repos/${expected.repository}`;
- const get=async path=>{
+ const publicMessages=new Set(['Resource not accessible by integration','Resource not accessible by personal access token','Not Found','Forbidden','Requires authentication','API rate limit exceeded','Too Many Requests','Bad credentials','Service Unavailable']);
+ const publicErrorBody=value=>{
+  if(typeof value==='string')return publicMessages.has(value)?value:null;
+  if(!value||typeof value!=='object'||Array.isArray(value))return null;
+  const body={};
+  if(Object.hasOwn(value,'message'))body.message=publicMessages.has(value.message)?value.message:null;
+  if(Object.hasOwn(value,'status'))body.status=typeof value.status==='string'&&/^[1-5][0-9]{2}$/.test(value.status)?value.status:null;
+  if(Object.hasOwn(value,'documentation_url')){
+   let url;try{url=new URL(value.documentation_url);}catch{}
+   body.documentation_url=url?.origin==='https://docs.github.com'&&!url.search&&!url.username&&!url.password?url.href:null;
+  }
+  return body;
+ };
+ const get=async(path,kind)=>{
   const response=await transport(base+path,{headers:{Authorization:`Bearer ${process.env.GITHUB_TOKEN}`,Accept:'application/vnd.github+json'},redirect:'error',signal:AbortSignal.timeout(30000)});
-  requireValue(response.ok,'GitHub metadata unavailable');return response.json();
+  const record={status:Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:null,bodyState:'reading'};
+  await checkpoint(observed.stage,{responses:{...observed.responses,[kind]:record}});
+  const limit=256*1024;let bytes;
+  if(response.body){
+   const chunks=[];let size=0;
+   for await(const chunk of response.body){size+=chunk.length;if(size>limit){record.bodyState='oversized';record.observedBytes=size;await checkpoint(observed.stage);requireValue(false,'metadata body size');}chunks.push(chunk);}
+   bytes=Buffer.concat(chunks);
+  }else if(typeof response.text==='function')bytes=Buffer.from(await response.text());
+  else bytes=Buffer.from(JSON.stringify(await response.json())); // mock transport seam
+  requireValue(bytes.length<=limit,'metadata body size');
+  let value;try{value=JSON.parse(bytes.toString('utf8'));}catch{}
+  Object.assign(record,{bodyState:value===undefined?'non-json':'observed',bytes:bytes.length,sha256:sha(bytes),body:response.ok?(kind==='before'||kind==='after'?safeArtifact(value):safeRun(value)):publicErrorBody(value)});
+  // Bounded PUBLIC projection + actual status/body hash are retained even for
+  // HTTP403/404/429, BEFORE status validation. Never headers or raw errors/URLs.
+  await checkpoint(observed.stage);
+  requireValue(response.ok,'GitHub metadata unavailable');
+  requireValue(value!==undefined,'GitHub metadata JSON');return value;
  };
  await checkpoint('before-lookup');
  try {
   requireValue(Object.values(observed.expected).every(v=>v!==null),'expected identity');
-  const before=await get(`/actions/artifacts/${expected.id}`);
+  const before=await get(`/actions/artifacts/${expected.id}`,'before');
   await checkpoint('before-observed',{before:safeArtifact(before)});
   assertArtifactMetadata(before,expected);
   await checkpoint('run-lookup');
-  const run=await get(`/actions/runs/${expected.run}`);
+  const run=await get(`/actions/runs/${expected.run}`,'run');
   await checkpoint('run-observed',{run:safeRun(run)});
   assertRunIdentity(run,expected);
   await checkpoint('archive-lookup');
@@ -96,11 +125,11 @@ with zipfile.ZipFile(sys.argv[1]) as z:
   assert len(seen)<=20000 and total<=512*1024*1024
  z.extractall(sys.argv[2])`,zip,root]);
   await checkpoint('after-lookup');
-  const after=await get(`/actions/artifacts/${expected.id}`);
+  const after=await get(`/actions/artifacts/${expected.id}`,'after');
   await checkpoint('after-observed',{after:safeArtifact(after)});
   assertArtifactMetadata(after,expected);
   await checkpoint('run-after-lookup');
-  const runAfter=await get(`/actions/runs/${expected.run}`);
+  const runAfter=await get(`/actions/runs/${expected.run}`,'runAfter');
   await checkpoint('run-after-observed',{runAfter:safeRun(runAfter)});
   assertRunIdentity(runAfter,expected,run.workflow_id);
   const postDownloadSha256=sha(await readFile(zip));
