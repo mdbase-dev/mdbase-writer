@@ -4,6 +4,7 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@11.15.1",
   "engines": {
     "node": ">=22.12 <23"
   },
@@ -15,6 +16,11 @@
     "test": "pnpm -r --if-present test && node --test tests/*.test.mjs",
     "test:publisher": "node --test apps/writer/scripts/native-publisher.test.mjs tests/*.test.mjs",
     "test:publisher:tools": "node scripts/native-tool-compat.mjs",
+    "test:staging:intake": "node --test tests/writer-staging-intake.test.mjs",
+    "test:installer": "node --test tests/writer-installer.test.mjs",
+    "check:staging": "node scripts/qualify-native-staging.mjs check",
+    "build:staging:qualification": "node scripts/qualify-native-staging.mjs build",
+    "verify:staging:build": "node scripts/qualify-native-staging.mjs verify",
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {

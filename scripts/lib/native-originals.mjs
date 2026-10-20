@@ -30,7 +30,7 @@ function memberBytes(archive, members, path) {
   requireValue(members.some(m => m.path === path), `missing original ${path}`);
   return execFileSync('tar', ['-xOzf', archive, `package/${path}`], { maxBuffer: 128 * 1024 * 1024 });
 }
-async function installedMembers(root) {
+export async function installedMembers(root) {
   const out = [];
   async function walk(directory, prefix = '') {
     for (const name of await readdir(directory)) {
@@ -51,6 +51,9 @@ export async function loadOriginals({ target, repoRoot, hashes, installed = fals
   requireValue(['staging','production'].includes(target), 'unknown target; no LAB retarget');
   protectedHashes(hashes);
   repoRoot = await realpath(repoRoot);
+  const approvedBytes = await regular(repoRoot, `config/native-publish/${target}.json`);
+  const approved = JSON.parse(approvedBytes);
+  requireValue(approved.target === target && /^[a-f0-9]{64}$/.test(approved.factsSha256) && /^[a-f0-9]{40}$/.test(approved.sdkSource) && /^[a-f0-9]{40}$/.test(approved.sdkTree), 'approved source intake input');
   const app = join(repoRoot, 'apps/writer');
   const pkg = await json(join(app, 'package.json'));
   const lockBytes = await regular(repoRoot, 'pnpm-lock.yaml');
@@ -73,7 +76,12 @@ export async function loadOriginals({ target, repoRoot, hashes, installed = fals
     if (installed) {
       const installedRoot = await realpath(join(app, 'node_modules', name));
       requireValue(!relative(repoRoot, installedRoot).startsWith('..'), 'installed package outside checkout');
-      equal(await installedMembers(installedRoot), members, `${name} ALL installed original members differ`);
+      const actual = await installedMembers(installedRoot);
+      const byPath = new Map(actual.map(m => [m.path,m]));
+      const originalPaths = new Set(members.map(m => m.path));
+      const extras = actual.filter(m => !originalPaths.has(m.path)).map(m => m.path).slice(0,3);
+      const differences = members.filter(m => !isDeepStrictEqual(m,byPath.get(m.path))).slice(0,3).map(m => ({expected:m,actual:byPath.get(m.path)??null}));
+      equal(actual, members, `${name} ALL installed original members differ: ${JSON.stringify({expectedCount:members.length,actualCount:actual.length,extras,differences})}`);
     }
     archives[key] = { path, bytes: bytes.length, sha256, sri, members: members.length };
     originals[key] = members;
@@ -81,13 +89,21 @@ export async function loadOriginals({ target, repoRoot, hashes, installed = fals
   // This is a delivery location, not a new approval descriptor/schema.
   const packet = `apps/writer/vendor/native-release/${target}`;
   const packetFile = (path) => regular(repoRoot, `${packet}/${path}`);
-  const factsBytes = await packetFile('artifact-facts.json'), facts = JSON.parse(factsBytes);
+  const factsBytes = await packetFile('artifact-facts.json');
+  equal(hash(factsBytes), approved.factsSha256, 'approved facts digest mismatch');
+  const facts = JSON.parse(factsBytes);
+  equal([facts.source,facts.sourceTree],[approved.sdkSource,approved.sdkTree],'approved SDK source/tree mismatch');
   const sdk = archives.sdk, sdkPath = join(repoRoot, sdk.path), members = originals.sdk;
-  equal(JSON.parse(await packetFile('members.json')), members, 'producer complete SDK inventory mismatch');
+  const producerMembers = JSON.parse(await packetFile('members.json'));
+  requireValue(Array.isArray(producerMembers), 'producer complete SDK inventory type');
+  // Canonical producer sidecar retains npm archive order. Compare ALL entries
+  // by path without rewriting originals, deduplicating or dropping any entry.
+  equal(producerMembers.toSorted((a,b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0), members, 'producer complete SDK inventory mismatch');
   requireValue(facts.archive === sdk.path.split('/').at(-1) && facts.bytes === sdk.bytes && facts.sha256 === sdk.sha256 && facts.sri === sdk.sri && facts.members === sdk.members && /^[a-f0-9]{40}$/.test(facts.source) && /^[a-f0-9]{40}$/.test(facts.sourceTree), 'canonical artifact facts mismatch');
   const provenanceBytes = await packetFile('provenance.json');
   requireValue(provenanceBytes.equals(memberBytes(sdkPath, members, 'dist/native/provenance.json')), 'provenance not byte-identical to original');
   const provenance = JSON.parse(provenanceBytes);
+  equal([facts.trust,facts.handoff,facts.verifier],[provenance.trust,provenance.handoff,provenance.verifier], 'approved facts/provenance trust/handoff/verifier mismatch');
   requireValue(provenance.schema === 'mdbn-sdk/application-assets/1' && provenance.environment === target && provenance.trust?.environment === target, 'provenance target mismatch');
   const contextBytes = await packetFile(`next-trust/${target}-context.json`), context = JSON.parse(contextBytes);
   const asset = await packetFile(`next-trust/${target}.json`);
@@ -118,6 +134,7 @@ export async function loadOriginals({ target, repoRoot, hashes, installed = fals
   requireValue(/^[a-f0-9]{40}$/.test(h.trust_publication.publisher_commit), 'publisher commit identity');
   requireValue(receipt.schema === 'mdbn-sdk/application-build/1' && receipt.contextSha256 === hash(contextBytes) && receipt.verifierSha256 === v.sha256 && receipt.verifierSourceCommit === v.source && v.clockOverride === false && /^[a-f0-9]{40}$/.test(v.source) && /^[a-f0-9]{64}$/.test(v.sha256), 'frozen receipt/verifier binding');
   const module = memberBytes(sdkPath, members, 'dist/application/packaged-trust.js');
+  equal(hash(module), facts.packagedTrustModuleSha256, 'approved compiled trust module mismatch');
   const literal = /const metadata = (\{[^\n]+\});/.exec(module.toString());
   requireValue(literal, 'unknown canonical packaged trust literal');
   const release = JSON.parse(literal[1]);
@@ -140,7 +157,7 @@ export async function loadOriginals({ target, repoRoot, hashes, installed = fals
   const bundled = members.filter(m => m.path.startsWith('node_modules/@mdbase-dev/connect-protocol/')).map(m => ({...m,path:m.path.slice('node_modules/@mdbase-dev/connect-protocol/'.length)}));
   equal(bundled, originals.protocol, 'SDK bundled protocol differs from pinned original');
   return { environment:target, release, nativeAssets, archives, lockSha256:hash(lockBytes), protectedHashes:hashes,
-    packet: { path:packet, factsSha256:hash(factsBytes), contextSha256:hash(contextBytes), receiptSha256:hash(receiptBytes), provenanceSha256:hash(provenanceBytes) },
+    packet: { path:packet, approvedInputSha256:hash(approvedBytes), factsSha256:hash(factsBytes), contextSha256:hash(contextBytes), receiptSha256:hash(receiptBytes), provenanceSha256:hash(provenanceBytes) },
     trustModuleSha256:hash(module), appOrigin:target === 'staging' ? 'https://staging.mdbase-writer.pages.dev' : 'https://writer.mdbase.dev',
     connectOrigin:cp, editorOrigin:target === 'staging' ? 'https://editor-staging.mdbase.dev' : 'https://editor.mdbase.dev' };
 }

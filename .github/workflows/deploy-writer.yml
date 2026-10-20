@@ -175,6 +175,7 @@ jobs:
         id: members
         run: |
           set -euo pipefail
+          node scripts/lib/writer-installer.mjs
           node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" --installed > "$RUNNER_TEMP/installed-plan.json"
           cmp "$RUNNER_TEMP/writer-build/plan.json" "$RUNNER_TEMP/installed-plan.json"
       - name: Check qualified source

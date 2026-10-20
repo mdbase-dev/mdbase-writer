@@ -43,10 +43,16 @@ Required external settings, **not configured or inspected here**:
 - Authenticated exact target packet, public source/qualification/evidence
   references and accepted producer facts carried by the reviewed immutable source.
 
-Missing/unknown originals fail closed. Current frozen LAB SDK/UI/protocol/native
-pins are unchanged. No target repin/packet, LAB retarget or production GO is
-supplied. Candidate B, Editor pairing, exact origins, no native loopback and demo
-OFF are unchanged. A generic current-LAB build is NOT native target qualification.
+Missing/unknown originals fail closed. Writer's approved UI9553 and C280 protocol
+pins/originals remain unchanged. The retained original c0bc staging SDK and public
+packet are now pinned for **historical custody/source tests only**. Owner order
+065615 holds any unstarted c0bc app product build/publication pending a qualified
+replacement SDK original and independent facts; neither replacement bytes nor
+facts are available here. c0bc remains immutable, valid historical custody, NOT
+latest/future candidate qualification or admission. No c0bc Writer app build was
+started. Old vendor originals/metadata and LAB source paths are preserved. Exact
+Editor pairing/origins, no native loopback and demo OFF remain requirements. A
+generic LAB build is NOT staging qualification; production still has no tuple/GO.
 
 ## Canonical delivery layout (not a new authority/schema)
 
@@ -57,6 +63,22 @@ OFF are unchanged. A generic current-LAB build is NOT native target qualificatio
 `image-release-bundle.json`, `image-release-bundle.sigstore.json`.
 `build-receipt.json` is only this delivery filename for the existing
 `mdbn-sdk/application-build/1` receipt. No field aliases are invented.
+
+`config/native-publish/<target>.json` is reviewed public source input, not an
+approval/authentication schema or protected-variable fallback. Independently
+supplied facts SHA256 and SDK source/tree bind producer facts BEFORE candidate
+code; facts then bind canonical trust/handoff/verifier/module metadata. The
+historical staging facts pin is `d313bb9dc2e291f957a77fa0c05fdff533a4cb79afa8973d63bca75c7897b44c`.
+CI still requires exactly the four protected original hashes above. Local finite
+qualification explicitly reads this approved data because rpnpm forwards neither
+`.git` nor env; it does not forge dispatch, ref, clean tree or publication SHA.
+
+UI9553's original companion stays byte-identical. Its old dev/release/peer flags
+are historical custody/old qualification, NOT staging publication gates or fresh
+peer proof. No companion guard was removed here: live checks already bind the
+approved package/lock pin, protected per-app UI hash and EVERY original member,
+not those flags. This follows Co064253; it does not transfer another app's UI
+qualification or relabel/rewrite the companion.
 
 Contract: TNAPP public target-SDK verification-input handoff (inbox878), including
 `mdbn-sdk/application-assets/1` provenance, canonical facts/dependency/member
@@ -78,6 +100,47 @@ The install is frozen with scripts and pnpmfile hooks disabled. Then compare ALL
 installed SDK/UI/protocol members, including bundled originals, to original
 inventories before rebuild/tests/build. Missing/extra/tampered/symlinked original
 members refuse. Proof copying is byte binding, not full-chain authentication.
+
+### Narrow unprivileged pnpm installer normalization
+
+Pinned Linux **pnpm11.15.1** adds only `node_modules/.bin/yaml` inside the SDK.
+This is NOT an original; the strict installed guard genuinely refused 897 vs896
+members while all896 original bytes matched. Owner explicitly authorized removing
+ONLY a proved installer-generated shim, never ignoring `.bin` or weakening the
+complete installed comparison. Every CI/local staging qualification install uses
+source-owned `scripts/lib/writer-installer.mjs` before candidate code:
+
+- Verify exact pnpm version; original hashes, frozen SRI/importer, independently
+  pinned facts/source/tree, provenance/trust/native metadata and complete SDK,
+  UI and protocol installed original path/size/hash sets BEFORE any deletion.
+- Accept only ONE non-original regular, nonlink, single-link, mode0755 bounded
+  shim, with no shadows/unrelated extras. Target is ONLY the exact original
+  SDK-bundled yaml2.9.1 `./bin.mjs`; ALL bundled YAML members/metadata are included
+  in complete SDK proof. Any external/hoisted YAML target is rejected outright.
+- Compare full bytes to official11.15.1 `generateShShim` output, including exact
+  target and independently derived pnpm node paths. No shim/SDK evaluation.
+  The unchanged generator/helper excerpts are from cached official
+  `pnpm@11.15.1/dist/pnpm.mjs`, SHA256
+  `a42f04caf24d09274405413a31eb43bbb4ba18a61db3968a947e9c9d71ce5e38`,
+  `@zkochan/cmd-shim@9.0.6`; license in `docs/pnpm-shim-LICENSE`.
+- Recheck file identity/bytes, unlink ONLY that shim and its EMPTY generated
+  directory, then immediately rerun the unchanged strict complete installed
+  guard for ALL SDK/UI/protocol originals. Already-normalized installs still
+  require exact complete equality; no original file/archive is modified.
+
+Wrong/appended-exec shim, target, version, original/metadata/YAML/UI mutation,
+symlink, unknown extra, shadow, mode, archive hash or frozen SRI refuses BEFORE
+removal. No broad cleanup, original-member exception or manual remote rm.
+
+**Current real-install blocker:** further strict proof found direct C280 protocol
+also has its own non-original `node_modules/.bin/yaml`: all67 protocol originals
+and all78 UI originals match, but protocol has68 installed files. This SDK-only
+normalizer refuses BEFORE deleting either shim. The extra protocol/external-YAML
+case has NOT been silently included in the single-SDK-shim authority. It needs
+an explicit narrow scope ruling and complete external-YAML/template proof, not a
+blanket ignore. SDK-only synthetic cases pass; the actual retained c0bc install
+remains a recorded strict refusal. Final replacement intake/product qualification
+and activation remain blocked; no c0bc product build started.
 
 ## Job boundary and EXACT deploy-tool choice
 
@@ -138,7 +201,13 @@ dumps are never persisted. Null projected fields mean missing/unsafe values, not
 fabricated values. Both run observations must match the actual run ID, repository
 ID/name and head repository, attempt, source, dispatch event and native branch,
 plus fixed `.github/workflows/deploy-writer.yml` path and the same positive
-workflow ID. Canonical API fixtures use `repository.id`, `head_repository.id`,
+workflow ID. Each metadata HTTP response also checkpoints actual status before
+body reading and a bounded256KiB public body projection/hash/length BEFORE status
+validation, including403/404/429 at all four lookups. Known public error messages,
+status and credential/query-free GitHub docs URLs survive; unknown/unsafe body
+fields/messages are omitted or null with actual bounded body hash/length, never
+raw opaque errors/tokens/SAS/headers. Oversized responses retain observed status
+and bounded refusal metadata without dumping bodies. Canonical API fixtures use `repository.id`, `head_repository.id`,
 `id`, `workflow_id`, `path`, and artifact `workflow_run.repository_id` and
 `head_repository_id`; no alternate weaker identity aliases are accepted.
 
@@ -228,6 +297,23 @@ receipt/log evidence for 90 days. Missing UUID, missing checks, or byte/control
 failure produces `failed-or-incomplete`; never automatically rebuild/redeploy or
 rollback. Longer evidence archival and real native admission remain external.
 
+### Actual offline-shell format (DATA only)
+
+Original SDK `dist/offline-shell-build.js` emits a canonical inline JSON manifest
+in Writer's default `mdbase-shell-sw.js`, NOT `offline-assets.json`. The source
+validator parses only the exact known wrapper and bounded canonical JSON (no
+eval/SDK/Worker import), verifies safe sorted unique paths, every eligible final
+asset hash, base and version hash, exact registration/HTML and original
+`dist/offline-shell-worker.js` runtime bytes with ONLY the original builder's
+source-map-comment removal. It independently inventories ALL post-build files,
+including hidden/extra files, manifest, routes and compiled Pages Worker excluded
+from the cache list. Cache coverage never substitutes for full publish inventory.
+Tests inspect actual c0bc builder/runtime DATA and use synthetic outputs; they
+are NOT a c0bc Writer product build or actual-output proof. No such build began
+before the replacement hold. New original output must be inspected/qualified
+when replacement custody arrives; never invent alias outputs or rebuild merely
+to repair post-only verification.
+
 ## Source-only checks
 
 - `rpnpm run test:publisher`: focused guards, original/installed custody, artifact,
@@ -237,6 +323,14 @@ rollback. Longer evidence archival and real native admission remain external.
   4.114.0 ignore-scripts tool install and offline Functions precompile compatibility.
 - `rpnpm run test:publisher:tools`: standalone tool-only compatibility check;
   useful if app build already completed (do not rebuild the app for a tool fix).
+- `test:staging:intake` / `test:installer`: historical actual-original byte gates
+  and adversarial installer cases (no SDK execution); via rpnpm.
+- `check:staging`: explicit approved-data gate then existing FULL `pnpm check`
+  (types/tests); `build:staging:qualification`: same gates then ONE real staging
+  app build and offline Pages Functions precompile; `verify:staging:build` is
+  post-only and never rebuilds. Source qualification plans have null source SHA/
+  tree and cannot qualify for immutable publication. These product checks/build
+  are **pending replacement**, not evidence collected in this held source phase.
 - `actionlint .github/workflows/deploy-writer.yml`, `git diff --check`.
 
 No deployment, remote approval/credential/ref/environment action, SDK/native

@@ -52,7 +52,8 @@ export async function trustFixture(target) {
  await put(join(repo,'pnpm-lock.yaml'),`lockfileVersion: '9.0'\nimporters:\n  apps/writer:\n    dependencies:\n${importer}\npackages:\n${resolutions}`);
  await obj(join(packet,'members.json'),originalMembers(join(repo,archives.sdk.path)));
  const protocol=archives.protocol;
- await obj(join(packet,'artifact-facts.json'),{source:sha,sourceTree:sha,archive:'sdk.tgz',...Object.fromEntries(['bytes','sha256','sri','members'].map(k=>[k,archives.sdk[k]])),nativeSource:sha,nativeSha256:provenance.runtime.sha256,nativeBytes:provenance.runtime.bytes,dependencies:[{name:'@mdbase-dev/connect-protocol',file:'vendor/protocol.tgz',bytes:protocol.bytes,sha256:protocol.sha256,sri:protocol.sri}]});
+ await obj(join(packet,'artifact-facts.json'),{source:sha,sourceTree:sha,archive:'sdk.tgz',...Object.fromEntries(['bytes','sha256','sri','members'].map(k=>[k,archives.sdk[k]])),nativeSource:sha,nativeSha256:provenance.runtime.sha256,nativeBytes:provenance.runtime.bytes,trust:provenance.trust,handoff:provenance.handoff,verifier:provenance.verifier,packagedTrustModuleSha256:digest(await readFile(join(sdk,'dist/application/packaged-trust.js'))),dependencies:[{name:'@mdbase-dev/connect-protocol',file:'vendor/protocol.tgz',bytes:protocol.bytes,sha256:protocol.sha256,sri:protocol.sri}]});
  for(const [key,name] of [['sdk','sdk'],['ui','ui'],['protocol','connect-protocol']]) await cp(join(sources,key,'package'),join(app,'node_modules/@mdbase-dev',name),{recursive:true});
+ await obj(join(repo,`config/native-publish/${target}.json`),{target,sdkSource:sha,sdkTree:sha,factsSha256:digest(await readFile(join(packet,'artifact-facts.json'))),protectedHashes:hashes});
  return {repo,app,packet,hashes,sources};
 }
