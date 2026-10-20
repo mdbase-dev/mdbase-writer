@@ -48,7 +48,7 @@ export function assertRunIdentity(run,expected,workflowId=run.workflow_id) {
  requireValue(run.head_sha===expected.source&&run.run_attempt===Number(expected.attempt)&&run.event==='workflow_dispatch'&&run.head_branch===`release/native-${expected.target}`,'run attempt/event/ref');
  requireValue(number(run.workflow_id)!==null&&run.workflow_id===workflowId&&run.path===publisherWorkflowPath,'run workflow identity');
 }
-export async function download(expected,root,transport=fetch,repoRoot=resolve('.')) {
+export async function download(expected,root,transport=fetch,repoRoot=resolve('.'),{responseTimeoutMs=30000}={}) {
  const evidence=join(root,'../artifact-metadata.json');
  await mkdir(join(root,'..'),{recursive:true});
  const observed={expected:{id:text(expected.id,/^[1-9][0-9]*$/),digest:text(expected.digest,/^sha256:[a-f0-9]{64}$/),repository:text(expected.repository,/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),repositoryId:text(expected.repositoryId,/^[1-9][0-9]*$/),run:text(expected.run,/^[1-9][0-9]*$/),attempt:text(expected.attempt,/^[1-9][0-9]*$/),source:text(expected.source,/^[a-f0-9]{40}$/),tree:text(expected.tree,/^[a-f0-9]{40}$/),target:text(expected.target,/^(staging|production)$/),workflowPath:publisherWorkflowPath},stage:'before-lookup',refusal:null};
@@ -67,28 +67,36 @@ export async function download(expected,root,transport=fetch,repoRoot=resolve('.
   }
   return body;
  };
+ const capture=async(response,kind,limit=256*1024,timeoutMs=responseTimeoutMs)=>{
+  const record={status:Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:null,bodyState:'reading',complete:false,truncated:false};
+  await checkpoint(observed.stage,{responses:{...observed.responses,[kind]:record}});
+  const deadline=Date.now()+timeoutMs,chunks=[];let held=0,seen=0,reader;
+  const timed=async promise=>{let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Object.assign(Error('response timeout'),{name:'TimeoutError'})),Math.max(0,deadline-Date.now()));})]);}finally{clearTimeout(timer);}};
+  const push=chunk=>{const b=Buffer.from(chunk);seen+=b.length;const left=limit-held;if(left>0){chunks.push(b.subarray(0,left));held+=Math.min(left,b.length);}if(seen>limit){record.truncated=true;record.bodyState='oversized';return false;}return true;};
+  try{
+   if(response.body){
+    reader=response.body.getReader?response.body.getReader():response.body[Symbol.asyncIterator]();
+    while(true){const next=await timed(reader.read?reader.read():reader.next());if(next.done){record.complete=true;break;}if(!push(next.value))break;}
+   }else{const value=typeof response.text==='function'?await timed(response.text()):JSON.stringify(await timed(response.json()));if(push(Buffer.from(value)))record.complete=true;}
+   if(record.complete)record.bodyState='observed';
+  }catch(error){record.bodyState=error?.name==='TimeoutError'?'timeout':'read-error';}
+  finally{if(!record.complete&&reader){try{void Promise.resolve(reader.cancel?reader.cancel():reader.return?.()).catch(()=>{});}catch{}}}
+  const bytes=Buffer.concat(chunks);Object.assign(record,{bytes:bytes.length,observedBytes:seen,sha256:sha(bytes)});
+  await checkpoint(observed.stage);
+  return {record,bytes};
+ };
  const get=async(path,kind)=>{
   const response=await transport(base+path,{headers:{Authorization:`Bearer ${process.env.GITHUB_TOKEN}`,Accept:'application/vnd.github+json'},redirect:'error',signal:AbortSignal.timeout(30000)});
-  const record={status:Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:null,bodyState:'reading'};
-  await checkpoint(observed.stage,{responses:{...observed.responses,[kind]:record}});
-  const limit=256*1024;let bytes;
-  if(response.body){
-   const chunks=[];let size=0;
-   for await(const chunk of response.body){size+=chunk.length;if(size>limit){record.bodyState='oversized';record.observedBytes=size;await checkpoint(observed.stage);requireValue(false,'metadata body size');}chunks.push(chunk);}
-   bytes=Buffer.concat(chunks);
-  }else if(typeof response.text==='function')bytes=Buffer.from(await response.text());
-  else bytes=Buffer.from(JSON.stringify(await response.json())); // mock transport seam
-  requireValue(bytes.length<=limit,'metadata body size');
+  const {record,bytes}=await capture(response,kind);
+  requireValue(record.complete&&!record.truncated,'metadata response incomplete');
   let value;try{value=JSON.parse(bytes.toString('utf8'));}catch{}
-  Object.assign(record,{bodyState:value===undefined?'non-json':'observed',bytes:bytes.length,sha256:sha(bytes),body:response.ok?(kind==='before'||kind==='after'?safeArtifact(value):safeRun(value)):publicErrorBody(value)});
-  // Bounded PUBLIC projection + actual status/body hash are retained even for
-  // HTTP403/404/429, BEFORE status validation. Never headers or raw errors/URLs.
+  Object.assign(record,{bodyState:value===undefined?'non-json':'observed',body:response.ok?(kind==='before'||kind==='after'?safeArtifact(value):safeRun(value)):publicErrorBody(value)});
   await checkpoint(observed.stage);
-  requireValue(response.ok,'GitHub metadata unavailable');
-  requireValue(value!==undefined,'GitHub metadata JSON');return value;
+  requireValue(response.ok,'GitHub metadata unavailable');requireValue(value!==undefined,'GitHub metadata JSON');return value;
  };
  await checkpoint('before-lookup');
  try {
+  requireValue(Number.isInteger(responseTimeoutMs)&&responseTimeoutMs>0&&responseTimeoutMs<=30000,'bounded response timeout');
   requireValue(Object.values(observed.expected).every(v=>v!==null),'expected identity');
   const before=await get(`/actions/artifacts/${expected.id}`,'before');
   await checkpoint('before-observed',{before:safeArtifact(before)});
@@ -99,16 +107,18 @@ export async function download(expected,root,transport=fetch,repoRoot=resolve('.
   assertRunIdentity(run,expected);
   await checkpoint('archive-lookup');
   const response=await transport(`${base}/actions/artifacts/${expected.id}/zip`,{headers:{Authorization:`Bearer ${process.env.GITHUB_TOKEN}`},redirect:'manual',signal:AbortSignal.timeout(30000)});
+  const redirect=await capture(response,'archive');
+  requireValue(redirect.record.complete&&!redirect.record.truncated,'archive redirect response incomplete');
   requireValue(response.status===302,'archive redirect');
   const location=new URL(response.headers.get('location'));
   requireValue(location.protocol==='https:'&&!location.username&&!location.password,'archive HTTPS');
   // Never persist blob/SAS URLs or forward GitHub credentials to blob transport.
   await checkpoint('download-lookup');
   const blob=await transport(location,{redirect:'error',credentials:'omit',signal:AbortSignal.timeout(60000)});
+  const downloaded=await capture(blob,'blob',512*1024*1024,responseTimeoutMs*2);
+  requireValue(downloaded.record.complete&&!downloaded.record.truncated,'archive body incomplete');
   requireValue(blob.ok&&Number(blob.headers.get('content-length'))<=512*1024*1024,'archive size/status');
-  const chunks=[];let size=0;
-  for await(const chunk of blob.body){size+=chunk.length;requireValue(size<=512*1024*1024,'archive size');chunks.push(chunk);}
-  const bytes=Buffer.concat(chunks);
+  const bytes=downloaded.bytes;
   await checkpoint('download-observed',{downloadedSha256:sha(bytes),downloadedBytes:bytes.length});
   requireValue(`sha256:${observed.downloadedSha256}`===expected.digest,'download digest');
   await checkpoint('archive-extract');

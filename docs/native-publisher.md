@@ -103,44 +103,37 @@ members refuse. Proof copying is byte binding, not full-chain authentication.
 
 ### Narrow unprivileged pnpm installer normalization
 
-Pinned Linux **pnpm11.15.1** adds only `node_modules/.bin/yaml` inside the SDK.
-This is NOT an original; the strict installed guard genuinely refused 897 vs896
-members while all896 original bytes matched. Owner explicitly authorized removing
-ONLY a proved installer-generated shim, never ignoring `.bin` or weakening the
-complete installed comparison. Every CI/local staging qualification install uses
-source-owned `scripts/lib/writer-installer.mjs` before candidate code:
+Pinned Linux **pnpm11.15.1** can add exactly one non-original
+`node_modules/.bin/yaml` inside EACH of SDK and direct C280 protocol. UI permits
+NO extras. `scripts/lib/writer-installer.mjs` plans/proves BOTH before deleting
+either; no global .bin ignore, partial cleanup or original-member exception.
 
-- Verify exact pnpm version; original hashes, frozen SRI/importer, independently
-  pinned facts/source/tree, provenance/trust/native metadata and complete SDK,
-  UI and protocol installed original path/size/hash sets BEFORE any deletion.
-- Accept only ONE non-original regular, nonlink, single-link, mode0755 bounded
-  shim, with no shadows/unrelated extras. Target is ONLY the exact original
-  SDK-bundled yaml2.9.1 `./bin.mjs`; ALL bundled YAML members/metadata are included
-  in complete SDK proof. Any external/hoisted YAML target is rejected outright.
-- Compare full bytes to official11.15.1 `generateShShim` output, including exact
-  target and independently derived pnpm node paths. No shim/SDK evaluation.
-  The unchanged generator/helper excerpts are from cached official
-  `pnpm@11.15.1/dist/pnpm.mjs`, SHA256
-  `a42f04caf24d09274405413a31eb43bbb4ba18a61db3968a947e9c9d71ce5e38`,
-  `@zkochan/cmd-shim@9.0.6`; license in `docs/pnpm-shim-LICENSE`.
-- Recheck file identity/bytes, unlink ONLY that shim and its EMPTY generated
-  directory, then immediately rerun the unchanged strict complete installed
-  guard for ALL SDK/UI/protocol originals. Already-normalized installs still
-  require exact complete equality; no original file/archive is modified.
+All original hashes, frozen SRI/importers, approved facts/source/tree, native
+metadata and ALL SDK/UI/protocol original path/size/hash sets pass before any
+removal. Bounded snapshots refuse links/excessive depth/count/size and capture
+identities/modes/times. SDK targets its original bundled yaml2.9.1. Protocol
+prefers an original own bundled target if present; C280 has none, so ONLY its
+exact pnpm dependency link to checkout-local
+`node_modules/.pnpm/yaml@2.9.1/node_modules/yaml` is accepted. EVERY external
+YAML member/metadata must byte-equal the independently verified SDK-bundled
+original; frozen YAML version/SRI and protocol resolution must match.
+Unknown links/escape/shadows, extra/missing/tampered YAML refuse.
 
-Wrong/appended-exec shim, target, version, original/metadata/YAML/UI mutation,
-symlink, unknown extra, shadow, mode, archive hash or frozen SRI refuses BEFORE
-removal. No broad cleanup, original-member exception or manual remote rm.
+Each shim is a bounded regular nonlink single-link mode0755 file, sole bin
+directory member, with original bin metadata/shebang and WHOLE exact official
+11.15.1 template/target/node paths. Unchanged generator excerpt: cached official
+`pnpm@11.15.1/dist/pnpm.mjs`, SHA256
+`a42f04caf24d09274405413a31eb43bbb4ba18a61db3968a947e9c9d71ce5e38`,
+`@zkochan/cmd-shim@9.0.6`; license in `docs/pnpm-shim-LICENSE`.
+No YAML/shim/SDK execution occurs during proof. All plans/YAML proofs finish,
+then originals/frozen inputs and EVERY captured path set/byte/metadata/identity
+are rechecked BEFORE unlinking ANY file. Only proved generated files and EMPTY
+dirs are removed, immediately followed by the unchanged strict ALL-installed
+guard. Already-normalized installs require exact equality and no deletion.
 
-**Current real-install blocker:** further strict proof found direct C280 protocol
-also has its own non-original `node_modules/.bin/yaml`: all67 protocol originals
-and all78 UI originals match, but protocol has68 installed files. This SDK-only
-normalizer refuses BEFORE deleting either shim. The extra protocol/external-YAML
-case has NOT been silently included in the single-SDK-shim authority. It needs
-an explicit narrow scope ruling and complete external-YAML/template proof, not a
-blanket ignore. SDK-only synthetic cases pass; the actual retained c0bc install
-remains a recorded strict refusal. Final replacement intake/product qualification
-and activation remain blocked; no c0bc product build started.
+Old real c0bc refusal (SDK896+1/protocol67+1/UI78 exact) is retained. Approved
+two-package policy passes source tests without ignoring extras; malformed
+protocol proof leaves BOTH shims intact. Not c0bc product/native admission proof.
 
 ## Job boundary and EXACT deploy-tool choice
 
@@ -207,7 +200,11 @@ validation, including403/404/429 at all four lookups. Known public error message
 status and credential/query-free GitHub docs URLs survive; unknown/unsafe body
 fields/messages are omitted or null with actual bounded body hash/length, never
 raw opaque errors/tokens/SAS/headers. Oversized responses retain observed status
-and bounded refusal metadata without dumping bodies. Canonical API fixtures use `repository.id`, `head_repository.id`,
+and bounded refusal metadata without dumping bodies. ALL observed responses,
+including ZIP302, must complete nontruncated before any blob/next lookup.
+Overflow/read error/timeout retain safe status and incomplete evidence; no blob,
+ZIP or actual ZIP SHA follows refusal. Complete NON-JSON302 is valid.
+Canonical API fixtures use `repository.id`, `head_repository.id`,
 `id`, `workflow_id`, `path`, and artifact `workflow_run.repository_id` and
 `head_repository_id`; no alternate weaker identity aliases are accepted.
 

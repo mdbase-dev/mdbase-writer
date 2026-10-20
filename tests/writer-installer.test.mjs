@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile, chmod, symlink, lstat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join,resolve } from 'node:path';
+import { join,resolve,relative,dirname } from 'node:path';
 import test from 'node:test';
 import { normalizeWriterInstaller } from '../scripts/lib/writer-installer.mjs';
 import { loadOriginals,originalMembers } from '../scripts/lib/native-originals.mjs';
@@ -27,6 +27,34 @@ test('only the exact official pnpm11 generated shim is removed after complete or
  const result=await normalizeWriterInstaller(f.options);assert.equal(result.normalized,true);assert.equal(result.sdkMembers,896);assert.ok(result.yamlMembers>100);
  await assert.rejects(lstat(f.shim),{code:'ENOENT'});await loadOriginals({...f.options,installed:true});
  const again=await normalizeWriterInstaller(f.options);assert.equal(again.normalized,false);await loadOriginals({...f.options,installed:true});
+});
+async function protocolFixture(t){
+ const f=await fixture(t),protocol=join(f.app,'node_modules/@mdbase-dev/connect-protocol');
+ const yaml=join(f.root,'node_modules/.pnpm/yaml@2.9.1/node_modules/yaml');await mkdir(dirname(yaml),{recursive:true});await cp(join(f.sdk,'node_modules/yaml'),yaml,{recursive:true});
+ const alias=join(f.app,'node_modules/yaml');await symlink(relative(dirname(alias),yaml),alias);
+ const protocolShim=join(protocol,'node_modules/.bin/yaml');await mkdir(dirname(protocolShim),{recursive:true});const protocolBytes=expectedYamlShim(join(yaml,'bin.mjs'),protocolShim,f.root);await writeFile(protocolShim,protocolBytes,{mode:0o755});
+ return {...f,protocol,yaml,alias,protocolShim,protocolBytes};
+}
+test('SDK plus direct-protocol official shims are BOTH planned/proved before either removal',async t=>{
+ const f=await protocolFixture(t);const result=await normalizeWriterInstaller(f.options);assert.equal(result.removed.length,2);await assert.rejects(lstat(f.shim),{code:'ENOENT'});await assert.rejects(lstat(f.protocolShim),{code:'ENOENT'});await loadOriginals({...f.options,installed:true});
+});
+for(const kind of ['template','append-exec','target','version','external-byte','external-metadata','external-extra','external-missing','external-link','shim-link','shadow','extra','sri','alias'])test('protocol '+kind+' refuses with BOTH shims untouched',async t=>{
+ const f=await protocolFixture(t);
+ if(kind==='template')await writeFile(f.protocolShim,'#!/bin/sh\nexit 0\n');
+ if(kind==='append-exec')await writeFile(f.protocolShim,f.protocolBytes+'echo never-execute\n');
+ if(kind==='target')await writeFile(f.protocolShim,expectedYamlShim(f.target,f.protocolShim,f.root));
+ if(kind==='version')f.options.getVersion=()=> '10.7.0';
+ if(kind==='external-byte')await writeFile(join(f.yaml,'dist/index.js'),'tampered');
+ if(kind==='external-metadata')await writeFile(join(f.yaml,'package.json'),'{}');
+ if(kind==='external-extra')await writeFile(join(f.yaml,'extra.js'),'extra');
+ if(kind==='external-missing')await rm(join(f.yaml,'LICENSE'));
+ if(kind==='external-link'){await rm(join(f.yaml,'LICENSE'));await symlink(join(f.yaml,'package.json'),join(f.yaml,'LICENSE'));}
+ if(kind==='shim-link'){await rm(f.protocolShim);await symlink(f.target,f.protocolShim);}
+ if(kind==='shadow')await mkdir(join(f.protocolShim,'../node'));
+ if(kind==='extra')await writeFile(join(f.protocol,'extra.js'),'extra');
+ if(kind==='sri'){const p=join(f.root,'pnpm-lock.yaml');await writeFile(p,(await readFile(p,'utf8')).replace('sha512-3NxN8','sha512-xxxxx'));}
+ if(kind==='alias'){await rm(f.alias);await symlink(join(f.sdk,'node_modules/yaml'),f.alias);}
+ const before=await Promise.all([readFile(f.shim),readFile(f.protocolShim)]);await assert.rejects(normalizeWriterInstaller(f.options));assert.deepEqual(await readFile(f.shim),before[0]);assert.deepEqual(await readFile(f.protocolShim),before[1]);
 });
 for(const kind of ['wrong-shim','appended-exec','target','pnpm-version','original-tamper','yaml-tamper','ui-tamper','link','unrelated-extra','shadow','mode','metadata-tamper','frozen-sri','archive-hash'])test(kind+' refuses BEFORE removal, never executes shim/SDK',async t=>{
  const f=await fixture(t);

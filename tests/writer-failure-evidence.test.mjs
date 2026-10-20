@@ -64,7 +64,7 @@ with zipfile.ZipFile(sys.argv[2],'w') as z:
  const bytes=await readFile(zip);expected.digest=changes.wrongDigest?'sha256:'+'0'.repeat(64):'sha256:'+hash(bytes);
  const meta={id:42,digest:expected.digest,expired:false,name:'writer-native-build-staging-23-2',workflow_run:{id:23,repository_id:17,head_repository_id:17,head_sha:source,head_branch:'release/native-staging'},archive_download_url:'https://blob.invalid/?sig=private-metadata'};
  const run={id:23,workflow_id:7,path:'.github/workflows/deploy-writer.yml',repository:{id:17,full_name:'fixture/writer'},head_repository:{id:17,full_name:'fixture/writer'},head_sha:source,run_attempt:2,event:'workflow_dispatch',head_branch:'release/native-staging',env:{DONT:'private-context'}};
- let metadataCalls=0,runCalls=0,zipCalls=0;
+ let metadataCalls=0,runCalls=0,zipCalls=0,blobCalls=0;
  const transport=async(url,init)=>{
   url=String(url);
   if(url.endsWith('/actions/artifacts/42')){
@@ -80,13 +80,15 @@ with zipfile.ZipFile(sys.argv[2],'w') as z:
    if(runCalls===2)Object.assign(result,changes.afterRun??{});
    return {ok:true,status:200,json:async()=>result};
   }
-  if(url.endsWith('/zip')){zipCalls++;return {status:302,headers:new Headers({location:'https://artifact.example.test/blob?sig=private-sas'})};}
-  if(url.startsWith('https://artifact.example.test/')){assert.equal(init.headers,undefined);return new Response(bytes);}
+  if(url.endsWith('/zip')){zipCalls++;const headers=new Headers({location:'https://artifact.example.test/blob?sig=private-sas'});
+   if(changes.redirect==='read-error'||changes.redirect==='timeout')return {status:302,headers,body:new ReadableStream({pull(c){if(changes.redirect==='read-error')c.error(Error('private-reader-error'));else return new Promise(()=>{});}})};
+   return new Response(changes.redirect==='overflow'?'x'.repeat(256*1024+1):'complete non-JSON redirect body',{status:302,headers});}
+  if(url.startsWith('https://artifact.example.test/')){blobCalls++;assert.equal(init.headers,undefined);return new Response(bytes);}
   throw Error('unexpected mocked request');
  };
  const downloadRoot=join(f.repoRoot,'download/artifact'),evidencePath=join(f.repoRoot,'download/artifact-metadata.json');
  const evidence=async()=>{const text=await readFile(evidencePath,'utf8');assert.doesNotMatch(text,/private-|archive_download_url|Authorization|"env"/);return JSON.parse(text);};
- return {...f,expected,bytes,downloadRoot,transport,evidence,counts:()=>({metadataCalls,runCalls,zipCalls})};
+ return {...f,expected,bytes,downloadRoot,transport,evidence,counts:()=>({metadataCalls,runCalls,zipCalls,blobCalls})};
 }
 test('wrong INITIAL attempt persists observed run before refusing without any ZIP fetch',async t=>{
  const f=await transportFixture(t,{initialRun:{run_attempt:1}});
@@ -139,7 +141,12 @@ test('oversized HTTP error body is bounded and refused, with observed status ret
  const f=await transportFixture(t,{http:{stage:'before',status:429,body:{message:'private-'.repeat(50000)}}});
  await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot));const e=await f.evidence();assert.equal(e.responses.before.status,429);assert.equal(e.responses.before.bodyState,'oversized');assert.equal(e.responses.before.body,undefined);assert.equal(e.before,undefined);
 });
+for(const redirect of ['overflow','read-error','timeout'])test('otherwise-valid 302 '+redirect+' refuses BEFORE blob/ZIP/SHA and retains incomplete public status',async t=>{
+ const f=await transportFixture(t,{redirect});await assert.rejects(download(f.expected,f.downloadRoot,f.transport,f.repoRoot,{responseTimeoutMs:20}));
+ const e=await f.evidence();assert.equal(f.counts().blobCalls,0);assert.equal(e.responses.archive.status,302);assert.equal(e.responses.archive.complete,false);assert.equal(e.downloadedSha256,undefined);await assert.rejects(readFile(join(f.downloadRoot,'../writer-native.zip')),{code:'ENOENT'});
+ if(redirect==='overflow')assert.equal(e.responses.archive.truncated,true);
+});
 test('full positive transport preserves every observation including after-run workflow identity',async t=>{
  const f=await transportFixture(t);await download(f.expected,f.downloadRoot,f.transport,f.repoRoot);
- const e=await f.evidence();assert.equal(e.stage,'complete');assert.equal(e.refusal,null);assert.equal(e.run.workflow_id,7);assert.equal(e.runAfter.workflow_id,7);assert.equal(e.runAfter.path,'.github/workflows/deploy-writer.yml');assert.equal(e.after.id,42);assert.equal(e.downloadedSha256,hash(f.bytes));assert.deepEqual(f.counts(),{metadataCalls:2,runCalls:2,zipCalls:1});
+ const e=await f.evidence();assert.equal(e.stage,'complete');assert.equal(e.refusal,null);assert.equal(e.run.workflow_id,7);assert.equal(e.runAfter.workflow_id,7);assert.equal(e.runAfter.path,'.github/workflows/deploy-writer.yml');assert.equal(e.after.id,42);assert.equal(e.downloadedSha256,hash(f.bytes));assert.deepEqual(f.counts(),{metadataCalls:2,runCalls:2,zipCalls:1,blobCalls:1});
 });
