@@ -54,8 +54,8 @@ importers:
         specifier: 0.1.0-beta.125
         version: 0.1.0-beta.125
       '@mdbase-dev/connect-protocol':
-        specifier: file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz
-        version: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz
+        specifier: file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz
+        version: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz
       '@mdbase-dev/sdk':
         specifier: file:../../vendor/mdbase-dev-sdk-dev-0ecbef41.tgz
         version: file:vendor/mdbase-dev-sdk-dev-0ecbef41.tgz
@@ -398,8 +398,8 @@ packages:
   '@mdbase-dev/connect-protocol@0.1.0-beta.125':
     resolution: {integrity: sha512-q6aEZ1+dVAXvoN84FgDLMhqCnCdlsXhp0K5M+Wcp2x2ICUIoE/lA+eDg4AJqDqdWZ3Nq2mkiczvat6HG2y8EeQ==}
 
-  '@mdbase-dev/connect-protocol@file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz':
-    resolution: {integrity: sha512-PFG1qmAzmcyJjmZLmGz4eoOOZRDgvTvDZATf6IGBccNHRc1eGZtMm7ZUA7gNAxuO5KerrN6mDIB9qQnpojyOAg==, tarball: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz}
+  '@mdbase-dev/connect-protocol@file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz':
+    resolution: {integrity: sha512-c0iOOWEcNJRstdyUJ6aqJ3puVR5C9jXW4MBHmQnHI2c4vgOeKi5VWfiuueWx3ArvtwB3nPuAaXHhll/OKH/+Yw==, tarball: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz}
     version: 0.1.0-beta.129
 
   '@mdbase-dev/connect-testing@0.1.0-beta.125':
@@ -1622,11 +1622,9 @@ snapshots:
       ajv-formats: 3.0.1(ajv@8.20.0)
       yaml: 2.9.1
 
-  '@mdbase-dev/connect-protocol@file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-d765e675c3da.tgz':
+  '@mdbase-dev/connect-protocol@file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz':
     dependencies:
       '@noble/hashes': 2.4.0
-      ajv: 8.20.0
-      ajv-formats: 3.0.1(ajv@8.20.0)
       yaml: 2.9.1
 
   '@mdbase-dev/connect-testing@0.1.0-beta.125':
