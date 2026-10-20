@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { inventoryDirectory } from '../scripts/lib/native-publish-bytes.mjs';
 import { assertRuntimeOriginals, deriveRuntimeOriginals, runtimeSourcePins } from '../scripts/lib/writer-runtime-originals.mjs';
 import { sourceHostingPolicy, uploadConfiguration, readHostingMetadata, assertHostingMetadata } from '../scripts/lib/writer-hosting-policy.mjs';
-import { createReceipt } from '../apps/writer/scripts/native-publisher.mjs';
+import { assertInventoryCoverage, createReceipt } from '../apps/writer/scripts/native-publisher.mjs';
 import { verifyServedAssets } from '../apps/writer/scripts/verify-served.mjs';
 import { hostingFixture } from './writer-hosting-fixture.mjs';
 const origin='https://staging.mdbase-writer.pages.dev';
@@ -26,6 +26,24 @@ test('known uploaded routes and Worker clear ONLY with source config, actual met
  const args={target:'staging',source:{sha:f.plan.sha,tree:f.plan.tree},releaseRef:'release/native-staging',sdkTrust:{},inventory:f.inventory,deploymentId:f.deployment.id,verification:result};
  assert.equal(createReceipt(args).status,'verified');
  assert.equal(createReceipt({...args,verification:{ok:true,policy_verified:true,verified:f.inventory,failures:[],unverified:[]}}).status,'failed-or-incomplete');
+});
+test('official advanced-mode Worker directory retains EVERY module/map in inventory and hosting evidence',async t=>{
+ const f=await hostingFixture(t); // SYNTHETIC data only, not compiled app output.
+ await rm(join(f.publish,'_worker.js'));
+ for(const [name,body] of Object.entries({'index.js':'export default {};','module.mjs':'export {};','index.js.map':'{}'}))await f.put(join(f.publish,'_worker.js',name),body);
+ const inventory=await inventoryDirectory(f.publish);
+ assert.doesNotThrow(()=>assertInventoryCoverage(inventory,{nativeAssets:{}}));
+ const result=await verifyServedAssets({origin,inventory,publication:f.publication,fetch:f.fetch,attempts:1});
+ assert.equal(result.ok,true,JSON.stringify(result));
+ assert.deepEqual(result.policyEvidence.coveredControls.map(a=>a.path).sort(),['_routes.json','_worker.js/index.js','_worker.js/index.js.map','_worker.js/module.mjs']);
+ assert.ok(result.verified.every(a=>!a.path.startsWith('_worker.js/')));
+ const args={target:'staging',source:{sha:f.plan.sha,tree:f.plan.tree},releaseRef:'release/native-staging',sdkTrust:{},inventory,deploymentId:f.deployment.id,verification:result};
+ assert.equal(createReceipt(args).status,'verified');
+ const omitted=structuredClone(result);omitted.policyEvidence.coveredControls.pop();
+ assert.equal(createReceipt({...args,verification:omitted}).status,'failed-or-incomplete');
+ const changed=structuredClone(result);changed.policyEvidence.coveredControls[1].sha256='0'.repeat(64);
+ assert.equal(createReceipt({...args,verification:changed}).status,'failed-or-incomplete');
+ assert.throws(()=>assertInventoryCoverage(inventory.filter(a=>a.path!=='_worker.js/index.js'),{nativeAssets:{}}),/Missing precompiled Pages Worker/);
 });
 for(const field of ['bucket','compatibility','deployment']) test('even exact static bytes refuse wrong '+field+' metadata',async t=>{
  const f=await hostingFixture(t),metadata=structuredClone(f.metadata);

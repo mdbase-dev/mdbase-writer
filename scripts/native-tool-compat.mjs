@@ -1,7 +1,7 @@
-// Offline compiler compatibility only; never deploy, no Cloudflare credentials.
+// SYNTHETIC Functions compatibility only; never app/SDK build or deployment.
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { sourceHostingPolicy, uploadConfiguration } from './lib/writer-hosting-policy.mjs';
 import { resolve, join } from 'node:path';
@@ -22,8 +22,21 @@ try {
   assert.deepEqual(parsed.compatibility_flags,[]);
  }
  console.log('PASS Wrangler4.114 documented config parser: isolated SOURCE binding/date in both Pages channels');
- execFileSync(join(root,'node_modules/.bin/wrangler'),['pages','functions','build',join(repo,'apps/writer/functions'),'--outfile',join(root,'_worker.js')],{cwd:root,env,stdio:'inherit'});
- const worker=await readFile(join(root,'_worker.js'),'utf8');
- assert.ok(worker.includes('WRITER_ASSETS') && worker.includes('application/wasm'));
- console.log('PASS isolated integrity-locked Wrangler 4.114.0 --ignore-scripts + Pages Functions precompile (NO deploy)');
+ // Exercise the SAME output mode selected by the real build workflow, but with
+ // a tiny non-product fixture. Parse only; NEVER execute its generated Worker.
+ const workflow=await readFile(join(repo,'.github/workflows/deploy-writer.yml'),'utf8');
+ const flag=workflow.match(/pages functions build apps\/writer\/functions (--out(?:file|dir)) apps\/writer\/dist\/_worker\.js/)[1];
+ const functions=join(root,'synthetic-functions'),output=join(root,'_worker.js');
+ await mkdir(functions);
+ await writeFile(join(functions,'index.js'),'export const onRequestGet = ({env}) => new Response("SYNTHETIC_WRITER_FUNCTIONS", {headers:{"Content-Type":"application/wasm","X-Synthetic-Binding":typeof env.WRITER_ASSETS}});');
+ execFileSync(join(root,'node_modules/.bin/wrangler'),['pages','functions','build','--help'],{cwd:root,env,stdio:'inherit'});
+ execFileSync(join(root,'node_modules/.bin/wrangler'),['pages','functions','build',functions,flag,output],{cwd:root,env,stdio:'inherit'});
+ const directory=(await stat(output)).isDirectory();
+ const worker=await readFile(directory?join(output,'index.js'):output,'utf8');
+ const syntax=spawnSync(process.execPath,['--input-type=module','--check'],{input:worker,env,encoding:'utf8'});
+ console.log(JSON.stringify({kind:'SYNTHETIC UNIT DATA ONLY',officialWrangler:'4.114.0',flag,directory,multipartMetadata:worker.includes('Content-Disposition: form-data; name="metadata"'),moduleSyntaxExit:syntax.status}));
+ assert.equal(syntax.status,0,'compiled output must be JavaScript, NOT a multipart upload body');
+ assert.ok(directory,'official advanced-mode _worker.js/index.js layout');
+ assert.ok(worker.includes('SYNTHETIC_WRITER_FUNCTIONS') && worker.includes('WRITER_ASSETS') && worker.includes('application/wasm'));
+ console.log('PASS official advanced-mode JavaScript from SYNTHETIC Functions; NO product build/deploy');
 } finally {await rm(root,{recursive:true,force:true});}

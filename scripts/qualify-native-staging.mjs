@@ -52,7 +52,7 @@ try{
   run('pnpm',['--ignore-workspace','install','--frozen-lockfile','--ignore-scripts','--ignore-pnpmfile'],tools);
   assert.equal(JSON.parse(await readFile(join(tools,'node_modules/wrangler/package.json'))).version,'4.114.0');
   await writeFile(join(tools,'wrangler.json'),JSON.stringify(uploadConfiguration(await sourceHostingPolicy(repo))));
-  run(join(tools,'node_modules/.bin/wrangler'),['pages','functions','build',join(repo,'apps/writer/functions'),'--outfile',join(dist,'_worker.js')],tools);
+  run(join(tools,'node_modules/.bin/wrangler'),['pages','functions','build',join(repo,'apps/writer/functions'),'--outdir',join(dist,'_worker.js')],tools);
  }
  // verify mode is POST-ONLY: never app rebuild or Functions recompilation.
  run('node',['apps/writer/scripts/validate-manifest.mjs',join(dist,'.well-known/mdbase-app.json')]);
@@ -61,7 +61,7 @@ try{
  const offlineShell=await assertWriterOfflineShell({directory:dist,repoRoot:repo,sdkTrust});
  assert.deepEqual(offlineShell.inventory.map(({path,bytes,sha256})=>({path,bytes,sha256})),inventory.map(({path,bytes,sha256})=>({path,bytes,sha256})));
  coveredHostingControls(await sourceHostingPolicy(repo),inventory);
- const js=await Promise.all(inventory.filter(a=>/\.m?js$/.test(a.path)&&a.path!=='_worker.js').map(a=>readFile(join(dist,a.path),'utf8')));
+ const js=await Promise.all(inventory.filter(a=>/\.m?js$/.test(a.path)&&a.path!=='_worker.js'&&!a.path.startsWith('_worker.js/')).map(a=>readFile(join(dist,a.path),'utf8')));
  for(const literal of [sdkTrust.release.cpOrigin,sdkTrust.release.logOrigin,sdkTrust.release.assetSha256,sdkTrust.release.source.commit,sdkTrust.editorOrigin])assert.ok(js.some(s=>s.includes(literal)),'missing exact compiled staging trust/Editor binding');
  await mkdir(join(repo,'test-results'),{recursive:true});
  await writeFile(join(repo,'test-results/writer-staging-qualification.json'),JSON.stringify({...evidence,mode,offlineShell,inventory},null,2));

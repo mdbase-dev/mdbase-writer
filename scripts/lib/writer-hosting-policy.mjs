@@ -63,7 +63,8 @@ export async function readHostingMetadata({policy,plan,deployment,preflight,acco
  try{assertHostingMetadata(policy,result,plan,deployment,preflight);}catch(error){error.safeEvidence=result;throw error;}return result;
 }
 export function coveredHostingControls(policy,inventory) {
- const routes=inventory.find(r=>r.path==='_routes.json'),worker=inventory.find(r=>r.path==='_worker.js');
- check(routes?.sha256===policy.routesSha256&&worker?.bytes>0,'immutable source routes/precompiled Worker coverage');
- return [routes,worker].map(row=>({...row,evidence:'immutable-upload-inventory + source-config + scoped-deployment/current-project-config + runtime-behavior (NOT live Worker-source GET)'}));
+ const routes=inventory.find(r=>r.path==='_routes.json'),workers=inventory.filter(r=>r.path==='_worker.js'||r.path.startsWith('_worker.js/'));
+ const entry=workers.find(r=>r.path==='_worker.js'||r.path==='_worker.js/index.js');
+ check(routes?.sha256===policy.routesSha256&&entry?.bytes>0,'immutable source routes/precompiled Worker coverage');
+ return [routes,...workers].map(row=>({...row,evidence:'immutable-upload-inventory + source-config + scoped-deployment/current-project-config + runtime-behavior (NOT live Worker-source GET)'}));
 }

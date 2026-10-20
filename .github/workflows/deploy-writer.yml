@@ -200,7 +200,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/writer-tools"
           cp tools/native-publisher/{package.json,pnpm-lock.yaml} "$RUNNER_TEMP/writer-tools/"
           (cd "$RUNNER_TEMP/writer-tools" && NPM_CONFIG_USERCONFIG=/dev/null NPM_CONFIG_GLOBALCONFIG=/dev/null pnpm --ignore-workspace install --frozen-lockfile --ignore-scripts --ignore-pnpmfile)
-          "$RUNNER_TEMP/writer-tools/node_modules/.bin/wrangler" pages functions build apps/writer/functions --outfile apps/writer/dist/_worker.js
+          "$RUNNER_TEMP/writer-tools/node_modules/.bin/wrangler" pages functions build apps/writer/functions --outdir apps/writer/dist/_worker.js
           cp -a apps/writer/dist/. "$RUNNER_TEMP/writer-build/publish/"
           node apps/writer/scripts/native-publisher.mjs inventory --dist "$RUNNER_TEMP/writer-build/publish" --plan "$RUNNER_TEMP/writer-build/plan.json" > "$RUNNER_TEMP/writer-build/inventory.json"
           # Official npm ORIGINAL DATA, root-lock SRI verified; never R2 writes.
