@@ -21,6 +21,17 @@ test("staging and production are explicit, and production uses the custom domain
   assert.equal(writerDeployments.staging.connectUrl, "https://connect-staging.mdbase.dev");
 });
 
+test("every target has an exact HTTPS app origin and its own Connect loopback port", () => {
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(writerDeployments).map(([name, d]) => [name, [d.origin, d.connectUrl, d.loopbackUrl]])),
+    {
+      lab: ["https://lab.mdbase-writer.pages.dev", "https://connect-lab.mdbase.dev", "http://127.0.0.1:28487"],
+      staging: ["https://staging.mdbase-writer.pages.dev", "https://connect-staging.mdbase.dev", "http://127.0.0.1:28486"],
+      production: ["https://writer.mdbase.dev", "https://connect.mdbase.dev", "http://127.0.0.1:28485"],
+    },
+  );
+});
+
 test("refuses conflicting selectors, unknown targets and mismatched Connect origins", () => {
   assert.throws(() => writerDeploymentFor({ MDBASE_ENV: "staging", MDBASE_WRITER_DEPLOY_TARGET: "production" }), /Conflicting/);
   assert.throws(() => writerDeploymentFor({ MDBASE_ENV: "unknown" }), /Unsupported/);

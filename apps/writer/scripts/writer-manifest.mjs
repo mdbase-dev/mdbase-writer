@@ -30,6 +30,8 @@ import { resolve } from "node:path";
 import { dataContractDigest } from "@callumalpass/mdbase";
 import { parse as parseYaml } from "yaml";
 
+import { writerDeployments } from "./deployment-environment.mjs";
+
 // beta.5 ships the same starters as beta.4 and lists every earlier starter as an upgrade baseline.
 export const WRITER_TYPE_PACK_VERSION = "1.0.0-beta.5";
 
@@ -88,6 +90,16 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
     homepage: appUrl,
     icon: new URL("favicon.svg", appUrl).href,
     redirect_uris: [appUrl],
+    // Every environment's exact app origin, from the deployment table, so the
+    // same declaration can be installed in lab, staging and production. The
+    // Connect loopback ports in that table belong to the legacy Connect
+    // session only; they are never installation origins.
+    installation_origins: Object.fromEntries(
+      Object.entries(writerDeployments).map(([environment, deployment]) => [
+        environment,
+        { "app-runtime": [deployment.origin] },
+      ]),
+    ),
     requirements: {
       access: "full_collection",
       contracts: [...contracts, ...commentPack.provides],

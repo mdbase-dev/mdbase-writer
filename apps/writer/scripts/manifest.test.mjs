@@ -39,6 +39,25 @@ test("the comment pack is byte-identical to the one mdbase contracts publishes",
   assert.equal(readFileSync(resolve(root, "mdbase", COMMENT_PACK), "utf8"), readFileSync(publishedCommentPack, "utf8"));
 });
 
+test("the manifest declares exact installation origins for lab, staging and production", async () => {
+  const manifest = await buildWriterManifest();
+  assert.deepEqual(manifest.installation_origins, {
+    lab: { "app-runtime": ["https://lab.mdbase-writer.pages.dev"] },
+    staging: { "app-runtime": ["https://staging.mdbase-writer.pages.dev"] },
+    production: { "app-runtime": ["https://writer.mdbase.dev"] },
+  });
+});
+
+test("a staging build keeps the same app identity, scopes and installation origins", async () => {
+  const staging = await buildWriterManifest({ origin: "https://staging.mdbase-writer.pages.dev" });
+  const production = await buildWriterManifest();
+  assert.equal(staging.homepage, "https://staging.mdbase-writer.pages.dev/");
+  assert.equal(staging.id, production.id);
+  assert.equal(staging.name, production.name);
+  assert.deepEqual(staging.requirements, production.requirements);
+  assert.deepEqual(staging.installation_origins, production.installation_origins);
+});
+
 test("identity is optional: comments are unsigned without it", async () => {
   const manifest = await buildWriterManifest();
   assert.deepEqual(manifest.requirements.people, { version: 1, optional: ["identity"] });
