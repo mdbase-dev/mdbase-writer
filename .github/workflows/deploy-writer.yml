@@ -104,105 +104,199 @@ jobs:
           [[ "$GITHUB_REF" == "refs/heads/release/native-$TARGET" ]]
           [[ "$GITHUB_SHA" == "$SOURCE_SHA" ]]
 
-  native-deploy:
-    name: Protected native Writer to ${{ inputs.target }}
+  native-inputs:
+    # Only nonsecret authenticated-handoff byte expectations leave this job.
     needs: native-dispatch
     runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    environment: writer-${{ inputs.target }}
+    outputs:
+      sdk: ${{ steps.hashes.outputs.sdk }}
+      ui: ${{ steps.hashes.outputs.ui }}
+      protocol: ${{ steps.hashes.outputs.protocol }}
+      trust: ${{ steps.hashes.outputs.trust }}
+    steps:
+      - id: hashes
+        name: Require four protected original-byte expectations (OFF-CI auth only)
+        env:
+          NATIVE_SDK_SHA256: ${{ vars.NATIVE_SDK_SHA256 }}
+          NATIVE_UI_SHA256: ${{ vars.NATIVE_UI_SHA256 }}
+          NATIVE_PROTOCOL_SHA256: ${{ vars.NATIVE_PROTOCOL_SHA256 }}
+          NATIVE_TRUST_ASSET_SHA256: ${{ vars.NATIVE_TRUST_ASSET_SHA256 }}
+        run: |
+          set -euo pipefail
+          for name in NATIVE_SDK_SHA256 NATIVE_UI_SHA256 NATIVE_PROTOCOL_SHA256 NATIVE_TRUST_ASSET_SHA256; do
+            [[ "${!name}" =~ ^[0-9a-f]{64}$ ]]
+          done
+          printf 'sdk=%s\nui=%s\nprotocol=%s\ntrust=%s\n' "$NATIVE_SDK_SHA256" "$NATIVE_UI_SHA256" "$NATIVE_PROTOCOL_SHA256" "$NATIVE_TRUST_ASSET_SHA256" >> "$GITHUB_OUTPUT"
+
+  native-build:
+    name: Unprivileged frozen native Writer build
+    needs: native-inputs
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
-    concurrency:
-      group: deploy-writer-${{ inputs.target }}
-      cancel-in-progress: false
-    # Existing environments: production MUST retain a required reviewer,
-    # prevent-self-review, no admin bypass, and exact native branch policies.
-    # This workflow neither creates protections nor supplies an approval bypass.
-    environment:
-      name: writer-${{ inputs.target }}
-      url: ${{ inputs.target == 'production' && 'https://writer.mdbase.dev/' || 'https://staging.mdbase-writer.pages.dev/' }}
+    # NO GitHub environment and NO Cloudflare secrets in this job.
     env:
       TARGET: ${{ inputs.target }}
       SOURCE_SHA: ${{ inputs.source_sha }}
+      NATIVE_SDK_SHA256: ${{ needs.native-inputs.outputs.sdk }}
+      NATIVE_UI_SHA256: ${{ needs.native-inputs.outputs.ui }}
+      NATIVE_PROTOCOL_SHA256: ${{ needs.native-inputs.outputs.protocol }}
+      NATIVE_TRUST_ASSET_SHA256: ${{ needs.native-inputs.outputs.trust }}
+      WRANGLER_SEND_METRICS: 'false'
+    outputs:
+      artifact-id: ${{ steps.artifact.outputs.artifact-id }}
+      artifact-digest: ${{ steps.artifact.outputs.artifact-digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.source_sha }}
           fetch-depth: 0
           persist-credentials: false
-          clean: true
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.15.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
-          cache: pnpm
-      - name: Verify clean exact source and independently approved target SDK originals
-        env:
-          # Public digest approved independently AFTER canonical producer auth.
-          # Missing archives or protected digest is a hard pre-upload refusal.
-          WRITER_NATIVE_TRUST_SHA256: ${{ vars.WRITER_NATIVE_TRUST_SHA256 }}
+      - name: Exact checkout and complete frozen originals BEFORE dependency execution
         run: |
           set -euo pipefail
-          export RECEIPTS="$RUNNER_TEMP/writer-native-receipt"
-          echo "RECEIPTS=$RECEIPTS" >> "$GITHUB_ENV"
-          mkdir -p "$RECEIPTS"
-          node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" --repo-root . > "$RECEIPTS/plan.json"
-      - run: pnpm install --frozen-lockfile
-      - name: Test qualified source (no deployment credentials)
-        run: pnpm check
-      - name: Build once with exact target origins; strict canonical manifest validation
+          mkdir -p "$RUNNER_TEMP/writer-build/publish"
+          node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" > "$RUNNER_TEMP/writer-build/plan.json"
+          pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile
+          node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" --installed > "$RUNNER_TEMP/installed-plan.json"
+          cmp "$RUNNER_TEMP/writer-build/plan.json" "$RUNNER_TEMP/installed-plan.json"
+          pnpm rebuild --pending
+          pnpm check
+      - name: Build once, then precompile Pages Functions without credentials
         run: |
           set -euo pipefail
-          # Install/test scripts must not have changed source or archive inputs.
-          node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" --repo-root . > "$RECEIPTS/plan-confirmed.json"
-          cmp "$RECEIPTS/plan.json" "$RECEIPTS/plan-confirmed.json"
-          MDBASE_WRITER_ORIGIN=$(jq -er .origin "$RECEIPTS/plan.json")
-          VITE_MDBASE_CONNECT_URL=$(jq -er .sdkTrust.release.cpOrigin "$RECEIPTS/plan.json")
-          VITE_MDBASE_EDITOR_URL=$(jq -er .sdkTrust.editorOrigin "$RECEIPTS/plan.json")
-          export MDBASE_WRITER_ORIGIN VITE_MDBASE_CONNECT_URL VITE_MDBASE_EDITOR_URL
-          export VITE_MDBASE_ENV="$TARGET"
-          export VITE_MDBASE_CONNECT_LOOPBACK_URL=''
-          export VITE_WRITER_DEMO=0
-          export VITE_MDBASE_WRITER_BUILD_ID="$SOURCE_SHA"
+          node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" --installed > "$RUNNER_TEMP/confirmed-plan.json"
+          cmp "$RUNNER_TEMP/writer-build/plan.json" "$RUNNER_TEMP/confirmed-plan.json"
+          export MDBASE_WRITER_ORIGIN="$(jq -er .origin "$RUNNER_TEMP/writer-build/plan.json")"
+          export VITE_MDBASE_CONNECT_URL="$(jq -er .sdkTrust.release.cpOrigin "$RUNNER_TEMP/writer-build/plan.json")"
+          export VITE_MDBASE_EDITOR_URL="$(jq -er .sdkTrust.editorOrigin "$RUNNER_TEMP/writer-build/plan.json")"
+          export VITE_MDBASE_ENV="$TARGET" VITE_MDBASE_CONNECT_LOOPBACK_URL='' VITE_WRITER_DEMO=0 VITE_MDBASE_WRITER_BUILD_ID="$SOURCE_SHA"
           pnpm build
           node apps/writer/scripts/validate-manifest.mjs apps/writer/dist/.well-known/mdbase-app.json
-          node apps/writer/scripts/native-publisher.mjs inventory --dist apps/writer/dist --plan "$RECEIPTS/plan.json" > "$RECEIPTS/inventory.json"
+          # Independent reviewed tooling lock, outside the app/workspace.
+          mkdir -p "$RUNNER_TEMP/writer-tools"
+          cp tools/native-publisher/{package.json,pnpm-lock.yaml} "$RUNNER_TEMP/writer-tools/"
+          (cd "$RUNNER_TEMP/writer-tools" && NPM_CONFIG_USERCONFIG=/dev/null NPM_CONFIG_GLOBALCONFIG=/dev/null pnpm --ignore-workspace install --frozen-lockfile --ignore-scripts --ignore-pnpmfile)
+          "$RUNNER_TEMP/writer-tools/node_modules/.bin/wrangler" pages functions build apps/writer/functions --outfile apps/writer/dist/_worker.js
+          cp -a apps/writer/dist/. "$RUNNER_TEMP/writer-build/publish/"
+          node apps/writer/scripts/native-publisher.mjs inventory --dist "$RUNNER_TEMP/writer-build/publish" --plan "$RUNNER_TEMP/writer-build/plan.json" > "$RUNNER_TEMP/writer-build/inventory.json"
+          node scripts/native-build-envelope.mjs "$RUNNER_TEMP/writer-build"
+      - id: artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: writer-native-build-${{ inputs.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/writer-build/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+
+  native-deploy:
+    name: Protected immutable Writer upload
+    needs: [native-inputs, native-build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-writer-${{ inputs.target }}
+      cancel-in-progress: false
+    # EXTERNAL: exact immutable protected native refs, Callum production reviewer,
+    # no admin bypass (NOT prevent-self-review). Separate Callum GO before dispatch.
+    environment:
+      name: writer-${{ inputs.target }}
+      url: ${{ inputs.target == 'production' && 'https://writer.mdbase.dev/' || 'https://staging.mdbase-writer.pages.dev/' }}
+    env:
+      TARGET: ${{ inputs.target }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      NATIVE_SDK_SHA256: ${{ vars.NATIVE_SDK_SHA256 }}
+      NATIVE_UI_SHA256: ${{ vars.NATIVE_UI_SHA256 }}
+      NATIVE_PROTOCOL_SHA256: ${{ vars.NATIVE_PROTOCOL_SHA256 }}
+      NATIVE_TRUST_ASSET_SHA256: ${{ vars.NATIVE_TRUST_ASSET_SHA256 }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 11.15.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Reviewed-source guard (no app dependencies installed)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/writer-native-receipt"
+          node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" > "$RUNNER_TEMP/writer-native-receipt/source-plan.json"
+          cp "$RUNNER_TEMP/writer-native-receipt/source-plan.json" "$RUNNER_TEMP/writer-native-receipt/plan.json"
+      - name: Independently bootstrap reviewed pinned upload tooling only
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/writer-tools" "$RUNNER_TEMP/writer-upload"
+          cp tools/native-publisher/{package.json,pnpm-lock.yaml} "$RUNNER_TEMP/writer-tools/"
+          (cd "$RUNNER_TEMP/writer-tools" && NPM_CONFIG_USERCONFIG=/dev/null NPM_CONFIG_GLOBALCONFIG=/dev/null pnpm --ignore-workspace install --frozen-lockfile --ignore-scripts --ignore-pnpmfile)
+          test "$(node -p "require('$RUNNER_TEMP/writer-tools/node_modules/wrangler/package.json').version")" = 4.114.0
+      - name: Validate immutable ID/digest/repository/run/attempt/source/tree/target before and after download
         env:
-          WRITER_NATIVE_TRUST_SHA256: ${{ vars.WRITER_NATIVE_TRUST_SHA256 }}
-          VITE_MDBASE_FEEDBACK_URL: ${{ vars.MDBASE_FEEDBACK_URL }}
-          VITE_MDBASE_FEEDBACK_TURNSTILE_SITE_KEY: ${{ vars.MDBASE_FEEDBACK_TURNSTILE_SITE_KEY }}
-      - name: Upload the already-built bytes once
+          ARTIFACT_ID: ${{ needs.native-build.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ needs.native-build.outputs.artifact-digest }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/lib/native-artifact.mjs "$RUNNER_TEMP/writer-upload/artifact"
+          cp "$RUNNER_TEMP/writer-upload/artifact/"{plan.json,inventory.json,envelope.json} "$RUNNER_TEMP/writer-native-receipt/"
+          cp "$RUNNER_TEMP/writer-upload/artifact-metadata.json" "$RUNNER_TEMP/writer-native-receipt/"
+          cmp "$RUNNER_TEMP/writer-native-receipt/source-plan.json" "$RUNNER_TEMP/writer-native-receipt/plan.json"
+          node apps/writer/scripts/native-publisher.mjs inventory --dist "$RUNNER_TEMP/writer-upload/artifact/publish" --plan "$RUNNER_TEMP/writer-native-receipt/source-plan.json" > "$RUNNER_TEMP/writer-native-receipt/revalidated-inventory.json"
+          cmp "$RUNNER_TEMP/writer-native-receipt/inventory.json" "$RUNNER_TEMP/writer-native-receipt/revalidated-inventory.json"
+          chmod -R a-w "$RUNNER_TEMP/writer-upload/artifact"
+      - name: Exact CURRENT native HEAD and inventory immediately before the one upload
         id: upload
-        working-directory: apps/writer
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
-          branch=$(jq -er .pagesBranch "$RECEIPTS/plan.json")
-          # Pages branch main is a channel, NEVER a Git main checkout/merge.
-          pnpm dlx wrangler@4.120.0 pages deploy dist --project-name mdbase-writer --branch "$branch" --commit-hash "$SOURCE_SHA" --commit-dirty=false 2>&1 | tee "$RECEIPTS/wrangler-output.txt"
-      - name: Resolve actual deployment UUID bound to uploaded URL, commit and channel
+          # No project config/functions/hooks in this isolated cwd; no app install.
+          branch=$(jq -er .pagesBranch "$RUNNER_TEMP/writer-native-receipt/plan.json")
+          node apps/writer/scripts/native-publisher.mjs assert-inventory --dist "$RUNNER_TEMP/writer-upload/artifact/publish" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json"
+          node scripts/native-current-head.mjs
+          cd "$RUNNER_TEMP/writer-upload"
+          "$RUNNER_TEMP/writer-tools/node_modules/.bin/wrangler" pages deploy artifact/publish --no-bundle --project-name mdbase-writer --branch "$branch" --commit-hash "$SOURCE_SHA" --commit-dirty=false 2>&1 | tee "$RUNNER_TEMP/writer-native-receipt/wrangler-output.txt"
+      - name: Capture actual UUID before any served checks
+        if: always() && (steps.upload.outcome == 'success' || steps.upload.outcome == 'failure')
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          node apps/writer/scripts/native-publisher.mjs capture-deployment --target "$TARGET" --sha "$SOURCE_SHA" --wrangler-output "$RECEIPTS/wrangler-output.txt" > "$RECEIPTS/deployment.json"
-      - name: Verify real staging alias or production custom domain against saved digests
+          node apps/writer/scripts/native-publisher.mjs capture-deployment --target "$TARGET" --sha "$SOURCE_SHA" --wrangler-output "$RUNNER_TEMP/writer-native-receipt/wrangler-output.txt" > "$RUNNER_TEMP/writer-native-receipt/deployment.json"
+      - name: All served bytes AND trusted hosting policy must pass (unverified blocks)
         if: always() && steps.upload.outcome == 'success'
         run: |
           set -euo pipefail
-          origin=$(jq -er .origin "$RECEIPTS/plan.json")
-          node apps/writer/scripts/verify-served.mjs --origin "$origin" --inventory "$RECEIPTS/inventory.json" > "$RECEIPTS/verification.json"
-      - name: Record receipt (missing ID or served-byte failure is NOT success)
-        if: always() && (steps.upload.outcome == 'success' || steps.upload.outcome == 'failure')
+          node apps/writer/scripts/native-publisher.mjs assert-inventory --dist "$RUNNER_TEMP/writer-upload/artifact/publish" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json"
+          origin=$(jq -er .origin "$RUNNER_TEMP/writer-native-receipt/plan.json")
+          node apps/writer/scripts/verify-served.mjs --origin "$origin" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json" > "$RUNNER_TEMP/writer-native-receipt/verification.json"
+      - name: Failure receipt is evidence, never rebuild/redeploy/rollback authority
+        if: always()
         run: |
-          node apps/writer/scripts/native-publisher.mjs receipt --target "$TARGET" --plan "$RECEIPTS/plan.json" --inventory "$RECEIPTS/inventory.json" --deployment "$RECEIPTS/deployment.json" --verification "$RECEIPTS/verification.json" > "$RECEIPTS/receipt.json"
-      - name: Retain evidence even on failure; never rollback or redeploy
+          if [ -f "$RUNNER_TEMP/writer-upload/artifact-metadata.json" ]; then cp "$RUNNER_TEMP/writer-upload/artifact-metadata.json" "$RUNNER_TEMP/writer-native-receipt/"; fi
+          node apps/writer/scripts/native-publisher.mjs receipt --target "$TARGET" --plan "$RUNNER_TEMP/writer-native-receipt/plan.json" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json" --deployment "$RUNNER_TEMP/writer-native-receipt/deployment.json" --verification "$RUNNER_TEMP/writer-native-receipt/verification.json" > "$RUNNER_TEMP/writer-native-receipt/receipt.json"
+      - name: Preserve source/run/artifact/inventory/failed deployment evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: writer-native-${{ inputs.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: writer-native-receipt-${{ inputs.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/writer-native-receipt/
+          include-hidden-files: true
           if-no-files-found: warn
           retention-days: 90

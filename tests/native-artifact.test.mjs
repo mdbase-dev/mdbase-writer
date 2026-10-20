@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
+import { assertArtifactMetadata, assertArtifactDirectory } from '../scripts/lib/native-artifact.mjs';
+import { assertCurrentHead } from '../scripts/native-current-head.mjs';
+import { inventoryDirectory } from '../scripts/lib/native-publish-bytes.mjs';
+const source='a'.repeat(40),tree='b'.repeat(40),digest='sha256:'+'c'.repeat(64);
+const expected={id:'42',digest,repository:'fixture/writer',repositoryId:'17',run:'23',attempt:'2',source,tree,target:'staging'};
+const meta={id:42,digest,expired:false,name:'writer-native-build-staging-23-2',workflow_run:{id:23,head_sha:source,head_repository_id:17}};
+test('immutable artifact ID/digest/repo/run/attempt/source are independently required',()=>{
+ assert.doesNotThrow(()=>assertArtifactMetadata(meta,expected));
+ for(const change of [{id:43},{digest:'sha256:'+'d'.repeat(64)},{expired:true},{name:'writer-native-build-staging-23-1'},{workflow_run:{...meta.workflow_run,id:24}},{workflow_run:{...meta.workflow_run,head_sha:'d'.repeat(40)}},{workflow_run:{...meta.workflow_run,head_repository_id:18}}]) assert.throws(()=>assertArtifactMetadata({...meta,...change},expected),/refusal/);
+});
+test('full artifact source/tree/target and inventory refuse substitutions, missing, extra, tampered files',async t=>{
+ const root=await mkdtemp(join(tmpdir(),'writer-artifact-'));t.after(()=>rm(root,{recursive:true,force:true}));
+ await mkdir(join(root,'publish'));await writeFile(join(root,'publish/index.html'),'writer');
+ const inventory=await inventoryDirectory(join(root,'publish'));
+ const plan={sha:source,tree,sdkTrust:{environment:'staging'}};
+ const hash=b=>createHash('sha256').update(b).digest('hex');
+ const inventoryBytes=JSON.stringify(inventory),planBytes=JSON.stringify(plan);
+ const envelope={...expected,inventorySha256:hash(inventoryBytes),planSha256:hash(planBytes)};
+ await writeFile(join(root,'inventory.json'),inventoryBytes);await writeFile(join(root,'plan.json'),planBytes);await writeFile(join(root,'envelope.json'),JSON.stringify(envelope));
+ await assertArtifactDirectory(root,expected);
+ for(const key of ['repository','run','attempt','source','tree','target']) await assert.rejects(assertArtifactDirectory(root,{...expected,[key]:'wrong'}),/envelope/);
+ await writeFile(join(root,'publish/index.html'),'tamper');await assert.rejects(assertArtifactDirectory(root,expected),/inventory-mismatch/);
+ await rm(join(root,'publish/index.html'));await assert.rejects(assertArtifactDirectory(root,expected),/inventory-mismatch/);
+ await writeFile(join(root,'publish/index.html'),'writer');await writeFile(join(root,'publish/.extra'),'extra');await assert.rejects(assertArtifactDirectory(root,expected),/inventory-mismatch/);
+ await rm(join(root,'publish/.extra'));await writeFile(join(root,'project-script.mjs'),'untrusted');await assert.rejects(assertArtifactDirectory(root,expected),/unexpected artifact paths/);
+ await rm(join(root,'project-script.mjs'));await writeFile(join(root,'inventory.json'),'[]');await assert.rejects(assertArtifactDirectory(root,expected),/inventory\/plan binding/);
+});
+test('current HEAD must still equal exact event, dispatch and checkout source immediately before upload',async()=>{
+ const env={SOURCE_SHA:source,TARGET:'staging',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/release/native-staging',GITHUB_SHA:source,GITHUB_REPOSITORY:'fixture/writer'};
+ const valid={ref:env.GITHUB_REF,object:{type:'commit',sha:source}};
+ const transport=value=>async(_url,options)=>{assert.equal(options.redirect,'error');return {ok:true,json:async()=>value};};
+ await assertCurrentHead(env,transport(valid));
+ for(const value of [{...valid,object:{type:'commit',sha:'d'.repeat(40)}},{...valid,ref:'refs/heads/main'},{...valid,object:{type:'tag',sha:source}}]) await assert.rejects(assertCurrentHead(env,transport(value)),/HEAD moved/);
+ await assert.rejects(assertCurrentHead({...env,GITHUB_SHA:'d'.repeat(40)},transport(valid)),/dispatch/);
+ await assert.rejects(assertCurrentHead(env,async()=>({ok:false})),/unavailable/);
+});

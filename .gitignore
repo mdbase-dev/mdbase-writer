@@ -1,4 +1,5 @@
 node_modules/
+.publisher-tools-*/
 dist/
 coverage/
 .vite/
