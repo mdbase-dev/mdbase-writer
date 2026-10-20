@@ -334,6 +334,39 @@ post-only verification never triggers an assurance rebuild.
   tree and cannot qualify for immutable publication. These product checks/build
   are explicit source qualification only. See the exact current intake report
   for commands/exits/output identity; tests alone never imply a build or admission.
+
+### Current 15eb source/product qualification (NOT live acceptance)
+
+Report: `.coord/scratch/nx-uiopen/writer-eaa4-staging-intake.md` in the parent
+coordination checkout. Fresh SDK/facts intake preserved all old originals and
+its ten-file historical packet. Full supported root checks passed: both
+typechecks; test groups65/52/300/212 PASS, with seven EXISTING optional skips.
+Focused publisher/installer suite:242 PASS/0 FAIL/0 SKIP. No assertion/skip
+bypass: target-specific app tests now use the explicit build environment and
+verify BOTH cross-environment refusals; jsdom remains honestly unavailable,
+not READY. Compiled public return checks validate metadata PLUS every original
+root/policy-pin byte, rather than incorrectly comparing enriched output with
+metadata alone.
+
+Exactly ONE actual staging app build and ONE isolated official4.114.0 Functions
+compilation succeeded from clean source
+`472f97ded12ac97ed95b8c5da4f5f011582af822`, tree
+`6ea4db1d82302e7715384224697ebf1447e6b7df`. Complete independent output inventory:
+86 files; offline cache39 assets, version
+`96ff20deb8d27fb51b64d603b07e3ee1a5aad180439b4935dea63129127ad712`.
+Post-only verification reuses the SAME output; it never rebuilds/recompiles.
+The extended post-only mode also checks the original SDK's pure environment
+selector, HTTPS CP/log, native loopback false and four refused retargets, AFTER
+all installed-original proofs. It does not allocate a Worker or perform IO.
+Final post-only/docs changes do not change any compiled product input; build
+identity above is retained explicitly, never relabeled as a later source tree.
+
+Actual output/manifest/JS/native/SQLite/compiled-trust/control bytes are local
+qualification only. No GitHub environment/CF credentials, protected dispatch,
+upload, served-hosting/R2/native sign-in/grant/readiness/edit/save acceptance was
+performed. No public verifier/authentication schema or protected-variable
+fallback was introduced. Separate parent review, protected gates/credential
+scope, human UI approval and Callum production GO remain external requirements.
 - `actionlint .github/workflows/deploy-writer.yml`, `git diff --check`.
 
 No deployment, remote approval/credential/ref/environment action, SDK/native

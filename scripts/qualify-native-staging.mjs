@@ -23,7 +23,20 @@ const evidence={kind:'UNPRIVILEGED-source-qualification-NOT-publication-or-nativ
 // NO candidate SDK code before ALL original/frozen/installed complete proofs.
 if(mode==='originals'){console.log(JSON.stringify(evidence,null,2));process.exit(0);}
 const {appReleaseTrust}=await import(pathToFileURL(join(repo,'apps/writer/node_modules/@mdbase-dev/sdk/dist/application/packaged-trust.js')).href);
-evidence.compiledTrust=assertCompiledRelease({compiled:appReleaseTrust(),moduleBytes:await readFile(join(repo,'apps/writer/node_modules/@mdbase-dev/sdk/dist/application/packaged-trust.js')),sdkTrust});
+const compiledRelease=appReleaseTrust();
+evidence.compiledTrust=assertCompiledRelease({compiled:compiledRelease,moduleBytes:await readFile(join(repo,'apps/writer/node_modules/@mdbase-dev/sdk/dist/application/packaged-trust.js')),sdkTrust});
+if(mode==='verify'){
+ // Post-only PURE public selector check, not Worker/native/runtime acceptance.
+ const sdk=join(repo,'apps/writer/node_modules/@mdbase-dev/sdk/dist');
+ const {selectAppEnvironment}=await import(pathToFileURL(join(sdk,'app-host/app-environment.js')).href);
+ const {applicationLoopbackAllowed}=await import(pathToFileURL(join(sdk,'application/local-build.js')).href);
+ const input={environment:'staging',appOrigin:sdkTrust.appOrigin,release:compiledRelease};
+ const selected=selectAppEnvironment(input);
+ assert.deepEqual(selected,{environment:'staging',appOrigin:sdkTrust.appOrigin,cpOrigin:sdkTrust.connectOrigin,logOrigin:sdkTrust.release.logOrigin,assetSha256:sdkTrust.release.assetSha256,allowLoopbackHttp:false});
+ assert.equal(applicationLoopbackAllowed('staging'),false);
+ for(const bad of [{...input,environment:'lab'},{...input,appOrigin:'http://127.0.0.1:5173'},{...input,release:{...compiledRelease,cpOrigin:'http://127.0.0.1:8080'}},{...input,release:{...compiledRelease,logOrigin:'http://localhost:8080'}}])assert.throws(()=>selectAppEnvironment(bad));
+ evidence.sdkSelector={kind:'post-only-pure-selector-NOT-native-admission',selected,nativeLoopbackAllowed:false,negativeRetargets:4};
+}
 const env={...process.env,MDBASE_ENV:'staging',VITE_MDBASE_ENV:'staging',MDBASE_WRITER_ORIGIN:sdkTrust.appOrigin,MDBASE_WRITER_BASE_PATH:'/',VITE_MDBASE_CONNECT_URL:sdkTrust.connectOrigin,VITE_MDBASE_CONNECT_LOOPBACK_URL:'',VITE_MDBASE_EDITOR_URL:sdkTrust.editorOrigin,VITE_WRITER_DEMO:'0',VITE_MDBASE_WRITER_BUILD_ID:'source-qualification-staging',WRANGLER_SEND_METRICS:'false',NPM_CONFIG_USERCONFIG:'/dev/null',NPM_CONFIG_GLOBALCONFIG:'/dev/null'};
 const run=(cmd,args,cwd=repo)=>execFileSync(cmd,args,{cwd,env,stdio:'inherit'});
 if(mode==='check'){run('pnpm',['check']);console.log(JSON.stringify(evidence,null,2));process.exit(0);}
