@@ -66,7 +66,12 @@ existing app `file:` pins; no archive filenames are synthesized or repacked.
 Before candidate package code executes: hash ALL three originals, check frozen
 importer/file pins and SHA512 integrity; safely inventory every regular original
 member without extraction/execution; compare producer SDK complete inventory and
-byte-identical provenance; bind raw asset, target/CP/log/source, release/image
+byte-identical provenance; canonical native producer repository is
+`mdbase-dev/mdbase-next` (distinct from Connect trust source
+`mdbase-dev/mdbase-connect`). Facts dependency `file` is SDK-relative
+`vendor/<original-protocol>.tgz`: bind that exact archived original tgz AND all
+bundled/installed protocol members, not a basename/path alias. Bind raw asset,
+target/CP/log/source, release/image
 inventory and publication/qualification IDs, frozen receipt/verifier identity,
 compiled trust literal, native/SQLite hashes/budgets and bundled protocol original.
 The install is frozen with scripts and pnpmfile hooks disabled. Then compare ALL
@@ -95,12 +100,19 @@ members refuse. Proof copying is byte binding, not full-chain authentication.
    preinstalled/prebundled tool is required. The lock was copied from existing
    official 4.114.0 cache, not dynamically resolved by the protected job.
 
-Compiler CLI/`--no-bundle` contract was inspected in cached official Wrangler
-4.114.0 source. Build compiles Functions into `_worker.js`; upload runs from a
-separate config/functions-free cwd and `pages deploy ... --no-bundle`. It cannot
-compile project Functions or execute artifact project scripts in the protected
-job. The dedicated tool's own trusted code is the only package code installed
-there; all install lifecycle scripts are disabled.
+Compiler CLI/`--no-bundle` and Pages configuration behavior were inspected in
+cached official Wrangler4.114.0 source. Pages rejects `--config`; it discovers a
+`wrangler.json` in its cwd. Without config, Wrangler deletes Worker bindings from
+the upload bundle metadata. The protected job therefore generates an isolated
+SOURCE-derived `wrangler.json` from existing `apps/writer/wrangler.jsonc`:
+`WRITER_ASSETS` → `mdbase-writer-assets`, compatibility date `2026-09-27`, no flags,
+for both preview and production. Only its output path changes to the immutable
+artifact directory. It is NOT artifact-provided config. No functions, project
+hooks or app install exist in this cwd. Build compiles Functions into `_worker.js`;
+upload uses `pages deploy ... --no-bundle`, never project compilation. Offline
+compatibility checks parse both channels with official4.114.0 `unstable_readConfig`
+and precompile the existing Functions without deployment. All tool-install
+lifecycle scripts stay disabled.
 
 ## Immutable artifact and deployment evidence
 
@@ -109,7 +121,14 @@ repository, plan and full inventory hashes. Upload validates GitHub artifact
 ID/digest/repository/run/attempt/source and workflow dispatch/native branch;
 hashes the ZIP before extraction, refuses unsafe/duplicate/link paths and limits,
 then repeats metadata/digest checks after download. Downloaded source/tree/target,
-plan and exact full inventory must match trusted source. The upload directory is
+plan and exact full inventory must match trusted source. The artifact additionally
+contains the unchanged official Typst/Pandoc npm tgz DATA and `runtime.json`.
+Build fetches only exact official registry URLs; root frozen lock SHA512/SRI and
+app version pins independently anchor them. Protected upload re-derives the exact
+original member sizes/SHA256/versioned URL paths without installing app packages
+or executing archive code; the artifact's expectation JSON is never authority.
+Only those two fixed data-archive paths are allowed, and the envelope binds the
+runtime expectation file. No R2 uploads or repairs are performed. The upload directory is
 read-only with no artifact process running; full inventory is asserted again
 immediately before upload. The current remote exact native HEAD is rechecked as
 the last guard before the one upload. These read-only GitHub calls are workflow
@@ -129,16 +148,54 @@ GET verification checks every servable asset, credentials omitted, strict truste
 same-origin mappings/redirect rules, bounded streaming sizes/retries/deadline
 (maximum 180 seconds). Missing/tampered/redirected/oversized/timed-out assets fail.
 
-**Remaining source-policy gap, deliberately BLOCKING:** trusted live route/header
-and R2/Pages Worker runtime policy checks are not yet implemented/qualified.
-`_routes.json`/other hosting controls and compiled `_worker.js` remain in the full
-inventory and return **unverified**, never success. Every returned failure AND
-every unverified control/worker blocks receipt success. No artifact-supplied
-policy flag or self-certification can waive this. Do not dispatch as a qualified
-publisher until parent reviews/implements that narrow policy check; no SDK
-public-tool/auth blocker is implied. `/wasm/*` serves externally versioned R2
-objects, not these static upload bytes: runtime/R2 identity needs separate trusted
-policy evidence, not a claim from worker source bytes.
+### Trusted hosting/runtime policy (source implementation, mocked qualification)
+
+The actual external compilers are Typst (~28 MB) and Pandoc (~58 MB), NOT SDK
+runtime.wasm. Independently root-lock-bound originals supply exactly
+`pkg/typst_ts_web_compiler_bg.wasm` and `src/pandoc.wasm`, served at the existing
+versioned `/wasm/typst_ts_web_compiler-<version>.wasm` and
+`/wasm/pandoc-<version>.wasm` URLs. The unchanged shared helper verifies ALL their
+actual bytes/length/SHA256 together with all static assets under the same180s
+whole-publication budget. The shared128MiB/file ceiling is retained; static
+upload files still have Pages'25MiB ceiling.
+
+Before upload, the workflow reads only the fixed project's API identity/config;
+no alias is assumed to exist. After actual UUID capture, source code reads the
+scoped deployment and project's selected `deployment_configs.preview|production`.
+Only safe project ID/name/production-branch, compatibility date/flags, R2
+binding/bucket names and deployment UUID/URL/source/channel/environment are
+retained. No whole project, env_vars, tokens or secret values are persisted.
+The project ID must stay identical across upload, name is `mdbase-writer`,
+production branch is `main`, compatibility settings and sole R2 binding must
+match source, and deployment/source/channel/UUID must match the captured upload.
+These are documented existing GET endpoints/fields used by cached Wrangler;
+no invented Worker source-download or approval API is used.
+
+Actual WASM responses must have `application/wasm`, exact Content-Length,
+`public, max-age=31536000, immutable` and a quoted ETag. ETag is NOT byte proof.
+After full byte equality, bounded conditional GETs must return matching ETag with
+empty304. Invalid names and a source-SHA-qualified missing object name must
+return404 with exact `Not found` body. Missing/stale R2 objects fail closed;
+there is no seeding/repair/retry-deployment permission. All probes share the
+remaining180s budget and omit credentials/refuse redirects.
+
+Only root `_routes.json` matching the trusted source byte hash and root compiled
+`_worker.js` in the immutable upload inventory can receive **separate covered
+hosting-control evidence**, after configuration/metadata/byte/behavior checks.
+They are NOT put in the servable-byte `verified` array. Unknown `_headers`,
+`_redirects`, nested/new route controls or Worker modules remain `unverified` and
+BLOCK, as do all byte/header/route/metadata failures. No artifact-provided
+`policy_verified` flag is accepted. Receipts require exact disjoint static-byte
+and covered-control inventory, both original-bound runtime byte results, actual
+UUID/source-bound metadata and all behavior evidence.
+
+Proof limit: current project configuration + scoped deployment identity +
+controlled immutable compiled-artifact/config upload + actual behavior is NOT a
+public API proof of live Worker source bytes or historical per-deployment binding
+snapshots. We do not claim one. Live metadata/alias/R2 behavior and actual official
+archive intake have NOT been exercised by source-only mocked qualification.
+Native target originals, external environment/ref/credential protections,
+reviewed source activation and separate production GO remain real gates.
 
 Retain run/source/artifact metadata, full inventory, UUID, verification and failed
 receipt/log evidence for 90 days. Missing UUID, missing checks, or byte/control

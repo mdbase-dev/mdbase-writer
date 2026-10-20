@@ -134,6 +134,16 @@ export async function captureDeployment({ output, target, sha, accountId, apiTok
   return { id: matches[0].id, url, sourceSha: sha, pagesBranch: branch };
 }
 
+function publicationEvidenceComplete(inventory, verification, deploymentId, sourceSha) {
+  if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/u.test(deploymentId ?? "") || verification?.ok !== true || inventory.length === 0 || verification.failures?.length !== 0 || verification.unverified?.length !== 0 || verification.policyFailures?.length !== 0) return false;
+  const policy = verification.policyEvidence;
+  if (policy?.metadata?.deployment?.id !== deploymentId || policy.metadata.deployment.sourceSha !== sourceSha || policy.behavior?.length !== 4 || verification.runtimeVerified?.length !== 2 || !/^[0-9a-f]{64}$/.test(policy.sourceConfigSha256 ?? "")) return false;
+  const covered = policy.coveredControls ?? [];
+  if (covered.length !== 2 || !covered.some(a => a.path === "_routes.json") || !covered.some(a => a.path === "_worker.js")) return false;
+  const seen = [...(verification.verified ?? []), ...covered];
+  return seen.length === inventory.length && new Set(seen.map(a => a.path)).size === seen.length && inventory.every(asset => seen.some(item => item.path === asset.path && item.sha256 === asset.sha256 && item.bytes === asset.bytes));
+}
+
 export function createReceipt({ target, source, releaseRef, sdkTrust, inventory, deploymentId = null, deployment = null, verification = null }) {
   authorizedReleaseRef(target);
   return {
@@ -149,7 +159,7 @@ export function createReceipt({ target, source, releaseRef, sdkTrust, inventory,
     assets: inventory,
     verification,
     run: { repository: process.env.GITHUB_REPOSITORY ?? null, id: process.env.GITHUB_RUN_ID ?? null, attempt: process.env.GITHUB_RUN_ATTEMPT ?? null },
-    status: /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/u.test(deploymentId ?? "") && verification?.ok === true && inventory.length > 0 && verification.failures?.length === 0 && verification.unverified?.length === 0 && verification.verified?.length === inventory.length && inventory.every(asset => verification.verified.some(seen => seen.path === asset.path && seen.sha256 === asset.sha256 && seen.bytes === asset.bytes)) ? "verified" : "failed-or-incomplete",
+    status: publicationEvidenceComplete(inventory, verification, deploymentId, source.sha) ? "verified" : "failed-or-incomplete",
   };
 }
 

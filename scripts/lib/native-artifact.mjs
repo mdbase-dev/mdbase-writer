@@ -2,7 +2,8 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { assertRuntimeOriginals } from './writer-runtime-originals.mjs';
 import { fileURLToPath } from 'node:url';
 import { assertInventory, inventoryDirectory } from './native-publish-bytes.mjs';
 const sha = b => createHash('sha256').update(b).digest('hex');
@@ -12,7 +13,7 @@ export function assertArtifactMetadata(meta, expected) {
   requireValue(meta.name === `writer-native-build-${expected.target}-${expected.run}-${expected.attempt}`, 'attempt-bound name');
   requireValue(meta.workflow_run?.id === Number(expected.run) && meta.workflow_run?.head_sha === expected.source && meta.workflow_run?.head_repository_id === Number(expected.repositoryId), 'repository/run/source');
 }
-export async function assertArtifactDirectory(root, expected) {
+export async function assertArtifactDirectory(root, expected, repoRoot = resolve('.')) {
   const envelope = JSON.parse(await readFile(join(root,'envelope.json'),'utf8'));
   for (const key of ['repository','run','attempt','source','tree','target']) requireValue(envelope[key] === expected[key], `envelope ${key}`);
   const inventoryBytes = await readFile(join(root,'inventory.json'));
@@ -21,8 +22,12 @@ export async function assertArtifactDirectory(root, expected) {
   const plan = JSON.parse(planBytes), inventory = JSON.parse(inventoryBytes);
   requireValue(plan.sha === expected.source && plan.tree === expected.tree && plan.sdkTrust.environment === expected.target, 'plan source/tree/target');
   await assertInventory(join(root,'publish'), inventory);
+  const runtimeBytes = await readFile(join(root,'runtime.json'));
+  requireValue(envelope.runtimeSha256 === sha(runtimeBytes), 'runtime original expectation binding');
+  await assertRuntimeOriginals(repoRoot,root);
   const all = await inventoryDirectory(root);
-  requireValue(all.length === inventory.length + 3 && all.every(a => ['envelope.json','inventory.json','plan.json'].includes(a.path) || a.path.startsWith('publish/')), 'unexpected artifact paths');
+  const attachments=['envelope.json','inventory.json','plan.json','runtime.json','runtime-originals/typst.tgz','runtime-originals/pandoc.tgz'];
+  requireValue(all.length === inventory.length + attachments.length && all.every(a => attachments.includes(a.path) || a.path.startsWith('publish/')), 'unexpected artifact paths');
   return {plan,inventory,envelope};
 }
 export async function download(expected, root, transport = fetch) {

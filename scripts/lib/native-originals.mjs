@@ -128,10 +128,15 @@ export async function loadOriginals({ target, repoRoot, hashes, installed = fals
     requireValue(pin.sha256 === hash(bytes) && pin.bytes === bytes.length, `${name} provenance mismatch`);
     nativeAssets[name] = { sha256:hash(bytes), bytes:bytes.length };
   }
-  requireValue(provenance.runtime.source?.repository === 'mdbase-dev/mdbase-connect' && facts.nativeSource === provenance.runtime.source.commit && facts.nativeSha256 === provenance.runtime.sha256 && facts.nativeBytes === provenance.runtime.bytes && provenance.runtime.bytes <= provenance.runtime.maxBytes && provenance.sqlite.bytes <= provenance.sqlite.maxBytes, 'native source/budget facts');
+  requireValue(provenance.runtime.source?.repository === 'mdbase-dev/mdbase-next' && facts.nativeSource === provenance.runtime.source.commit && facts.nativeSha256 === provenance.runtime.sha256 && facts.nativeBytes === provenance.runtime.bytes && provenance.runtime.bytes <= provenance.runtime.maxBytes && provenance.sqlite.bytes <= provenance.sqlite.maxBytes, 'native source/budget facts');
   const dep = facts.dependencies?.find(d => d.name === packages.protocol);
   const protocol = archives.protocol;
-  requireValue(dep && dep.file === protocol.path.split('/').at(-1) && dep.bytes === protocol.bytes && dep.sha256 === protocol.sha256 && dep.sri === protocol.sri, 'bundled protocol original custody');
+  requireValue(dep && dep.file === `vendor/${protocol.path.split('/').at(-1)}` && dep.bytes === protocol.bytes && dep.sha256 === protocol.sha256 && dep.sri === protocol.sri, 'bundled protocol original custody');
+  // Canonical facts.file is SDK-relative original vendor custody, NOT an app path
+  // or invented basename alias. Bind that unchanged original tgz as well as every
+  // installed/bundled protocol member below.
+  const vendorProtocol = memberBytes(sdkPath, members, dep.file);
+  requireValue(vendorProtocol.length === protocol.bytes && hash(vendorProtocol) === protocol.sha256 && `sha512-${hash(vendorProtocol, 'sha512')}` === protocol.sri, 'SDK vendor protocol original archive differs');
   const bundled = members.filter(m => m.path.startsWith('node_modules/@mdbase-dev/connect-protocol/')).map(m => ({...m,path:m.path.slice('node_modules/@mdbase-dev/connect-protocol/'.length)}));
   equal(bundled, originals.protocol, 'SDK bundled protocol differs from pinned original');
   return { environment:target, release, nativeAssets, archives, lockSha256:hash(lockBytes), protectedHashes:hashes,

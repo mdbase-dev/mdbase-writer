@@ -187,6 +187,8 @@ jobs:
           "$RUNNER_TEMP/writer-tools/node_modules/.bin/wrangler" pages functions build apps/writer/functions --outfile apps/writer/dist/_worker.js
           cp -a apps/writer/dist/. "$RUNNER_TEMP/writer-build/publish/"
           node apps/writer/scripts/native-publisher.mjs inventory --dist "$RUNNER_TEMP/writer-build/publish" --plan "$RUNNER_TEMP/writer-build/plan.json" > "$RUNNER_TEMP/writer-build/inventory.json"
+          # Official npm ORIGINAL DATA, root-lock SRI verified; never R2 writes.
+          node scripts/writer-hosting.mjs prepare-runtime "$RUNNER_TEMP/writer-build"
           node scripts/native-build-envelope.mjs "$RUNNER_TEMP/writer-build"
       - id: artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -246,6 +248,11 @@ jobs:
           cp tools/native-publisher/{package.json,pnpm-lock.yaml} "$RUNNER_TEMP/writer-tools/"
           (cd "$RUNNER_TEMP/writer-tools" && NPM_CONFIG_USERCONFIG=/dev/null NPM_CONFIG_GLOBALCONFIG=/dev/null pnpm --ignore-workspace install --frozen-lockfile --ignore-scripts --ignore-pnpmfile)
           test "$(node -p "require('$RUNNER_TEMP/writer-tools/node_modules/wrangler/package.json').version")" = 4.114.0
+          # Wrangler4.114 discovers this SOURCE-derived Pages config in the cwd;
+          # Pages forbids --config. No artifact config, project hooks/functions.
+          node scripts/writer-hosting.mjs upload-config "$RUNNER_TEMP/writer-upload"
+          cp "$RUNNER_TEMP/writer-upload/wrangler.json" "$RUNNER_TEMP/writer-native-receipt/upload-config.json"
+          chmod a-w "$RUNNER_TEMP/writer-upload/wrangler.json"
       - name: Validate immutable ID/digest/repository/run/attempt/source/tree/target before and after download
         env:
           ARTIFACT_ID: ${{ needs.native-build.outputs.artifact-id }}
@@ -254,12 +261,18 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/lib/native-artifact.mjs "$RUNNER_TEMP/writer-upload/artifact"
-          cp "$RUNNER_TEMP/writer-upload/artifact/"{plan.json,inventory.json,envelope.json} "$RUNNER_TEMP/writer-native-receipt/"
+          cp "$RUNNER_TEMP/writer-upload/artifact/"{plan.json,inventory.json,envelope.json,runtime.json} "$RUNNER_TEMP/writer-native-receipt/"
           cp "$RUNNER_TEMP/writer-upload/artifact-metadata.json" "$RUNNER_TEMP/writer-native-receipt/"
           cmp "$RUNNER_TEMP/writer-native-receipt/source-plan.json" "$RUNNER_TEMP/writer-native-receipt/plan.json"
           node apps/writer/scripts/native-publisher.mjs inventory --dist "$RUNNER_TEMP/writer-upload/artifact/publish" --plan "$RUNNER_TEMP/writer-native-receipt/source-plan.json" > "$RUNNER_TEMP/writer-native-receipt/revalidated-inventory.json"
           cmp "$RUNNER_TEMP/writer-native-receipt/inventory.json" "$RUNNER_TEMP/writer-native-receipt/revalidated-inventory.json"
           chmod -R a-w "$RUNNER_TEMP/writer-upload/artifact"
+      - name: Preflight project identity via safe runtime metadata (no alias assumption)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node scripts/writer-hosting.mjs metadata "$RUNNER_TEMP/writer-native-receipt/hosting-preflight.json" "$RUNNER_TEMP/writer-native-receipt/plan.json"
       - name: Exact CURRENT native HEAD and inventory immediately before the one upload
         id: upload
         env:
@@ -269,7 +282,8 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
-          # No project config/functions/hooks in this isolated cwd; no app install.
+          # Only reviewed SOURCE-derived Pages binding config in this isolated cwd;
+          # no project functions/hooks/app install. Precompiled Worker, --no-bundle.
           branch=$(jq -er .pagesBranch "$RUNNER_TEMP/writer-native-receipt/plan.json")
           node apps/writer/scripts/native-publisher.mjs assert-inventory --dist "$RUNNER_TEMP/writer-upload/artifact/publish" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json"
           node scripts/native-current-head.mjs
@@ -283,13 +297,21 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           node apps/writer/scripts/native-publisher.mjs capture-deployment --target "$TARGET" --sha "$SOURCE_SHA" --wrangler-output "$RUNNER_TEMP/writer-native-receipt/wrangler-output.txt" > "$RUNNER_TEMP/writer-native-receipt/deployment.json"
-      - name: All served bytes AND trusted hosting policy must pass (unverified blocks)
+      - name: Bind actual deployment and safe current-project runtime metadata
+        id: hosting
         if: always() && steps.upload.outcome == 'success' && steps.deployment.outcome == 'success'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node scripts/writer-hosting.mjs metadata "$RUNNER_TEMP/writer-native-receipt/hosting-metadata.json" "$RUNNER_TEMP/writer-native-receipt/plan.json" "$RUNNER_TEMP/writer-native-receipt/deployment.json" "$RUNNER_TEMP/writer-native-receipt/hosting-preflight.json"
+      - name: All served bytes AND trusted hosting policy must pass (unverified blocks)
+        if: always() && steps.upload.outcome == 'success' && steps.deployment.outcome == 'success' && steps.hosting.outcome == 'success'
         run: |
           set -euo pipefail
           node apps/writer/scripts/native-publisher.mjs assert-inventory --dist "$RUNNER_TEMP/writer-upload/artifact/publish" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json"
           origin=$(jq -er .origin "$RUNNER_TEMP/writer-native-receipt/plan.json")
-          node apps/writer/scripts/verify-served.mjs --origin "$origin" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json" > "$RUNNER_TEMP/writer-native-receipt/verification.json"
+          node apps/writer/scripts/verify-served.mjs --origin "$origin" --inventory "$RUNNER_TEMP/writer-native-receipt/inventory.json" --artifact "$RUNNER_TEMP/writer-upload/artifact" --plan "$RUNNER_TEMP/writer-native-receipt/plan.json" --deployment "$RUNNER_TEMP/writer-native-receipt/deployment.json" --metadata "$RUNNER_TEMP/writer-native-receipt/hosting-metadata.json" --preflight "$RUNNER_TEMP/writer-native-receipt/hosting-preflight.json" > "$RUNNER_TEMP/writer-native-receipt/verification.json"
       - name: Failure receipt is evidence, never rebuild/redeploy/rollback authority
         if: always()
         run: |
