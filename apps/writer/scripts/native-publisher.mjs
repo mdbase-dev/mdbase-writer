@@ -100,7 +100,7 @@ export function assertInventoryCoverage(inventory, sdkTrust) {
   for (const [name, pin] of Object.entries(sdkTrust?.nativeAssets ?? {})) {
     if (!inventory.some((asset) => asset.sha256 === pin.sha256 && asset.bytes === pin.bytes)) throw new Error(`Missing exact SDK native/SQLite bytes for ${name}; refusing`);
   }
-  if (sdkTrust && !inventory.some(asset => asset.path === "_worker.js")) throw new Error("Missing precompiled Pages Worker; refusing");
+  if (sdkTrust && !inventory.some(asset => asset.path === "_worker.js" || asset.path === "_worker.js/index.js")) throw new Error("Missing precompiled Pages Worker; refusing");
   const present = new Set(inventory.map((asset) => classifyAsset(asset.path)));
   const missing = requiredAssetCategories.filter((category) => !present.has(category));
   if (missing.length > 0) throw new Error(`Built assets are missing required categories: ${missing.join(", ")}; refusing to upload.`);
@@ -122,7 +122,7 @@ export function parseDeploymentId(output) {
 export async function captureDeployment({ output, target, sha, accountId, apiToken, fetchImpl = fetch }) {
   const prefix = parseDeploymentId(output);
   if (!prefix || !accountId || !apiToken) throw new Error("Refusing: missing unique deployment URL or Cloudflare credentials");
-  const response = await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/pages/projects/mdbase-writer/deployments?per_page=100`, {
+  const response = await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/pages/projects/mdbase-writer/deployments?per_page=20`, {
     headers: { Authorization: `Bearer ${apiToken}` }, redirect: "error", signal: AbortSignal.timeout(30000),
   });
   if (!response.ok) throw new Error(`Deployment ID lookup failed: HTTP ${response.status}`);
@@ -139,7 +139,7 @@ function publicationEvidenceComplete(inventory, verification, deploymentId, sour
   const policy = verification.policyEvidence;
   if (policy?.metadata?.deployment?.id !== deploymentId || policy.metadata.deployment.sourceSha !== sourceSha || policy.behavior?.length !== 4 || verification.runtimeVerified?.length !== 2 || !/^[0-9a-f]{64}$/.test(policy.sourceConfigSha256 ?? "")) return false;
   const covered = policy.coveredControls ?? [];
-  if (covered.length !== 2 || !covered.some(a => a.path === "_routes.json") || !covered.some(a => a.path === "_worker.js")) return false;
+  if (!covered.some(a => a.path === "_routes.json") || !covered.some(a => a.path === "_worker.js" || a.path === "_worker.js/index.js") || covered.some(a => a.path !== "_routes.json" && a.path !== "_worker.js" && !a.path.startsWith("_worker.js/"))) return false;
   const seen = [...(verification.verified ?? []), ...covered];
   return seen.length === inventory.length && new Set(seen.map(a => a.path)).size === seen.length && inventory.every(asset => seen.some(item => item.path === asset.path && item.sha256 === asset.sha256 && item.bytes === asset.bytes));
 }

@@ -280,7 +280,8 @@ test("receipt cannot pass without both a deployment ID and exact served bytes", 
 test("API deployment ID must match the unique URL, source and Pages channel", async () => {
   const deployment = { id: "12345678-1234-1234-1234-123456789abc", url: "https://abcdef12.mdbase-writer.pages.dev", deployment_trigger: { metadata: { commit_hash: FULL_SHA, branch: "staging" } } };
   const args = { output: deployment.url, target: "staging", sha: FULL_SHA, accountId: "fixture-account", apiToken: "fixture-not-a-secret" };
-  const fetchImpl = async (_url, options) => {
+  const fetchImpl = async (url, options) => {
+    assert.equal(url, "https://api.cloudflare.com/client/v4/accounts/fixture-account/pages/projects/mdbase-writer/deployments?per_page=20");
     assert.equal(options.redirect, "error");
     return { ok: true, json: async () => ({ success: true, result: [deployment] }) };
   };
