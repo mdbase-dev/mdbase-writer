@@ -49,7 +49,10 @@ export async function installedMembers(root) {
 }
 export async function loadOriginals({ target, repoRoot, hashes, installed = false }) {
   requireValue(['staging','production'].includes(target), 'unknown target; no LAB retarget');
-  protectedHashes(hashes);
+  // Library callers must supply explicit expectations. Only the CLI's separate
+  // protectedHashes() call intentionally reads process.env; undefined here must
+  // not trigger that default overload and then leave `hashes` unvalidated.
+  protectedHashes(hashes ?? {});
   repoRoot = await realpath(repoRoot);
   const approvedBytes = await regular(repoRoot, `config/native-publish/${target}.json`);
   const approved = JSON.parse(approvedBytes);

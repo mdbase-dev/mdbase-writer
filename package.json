@@ -15,6 +15,8 @@
     "dev": "pnpm --filter @mdbase-writer/app dev",
     "test": "pnpm -r --if-present test && node --test tests/*.test.mjs",
     "test:publisher": "node --test apps/writer/scripts/native-publisher.test.mjs tests/*.test.mjs",
+    "test:publisher:ci-unit": "node scripts/test-writer-ci-unit.mjs publisher",
+    "check:ci-unit": "node scripts/test-writer-ci-unit.mjs check",
     "test:publisher:tools": "node scripts/native-tool-compat.mjs",
     "test:staging:intake": "node --test tests/writer-staging-intake.test.mjs",
     "test:installer": "node --test tests/writer-installer.test.mjs",
