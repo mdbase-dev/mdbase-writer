@@ -37,13 +37,13 @@ test('producer inventory order is not authority, EVERY complete member still bin
  value.push(value[0]);await writeFile(path,JSON.stringify(value));
  await assert.rejects(loadOriginals({target:'staging',repoRoot:f.repo,hashes:f.hashes,installed:true}),/complete SDK inventory/);
 });
-test('historical c0bc Writer-approved packet and ALL installed SDK/UI9553/C280 members bind before candidate SDK execution',async()=>{
+test('actual eaa4 Writer-approved packet and ALL installed SDK/UI9553/C280 members bind before candidate SDK execution',async()=>{
  const repoRoot=resolve('.'),approved=JSON.parse(await readFile(join(repoRoot,'config/native-publish/staging.json'),'utf8'));
- assert.equal(approved.factsSha256,'d313bb9dc2e291f957a77fa0c05fdff533a4cb79afa8973d63bca75c7897b44c');
+ assert.equal(approved.factsSha256,'d54aef71521ab3561bd9a81cd1303410a3fde29f8fbd35a1e0041e58d0569de3');
  assert.equal(approved.protectedHashes.NATIVE_UI_SHA256,'5e388db28365cf6a966017851ece1c32223ea8b55bc6015d2f1b4113d86a3206');
- await normalizeWriterInstaller({target:'staging',repoRoot,hashes:approved.protectedHashes});
+ const installer=await normalizeWriterInstaller({target:'staging',repoRoot,hashes:approved.protectedHashes});console.log(JSON.stringify({actualInstallerEvidence:installer}));
  const result=await loadOriginals({target:'staging',repoRoot,hashes:approved.protectedHashes,installed:true});
- assert.equal(result.archives.sdk.sha256,'c0bc377606df159d03c668923b7626f31459a1750ae0db033bb42789532c7296');assert.equal(result.archives.sdk.bytes,4460029);assert.equal(result.archives.sdk.members,896);
+ assert.equal(result.archives.sdk.sha256,'15eb64b50fc7c2809ff3dba9cce5104fe48d8592208b3af8acb529862a1af18c');assert.equal(result.archives.sdk.bytes,4461608);assert.equal(result.archives.sdk.members,896);
  assert.equal(result.release.environment,'staging');assert.equal(result.release.cpOrigin,'https://connect-staging.mdbase.dev');assert.equal(result.release.logOrigin,'https://log-staging.mdbase.dev');assert.equal(result.release.assetSha256,'67e117646c9c26927f0d5a44cbd26f057c318975032e9cd24f24b020150cdbc7');
  assert.equal(result.release.source.commit,'f45df4598a5bff891de68eec3431ec7744885067');assert.equal(result.release.source.version,'0.1.0-beta.134');
  assert.equal(result.nativeAssets['runtime.wasm'].bytes,3676583);assert.equal(result.nativeAssets['runtime.wasm'].sha256,'6984f87d98e29d9f99c6b07f7728f716d1f7b2e3585a74bcc2046ba259a8afab');

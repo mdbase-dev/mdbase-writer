@@ -10,7 +10,8 @@ import { expectedYamlShim } from '../scripts/lib/pnpm-11-sh-shim.mjs';
 async function fixture(t){
  const root=await mkdtemp(join(tmpdir(),'writer-installer-'));t.after(()=>rm(root,{recursive:true,force:true}));
  const source=resolve('.'),approved=JSON.parse(await readFile(join(source,'config/native-publish/staging.json'),'utf8'));
- const paths=['apps/writer/package.json','pnpm-lock.yaml','config/native-publish/staging.json','vendor/sdk-dev-a3023aee-staging.tgz','vendor/mdbase-dev-ui-dev-9553ad66.tgz','apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz','apps/writer/vendor/native-release/staging'];
+ const sourcePackage=JSON.parse(await readFile(join(source,'apps/writer/package.json'),'utf8'));const sdkPath=relative(source,resolve(source,'apps/writer',sourcePackage.dependencies['@mdbase-dev/sdk'].slice(5)));
+ const paths=['apps/writer/package.json','pnpm-lock.yaml','config/native-publish/staging.json',sdkPath,'vendor/mdbase-dev-ui-dev-9553ad66.tgz','apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz','apps/writer/vendor/native-release/staging'];
  for(const p of paths){await mkdir(join(root,p,'..'),{recursive:true});await cp(join(source,p),join(root,p),{recursive:true});}
  await loadOriginals({target:'staging',repoRoot:root,hashes:approved.protectedHashes});
  const app=join(root,'apps/writer'),pkg=JSON.parse(await readFile(join(app,'package.json'),'utf8'));
@@ -20,7 +21,8 @@ async function fixture(t){
  }
  const sdk=join(app,'node_modules/@mdbase-dev/sdk'),shim=join(sdk,'node_modules/.bin/yaml'),target=join(sdk,'node_modules/yaml/bin.mjs');
  await mkdir(join(shim,'..'),{recursive:true});const bytes=expectedYamlShim(target,shim,root);await writeFile(shim,bytes,{mode:0o755});
- return {root,app,sdk,shim,target,bytes,options:{target:'staging',repoRoot:root,hashes:approved.protectedHashes,getVersion:()=> '11.15.1'}};
+ const archive=join(root,sdkPath),facts=JSON.parse(await readFile(join(root,'apps/writer/vendor/native-release/staging/artifact-facts.json'),'utf8'));
+ return {root,app,sdk,shim,target,bytes,archive,sri:facts.sri,options:{target:'staging',repoRoot:root,hashes:approved.protectedHashes,getVersion:()=> '11.15.1'}};
 }
 test('only the exact official pnpm11 generated shim is removed after complete original proof; strict guard then passes',async t=>{
  const f=await fixture(t);await assert.rejects(loadOriginals({...f.options,installed:true}),/ALL installed original members/);
@@ -70,8 +72,8 @@ for(const kind of ['wrong-shim','appended-exec','target','pnpm-version','origina
  if(kind==='shadow')await mkdir(join(f.shim,'../node'));
  if(kind==='mode')await chmod(f.shim,0o644);
  if(kind==='metadata-tamper')await writeFile(join(f.sdk,'package.json'),'{}');
- if(kind==='frozen-sri'){const lock=join(f.root,'pnpm-lock.yaml');await writeFile(lock,(await readFile(lock,'utf8')).replace('sha512-qfff','sha512-xxxx'));}
- if(kind==='archive-hash')await writeFile(join(f.root,'vendor/sdk-dev-a3023aee-staging.tgz'),'not the approved original');
+ if(kind==='frozen-sri'){const lock=join(f.root,'pnpm-lock.yaml');await writeFile(lock,(await readFile(lock,'utf8')).replace(f.sri,'sha512-xxxx'));}
+ if(kind==='archive-hash')await writeFile(f.archive,'not the approved original');
  const prior=await readFile(f.shim),link=(await lstat(f.shim)).isSymbolicLink();
  await assert.rejects(normalizeWriterInstaller(f.options));
  assert.deepEqual(await readFile(f.shim),prior);assert.equal((await lstat(f.shim)).isSymbolicLink(),link);

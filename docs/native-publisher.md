@@ -44,15 +44,19 @@ Required external settings, **not configured or inspected here**:
   references and accepted producer facts carried by the reviewed immutable source.
 
 Missing/unknown originals fail closed. Writer's approved UI9553 and C280 protocol
-pins/originals remain unchanged. The retained original c0bc staging SDK and public
-packet are now pinned for **historical custody/source tests only**. Owner order
-065615 holds any unstarted c0bc app product build/publication pending a qualified
-replacement SDK original and independent facts; neither replacement bytes nor
-facts are available here. c0bc remains immutable, valid historical custody, NOT
-latest/future candidate qualification or admission. No c0bc Writer app build was
-started. Old vendor originals/metadata and LAB source paths are preserved. Exact
-Editor pairing/origins, no native loopback and demo OFF remain requirements. A
-generic LAB build is NOT staging qualification; production still has no tuple/GO.
+pins/originals remain unchanged. Approved replacement staging SDK source is
+`eaa4e697fc1198f32fc3714f377342a24c56d985`, tree
+`71ddecbca5dd54b5153d6bcd500cc89ce189474e`; unchanged original filename
+`sdk-dev-eaa4e697-staging.tgz`, 4461608B, SHA256
+`15eb64b50fc7c2809ff3dba9cce5104fe48d8592208b3af8acb529862a1af18c`.
+Fresh independent facts, NOT old d313, precede any candidate execution. Co072350
+lifts the new-target app-build hold, not live publication/admission authority.
+Old c0bc archive stays unchanged; its complete packet is retained verbatim at
+`vendor/native-release/history/a3023aee-staging/` under the app. No c0bc Writer
+product build was run. Old vendor metadata/LAB source paths stay unchanged.
+Exact Editor pairing/origins, no native loopback and demo OFF remain requirements.
+Generic LAB/synthetic output is NOT actual staging qualification; production
+still has no tuple/GO.
 
 ## Canonical delivery layout (not a new authority/schema)
 
@@ -68,7 +72,8 @@ generic LAB build is NOT staging qualification; production still has no tuple/GO
 approval/authentication schema or protected-variable fallback. Independently
 supplied facts SHA256 and SDK source/tree bind producer facts BEFORE candidate
 code; facts then bind canonical trust/handoff/verifier/module metadata. The
-historical staging facts pin is `d313bb9dc2e291f957a77fa0c05fdff533a4cb79afa8973d63bca75c7897b44c`.
+current staging facts pin is `d54aef71521ab3561bd9a81cd1303410a3fde29f8fbd35a1e0041e58d0569de3`.
+The old d313 packet is historical only; it never qualifies the new archive.
 CI still requires exactly the four protected original hashes above. Local finite
 qualification explicitly reads this approved data because rpnpm forwards neither
 `.git` nor env; it does not forge dispatch, ref, clean tree or publication SHA.
@@ -305,11 +310,11 @@ asset hash, base and version hash, exact registration/HTML and original
 source-map-comment removal. It independently inventories ALL post-build files,
 including hidden/extra files, manifest, routes and compiled Pages Worker excluded
 from the cache list. Cache coverage never substitutes for full publish inventory.
-Tests inspect actual c0bc builder/runtime DATA and use synthetic outputs; they
-are NOT a c0bc Writer product build or actual-output proof. No such build began
-before the replacement hold. New original output must be inspected/qualified
-when replacement custody arrives; never invent alias outputs or rebuild merely
-to repair post-only verification.
+Unit tests inspect actual current SDK builder/runtime DATA and use synthetic
+outputs; those tests are NOT actual app-output proof. The explicit staging
+build/post-only path validates actual output separately under the approved new
+15eb inputs. No c0bc product build was run, no alias output is invented, and
+post-only verification never triggers an assurance rebuild.
 
 ## Source-only checks
 
@@ -320,14 +325,15 @@ to repair post-only verification.
   4.114.0 ignore-scripts tool install and offline Functions precompile compatibility.
 - `rpnpm run test:publisher:tools`: standalone tool-only compatibility check;
   useful if app build already completed (do not rebuild the app for a tool fix).
-- `test:staging:intake` / `test:installer`: historical actual-original byte gates
+- `test:staging:intake` / `test:installer`: current actual-original byte gates
   and adversarial installer cases (no SDK execution); via rpnpm.
 - `check:staging`: explicit approved-data gate then existing FULL `pnpm check`
   (types/tests); `build:staging:qualification`: same gates then ONE real staging
   app build and offline Pages Functions precompile; `verify:staging:build` is
   post-only and never rebuilds. Source qualification plans have null source SHA/
   tree and cannot qualify for immutable publication. These product checks/build
-  are **pending replacement**, not evidence collected in this held source phase.
+  are explicit source qualification only. See the exact current intake report
+  for commands/exits/output identity; tests alone never imply a build or admission.
 - `actionlint .github/workflows/deploy-writer.yml`, `git diff --check`.
 
 No deployment, remote approval/credential/ref/environment action, SDK/native

@@ -8,6 +8,7 @@ import { join,resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { normalizeWriterInstaller } from './lib/writer-installer.mjs';
 import { loadOriginals } from './lib/native-originals.mjs';
+import { assertCompiledRelease } from './lib/writer-compiled-trust.mjs';
 import { assertWriterOfflineShell } from './lib/writer-offline-shell.mjs';
 import { sourceHostingPolicy,uploadConfiguration,coveredHostingControls } from './lib/writer-hosting-policy.mjs';
 import { assertBuiltTarget,assertInventoryCoverage,buildAssetInventory } from '../apps/writer/scripts/native-publisher.mjs';
@@ -22,7 +23,7 @@ const evidence={kind:'UNPRIVILEGED-source-qualification-NOT-publication-or-nativ
 // NO candidate SDK code before ALL original/frozen/installed complete proofs.
 if(mode==='originals'){console.log(JSON.stringify(evidence,null,2));process.exit(0);}
 const {appReleaseTrust}=await import(pathToFileURL(join(repo,'apps/writer/node_modules/@mdbase-dev/sdk/dist/application/packaged-trust.js')).href);
-assert.deepEqual(appReleaseTrust(),sdkTrust.release);
+evidence.compiledTrust=assertCompiledRelease({compiled:appReleaseTrust(),moduleBytes:await readFile(join(repo,'apps/writer/node_modules/@mdbase-dev/sdk/dist/application/packaged-trust.js')),sdkTrust});
 const env={...process.env,MDBASE_ENV:'staging',VITE_MDBASE_ENV:'staging',MDBASE_WRITER_ORIGIN:sdkTrust.appOrigin,MDBASE_WRITER_BASE_PATH:'/',VITE_MDBASE_CONNECT_URL:sdkTrust.connectOrigin,VITE_MDBASE_CONNECT_LOOPBACK_URL:'',VITE_MDBASE_EDITOR_URL:sdkTrust.editorOrigin,VITE_WRITER_DEMO:'0',VITE_MDBASE_WRITER_BUILD_ID:'source-qualification-staging',WRANGLER_SEND_METRICS:'false',NPM_CONFIG_USERCONFIG:'/dev/null',NPM_CONFIG_GLOBALCONFIG:'/dev/null'};
 const run=(cmd,args,cwd=repo)=>execFileSync(cmd,args,{cwd,env,stdio:'inherit'});
 if(mode==='check'){run('pnpm',['check']);console.log(JSON.stringify(evidence,null,2));process.exit(0);}

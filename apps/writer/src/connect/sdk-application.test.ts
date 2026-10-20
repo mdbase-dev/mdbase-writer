@@ -47,16 +47,25 @@ it("refuses unknown build environments and leaves an absent one unselected for l
   expect(writerMdbaseForBuild("")).toBeUndefined();
 });
 
-it("builds the native entry for the bundled production manifest and refuses LAB/staging retargets of it", () => {
-  // `pnpm manifest` with no origin override declares the production origin.
-  expect(new URL(manifest.homepage).origin).toBe(ORIGINS.production);
-  const entry = writerMdbaseForBuild("production");
+it("constructs the exact explicit build target and refuses BOTH other environment retargets", async () => {
+  // Qualification supplies staging explicitly; ordinary manifest/check defaults
+  // to production. Expected origin is independent of the candidate manifest.
+  const environment = (import.meta.env.VITE_MDBASE_ENV || "production") as keyof typeof ORIGINS;
+  expect(Object.keys(ORIGINS)).toContain(environment);
+  expect(new URL(manifest.homepage).origin).toBe(ORIGINS[environment]);
+  const fetch = vi.spyOn(globalThis, "fetch"), popup = vi.spyOn(window, "open");
+  const entry = writerMdbaseForBuild(environment);
   expect(entry).toBeDefined();
-  // Node/jsdom need not host a native Worker to prove the selected entry.
   expect(entry?.getSnapshot().readiness.assessment).toBeNull();
   expect(entry?.connection("unopened")).toBeNull();
-  expect(() => writerMdbaseForBuild("lab")).toThrow(/refuses/);
-  expect(() => writerMdbaseForBuild("staging")).toThrow(/refuses/);
+  for (const other of Object.keys(ORIGINS).filter(value => value !== environment)) {
+    expect(() => writerMdbaseForBuild(other)).toThrow(/refuses/);
+  }
+  // jsdom has no module-Worker host: SDK must remain honestly blocked, not
+  // synthesize READY. Its unavailable shell also refuses close, without IO.
+  expect(entry?.getSnapshot()).toMatchObject({status: "blocked", problem: "application_not_yet_available"});
+  await expect(entry!.close()).rejects.toMatchObject({name: "MdbaseApplicationUnavailableError", code: "application_not_yet_available"});
+  expect(fetch).not.toHaveBeenCalled(); expect(popup).not.toHaveBeenCalled();
 });
 
 it("constructs the actual live public entry without registration, Worker or popup IO", async () => {
