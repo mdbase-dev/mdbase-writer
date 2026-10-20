@@ -116,6 +116,32 @@ lifecycle scripts stay disabled.
 
 ## Immutable artifact and deployment evidence
 
+An unprivileged build failure (checkout/setup, original intake, frozen install,
+ALL installed members, check, build or qualified-artifact upload) writes a minimal
+inline Node stdlib-only failure receipt, without importing project/package code.
+It retains only public repository ID/name, run/attempt/ref/target, requested/event
+and observed checkout SHA/tree (null if unavailable), named step outcomes and
+first failed stage. A separate `writer-native-build-failure-*` artifact retains
+only this receipt for 90 days. It has NO qualified artifact outputs. Successful
+`writer-native-build-*` upload retains `success()` gating; a failed build job
+still skips the entire protected dependent job, including deploy-tool bootstrap
+and Cloudflare steps. Failure evidence is not successful publication authority.
+
+Artifact transport checkpoints safe public projections to
+`artifact-metadata.json`: expected identity first, then EACH observed artifact
+`before`, initial `run`, actual `downloadedSha256`/length, artifact `after`, and
+`runAfter`, BEFORE validation or another fallible lookup. Errors never erase prior
+observations. A first lookup failure has only expected identity and safe stage/
+refusal reason, no fabricated observations. Unknown fields, raw API responses,
+error messages/bodies, auth headers, blob/SAS URLs/queries and environment/context
+dumps are never persisted. Null projected fields mean missing/unsafe values, not
+fabricated values. Both run observations must match the actual run ID, repository
+ID/name and head repository, attempt, source, dispatch event and native branch,
+plus fixed `.github/workflows/deploy-writer.yml` path and the same positive
+workflow ID. Canonical API fixtures use `repository.id`, `head_repository.id`,
+`id`, `workflow_id`, `path`, and artifact `workflow_run.repository_id` and
+`head_repository_id`; no alternate weaker identity aliases are accepted.
+
 Build publishes one immutable ID/digest with target/run/attempt name, source/tree,
 repository, plan and full inventory hashes. Upload validates GitHub artifact
 ID/digest/repository/run/attempt/source and workflow dispatch/native branch;

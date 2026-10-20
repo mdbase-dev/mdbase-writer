@@ -148,28 +148,43 @@ jobs:
       artifact-id: ${{ steps.artifact.outputs.artifact-id }}
       artifact-digest: ${{ steps.artifact.outputs.artifact-digest }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.source_sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - id: pnpm_setup
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.15.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - id: node_setup
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
       - name: Exact checkout and complete frozen originals BEFORE dependency execution
+        id: intake
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/writer-build/publish"
           node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" > "$RUNNER_TEMP/writer-build/plan.json"
-          pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile
+      - name: Frozen install without lifecycle or pnpmfile execution
+        id: install
+        run: pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile
+      - name: ALL installed original members before candidate execution
+        id: members
+        run: |
+          set -euo pipefail
           node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" --installed > "$RUNNER_TEMP/installed-plan.json"
           cmp "$RUNNER_TEMP/writer-build/plan.json" "$RUNNER_TEMP/installed-plan.json"
+      - name: Check qualified source
+        id: source_check
+        run: |
+          set -euo pipefail
           pnpm rebuild --pending
           pnpm check
       - name: Build once, then precompile Pages Functions without credentials
+        id: build
         run: |
           set -euo pipefail
           node apps/writer/scripts/native-publisher.mjs guard --target "$TARGET" --sha "$SOURCE_SHA" --installed > "$RUNNER_TEMP/confirmed-plan.json"
@@ -191,11 +206,54 @@ jobs:
           node scripts/writer-hosting.mjs prepare-runtime "$RUNNER_TEMP/writer-build"
           node scripts/native-build-envelope.mjs "$RUNNER_TEMP/writer-build"
       - id: artifact
+        if: success()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: writer-native-build-${{ inputs.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/writer-build/
           include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
+      - name: Minimal build failure receipt (no source package execution)
+        id: build_failure_receipt
+        if: failure()
+        env:
+          FAILURE_DIR: ${{ runner.temp }}/writer-build-failure
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          DISPATCH_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+          STEP_SOURCE: ${{ steps.source.outcome }}
+          STEP_PNPM: ${{ steps.pnpm_setup.outcome }}
+          STEP_NODE: ${{ steps.node_setup.outcome }}
+          STEP_INTAKE: ${{ steps.intake.outcome }}
+          STEP_INSTALL: ${{ steps.install.outcome }}
+          STEP_MEMBERS: ${{ steps.members.outcome }}
+          STEP_CHECK: ${{ steps.source_check.outcome }}
+          STEP_BUILD: ${{ steps.build.outcome }}
+          STEP_ARTIFACT: ${{ steps.artifact.outcome }}
+        run: |
+          node <<'NODE'
+          const {mkdirSync,writeFileSync}=require('node:fs');
+          const {join}=require('node:path');
+          const {execFileSync}=require('node:child_process');
+          const value=(name,pattern)=>pattern.test(process.env[name]??'')?process.env[name]:null;
+          const git=ref=>{try{const v=execFileSync('git',['rev-parse',ref],{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();return /^[0-9a-f]{40}$/.test(v)?v:null;}catch{return null;}};
+          const names={source:'STEP_SOURCE',pnpm_setup:'STEP_PNPM',node_setup:'STEP_NODE',intake:'STEP_INTAKE',install:'STEP_INSTALL',members:'STEP_MEMBERS',source_check:'STEP_CHECK',build:'STEP_BUILD',artifact:'STEP_ARTIFACT'};
+          const steps=Object.fromEntries(Object.entries(names).map(([id,name])=>[id,value(name,/^(success|failure|cancelled|skipped)$/)]));
+          const receipt={schema:'mdbase-writer/native-build-failure@1',status:'build-failed',repository:value('REPOSITORY',/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),repositoryId:value('REPOSITORY_ID',/^[1-9][0-9]*$/),run:value('RUN_ID',/^[1-9][0-9]*$/),attempt:value('RUN_ATTEMPT',/^[1-9][0-9]*$/),ref:value('DISPATCH_REF',/^refs\/heads\/release\/native-(staging|production)$/),target:value('TARGET',/^(staging|production)$/),source:{requestedSha:value('SOURCE_SHA',/^[0-9a-f]{40}$/),eventSha:value('EVENT_SHA',/^[0-9a-f]{40}$/),checkoutSha:git('HEAD'),tree:git('HEAD^{tree}')},failedStage:Object.keys(steps).find(id=>steps[id]==='failure')??null,steps};
+          mkdirSync(process.env.FAILURE_DIR,{recursive:true});
+          writeFileSync(join(process.env.FAILURE_DIR,'receipt.json'),JSON.stringify(receipt,null,2));
+          NODE
+      - name: Retain ONLY unprivileged build failure evidence
+        id: build_failure_artifact
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: writer-native-build-failure-${{ inputs.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/writer-build-failure/
           if-no-files-found: error
           retention-days: 90
 

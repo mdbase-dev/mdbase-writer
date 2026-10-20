@@ -10,7 +10,7 @@ import { assertCurrentHead } from '../scripts/native-current-head.mjs';
 import { inventoryDirectory } from '../scripts/lib/native-publish-bytes.mjs';
 const source='a'.repeat(40),tree='b'.repeat(40),digest='sha256:'+'c'.repeat(64);
 const expected={id:'42',digest,repository:'fixture/writer',repositoryId:'17',run:'23',attempt:'2',source,tree,target:'staging'};
-const meta={id:42,digest,expired:false,name:'writer-native-build-staging-23-2',workflow_run:{id:23,head_sha:source,head_repository_id:17}};
+const meta={id:42,digest,expired:false,name:'writer-native-build-staging-23-2',workflow_run:{id:23,repository_id:17,head_sha:source,head_repository_id:17,head_branch:'release/native-staging'}};
 test('immutable artifact ID/digest/repo/run/attempt/source are independently required',()=>{
  assert.doesNotThrow(()=>assertArtifactMetadata(meta,expected));
  for(const change of [{id:43},{digest:'sha256:'+'d'.repeat(64)},{expired:true},{name:'writer-native-build-staging-23-1'},{workflow_run:{...meta.workflow_run,id:24}},{workflow_run:{...meta.workflow_run,head_sha:'d'.repeat(40)}},{workflow_run:{...meta.workflow_run,head_repository_id:18}}]) assert.throws(()=>assertArtifactMetadata({...meta,...change},expected),/refusal/);
