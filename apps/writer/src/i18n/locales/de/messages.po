@@ -666,30 +666,30 @@ msgstr "Zitierstil<0/>"
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
-msgstr ""
+msgstr "Quellenangaben zeigen, auf wen verwiesen wird, Abbildungen und Tabellen werden angezeigt und Markierungen bleiben verborgen, bis der Cursor ihre Zeile erreicht. Der Text wird nicht verändert."
 
 #: src/editor/selection-bar.tsx
 #: src/ui/SourcesPanel.tsx
 msgid "Cite"
-msgstr ""
+msgstr "Zitieren"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
-msgstr ""
+msgstr "{0} zitieren"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr ""
+msgstr "Eine Quelle zitieren oder auf ein Label (über Schlüssel, Autor, Titel oder Jahr) verweisen"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
 msgid "Cite at {0}"
-msgstr ""
+msgstr "Bei {0} zitieren"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cite here"
-msgstr ""
+msgstr "Hier zitieren"
 
 #: src/ui/WorkspaceView.tsx
 msgid "cite source reference"
@@ -941,7 +941,7 @@ msgstr "Mit der Pfeiltaste nach unten zu den Quellen wechseln; Enter zitiert den
 
 #: src/ui/Manuscripts.tsx
 msgid "Download a local copy before leaving if saving cannot be completed."
-msgstr "Wenn das Speichern nicht abgeschlossen werden kann, lade vor dem Verlassen eine lokale Kopie herunter."
+msgstr "Wenn das Speichern nicht abgeschlossen werden kann, laden Sie vor dem Verlassen eine lokale Kopie herunter."
 
 #: src/ui/CompareDialog.tsx
 msgid "Download local draft"
@@ -1013,7 +1013,7 @@ msgstr "Alle"
 
 #: src/i18n/collections.ts
 msgid "Everyone, including you, loses access to it on every device and app right away. This can't be undone."
-msgstr "Alle, auch du, verlieren sofort auf allen Geräten und in allen Apps den Zugriff darauf. Das lässt sich nicht rückgängig machen."
+msgstr "Alle, auch Sie, verlieren sofort auf allen Geräten und in allen Apps den Zugriff darauf. Das lässt sich nicht rückgängig machen."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
@@ -1059,7 +1059,7 @@ msgstr "Word (DOCX) exportieren"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Word using article styles; your custom Typst layout applies only to PDF"
-msgstr "Word mit Artikel-Formatvorlagen exportieren; dein benutzerdefiniertes Typst-Layout gilt nur für PDF"
+msgstr "Word mit Artikel-Formatvorlagen exportieren; Ihr benutzerdefiniertes Typst-Layout gilt nur für PDF"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Exported {name}."
@@ -1126,7 +1126,7 @@ msgstr "Befehl suchen oder ausführen"
 #. placeholder {0}: Math.round((previewView?.scale ?? 1) * 100)
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {0}%"
-msgstr ""
+msgstr "An die Breite anpassen · {0}%"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1174,7 +1174,7 @@ msgstr "{app} Zugriff auf diese Sammlung gewähren?"
 
 #: src/ui/Home.tsx
 msgid "Give the manuscript a title; it can be changed later."
-msgstr "Gib dem Manuskript einen Titel; du kannst ihn später ändern."
+msgstr "Geben Sie dem Manuskript einen Titel; Sie können ihn später ändern."
 
 #: src/ui/WorkspaceView.tsx
 msgid "grid columns rows"
@@ -1276,31 +1276,31 @@ msgstr "[@{0}] an der Cursorposition einfügen (Enter)"
 #. placeholder {0}: clip(replacement)
 #: src/ui/comments.ts
 msgid "Insert {0}"
-msgstr ""
+msgstr "{0} einfügen"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
-msgstr ""
+msgstr "Eine Quellenangabe, Fußnote, Querverweis, Abbildung, Tabelle oder Gleichung einfügen (oder / im Text eingeben)"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a footnote, figure, table, equation, cross-reference or citation"
-msgstr ""
+msgstr "Eine Fußnote, Abbildung, Tabelle, Gleichung, einen Querverweis oder eine Quellenangabe einfügen"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Insert at the cursor"
-msgstr ""
+msgstr "An der Cursorposition einfügen"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Insert quotation"
-msgstr ""
+msgstr "Zitat einfügen"
 
 #: src/pwa-install.ts
 msgid "Install"
-msgstr ""
+msgstr "Installieren"
 
 #: src/pwa-install.ts
 msgid "Install {appName}"
-msgstr ""
+msgstr "{appName} installieren"
 
 #: src/pwa-install.ts
 msgid "Install {appName} for quick access in its own window."
