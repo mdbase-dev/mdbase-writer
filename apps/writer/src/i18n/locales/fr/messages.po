@@ -2579,353 +2579,353 @@ msgstr "L’aperçu a mis trop de temps à se charger. Réessayez l’aperçu."
 
 #: src/compile/client.ts
 msgid "The preview worker returned an unreadable response."
-msgstr ""
+msgstr "Le processus d’aperçu a renvoyé une réponse illisible."
 
 #: src/ui/Settings.tsx
 msgid "The style’s own (usually en-US)"
-msgstr ""
+msgstr "Celle du style (généralement en-US)"
 
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr ""
+msgstr "Le texte suggéré n’est plus dans le document ; modifiez-le à la main, puis résolvez la suggestion."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr ""
+msgstr "Le texte suggéré n’y figure plus"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
-msgstr ""
+msgstr "Thème"
 
 #: src/ui/names.ts
 msgid "Thesis or book"
-msgstr ""
+msgstr "Thèse ou livre"
 
 #: src/ui/ConnectGate.tsx
 msgid "This action could not be completed. Please try again."
-msgstr ""
+msgstr "Cette action n’a pas pu être effectuée. Veuillez réessayer."
 
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
-msgstr ""
+msgstr "S’applique dans ce navigateur, à tous les manuscrits."
 
 #: src/i18n/collections.ts
 msgid "this collection"
-msgstr ""
+msgstr "cette collection"
 
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
-msgstr ""
+msgstr "Cette collection n’accepte pas les fichiers provenant de Writer."
 
 #: src/ui/ConnectGate.tsx
 msgid "This collection is unavailable"
-msgstr ""
+msgstr "Cette collection est indisponible"
 
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
-msgstr ""
+msgstr "Cette vue de la collection n’a pas pu être ouverte. Choisissez une autre collection dans la barre ci-dessus, ou rechargez la page pour réessayer."
 
 #: src/i18n/collections.ts
 msgid "This device is still listed under your account until you remove it there."
-msgstr ""
+msgstr "Cet appareil reste associé à votre compte tant que vous ne l’y retirez pas."
 
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr ""
+msgstr "Il s’agit d’une version de développement locale. Le service mdbase connect hébergé n’accepte que les applications servies en HTTPS ; utilisez donc l’environnement local de Connect (<0>pnpm dev:environment:up</0> dans mdbase-connect) ou ouvrez la <1>collection de démonstration</1>."
 
 #: src/i18n/collections.ts
 msgid "This is taking longer than usual."
-msgstr ""
+msgstr "Cela prend plus de temps que d’habitude."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
-msgstr ""
+msgstr "Cette liste"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
-msgstr ""
+msgstr "Ce manuscrit n’a pas pu être ouvert"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr ""
+msgstr "Ce passage ne figure plus dans le texte"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record changed elsewhere while you were editing it."
-msgstr ""
+msgstr "Ce document a été modifié ailleurs pendant que vous le modifiiez."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr ""
+msgstr "Ce document a été supprimé ailleurs. Votre texte local reste disponible ici."
 
 #: src/ui/CompareDialog.tsx
 msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr ""
+msgstr "Ce document a été supprimé. Téléchargez le brouillon local pour le conserver ; il ne peut pas être restauré dans un document supprimé."
 
 #: src/ui/Settings.tsx
 msgid "Title"
-msgstr ""
+msgstr "Titre"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr ""
+msgstr "Titre, auteurs, résumé, style de citation, mise en page et langue ({MOD_LABEL}-,)"
 
 #. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
 #: src/ui/Home.tsx
 msgid "Title<0/>{0}"
-msgstr ""
+msgstr "Titre<0/>{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
-msgstr ""
+msgstr "suivi des modifications"
 
 #: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
-msgstr ""
+msgstr "Réessayer"
 
 #: src/i18n/collections.ts
 msgid "Type {collection} to confirm"
-msgstr ""
+msgstr "Saisissez {collection} pour confirmer"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
-msgstr ""
+msgstr "Saisissez du texte pour en trouver d’autres."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset from your latest text, with chapters and images checked before download"
-msgstr ""
+msgstr "Composé à partir de votre dernier texte, avec vérification des chapitres et des images avant le téléchargement"
 
 #. placeholder {0}: Math.round(timings.assembleMs + timings.compileMs)
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset in {0} ms"
-msgstr ""
+msgstr "Composé en {0} ms"
 
 #: src/compile/client.ts
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
-msgstr ""
+msgstr "La composition a pris trop de temps. Votre éditeur reste disponible ; relancez l’aperçu."
 
 #: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
-msgstr ""
+msgstr "Composition en cours…"
 
 #: src/ui/Settings.tsx
 msgid "Typst templates in the collection"
-msgstr ""
+msgstr "Modèles Typst de la collection"
 
 #: src/editor/insight.ts
 msgid "Unknown"
-msgstr ""
+msgstr "Inconnu"
 
 #: src/ui/records.ts
 msgid "Unsaved"
-msgstr ""
+msgstr "Non enregistré"
 
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
-msgstr ""
+msgstr "Brouillons non enregistrés"
 
 #: src/ui/Home.tsx
 msgid "Unsaved in this browser"
-msgstr ""
+msgstr "Non enregistré dans ce navigateur"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr ""
+msgstr "Non signé"
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
-msgstr ""
+msgstr "Figure sans titre"
 
 #: src/ui/Home.tsx
 msgid "Updating…"
-msgstr ""
+msgstr "Mise à jour…"
 
 #: src/i18n/collections.ts
 msgid "Use {app}'s version"
-msgstr ""
+msgstr "Utiliser la version de {app}"
 
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
-msgstr ""
+msgstr "Utiliser une note existante…"
 
 #: src/ui/Home.tsx
 msgid "Use as manuscript"
-msgstr ""
+msgstr "Utiliser comme manuscrit"
 
 #: src/ui/CompareDialog.tsx
 msgid "Use collection version"
-msgstr ""
+msgstr "Utiliser la version de la collection"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB."
-msgstr ""
+msgstr "Utilise les styles Word de la mise en page, mais la pagination peut différer de celle du PDF. La première utilisation télécharge environ 16 Mo."
 
 #: src/ui/WorkspaceView.tsx
 msgid "View"
-msgstr ""
+msgstr "Vue"
 
 #: src/workspace/workspace.ts
 msgid "Wait for the manuscript to open before exporting."
-msgstr ""
+msgstr "Attendez l’ouverture du manuscrit avant d’exporter."
 
 #: src/connect/native-signin-ui.ts
 msgid "Waiting for approval in the mdbase tab…"
-msgstr ""
+msgstr "En attente d’approbation dans l’onglet mdbase…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Waiting for approval…"
-msgstr ""
+msgstr "En attente d’approbation…"
 
 #: src/ui/CollectionPicker.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
-msgstr ""
+msgstr "En attente de mdbase connect…"
 
 #: src/i18n/collections.ts
 msgid "What changes"
-msgstr ""
+msgstr "Ce qui change"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
-msgstr ""
+msgstr "Commentaires de qui"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Why (optional)"
-msgstr ""
+msgstr "Motif (facultatif)"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
-msgstr ""
+msgstr "à ajouter"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be removed"
-msgstr ""
+msgstr "à supprimer"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
-msgstr ""
+msgstr "à mettre à jour"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdraw"
-msgstr ""
+msgstr "Retirer"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr ""
+msgstr "Retiré."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
-msgstr ""
+msgstr "Word (DOCX)"
 
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
-msgstr ""
+msgstr "L’exportation Word a signalé un problème."
 
 #: src/export/pandoc.ts
 msgid "Word export timed out. Check your connection and try again."
-msgstr ""
+msgstr "L’exportation Word a expiré. Vérifiez votre connexion et réessayez."
 
 #: src/ui/Home.tsx
 msgid "Word goal"
-msgstr ""
+msgstr "Objectif de mots"
 
 #: src/ui/Home.tsx
 msgid "Words, e.g. 8000"
-msgstr ""
+msgstr "Mots, p. ex. 8000"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Write"
-msgstr ""
+msgstr "Écrire"
 
 #: src/ui/ConnectGate.tsx
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
-msgstr ""
+msgstr "Écrire depuis votre collection"
 
 #: src/editor/Editor.tsx
 msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr ""
+msgstr "Écrivez en Markdown. Citez avec [@citekey] ; tapez / pour ajouter une note de bas de page, une figure ou un tableau."
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"
-msgstr ""
+msgstr "Écrivez la citation ici pour la modifier ; elle ne suit plus l’annotation"
 
 #: src/workspace/workspace.ts
 msgid "Writer cannot ask for access here."
-msgstr ""
+msgstr "Writer ne peut pas demander l’accès ici."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
-msgstr ""
+msgstr "Commandes de Writer"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
-msgstr ""
+msgstr "Writer n’a pas pu ouvrir cette collection"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Writer was not allowed to see your account."
-msgstr ""
+msgstr "Writer n’a pas été autorisé à voir votre compte."
 
 #: src/main.tsx
 msgid "You can close this window."
-msgstr ""
+msgstr "Vous pouvez fermer cette fenêtre."
 
 #: src/i18n/collections.ts
 msgid "You've signed out of {app} on this device."
-msgstr ""
+msgstr "Vous êtes déconnecté de {app} sur cet appareil."
 
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
-msgstr ""
+msgstr "Votre compte n’a pas pu être vérifié ({0})."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your account is not linked to a person record in this collection."
-msgstr ""
+msgstr "Votre compte n’est pas lié à un document de personne dans cette collection."
 
 #: src/connect/connect-popup.ts
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
-msgstr ""
+msgstr "Votre navigateur a bloqué l’onglet de connexion."
 
 #: src/i18n/collections.ts
 msgid "Your collections"
-msgstr ""
+msgstr "Vos collections"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
-msgstr ""
+msgstr "Vos commentaires ne sont pas signés."
 
 #: src/workspace/workspace.ts
 msgid "Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ."
-msgstr ""
+msgstr "Votre mise en page Typst personnalisée ne s’applique qu’au PDF. Word utilise les styles de l’article ; la pagination et la mise en page seront différentes."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB."
-msgstr ""
+msgstr "Votre mise en page Typst personnalisée est réservée au PDF. Word utilise les styles de l’article et une pagination différente. La première utilisation télécharge environ 16 Mo."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup."
-msgstr ""
+msgstr "Vos brouillons locaux sont sauvegardés dans ce navigateur lorsque le stockage est disponible. Téléchargez une copie avant de partir si vous avez besoin d’une sauvegarde indépendante."
 
 #: src/ui/CompareDialog.tsx
 msgid "Your local text"
-msgstr ""
+msgstr "Votre texte local"
 
 #: src/LegacyApp.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
-msgstr ""
+msgstr "Votre texte enregistré se trouve dans votre collection. Les brouillons locaux non envoyés sont sauvegardés dans ce navigateur lorsque le stockage est disponible. Téléchargez une copie avant de recharger la page."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom"
-msgstr ""
+msgstr "Zoom"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom in"
-msgstr ""
+msgstr "Zoom avant"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom out"
-msgstr ""
+msgstr "Zoom arrière"
