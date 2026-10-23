@@ -7,6 +7,7 @@ import test from 'node:test';
 import { loadOriginals } from '../scripts/lib/native-originals.mjs';
 import { normalizeWriterInstaller } from '../scripts/lib/writer-installer.mjs';
 import { trustFixture } from './native-originals-fixture.mjs';
+import { frozenStagingRoot } from './frozen-staging-root.mjs';
 test('CI and local qualification use the bounded normalizer before unchanged strict guards/candidate code',async()=>{
  const workflow=await readFile(new URL('../.github/workflows/deploy-writer.yml',import.meta.url),'utf8');
  const build=workflow.split('  native-build:')[1].split('  native-deploy:')[0];
@@ -37,11 +38,10 @@ test('producer inventory order is not authority, EVERY complete member still bin
  value.push(value[0]);await writeFile(path,JSON.stringify(value));
  await assert.rejects(loadOriginals({target:'staging',repoRoot:f.repo,hashes:f.hashes,installed:true}),/complete SDK inventory/);
 });
-test('actual eaa4 Writer-approved packet and ALL installed SDK/UI9553/C280 members bind before candidate SDK execution',async()=>{
- const repoRoot=resolve('.'),approved=JSON.parse(await readFile(join(repoRoot,'config/native-publish/staging.json'),'utf8'));
+test('retained staging eaa4 packet and ALL original SDK/UI9553/C280 members bind before candidate SDK execution',async t=>{
+ const repoRoot=await frozenStagingRoot(t,{installed:true}),approved=JSON.parse(await readFile(join(repoRoot,'config/native-publish/staging.json'),'utf8'));
  assert.equal(approved.factsSha256,'d54aef71521ab3561bd9a81cd1303410a3fde29f8fbd35a1e0041e58d0569de3');
  assert.equal(approved.protectedHashes.NATIVE_UI_SHA256,'5e388db28365cf6a966017851ece1c32223ea8b55bc6015d2f1b4113d86a3206');
- const installer=await normalizeWriterInstaller({target:'staging',repoRoot,hashes:approved.protectedHashes});console.log(JSON.stringify({actualInstallerEvidence:installer}));
  const result=await loadOriginals({target:'staging',repoRoot,hashes:approved.protectedHashes,installed:true});
  assert.equal(result.archives.sdk.sha256,'15eb64b50fc7c2809ff3dba9cce5104fe48d8592208b3af8acb529862a1af18c');assert.equal(result.archives.sdk.bytes,4461608);assert.equal(result.archives.sdk.members,896);
  assert.equal(result.release.environment,'staging');assert.equal(result.release.cpOrigin,'https://connect-staging.mdbase.dev');assert.equal(result.release.logOrigin,'https://log-staging.mdbase.dev');assert.equal(result.release.assetSha256,'67e117646c9c26927f0d5a44cbd26f057c318975032e9cd24f24b020150cdbc7');

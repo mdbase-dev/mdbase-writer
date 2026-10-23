@@ -7,9 +7,10 @@ import test from 'node:test';
 import { normalizeWriterInstaller } from '../scripts/lib/writer-installer.mjs';
 import { loadOriginals,originalMembers } from '../scripts/lib/native-originals.mjs';
 import { expectedYamlShim } from '../scripts/lib/pnpm-11-sh-shim.mjs';
+import { frozenStagingRoot } from './frozen-staging-root.mjs';
 async function fixture(t){
  const root=await mkdtemp(join(tmpdir(),'writer-installer-'));t.after(()=>rm(root,{recursive:true,force:true}));
- const source=resolve('.'),approved=JSON.parse(await readFile(join(source,'config/native-publish/staging.json'),'utf8'));
+ const source=await frozenStagingRoot(t),approved=JSON.parse(await readFile(join(source,'config/native-publish/staging.json'),'utf8'));
  const sourcePackage=JSON.parse(await readFile(join(source,'apps/writer/package.json'),'utf8'));const sdkPath=relative(source,resolve(source,'apps/writer',sourcePackage.dependencies['@mdbase-dev/sdk'].slice(5)));
  const paths=['apps/writer/package.json','pnpm-lock.yaml','config/native-publish/staging.json',sdkPath,'vendor/mdbase-dev-ui-dev-9553ad66.tgz','apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz','apps/writer/vendor/native-release/staging'];
  for(const p of paths){await mkdir(join(root,p,'..'),{recursive:true});await cp(join(source,p),join(root,p),{recursive:true});}
