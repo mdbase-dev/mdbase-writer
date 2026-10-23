@@ -2035,534 +2035,534 @@ msgstr "Изменить размер редактора и предпросмо
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the sidebar"
-msgstr ""
+msgstr "Изменить размер боковой панели"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolve"
-msgstr ""
+msgstr "Закрыть"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
-msgstr ""
+msgstr "Закрыто"
 
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
-msgstr ""
+msgstr "Восстановить локальный черновик"
 
 #: src/ui/Home.tsx
 msgid "Retry background data"
-msgstr ""
+msgstr "Повторить загрузку фоновых данных"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Retry comments"
-msgstr ""
+msgstr "Повторить загрузку комментариев"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry dependencies"
-msgstr ""
+msgstr "Повторить загрузку зависимостей"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry export"
-msgstr ""
+msgstr "Повторить экспорт"
 
 #: src/LegacyApp.tsx
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Retry loading"
-msgstr ""
+msgstr "Повторить загрузку"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry opening"
-msgstr ""
+msgstr "Повторить открытие"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
-msgstr ""
+msgstr "Повторить предпросмотр"
 
 #: src/preview/Preview.tsx
 msgid "Retry rendering"
-msgstr ""
+msgstr "Повторить построение"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry save"
-msgstr ""
+msgstr "Повторить сохранение"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry saving"
-msgstr ""
+msgstr "Повторить сохранение"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Retry sources"
-msgstr ""
+msgstr "Повторить загрузку источников"
 
 #: src/ui/Home.tsx
 msgid "Review"
-msgstr ""
+msgstr "Проверить"
 
 #. placeholder {0}: recordTitle(snap.records.get(path), path)
 #: src/ui/WorkspaceView.tsx
 msgid "Review {0}"
-msgstr ""
+msgstr "Проверить «{0}»"
 
 #: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Review access"
-msgstr ""
+msgstr "Проверить доступ"
 
 #: src/i18n/collections.ts
 msgid "Review access to {collection} there."
-msgstr ""
+msgstr "Проверьте там доступ к коллекции «{collection}»."
 
 #: src/ui/records.ts
 msgid "Review drafts"
-msgstr ""
+msgstr "Проверить черновики"
 
 #: src/ui/ExportReview.tsx
 msgid "Review export problems"
-msgstr ""
+msgstr "Проверка проблем экспорта"
 
 #: src/ui/records.ts
 msgid "Review local drafts"
-msgstr ""
+msgstr "Проверить локальные черновики"
 
 #: src/ui/CompareDialog.tsx
 msgid "Review recovered local draft"
-msgstr ""
+msgstr "Проверить восстановленный локальный черновик"
 
 #: src/workspace/workspace.ts
 msgid "Review the recovered local drafts before leaving."
-msgstr ""
+msgstr "Проверьте восстановленные локальные черновики, прежде чем выйти."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Save all records now"
-msgstr ""
+msgstr "Сохранить все записи сейчас"
 
 #: src/ui/CompareDialog.tsx
 msgid "Save merged version"
-msgstr ""
+msgstr "Сохранить объединённую версию"
 
 #: src/ui/records.ts
 msgid "Saved"
-msgstr ""
+msgstr "Сохранено"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
 msgid "Saved on this device; waiting for sync"
-msgstr ""
+msgstr "Сохранено на этом устройстве; ожидает синхронизации"
 
 #: src/ui/records.ts
 msgid "Saving…"
-msgstr ""
+msgstr "Сохранение…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Search by author, title, year or key"
-msgstr ""
+msgstr "Поиск по автору, названию, году или ключу"
 
 #: src/ui/ManuscriptSearch.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
-msgstr ""
+msgstr "Искать в рукописи"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Search the whole manuscript"
-msgstr ""
+msgstr "Искать во всей рукописи"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Second panel"
-msgstr ""
+msgstr "Вторая панель"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 msgid "Section"
-msgstr ""
+msgstr "Раздел"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
-msgstr ""
+msgstr "Выделите фрагмент и нажмите <0>{MOD_LABEL}-{ALT_LABEL}-M</0>, чтобы оставить комментарий, или <1>{MOD_LABEL}-{ALT_LABEL}-S</1>, чтобы предложить правку."
 
 #: src/editor/selection-bar.tsx
 msgid "Selection"
-msgstr ""
+msgstr "Выделенный фрагмент"
 
 #: src/ui/Home.tsx
 msgid "Set a word goal"
-msgstr ""
+msgstr "Задать цель по количеству слов"
 
 #: src/ui/Home.tsx
 msgid "Set goal"
-msgstr ""
+msgstr "Задать цель"
 
 #: src/i18n/collections.ts
 msgid "Set up"
-msgstr ""
+msgstr "Настроить"
 
 #: src/i18n/collections.ts
 msgid "Set up {collection} for {app}"
-msgstr ""
+msgstr "Настройка коллекции «{collection}» для {app}"
 
 #: src/ui/ConnectGate.tsx
 msgid "Set up collection"
-msgstr ""
+msgstr "Настроить коллекцию"
 
 #: src/ui/ConnectGate.tsx
 msgid "Set up this collection for writing"
-msgstr ""
+msgstr "Настройте эту коллекцию для работы над рукописями"
 
 #: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Setting up…"
-msgstr ""
+msgstr "Настройка…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Settings"
-msgstr ""
+msgstr "Настройки"
 
 #. placeholder {0}: diagnostic.field
 #: src/ui/ProblemsStrip.tsx
 msgid "Settings · {0}"
-msgstr ""
+msgstr "Настройки · {0}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Settings also differ"
-msgstr ""
+msgstr "Настройки также различаются"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Show"
-msgstr ""
+msgstr "Показывать"
 
 #. placeholder {0}: rest.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more chapters · {0}"
-msgstr ""
+msgstr "Показать ещё 50 глав · {0}"
 
 #. placeholder {0}: inManuscript.length
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more cited sources · {0}"
-msgstr ""
+msgstr "Показать ещё 50 цитируемых источников · {0}"
 
 #. placeholder {0}: logical.length
 #: src/ui/CommentsPanel.tsx
 msgid "Show 50 more comments · {0}"
-msgstr ""
+msgstr "Показать ещё 50 комментариев · {0}"
 
 #. placeholder {0}: list.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more headings · {0}"
-msgstr ""
+msgstr "Показать ещё 50 заголовков · {0}"
 
 #. placeholder {0}: notes.length
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more highlights · {0}"
-msgstr ""
+msgstr "Показать ещё 50 выделений · {0}"
 
 #. placeholder {0}: shown.length
 #: src/ui/Home.tsx
 msgid "Show 50 more manuscripts · {0}"
-msgstr ""
+msgstr "Показать ещё 50 рукописей · {0}"
 
 #. placeholder {0}: thread.replies.length
 #: src/ui/CommentsPanel.tsx
 msgid "Show 50 more replies · {0}"
-msgstr ""
+msgstr "Показать ещё 50 ответов · {0}"
 
 #. placeholder {0}: rest.length
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more sources · {0}"
-msgstr ""
+msgstr "Показать ещё 50 источников · {0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show a second panel beneath (outline and comments together)"
-msgstr ""
+msgstr "Показать вторую панель ниже (структура и комментарии одновременно)"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show a second sidebar panel"
-msgstr ""
+msgstr "Показать вторую боковую панель"
 
 #. placeholder {0}: untypedShown.length
 #: src/ui/Home.tsx
 msgid "Show all {0} notes without a type"
-msgstr ""
+msgstr "Показать все заметки без типа ({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show comments"
-msgstr ""
+msgstr "Показать комментарии"
 
 #: src/preview/Preview.tsx
 msgid "Show in Sources"
-msgstr ""
+msgstr "Показать в «Источниках»"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Show in the editor"
-msgstr ""
+msgstr "Показать в редакторе"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
-msgstr ""
+msgstr "Показать Markdown как написан"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show or hide the sidebar"
-msgstr ""
+msgstr "Показать или скрыть боковую панель"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 chapters"
-msgstr ""
+msgstr "Показать предыдущие 50 глав"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 cited sources"
-msgstr ""
+msgstr "Показать предыдущие 50 цитируемых источников"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Show previous 50 comments"
-msgstr ""
+msgstr "Показать предыдущие 50 комментариев"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 headings"
-msgstr ""
+msgstr "Показать предыдущие 50 заголовков"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 sources"
-msgstr ""
+msgstr "Показать предыдущие 50 источников"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show problems"
-msgstr ""
+msgstr "Показать проблемы"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar"
-msgstr ""
+msgstr "Показать боковую панель"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
-msgstr ""
+msgstr "Показать этот комментарий"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
-msgstr ""
+msgstr "Показан последний успешно построенный предпросмотр; он может не соответствовать вашему последнему тексту."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Sidebar"
-msgstr ""
+msgstr "Боковая панель"
 
 #: src/connect/native-signin-ui.ts
 #: src/i18n/collections.ts
 msgid "Sign in"
-msgstr ""
+msgstr "Войти"
 
 #: src/i18n/collections.ts
 msgid "Sign in and choose a collection there."
-msgstr ""
+msgstr "Войдите и выберите там коллекцию."
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
-msgstr ""
+msgstr "Войдите с учётной записью mdbase, чтобы синхронизировать {appName} между вашими устройствами."
 
 #: src/i18n/collections.ts
 msgid "Sign in with your mdbase account. You'll choose which collection {app} can use."
-msgstr ""
+msgstr "Войдите с учётной записью mdbase. Вы выберете, какую коллекцию сможет использовать {app}."
 
 #: src/connect/native-signin-ui.ts
 #: src/i18n/collections.ts
 msgid "Sign out"
-msgstr ""
+msgstr "Выйти"
 
 #: src/i18n/collections.ts
 msgid "Sign out anyway"
-msgstr ""
+msgstr "Всё равно выйти"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Sign-in status"
-msgstr ""
+msgstr "Состояние входа"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign-in was interrupted. Please try again."
-msgstr ""
+msgstr "Вход прерван. Повторите попытку."
 
 #: src/connect/connect-popup.ts
 msgid "Sign-in window closed."
-msgstr ""
+msgstr "Окно входа закрыто."
 
 #: src/i18n/collections.ts
 msgid "Signed in as {account}"
-msgstr ""
+msgstr "Вы вошли как {account}"
 
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
-msgstr ""
+msgstr "Вы вошли как {email}"
 
 #. placeholder {0}: selected.displayName
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
-msgstr ""
+msgstr "Вход выполнен. Открываем «{0}»…"
 
 #: src/i18n/collections.ts
 msgid "Signing out…"
-msgstr ""
+msgstr "Выход…"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Some changes are not saved"
-msgstr ""
+msgstr "Некоторые изменения не сохранены"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Some images or chapters could not be loaded. See Problems for their locations."
-msgstr ""
+msgstr "Не удалось загрузить некоторые изображения или главы. Их расположение указано в разделе «Проблемы»."
 
 #: src/LegacyApp.tsx
 msgid "Something went wrong"
-msgstr ""
+msgstr "Что-то пошло не так"
 
 #: src/ui/ConnectGate.tsx
 msgid "Something went wrong."
-msgstr ""
+msgstr "Что-то пошло не так."
 
 #: src/editor/insight.ts
 msgid "Source"
-msgstr ""
+msgstr "Источник"
 
 #: src/ui/WorkspaceView.tsx
 msgid "source markup raw live preview chips"
-msgstr ""
+msgstr "исходник разметка исходный код живой предпросмотр метки"
 
 #: src/ui/SourcesPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Sources"
-msgstr ""
+msgstr "Источники"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources are not set up in this collection."
-msgstr ""
+msgstr "Источники не настроены в этой коллекции."
 
 #. placeholder {0}: r.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
-msgstr ""
+msgstr "Не удалось загрузить источники: {0}"
 
 #: src/ui/Home.tsx
 msgid "Sources not set up"
-msgstr ""
+msgstr "Источники не настроены"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
-msgstr ""
+msgstr "Источники недоступны: {libraryProblem}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr ""
+msgstr "Источники недоступны: {libraryProblem} <0>Повторить загрузку источников</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."
-msgstr ""
+msgstr "Источники."
 
 #: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
-msgstr ""
+msgstr "разделить вторая панель структура комментарии источники"
 
 #: src/i18n/collections.ts
 msgid "Starting {app}…"
-msgstr ""
+msgstr "Запуск {app}…"
 
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
-msgstr ""
+msgstr "Сохранено: {0}. Напишите подпись."
 
 #. placeholder {0}: file.name
 #: src/ui/WorkspaceView.tsx
 msgid "Storing {0}…"
-msgstr ""
+msgstr "Сохранение {0}…"
 
 #: src/ui/Settings.tsx
 msgid "Subtitle"
-msgstr ""
+msgstr "Подзаголовок"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest"
-msgstr ""
+msgstr "Предложить"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest an edit"
-msgstr ""
+msgstr "Предложить правку"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
-msgstr ""
+msgstr "Предложить правку к выделенному фрагменту"
 
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr ""
+msgstr "Предложить правку к выделенному фрагменту ({MOD_LABEL}-{ALT_LABEL}-S)"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
-msgstr ""
+msgstr "Предлагаемая вставка"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggested text"
-msgstr ""
+msgstr "Предлагаемый текст"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
-msgstr ""
+msgstr "Сменить коллекцию"
 
 #: src/i18n/collections.ts
 msgid "Switch collection, current: {collection}"
-msgstr ""
+msgstr "Сменить коллекцию, текущая: «{collection}»"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection: {name}"
-msgstr ""
+msgstr "Сменить коллекцию: {name}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "System"
-msgstr ""
+msgstr "Системная"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Table"
-msgstr ""
+msgstr "Таблица"
 
 #: src/workspace/workspace.ts
 msgid "That record is not open."
-msgstr ""
+msgstr "Эта запись не открыта."
 
 #: src/workspace/workspace.ts
 msgid "The chapter is not open."
-msgstr ""
+msgstr "Глава не открыта."
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
-msgstr ""
+msgstr "Фоновый процесс компиляции остановился."
 
 #: src/LegacyApp.tsx
 msgid "The demo could not be loaded"
-msgstr ""
+msgstr "Не удалось загрузить демоверсию"
 
 #: src/editor/Editor.tsx
 msgid "The editor language could not be loaded. You can keep writing."
-msgstr ""
+msgstr "Не удалось загрузить язык редактора. Можно продолжать писать."
 
 #. placeholder {0}: errorMessage(error)
 #: src/ui/WorkspaceView.tsx
 msgid "The file could not be downloaded. {0}"
-msgstr ""
+msgstr "Не удалось скачать файл. {0}"
 
 #. placeholder {0}: missingImage[1]
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
-msgstr ""
+msgstr "Не удалось загрузить изображение «{0}» для Word. Вместо него будет добавлено описание."
 
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
-msgstr ""
+msgstr "Не удалось загрузить язык. Текущий язык не изменён. Повторите попытку."
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
-msgstr ""
+msgstr "Текущая строка проверяется, как только вы прекращаете печатать"
 
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
-msgstr ""
+msgstr "Рукопись продолжала меняться, пока загружались зависимости экспорта. Приостановите редактирование и повторите попытку."
 
 #: src/compile/client.ts
 #: src/workspace/workspace.ts
