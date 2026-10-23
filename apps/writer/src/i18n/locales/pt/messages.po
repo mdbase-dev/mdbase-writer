@@ -51,7 +51,7 @@ msgstr "{0, plural, one {# capítulo} other {# capítulos}}"
 #. placeholder {0}: this.ids.length
 #: src/editor/comments.ts
 msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr ""
+msgstr "{0, plural, one {# comentário nesta linha} other {# comentários nesta linha}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
@@ -66,7 +66,7 @@ msgstr "{0, plural, one {# palavra nesta seção} other {# palavras nesta seçã
 #. placeholder {0}: problems.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
-msgstr ""
+msgstr "{0, plural, one {Exportado {name} com # problema: {firstProblem}} other {Exportado {name} com # problemas: {firstProblem}}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
@@ -81,7 +81,7 @@ msgstr "{0, plural, one {Revise # rascunho local recuperado. A edição está pa
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
-msgstr ""
+msgstr "{0, plural, one {Primeiro resultado de # (exibindo {listedCount})} other {Primeiros resultados de # (exibindo {listedCount})}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
@@ -118,7 +118,7 @@ msgstr "{0} não pôde ser armazenado: {1}"
 #. placeholder {0}: THEME_NAME[t]
 #: src/ui/WorkspaceView.tsx
 msgid "{0} theme"
-msgstr ""
+msgstr "Tema {0}"
 
 #. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
 #. placeholder {1}: relativeTime(d.updated)
@@ -132,7 +132,7 @@ msgstr "{at}: este registro foi excluído; baixe o rascunho local antes de sair.
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr ""
+msgstr "Atalho para {commentsTitle} ({MOD_LABEL}-Shift-M)"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
@@ -273,7 +273,7 @@ msgstr "{uses, plural, one {Citado uma vez} other {Citado # vezes}}"
 
 #: src/i18n/diagnostics.ts
 msgid "{value} is not loaded; it was left out."
-msgstr ""
+msgstr "{value} não foi carregado e foi deixado de fora."
 
 #: src/ui/OutlinePanel.tsx
 msgid "<0/> Add chapter"
@@ -313,7 +313,7 @@ msgstr "Um capítulo precisa de um título."
 
 #: src/i18n/diagnostics.ts
 msgid "A citation cannot mix cross-references and citekeys."
-msgstr ""
+msgstr "Uma citação não pode misturar referências cruzadas e chaves de citação."
 
 #: src/ui/CommentsPanel.tsx
 msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
@@ -398,7 +398,7 @@ msgstr "7ª edição da APA"
 
 #: src/ui/WorkspaceView.tsx
 msgid "appearance dark light"
-msgstr ""
+msgstr "aparência escuro claro"
 
 #: src/ui/names.ts
 msgid "Article"
@@ -542,7 +542,7 @@ msgstr "Estilo de citação<0/>"
 
 #: src/i18n/diagnostics.ts
 msgid "Citations have no terms for \"{value}\"; they use {other}."
-msgstr ""
+msgstr "As citações não têm termos para \"{value}\"; usam {other}."
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
@@ -649,7 +649,7 @@ msgstr "Comentar"
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "Comment"
-msgstr ""
+msgstr "Comentário"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Comment on the selection"
@@ -789,7 +789,7 @@ msgstr "Dispensar"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
-msgstr ""
+msgstr "Clique duas vezes ou pressione F2 para renomear"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Down arrow moves to the sources; Enter cites the first match."
@@ -819,7 +819,7 @@ msgstr "Arraste para redimensionar; clique duas vezes para dividir igualmente"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Drag, or Alt-↑/↓, to reorder"
-msgstr ""
+msgstr "Arraste ou use Alt-↑/↓ para reordenar"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
@@ -830,7 +830,7 @@ msgstr "editado {0}"
 #: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
-msgstr "Editor"
+msgstr "Editor de texto"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor and preview"
@@ -854,7 +854,7 @@ msgstr "Não foi possível carregar o registro incorporado: {problem}"
 
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
-msgstr ""
+msgstr "Incorporar {value} aqui faria com que ele fosse incluído dentro de si mesmo."
 
 #: src/ui/ManuscriptSearch.tsx
 msgid "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
@@ -961,7 +961,7 @@ msgstr "Localizar uma fonte"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Find a source ({MOD_LABEL}-Shift-E)"
-msgstr ""
+msgstr "Encontrar uma fonte ({MOD_LABEL}-Shift-E)"
 
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
@@ -985,7 +985,7 @@ msgstr "Localizar ou executar um comando"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
-msgstr ""
+msgstr "Ajustar · {zoomLabel}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1001,15 +1001,15 @@ msgstr "Nota de rodapé"
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] has no definition."
-msgstr ""
+msgstr "A nota de rodapé [^{value}] não tem definição."
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] is never referenced."
-msgstr ""
+msgstr "A nota de rodapé [^{value}] nunca é mencionada."
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] is referenced more than once."
-msgstr ""
+msgstr "A nota de rodapé [^{value}] é mencionada mais de uma vez."
 
 #: src/ui/Settings.tsx
 msgid "for citation terms and hyphenation"
@@ -1051,11 +1051,11 @@ msgstr "Ocultar problemas"
 #. placeholder {0}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "Hide the headings of {0}"
-msgstr ""
+msgstr "Ocultar os títulos de {0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "Ocultar os problemas abaixo do editor (F8 vai para o próximo)"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the sidebar"
@@ -1063,7 +1063,7 @@ msgstr "Ocultar a barra lateral"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "Ocultar a barra lateral ({MOD_LABEL}-\\)"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1079,7 +1079,7 @@ msgstr "Hospedado pelo mdbase"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
-msgstr ""
+msgstr "A imagem “{value}” não foi encontrada. Adicione-a à coleção ou corrija o caminho."
 
 #: src/workspace/workspace.ts
 msgid "Image could not be loaded: {problem}"
@@ -1095,7 +1095,7 @@ msgstr "O envio de imagens estará disponível em breve. Os links de imagem exis
 
 #: src/i18n/diagnostics.ts
 msgid "Images must be files in the collection ({value})."
-msgstr ""
+msgstr "As imagens precisam ser arquivos da coleção ({value})."
 
 #. placeholder {0}: d.manuscript.title
 #: src/ui/Home.tsx
@@ -1223,11 +1223,11 @@ msgstr "Idioma"
 #: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Layout"
-msgstr "Layout"
+msgstr "Diagramação"
 
 #: src/ui/Home.tsx
 msgid "Layout<0/>"
-msgstr "Layout<0/>"
+msgstr "Diagramação<0/>"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
@@ -1264,7 +1264,7 @@ msgstr "Vincular sua conta"
 
 #: src/ui/WorkspaceView.tsx
 msgid "List the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "Listar os problemas abaixo do editor (F8 vai para o próximo)"
 
 #: src/editor/insight.ts
 msgid "Listing"
@@ -1342,27 +1342,27 @@ msgstr "fórmula matemática exibição"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {begin} is never closed."
-msgstr ""
+msgstr "Matemática: {begin} nunca é fechado."
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {end} closes {begin}."
-msgstr ""
+msgstr "Matemática: {end} fecha {begin}."
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {end} has no matching \\begin."
-msgstr ""
+msgstr "Matemática: {end} não tem um \\begin correspondente."
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {value} \\left but {other} \\right."
-msgstr ""
+msgstr "Matemática: {value} tem \\left, mas {other} tem \\right."
 
 #: src/i18n/diagnostics.ts
 msgid "Math: Unclosed brace."
-msgstr ""
+msgstr "Matemática: chave não fechada."
 
 #: src/i18n/diagnostics.ts
 msgid "Math: Unmatched closing brace."
-msgstr ""
+msgstr "Matemática: chave de fechamento sem par."
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase connect is unavailable"
@@ -1428,7 +1428,7 @@ msgstr "Novo comentário"
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "New comment"
-msgstr ""
+msgstr "Novo comentário"
 
 #: src/ui/Home.tsx
 msgid "New manuscript"
@@ -1444,7 +1444,7 @@ msgstr "Novos desde sua última visita"
 
 #: src/editor/comments.ts
 msgid "New suggestion"
-msgstr ""
+msgstr "Nova sugestão"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous comment"
@@ -1481,11 +1481,11 @@ msgstr "Nenhum arquivo foi baixado ainda. Imagens ou capítulos ausentes podem d
 
 #: src/i18n/diagnostics.ts
 msgid "No file in the collection matches the citation style {value}."
-msgstr ""
+msgstr "Nenhum arquivo da coleção corresponde ao estilo de citação {value}."
 
 #: src/i18n/diagnostics.ts
 msgid "No file in the collection matches the template {value}."
-msgstr ""
+msgstr "Nenhum arquivo da coleção corresponde ao modelo {value}."
 
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
@@ -1514,15 +1514,15 @@ msgstr "Nenhum registro corresponde a ![[{0}]]"
 
 #: src/i18n/diagnostics.ts
 msgid "No record matches the embed ![[{value}]]."
-msgstr ""
+msgstr "Nenhum registro corresponde à incorporação ![[{value}]]."
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
-msgstr ""
+msgstr "Nenhuma fonte da biblioteca tem a chave de citação {value}."
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library matches {value}, so the quotation from {other} is not cited."
-msgstr ""
+msgstr "Nenhuma fonte da biblioteca corresponde a {value}; por isso, a citação textual de {other} não tem referência."
 
 #: src/ui/SourcesPanel.tsx
 msgid "No source matches “{query}”; searching highlights…"
@@ -1556,7 +1556,7 @@ msgstr "Ainda não citado"
 
 #: src/workspace/workspace.ts
 msgid "Not loaded; it will be left out."
-msgstr ""
+msgstr "Não carregado; ficará de fora."
 
 #: src/pwa-install.ts
 msgid "Not now"
@@ -1593,7 +1593,7 @@ msgstr "Ainda não há citações. Cite uma fonte abaixo ou digite <0>[@</0> no 
 
 #: src/i18n/diagnostics.ts
 msgid "Nothing is labelled {value}."
-msgstr ""
+msgstr "Nada está identificado com o rótulo {value}."
 
 #: src/ui/CompareDialog.tsx
 msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
@@ -1726,7 +1726,7 @@ msgstr "Estrutura de tópicos"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr ""
+msgstr "Estrutura e pesquisa do manuscrito ({MOD_LABEL}-Shift-F)"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -1758,7 +1758,7 @@ msgstr "Pacote Pandoc (zip)"
 
 #: src/export/pandoc.ts
 msgid "Pandoc produced no document."
-msgstr ""
+msgstr "O Pandoc não gerou nenhum documento."
 
 #: src/export/pandoc.ts
 msgid "Pandoc returned an unreadable response."
@@ -1827,7 +1827,7 @@ msgstr "Progresso até a meta de palavras"
 
 #: src/i18n/diagnostics.ts
 msgid "Raw HTML is not rendered in PDF output."
-msgstr ""
+msgstr "HTML bruto não é renderizado na saída em PDF."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Read as the manuscript"
@@ -2201,7 +2201,7 @@ msgstr "Mostrar problemas"
 #. placeholder {0}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "Show the headings of {0}"
-msgstr ""
+msgstr "Mostrar os títulos de {0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar"
@@ -2209,7 +2209,7 @@ msgstr "Mostrar a barra lateral"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "Mostrar a barra lateral ({MOD_LABEL}-\\)"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2357,7 +2357,7 @@ msgstr "Texto sugerido"
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "Suggestion"
-msgstr ""
+msgstr "Sugestão"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
@@ -2383,7 +2383,7 @@ msgstr "Esse registro não está aberto."
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
-msgstr ""
+msgstr "A anotação {value} não tem um trecho citado para incorporar."
 
 #: src/workspace/workspace.ts
 msgid "The chapter is not open."
@@ -2399,7 +2399,7 @@ msgstr "Não foi possível carregar a demonstração"
 
 #: src/compile/client.ts
 msgid "The document has errors; fix them to export."
-msgstr ""
+msgstr "O documento tem erros; corrija-os para exportar."
 
 #: src/editor/Editor.tsx
 msgid "The editor language could not be loaded. You can keep writing."
@@ -2407,7 +2407,7 @@ msgstr "Não foi possível carregar o idioma do editor. Você pode continuar esc
 
 #: src/i18n/diagnostics.ts
 msgid "The embed ![[{value}]] in {other} was left out."
-msgstr ""
+msgstr "A incorporação ![[{value}]] em {other} foi deixada de fora."
 
 #. placeholder {0}: errorMessage(error)
 #: src/ui/WorkspaceView.tsx
@@ -2421,7 +2421,7 @@ msgstr "Não foi possível carregar a imagem “{0}” para o Word. A descriçã
 
 #: src/i18n/diagnostics.ts
 msgid "The label {value} is used more than once."
-msgstr ""
+msgstr "O rótulo {value} é usado mais de uma vez."
 
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
@@ -2482,7 +2482,7 @@ msgstr "Isto se aplica neste navegador a todos os manuscritos."
 
 #: src/ui/Settings.tsx
 msgid "This changes the interface in this browser, not the manuscript’s language."
-msgstr ""
+msgstr "Isso altera o idioma da interface neste navegador, não o idioma do manuscrito."
 
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
@@ -2573,7 +2573,7 @@ msgstr "Modelos Typst na coleção"
 
 #: src/i18n/diagnostics.ts
 msgid "Unclosed $$ math block."
-msgstr ""
+msgstr "Bloco matemático $$ não fechado."
 
 #: src/editor/insight.ts
 msgid "Unknown"
@@ -2581,11 +2581,11 @@ msgstr "Desconhecido"
 
 #: src/i18n/diagnostics.ts
 msgid "Unknown citation style \"{value}\"; using {other}."
-msgstr ""
+msgstr "Estilo de citação \"{value}\" desconhecido; usando {other}."
 
 #: src/i18n/diagnostics.ts
 msgid "Unknown template \"{value}\"; using article."
-msgstr ""
+msgstr "Modelo \"{value}\" desconhecido; usando article."
 
 #: src/ui/records.ts
 msgid "Unsaved"
@@ -2606,7 +2606,7 @@ msgstr "Sem assinatura"
 
 #: src/i18n/diagnostics.ts
 msgid "Unsupported Markdown block: {value}."
-msgstr ""
+msgstr "Bloco Markdown não compatível: {value}."
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
@@ -2778,7 +2778,7 @@ msgstr "Seu texto salvo está na coleção. Se houver armazenamento disponível,
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom"
-msgstr "Zoom"
+msgstr "Ampliação"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom in"
