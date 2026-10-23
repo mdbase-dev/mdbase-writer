@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // Quick fixes for a citation that names a citekey or label that does not
 // exist: the keys it was most likely meant to be, and (for a citekey) finding
 // the source in the Sources panel.
@@ -70,6 +71,6 @@ export function fixesFor(d: WriterDiagnostic, insight: EditorInsight, findSource
     name: `@${key}`,
     apply: (view, from, to) => replaceKey(view, from, to, unknown.key, key),
   }));
-  if (unknown.kind === "citekey" && findSource) actions.push({ name: "Find in Sources", apply: () => findSource(unknown.key) });
+  if (unknown.kind === "citekey" && findSource) actions.push({ name: t`Find in Sources`, apply: () => findSource(unknown.key) });
   return actions;
 }

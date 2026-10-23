@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t, plural } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // Typeset preview. Each page is a placeholder sized from the document's page
 // list; only pages near the viewport are drawn (to canvas), so the cost of an
 // update stays proportional to what is on screen rather than to the length
@@ -87,6 +90,7 @@ const NO_MARKS: readonly SourceMark[] = [];
 const pageTop = (canvas: HTMLCanvasElement) => (canvas.parentElement?.offsetTop ?? 0) + canvas.offsetTop;
 
 export const Preview = memo(function Preview({ artifact, problem, revision, positions, marks = NO_MARKS, stale, onJump, onSource, follow, zoom, onView, onTitleClick }: PreviewProps) {
+  useLingui();
   const scroller = useRef<HTMLDivElement>(null);
   const pagesHost = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<readonly PageBox[]>([]);
@@ -340,7 +344,7 @@ export const Preview = memo(function Preview({ artifact, problem, revision, posi
     // Only crossing into or out of a passage changes the page.
     if (at.canvas.classList.contains("over-source") === over) return;
     at.canvas.classList.toggle("over-source", over);
-    at.canvas.title = over ? "Show in Sources" : "";
+    at.canvas.title = over ? t`Show in Sources` : "";
   };
 
   const onClick = (event: React.MouseEvent) => {
@@ -358,16 +362,16 @@ export const Preview = memo(function Preview({ artifact, problem, revision, posi
   };
 
   return (
-    <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} aria-label={`Typeset preview, ${pages.length} ${pages.length === 1 ? "page" : "pages"}`} onScroll={reportView}>
-      {renderProblem && <div className="banner" role="alert"><span>Preview rendering failed: {renderProblem}. Your text is still available in the editor.</span><button type="button" className="mdbase-button" onClick={() => setRetry((value) => value + 1)}>Retry rendering</button></div>}
-      {!artifact && <p className="preview-empty">{problem ? "Preview unavailable. You can keep writing." : "Typesetting…"}</p>}
-      {stale && artifact && <p className="muted small" role="status">Showing the last successful preview; it may not match your latest text.</p>}
+    <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} aria-label={plural(pages.length, { one: "Typeset preview, # page", other: "Typeset preview, # pages" })} onScroll={reportView}>
+      {renderProblem && <div className="banner" role="alert"><span><Trans>Preview rendering failed: {renderProblem}. Your text is still available in the editor.</Trans></span><button type="button" className="mdbase-button" onClick={() => setRetry((value) => value + 1)}><Trans>Retry rendering</Trans></button></div>}
+      {!artifact && <p className="preview-empty">{problem ? t`Preview unavailable. You can keep writing.` : t`Typesetting…`}</p>}
+      {stale && artifact && <p className="muted small" role="status"><Trans>Showing the last successful preview; it may not match your latest text.</Trans></p>}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer shortcut; Problems and the outline offer the same navigation */}
       <div className="preview-pages" ref={pagesHost} onClick={onClick} onMouseMove={onMouseMove}>
         {pages.map((p, i) => (
           <div key={i} className="preview-page" style={{ aspectRatio: `${p.width} / ${p.height}`, ...(zoom === "fit" ? {} : { width: `${Math.round(p.width * PX_PER_PT * zoom)}px` }) }}>
             <canvas data-page={i} className="page" aria-hidden="true" />
-            <div className="text-layer" data-page={i} role="region" aria-label={`Page ${i + 1}`} tabIndex={0} />
+            <div className="text-layer" data-page={i} role="region" aria-label={t`Page ${i + 1}`} tabIndex={0} />
           </div>
         ))}
         <div ref={marker} className="preview-cursor" aria-hidden="true" hidden />

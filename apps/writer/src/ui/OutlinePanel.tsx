@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t, plural as icuPlural } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // The manuscript's outline: the manuscript and its word count, then its
 // chapters (records embedded on lines of their own) in reading order, each
 // with its headings. Chapters are dragged, or moved with Alt-↑/↓, to reorder
@@ -11,7 +14,7 @@ import type { RecordView } from "../workspace/workspace.js";
 import { useRowWindow } from "./paging.js";
 import { ChatIcon, ChevronRight, GripIcon, PlusIcon } from "./icons.js";
 import { headingAt, headings, sectionWords, withoutTitle } from "./outline.js";
-import { formatCount, plural, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
+import { formatCount, plural as countLabel, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
 
 export function OutlinePanel({
   main,
@@ -50,6 +53,7 @@ export function OutlinePanel({
   onMove(from: number, to: number): void;
   onAdd(title: string, intent: string): Promise<Result<string>>;
 }) {
+  useLingui();
   const [dragging, setDragging] = useState<number | null>(null);
   const [drop, setDrop] = useState<{ index: number; after: boolean } | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -86,7 +90,7 @@ export function OutlinePanel({
     if (to < 0 || to >= chapters.length || !path) return;
     refocus.current = path;
     onMove(from, to);
-    setAnnouncement(`Moved ${recordTitle(records.get(path), path)} to chapter ${to + 1} of ${chapters.length}.`);
+    setAnnouncement(t`Moved ${recordTitle(records.get(path), path)} to chapter ${to + 1} of ${chapters.length}.`);
   };
 
   const onDrop = (e: DragEvent) => {
@@ -105,14 +109,14 @@ export function OutlinePanel({
       <button type="button" className="outline-manuscript" aria-current={main === active ? "true" : undefined} onClick={() => onOpen(main)} title={main}>
         <span className="record-name">{recordTitle(mainView, main)}</span>
         <RecordState view={mainView} problems={byRecord.get(main)?.length ?? 0} />
-        <span className="record-words" title="In the whole manuscript; citations, code and math are not counted">{plural(words, "word")}</span>
+        <span className="record-words" title={t`In the whole manuscript; citations, code and math are not counted`}>{countLabel(words, "word")}</span>
       </button>
       <RecordHeadings view={mainView} path={main} cursor={cursor?.record === main ? cursor.offset : null} onJump={onJump} comments={commentOffsets?.get(main)} problems={byRecord.get(main)} />
 
       {rest.length > 0 && (
-        <h3 className="sidebar-heading outline-chapters" id="outline-chapters">
+        <h3 className="sidebar-heading outline-chapters" id="outline-chapters"><Trans>
           Chapters <span className="heading-count">{chapters.filter(Boolean).length}</span>
-        </h3>
+        </Trans></h3>
       )}
       {rest.length > 0 && (
         <ol ref={list} className="records" aria-labelledby="outline-chapters" onDragOver={(e) => dragging !== null && e.preventDefault()} onDrop={onDrop}>
@@ -176,7 +180,7 @@ export function OutlinePanel({
                       onClick={() => onOpen(path)}
                       onDoubleClick={openRename}
                       onKeyDown={(e) => { if (e.key === "F2") { e.preventDefault(); openRename(); } else onKeyDown(e); }}
-                      title={`${path}${direct ? " · drag, or Alt-↑/↓, to reorder" : ""}${onRename ? " · double-click or F2 to rename" : ""}`}
+                      title={t`${path}${direct ? " · drag, or Alt-↑/↓, to reorder" : ""}${onRename ? " · double-click or F2 to rename" : ""}`}
                     >
                       <span className="record-number" aria-hidden={!direct}>
                         <span className="record-index">{direct ? index + 1 : ""}</span>
@@ -187,7 +191,7 @@ export function OutlinePanel({
                       <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
                     </button>
                     {hasHeadings && (
-                      <button type="button" className="record-fold" aria-expanded={shows(path)} aria-label={`${shows(path) ? "Hide" : "Show"} the headings of ${recordTitle(view, path)}`} onClick={() => toggleExpanded(path)}>
+                      <button type="button" className="record-fold" aria-expanded={shows(path)} aria-label={t`${shows(path) ? "Hide" : "Show"} the headings of ${recordTitle(view, path)}`} onClick={() => toggleExpanded(path)}>
                         <ChevronRight />
                       </button>
                     )}
@@ -199,8 +203,8 @@ export function OutlinePanel({
           })}
         </ol>
       )}
-      {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}>Show previous 50 chapters</button>}
-      {rest.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}>Show 50 more chapters · {rest.length}</button>}
+      {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}><Trans>Show previous 50 chapters</Trans></button>}
+      {rest.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}><Trans>Show 50 more chapters · {rest.length}</Trans></button>}
       <AddChapter onAdd={onAdd} onAdded={onOpen} />
       <span className="visually-hidden" role="status">{announcement}</span>
     </div>
@@ -208,24 +212,27 @@ export function OutlinePanel({
 }
 
 function RecordState({ view, problems, comments = 0 }: { view: RecordView | undefined; problems: number; comments?: number }) {
+  useLingui();
   const state = view?.snapshot.state;
   if ((!state || state === "saved") && !problems && !comments) return null;
   return (
     <span className="record-state">
       {state && state !== "saved" && <span className={`status tone-${STATE_TONE[state]}`} title={STATE_LABEL[state]}><span className="dot" aria-hidden="true" /><span className="visually-hidden">{STATE_LABEL[state]}</span></span>}
       {comments > 0 && <CommentCount count={comments} />}
-      {problems > 0 && <span className="count tone-warning" title={plural(problems, "problem")}>{problems}</span>}
+      {problems > 0 && <span className="count tone-warning" title={countLabel(problems, "problem")}>{problems}</span>}
     </span>
   );
 }
 
 /** An open-comment count, kept as quiet as a word count. */
 function CommentCount({ count }: { count: number }) {
-  return <span className="outline-comments" title={`${plural(count, "open comment")}`}><ChatIcon /><span>{count}</span></span>;
+  useLingui();
+  return <span className="outline-comments" title={`${countLabel(count, "open comment")}`}><ChatIcon /><span>{count}</span></span>;
 }
 
 /** A chapter's title, edited in place: Enter keeps it, Escape leaves it. */
 function RenameChapter({ title, onDone }: { title: string; onDone(title: string | null): void }) {
+  useLingui();
   const [value, setValue] = useState(title);
   return (
     <form className="record-rename" onSubmit={(e) => { e.preventDefault(); onDone(value.trim() && value.trim() !== title ? value.trim() : null); }}>
@@ -237,7 +244,7 @@ function RenameChapter({ title, onDone }: { title: string; onDone(title: string 
         onFocus={(e) => e.target.select()}
         onBlur={() => onDone(value.trim() && value.trim() !== title ? value.trim() : null)}
         onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onDone(null); } }}
-        aria-label="Chapter title"
+        aria-label={t`Chapter title`}
       />
     </form>
   );
@@ -245,6 +252,7 @@ function RenameChapter({ title, onDone }: { title: string; onDone(title: string 
 
 /** A record's word count, counted again only when its text changes. */
 const Words = memo(function Words({ body }: { body: string }) {
+  useLingui();
   return formatCount(wordCount(body));
 });
 
@@ -253,6 +261,7 @@ const Words = memo(function Words({ body }: { body: string }) {
  * the record being edited, or the one the cursor is in, renders as you type.
  */
 const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump, comments, problems }: { view: RecordView | undefined; path: string; cursor: number | null; onJump(path: string, offset: number): void; comments?: readonly number[] | undefined; problems?: readonly WriterDiagnostic[] | undefined }) {
+  useLingui();
   const body = view?.snapshot.body;
   const title = recordTitle(view, path);
   const all = useMemo(() => (body ? headings(body) : []), [body]);
@@ -301,19 +310,20 @@ const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump
           >
             <span className="heading-text">{h.text}</span>
             {(counts[ranks.get(h)!]?.comments ?? 0) > 0 && <CommentCount count={counts[ranks.get(h)!]!.comments} />}
-            {(counts[ranks.get(h)!]?.problems ?? 0) > 0 && <span className="heading-problem" title={plural(counts[ranks.get(h)!]!.problems, "problem")} />}
-            <span className="heading-words" title={`${plural(words[ranks.get(h)!] ?? 0, "word")} in this section`}>{formatCount(words[ranks.get(h)!] ?? 0)}</span>
+            {(counts[ranks.get(h)!]?.problems ?? 0) > 0 && <span className="heading-problem" title={countLabel(counts[ranks.get(h)!]!.problems, "problem")} />}
+            <span className="heading-words" title={icuPlural(words[ranks.get(h)!] ?? 0, { one: "# word in this section", other: "# words in this section" })}>{formatCount(words[ranks.get(h)!] ?? 0)}</span>
           </button>
         </li>
       ))}
     </ol>
-    {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}>Show previous 50 headings</button>}
-    {list.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}>Show 50 more headings · {list.length}</button>}
+    {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}><Trans>Show previous 50 headings</Trans></button>}
+    {list.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}><Trans>Show 50 more headings · {list.length}</Trans></button>}
     </>
   );
 });
 
 function AddChapter({ onAdd, onAdded }: { onAdd(title: string, intent: string): Promise<Result<string>>; onAdded(path: string): void }) {
+  useLingui();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -324,9 +334,9 @@ function AddChapter({ onAdd, onAdded }: { onAdd(title: string, intent: string): 
 
   if (!editing) {
     return (
-      <button ref={opener} type="button" className="sidebar-more add-chapter" onClick={() => setEditing(true)}>
+      <button ref={opener} type="button" className="sidebar-more add-chapter" onClick={() => setEditing(true)}><Trans>
         <PlusIcon /> Add chapter
-      </button>
+      </Trans></button>
     );
   }
   const close = () => {
@@ -360,13 +370,13 @@ function AddChapter({ onAdd, onAdded }: { onAdd(title: string, intent: string): 
           e.preventDefault();
           close();
         }}
-        placeholder="Chapter title"
-        aria-label="New chapter title"
+        placeholder={t`Chapter title`}
+        aria-label={t`New chapter title`}
         disabled={busy}
       />
       <div className="add-chapter-actions">
-        <button type="submit" className="mdbase-button" disabled={busy || !title.trim()}>{busy ? "Adding…" : "Add"}</button>
-        <button type="button" className="link small" onClick={close}>Cancel</button>
+        <button type="submit" className="mdbase-button" disabled={busy || !title.trim()}>{busy ? t`Adding…` : t`Add`}</button>
+        <button type="button" className="link small" onClick={close}><Trans>Cancel</Trans></button>
       </div>
       {problem && <p className="field-problem severity-error" role="alert">{problem}</p>}
     </form>

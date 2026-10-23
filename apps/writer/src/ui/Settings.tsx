@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // The manuscript's settings: its frontmatter, edited as fields in a sheet beside
 // the preview, so a new style or layout shows as it is chosen. Each field
 // keeps its own draft while focused and commits after a pause or on blur, so
@@ -13,21 +16,13 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js";
 import { ChevronUp, CloseIcon, MinusIcon, PlusIcon } from "./icons.js";
-import { templateName } from "./names.js";
+import { styleName, templateName } from "./names.js";
+import { intlLocale } from "../i18n/presentation.js";
 
 type JsonValue = JsonObject[string];
 
 const COMMIT_AFTER_MS = 600;
-const LANGUAGE_NAMES: Record<string, string> = {
-  "en-US": "English (US)",
-  "en-GB": "English (UK)",
-  "de-DE": "German",
-  "fr-FR": "French",
-  "es-ES": "Spanish",
-  "it-IT": "Italian",
-  "nl-NL": "Dutch",
-  "pt-BR": "Portuguese (Brazil)",
-};
+
 
 export interface SettingsFocus {
   readonly field: MetaField;
@@ -56,6 +51,7 @@ export function Settings({
   livePreview?: boolean;
   onLivePreview?(): void;
 }) {
+  useLingui();
   const titleId = useId();
   const sheet = useRef<HTMLElement>(null);
   // Opening moves focus into the sheet (unless a field was asked for); closing returns it.
@@ -108,70 +104,70 @@ export function Settings({
       aria-labelledby={titleId}
     >
       <header className="settings-sheet-header">
-        <h2 id={titleId}>Manuscript settings</h2>
-        <button type="button" className="mdbase-icon-button" onClick={onClose} aria-label="Close settings" title="Close (Escape)">
+        <h2 id={titleId}><Trans>Manuscript settings</Trans></h2>
+        <button type="button" className="mdbase-icon-button" onClick={onClose} aria-label={t`Close settings`} title={t`Close (Escape)`}>
           <CloseIcon />
         </button>
       </header>
       <fieldset className="settings" disabled={view.snapshot.state === "deleted" || workspace.getSnapshot().recoveredDrafts.has(workspace.main)}>
         <div className="span-2">
-          <TextField label="Title" multiline={1} grow singleLine value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
+          <TextField label={t`Title`} multiline={1} grow singleLine value={str("title")} onCommit={(v) => patch({ title: v })} {...props("title")} />
         </div>
         <div className="span-2">
-          <TextField label="Subtitle" multiline={1} grow singleLine value={str("subtitle")} onCommit={(v) => patch({ subtitle: v || null })} {...props("subtitle")} />
+          <TextField label={t`Subtitle`} multiline={1} grow singleLine value={str("subtitle")} onCommit={(v) => patch({ subtitle: v || null })} {...props("subtitle")} />
         </div>
         <div className="span-2">
           <AuthorsField
-            label="Authors"
+            label={t`Authors`}
             value={authorList(fm["authors"] ?? fm["author"])}
             onCommit={(authors) => patch({ [authorsKey]: authors.length ? authors.map(toAuthor) : null })}
             {...props("authors")}
             onDraft={(draft) => workspace.stageFrontmatter(workspace.main, { [authorsKey]: parseAuthors(draft) })}
           />
         </div>
-        <TextField label="Date" hint="as it should appear" value={str("date")} onCommit={(v) => patch({ date: v || null })} {...props("date")} />
+        <TextField label={t`Date`} hint={t`as it should appear`} value={str("date")} onCommit={(v) => patch({ date: v || null })} {...props("date")} />
         <div className="span-2">
-          <TextField label="Abstract" multiline={7} grow value={str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
+          <TextField label={t`Abstract`} multiline={7} grow value={str("abstract")} onCommit={(v) => patch({ abstract: v || null })} {...props("abstract")} />
         </div>
         <SelectField
-          label="Citation style"
+          label={t`Citation style`}
           value={style}
           onCommit={(v) => patch({ csl: v })}
           options={[
-            ...STYLES.map((s) => ({ value: s.id as string, label: s.title })),
-            ...fileOptions("From the collection", cslFiles, style, STYLES.map((s) => s.id)),
+            ...STYLES.map((s) => ({ value: s.id as string, label: styleName(s.id) })),
+            ...fileOptions(t`From the collection`, cslFiles, style, STYLES.map((s) => s.id)),
           ]}
           {...props("csl")}
         />
         <SelectField
-          label="Layout"
+          label={t`Layout`}
           value={template}
           onCommit={(v) => patch({ template: v })}
           options={[
             ...TEMPLATES.map((t) => ({ value: t as string, label: templateName(t) })),
-            ...fileOptions("Typst templates in the collection", typFiles, template, TEMPLATES),
+            ...fileOptions(t`Typst templates in the collection`, typFiles, template, TEMPLATES),
           ]}
           {...props("template")}
         />
         <TextField
-          label="Language"
-          hint="for citation terms and hyphenation"
-          placeholder="The style’s own (usually en-US)"
-          list={LOCALES.map((l) => [l, LANGUAGE_NAMES[l] ?? l])}
+          label={t`Language`}
+          hint={t`for citation terms and hyphenation`}
+          placeholder={t`The style’s own (usually en-US)`}
+          list={LOCALES.map((l) => [l, new Intl.DisplayNames([intlLocale()], { type: "language" }).of(l) ?? l])}
           value={str("lang")}
           onCommit={(v) => patch({ lang: v.trim() || null })}
           {...props("lang")}
         />
       </fieldset>
-      <p className="muted small dialog-note">Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them.</p>
+      <p className="muted small dialog-note"><Trans>Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them.</Trans></p>
       {onLivePreview && (
         <section className="editor-prefs" aria-labelledby={`${titleId}-editor`}>
-          <h2 id={`${titleId}-editor`}>Editor</h2>
-          <label className="pref-row" title="Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed.">
+          <h2 id={`${titleId}-editor`}><Trans>Editor</Trans></h2>
+          <label className="pref-row" title={t`Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed.`}>
             <input type="checkbox" checked={livePreview} onChange={onLivePreview} />
-            <span>Read as the manuscript<span className="muted small">Off shows the Markdown as written</span></span>
+            <span><Trans>Read as the manuscript<span className="muted small">Off shows the Markdown as written</span></Trans></span>
           </label>
-          <p className="muted small dialog-note">This applies in this browser, to every manuscript.</p>
+          <p className="muted small dialog-note"><Trans>This applies in this browser, to every manuscript.</Trans></p>
         </section>
       )}
     </aside>
@@ -194,6 +190,7 @@ interface FieldProps {
 }
 
 function FieldFrame({ label, hint, problems, children, id }: FieldProps & { children: ReactNode; id: string }) {
+  useLingui();
   return (
     <label className={problems.length ? "has-problem" : undefined}>
       <span>
@@ -232,6 +229,7 @@ function TextField(props: FieldProps & {
   placeholder?: string;
   list?: readonly (readonly [string, string])[];
 }) {
+  useLingui();
   const { value, onCommit, onDraft, multiline, grow, singleLine, placeholder, list, field, problems, focus } = props;
   const [draft, setDraft] = useState(value);
   const editing = useRef(false);
@@ -308,6 +306,7 @@ function TextField(props: FieldProps & {
 }
 
 function SelectField(props: FieldProps & { value: string; onCommit(value: string): void; options: SelectItems }) {
+  useLingui();
   const { value, onCommit, field, problems, focus, options, label } = props;
   const element = useRef<HTMLButtonElement>(null);
   const problemId = useId();
@@ -341,6 +340,7 @@ const authorsDraft = (authors: readonly Author[]) => authors.map((a) => [a.name,
 
 /** Authors as rows of name and affiliation: add, remove or reorder them. */
 function AuthorsField(props: FieldProps & { value: readonly Author[]; onCommit(authors: readonly Author[]): void }) {
+  useLingui();
   const { value, onCommit, onDraft, field, problems, focus, label } = props;
   const [rows, setRows] = useState<Author[]>(() => [...value]);
   const editing = useRef(false);
@@ -380,21 +380,21 @@ function AuthorsField(props: FieldProps & { value: readonly Author[]; onCommit(a
       <span className="authors-label">{label}</span>
       {shown.map((author, i) => (
         <div key={i} className="author-row" onFocus={() => (editing.current = true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) { editing.current = false; commit(rows); } }}>
-          <input className="mdbase-field" value={author.name} placeholder="Name" aria-label={`Author ${i + 1} name`} onChange={(e) => change(shown.map((a, j) => (j === i ? { ...a, name: e.target.value } : a)))} />
-          <input className="mdbase-field" value={author.affiliation} placeholder="Affiliation" aria-label={`Author ${i + 1} affiliation`} onChange={(e) => change(shown.map((a, j) => (j === i ? { ...a, affiliation: e.target.value } : a)))} />
-          <button type="button" className="mdbase-icon-button is-small" aria-label={`Move author ${i + 1} up`} title="Move up" disabled={i === 0} onClick={() => change(shown.map((a, j) => (j === i - 1 ? shown[i]! : j === i ? shown[i - 1]! : a)), true)}>
+          <input className="mdbase-field" value={author.name} placeholder={t`Name`} aria-label={t`Author ${i + 1} name`} onChange={(e) => change(shown.map((a, j) => (j === i ? { ...a, name: e.target.value } : a)))} />
+          <input className="mdbase-field" value={author.affiliation} placeholder={t`Affiliation`} aria-label={t`Author ${i + 1} affiliation`} onChange={(e) => change(shown.map((a, j) => (j === i ? { ...a, affiliation: e.target.value } : a)))} />
+          <button type="button" className="mdbase-icon-button is-small" aria-label={t`Move author ${i + 1} up`} title={t`Move up`} disabled={i === 0} onClick={() => change(shown.map((a, j) => (j === i - 1 ? shown[i]! : j === i ? shown[i - 1]! : a)), true)}>
             <ChevronUp />
           </button>
-          <button type="button" className="mdbase-icon-button is-small" aria-label={`Remove author ${i + 1}`} title="Remove" disabled={shown.length === 1 && !author.name && !author.affiliation} onClick={() => change(shown.filter((_, j) => j !== i), true)}>
+          <button type="button" className="mdbase-icon-button is-small" aria-label={t`Remove author ${i + 1}`} title={t`Remove`} disabled={shown.length === 1 && !author.name && !author.affiliation} onClick={() => change(shown.filter((_, j) => j !== i), true)}>
             <MinusIcon />
           </button>
         </div>
       ))}
       <div className="author-actions">
-        <button type="button" className="text-button" onClick={() => change([...shown, { name: "", affiliation: "" }])}>
+        <button type="button" className="text-button" onClick={() => change([...shown, { name: "", affiliation: "" }])}><Trans>
           <PlusIcon />
           Add author
-        </button>
+        </Trans></button>
       </div>
       {problems.map((p, i) => (
         <span key={i} id={i === 0 ? problemId : undefined} className={`field-problem severity-${p.severity}`}>{p.message}</span>

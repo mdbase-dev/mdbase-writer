@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import { useEffect, useRef, useState } from "react";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import type { JsonObject } from "@mdbase-dev/connect";
@@ -40,6 +43,7 @@ export function CompareDialog({ comparison, canRestore = true, onClose, onResolv
   onResolve(choice: "mine" | "theirs" | { body: string }): void;
   onDownload(): void;
 }) {
+  useLingui();
   const [merge, setMerge] = useState({ path: comparison?.path, mine: comparison?.mine, text: comparison?.mine ?? "" });
   const changed = merge.path !== comparison?.path || merge.mine !== comparison?.mine;
   if (changed) setMerge({ path: comparison?.path, mine: comparison?.mine, text: comparison?.mine ?? "" });
@@ -49,29 +53,29 @@ export function CompareDialog({ comparison, canRestore = true, onClose, onResolv
   const diff = comparison ? changedPassage(comparison.mine, comparison.theirs) : null;
   const metadataChanged = comparison && JSON.stringify(comparison.mineFields) !== JSON.stringify(comparison.theirFields);
   return (
-    <Dialog open={Boolean(comparison)} onClose={onClose} title={comparison?.kind === "draft" ? "Review recovered local draft" : "Compare conflicting versions"} className="compare-dialog">
+    <Dialog open={Boolean(comparison)} onClose={onClose} title={comparison?.kind === "draft" ? t`Review recovered local draft` : t`Compare conflicting versions`} className="compare-dialog">
       {comparison && diff && <>
         <p><code>{comparison.path}</code></p>
-        <p className="muted">Nothing is replaced until you choose. Highlighted passages differ between the versions.</p>
+        <p className="muted"><Trans>Nothing is replaced until you choose. Highlighted passages differ between the versions.</Trans></p>
         <div className="compare-columns" ref={columns}>
-          {([['Your local text', diff.mine], ['Collection version', diff.theirs]] as const).map(([label, change]) => <section key={label}>
+          {([[t`Your local text`, diff.mine], [t`Collection version`, diff.theirs]] as const).map(([label, change]) => <section key={label}>
             <h3>{label}</h3>
-            <pre className="compare-text">{diff.prefix && `${diff.prefix}\n`}{comparison.mine !== comparison.theirs && <mark>{change || "(passage removed)"}</mark>}{diff.suffix && `\n${diff.suffix}`}</pre>
+            <pre className="compare-text">{diff.prefix && t`${diff.prefix}\n`}{comparison.mine !== comparison.theirs && <mark>{change || t`(passage removed)`}</mark>}{diff.suffix && t`\n${diff.suffix}`}</pre>
           </section>)}
         </div>
-        {metadataChanged && <details><summary>Settings also differ</summary><div className="compare-columns">
+        {metadataChanged && <details><summary><Trans>Settings also differ</Trans></summary><div className="compare-columns">
           <pre>{JSON.stringify(comparison.mineFields, null, 2)}</pre><pre>{JSON.stringify(comparison.theirFields, null, 2)}</pre>
         </div></details>}
-        {comparison.kind === "conflict" && <label className="merge-field">Merged Markdown
+        {comparison.kind === "conflict" && <label className="merge-field"><Trans>Merged Markdown
           <textarea className="mdbase-field" rows={12} value={merged} onChange={(event) => setMerge({ ...merge, text: event.target.value })} />
           <span className="muted small">The merged text keeps your local setting changes on top of the collection version.</span>
-        </label>}
-        {!canRestore && <p>This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record.</p>}
+        </Trans></label>}
+        {!canRestore && <p><Trans>This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record.</Trans></p>}
         <div className="compare-actions">
-          <button type="button" className="mdbase-button" onClick={onDownload}>Download local draft</button>
-          <button type="button" className="mdbase-button" onClick={() => onResolve("theirs")}>Use collection version</button>
-          <button type="button" className="mdbase-button" disabled={!canRestore} onClick={() => onResolve("mine")}>{comparison.kind === "draft" ? "Restore local draft" : "Keep mine"}</button>
-          {comparison.kind === "conflict" && <button type="button" className="mdbase-button is-primary" onClick={() => onResolve({ body: merged })}>Save merged version</button>}
+          <button type="button" className="mdbase-button" onClick={onDownload}><Trans>Download local draft</Trans></button>
+          <button type="button" className="mdbase-button" onClick={() => onResolve("theirs")}><Trans>Use collection version</Trans></button>
+          <button type="button" className="mdbase-button" disabled={!canRestore} onClick={() => onResolve("mine")}>{comparison.kind === "draft" ? t`Restore local draft` : t`Keep mine`}</button>
+          {comparison.kind === "conflict" && <button type="button" className="mdbase-button is-primary" onClick={() => onResolve({ body: merged })}><Trans>Save merged version</Trans></button>}
         </div>
       </>}
     </Dialog>

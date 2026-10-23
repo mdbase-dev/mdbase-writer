@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // Lazy Pandoc worker. Requests settle on crash, timeout and cancellation.
 import type { FromPandoc, ToPandoc } from "./pandoc-protocol.js";
 
@@ -12,18 +13,18 @@ function stop(error: string): void {
 }
 
 export function toDocx(markdown: string, files: ToPandoc["files"], signal?: AbortSignal): Promise<FromPandoc> {
-  if (signal?.aborted) return Promise.resolve({ id: nextId++, error: "Export cancelled." });
+  if (signal?.aborted) return Promise.resolve({ id: nextId++, error: t`Export cancelled.` });
   if (!worker) {
     worker = new Worker(new URL("./pandoc-worker.ts", import.meta.url), { type: "module" });
     worker.onmessage = (event: MessageEvent<FromPandoc>) => waiting.get(event.data.id)?.(event.data);
-    worker.onerror = (event) => { event.preventDefault(); stop(event.message || "Pandoc stopped."); };
-    worker.onmessageerror = () => stop("Pandoc returned an unreadable response.");
+    worker.onerror = (event) => { event.preventDefault(); stop(event.message || t`Pandoc stopped.`); };
+    worker.onmessageerror = () => stop(t`Pandoc returned an unreadable response.`);
   }
   const id = nextId++;
   const current = worker;
   return new Promise((resolve) => {
-    const abort = () => stop("Export cancelled.");
-    const timer = setTimeout(() => stop("Word export timed out. Check your connection and try again."), 120_000);
+    const abort = () => stop(t`Export cancelled.`);
+    const timer = setTimeout(() => stop(t`Word export timed out. Check your connection and try again.`), 120_000);
     const finish = (message: FromPandoc) => {
       clearTimeout(timer);
       signal?.removeEventListener("abort", abort);

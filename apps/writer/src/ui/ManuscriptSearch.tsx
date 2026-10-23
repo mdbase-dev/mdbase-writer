@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t, plural as icuPlural } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // Search across the whole manuscript, at the top of the outline. While the
 // field has text, matches grouped by record take the outline's place; a click
 // goes to a match, and Enter / Shift-Enter step through them from the field.
@@ -5,7 +8,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState, type KeyboardEv
 
 import type { RecordView } from "../workspace/workspace.js";
 import { SearchIcon } from "./icons.js";
-import { formatCount, plural } from "./records.js";
+import { formatCount } from "./records.js";
 import { searchManuscript, type SearchHit } from "./search.js";
 
 /** A request to focus the field (Mod-Shift-F); a new nonce repeats it. */
@@ -32,6 +35,7 @@ export function ManuscriptSearch({
   onGo(hit: SearchHit, focus: boolean): void;
   request: SearchRequest | null;
 }) {
+  useLingui();
   const field = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(-1);
@@ -86,20 +90,20 @@ export function ManuscriptSearch({
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           onKeyDown={onFieldKey}
-          placeholder="Search the manuscript"
-          aria-label="Search the manuscript"
+          placeholder={t`Search the manuscript`}
+          aria-label={t`Search the manuscript`}
           aria-describedby="manuscript-search-keys"
         />
       </div>
-      <span id="manuscript-search-keys" className="visually-hidden">Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches.</span>
+      <span id="manuscript-search-keys" className="visually-hidden"><Trans>Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches.</Trans></span>
       {query.trim() && (
         <div ref={list} className="search-results" onKeyDown={onListKey}>
           <p className="search-summary muted small" role="status">
             {result.total === 0
-              ? `Nothing matches “${query.trim()}”.`
+              ? t`Nothing matches “${query.trim()}”.`
               : result.truncated
-                ? `The first ${formatCount(listed)} of ${plural(result.total, "match", "matches")}`
-                : `${plural(result.total, "match", "matches")}${result.groups.length > 1 ? ` in ${plural(result.groups.length, "record")}` : ""}`}
+                ? icuPlural(result.total, { one: `The first ${formatCount(listed)} of # match`, other: `The first ${formatCount(listed)} of # matches` })
+                : icuPlural(result.total, { one: `# match in ${formatCount(result.groups.length)} records`, other: `# matches in ${formatCount(result.groups.length)} records` })}
           </p>
           {result.groups.map((group) => (
             <section key={group.record} className="search-group" aria-label={recordTitle(group.record)}>

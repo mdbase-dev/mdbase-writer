@@ -1,3 +1,4 @@
+import { t, plural } from "@lingui/core/macro";
 // Comment anchors in the editor: commented passages are highlighted, and a
 // suggestion shows as a tracked change (the text it replaces struck through,
 // its replacement inline after it). Anchors follow edits between updates.
@@ -45,7 +46,7 @@ class Insertion extends WidgetType {
     span.className = `${this.text ? "cm-suggest-insert" : "cm-comment-point"}${this.active ? " is-active" : ""}`;
     span.dataset["comment"] = this.id;
     span.textContent = this.text;
-    span.title = this.text ? "Suggested insertion" : "Comment";
+    span.title = this.text ? t`Suggested insertion` : t`Comment`;
     return span;
   }
 
@@ -96,7 +97,7 @@ class CommentMarker extends GutterMarker {
     el.className = `cm-comment-marker${this.active ? " is-active" : ""}`;
     el.dataset["comment"] = this.ids[0] ?? "";
     el.textContent = this.ids.length > 1 ? String(this.ids.length) : "";
-    el.title = this.ids.length > 1 ? `${this.ids.length} comments on this line` : "Show this comment";
+    el.title = this.ids.length > 1 ? tplural(this.ids.length, { one: "# comment on this line", other: "# comments on this line" }) : t`Show this comment`;
     el.setAttribute("aria-label", el.title);
     return el;
   }
@@ -167,7 +168,7 @@ export function commentAnchors(onAnchor: (id: string) => void, card?: (id: strin
         dom.className = "cm-ref-tip cm-comment-tip";
         const head = document.createElement("div");
         head.className = "cm-ref-kind";
-        head.textContent = `${info.kind === "suggestion" ? "Suggestion" : "Comment"}${info.isNew ? " · new" : ""}`;
+        head.textContent = t`${info.kind === "suggestion" ? "Suggestion" : "Comment"}${info.isNew ? " · new" : ""}`;
         const who = document.createElement("div");
         who.className = "cm-comment-who";
         who.textContent = `${info.author} · ${info.when}`;
@@ -176,7 +177,7 @@ export function commentAnchors(onAnchor: (id: string) => void, card?: (id: strin
         body.textContent = info.text.length > 240 ? `${info.text.slice(0, 239)}…` : info.text;
         const hint = document.createElement("div");
         hint.className = "cm-ref-hint";
-        hint.textContent = `${info.replies ? `${info.replies} ${info.replies === 1 ? "reply" : "replies"} · ` : ""}Click to open in Comments`;
+        hint.textContent = plural(info.replies, { "=0": "Click to open in Comments", one: "# reply · Click to open in Comments", other: "# replies · Click to open in Comments" });
         dom.append(head, who, body, hint);
         return { dom };
       },

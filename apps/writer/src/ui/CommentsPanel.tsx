@@ -1,3 +1,7 @@
+import { Trans } from "@lingui/react/macro";
+import { t, plural as icuPlural } from "@lingui/core/macro";
+import { formatDate } from "../i18n/presentation.js";
+import { useLingui } from "@lingui/react";
 // Comments on the manuscript's records: threads in reading order, with
 // replies, resolving, and suggested edits to accept or reject. A new comment
 // starts from a passage chosen in the editor (the draft).
@@ -13,7 +17,7 @@ import { Select } from "@mdbase-dev/ui/select";
 import { clipPassage, describeSuggestion, inlinePieces, plainPassage, threadIsNew, when, type PlacedThread } from "./comments.js";
 import { useRowWindow } from "./paging.js";
 import { PlusIcon } from "./icons.js";
-import { plural } from "./records.js";
+import { plural as countLabel } from "./records.js";
 
 /** A passage chosen to comment on or suggest an edit to, or (without a draft) a whole record. */
 export interface PendingComment {
@@ -77,6 +81,7 @@ export function CommentsPanel({
   /** Reopens Connect's approval, where the identity permission can be allowed. */
   onReviewAccess?(): Promise<Result<unknown>>;
 }) {
+  useLingui();
   const [filter, setFilter] = useState<Filter>("open");
   // Whose threads: everyone's, what is new since the last visit, one's own, or one person's.
   const [who, setWho] = useState<string>("all");
@@ -126,29 +131,29 @@ export function CommentsPanel({
   const signer = people.signing?.kind === "linked" ? people.me?.name : undefined;
   let lastRecord: string | null = null;
   return (
-    <section ref={panel} className="comments" aria-label="Comments" onKeyDown={onListKey}>
+    <section ref={panel} className="comments" aria-label={t`Comments`} onKeyDown={onListKey}>
       <div className="comments-bar">
-        <div className="segmented small" role="group" aria-label="Show">
+        <div className="segmented small" role="group" aria-label={t`Show`}>
           {(["open", "resolved"] as const).map((f) => (
             <button key={f} type="button" aria-pressed={filter === f} onClick={() => { setFilter(f); window.reset(); }}>
-              {f === "open" ? "Open" : "Resolved"} <span className="heading-count">{counts[f]}</span>
+              {f === "open" ? t`Open` : t`Resolved`} <span className="heading-count">{counts[f]}</span>
             </button>
           ))}
         </div>
-        <button type="button" className="text-button" onClick={onWholeRecord} title="A comment on the whole record, not on a passage (select text in the editor to comment on it)">
+        <button type="button" className="text-button" onClick={onWholeRecord} title={t`A comment on the whole record, not on a passage (select text in the editor to comment on it)`}><Trans>
           <PlusIcon /> On the record
-        </button>
+        </Trans></button>
       </div>
       {placed.length > 0 && (authors.length > 1 || newCount > 0) && (
         <div className="comments-who">
           <Select
-            aria-label="Whose comments"
+            aria-label={t`Whose comments`}
             value={who}
             onChange={(value) => { setWho(value); window.reset(); }}
             options={[
-              { value: "all", label: "Everyone" },
-              ...(newCount > 0 || who === "new" ? [{ value: "new", label: `New since last visit (${newCount})` }] : []),
-              ...(me ? [{ value: "mine", label: "Mine" }] : []),
+              { value: "all", label: t`Everyone` },
+              ...(newCount > 0 || who === "new" ? [{ value: "new", label: t`New since last visit (${newCount})` }] : []),
+              ...(me ? [{ value: "mine", label: t`Mine` }] : []),
               ...authors.map(([link, name]) => ({ value: link, label: name })),
             ]}
           />
@@ -156,20 +161,20 @@ export function CommentsPanel({
       )}
       <Signing people={people} onCheck={onCheckAccount} {...(onReviewAccess ? { onReviewAccess } : {})} />
       {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} signer={signer} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
-      {loading && <p className="muted small" role="status">Loading comments…</p>}
-      {problem && <p className="muted small">Comments unavailable: {problem} {onRetry && <button type="button" className="text-button" onClick={onRetry}>Retry comments</button>}</p>}
-      {notSetUp && <p className="muted small">Comments are not set up in this collection.</p>}
+      {loading && <p className="muted small" role="status"><Trans>Loading comments…</Trans></p>}
+      {problem && <p className="muted small"><Trans>Comments unavailable: {problem} {onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>}</Trans></p>}
+      {notSetUp && <p className="muted small"><Trans>Comments are not set up in this collection.</Trans></p>}
       {!loading && !problem && !notSetUp && !shown.length && !pending && (
         <div className="sidebar-empty">
           {filter === "open" ? (
             <>
-              <p><strong>No open comments</strong></p>
-              <p className="small muted">
+              <p><strong><Trans>No open comments</Trans></strong></p>
+              <p className="small muted"><Trans>
                 Select a passage and press <kbd>{MOD_LABEL}-{ALT_LABEL}-M</kbd> to comment, or <kbd>{MOD_LABEL}-{ALT_LABEL}-S</kbd> to suggest an edit.
-              </p>
+              </Trans></p>
             </>
           ) : (
-            <p className="small muted">Nothing resolved yet.</p>
+            <p className="small muted"><Trans>Nothing resolved yet.</Trans></p>
           )}
         </div>
       )}
@@ -199,8 +204,8 @@ export function CommentsPanel({
           ];
         })}
       </ul>
-      {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}>Show previous 50 comments</button>}
-      {logical.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}>Show 50 more comments · {logical.length}</button>}
+      {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}><Trans>Show previous 50 comments</Trans></button>}
+      {logical.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}><Trans>Show 50 more comments · {logical.length}</Trans></button>}
     </section>
   );
 }
@@ -221,6 +226,7 @@ function useAction() {
 }
 
 export function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: { pending: PendingComment; signer: string | undefined; recordTitle(path: string): string; onSubmit(text: string, replacement?: string): Promise<Result<unknown>>; onCancel(): void }) {
+  useLingui();
   const { draft, kind } = pending;
   const quote = draft ? draft.body.slice(draft.from, draft.to) : "";
   const [text, setText] = useState("");
@@ -247,17 +253,17 @@ export function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: {
       }}
     >
       <p className="composer-title">
-        <strong>{suggest ? "Suggest an edit" : "New comment"}</strong>
+        <strong>{suggest ? t`Suggest an edit` : t`New comment`}</strong>
         <span className="small muted" title={recordTitle(pending.record)}>
-          {signer ? <>as {signer} · </> : null}
+          {signer ? <><Trans>as {signer} · </Trans></> : null}
           {recordTitle(pending.record)}
         </span>
       </p>
-      {quote ? <blockquote className="thread-quote">{plainPassage(quote)}</blockquote> : <p className="thread-quote muted small">{draft ? (suggest ? "Insert at the cursor" : "At the cursor") : "On the whole record"}</p>}
+      {quote ? <blockquote className="thread-quote">{plainPassage(quote)}</blockquote> : <p className="thread-quote muted small">{draft ? (suggest ? t`Insert at the cursor` : t`At the cursor`) : t`On the whole record`}</p>}
       {suggest && (
         <label className="composer-field">
-          <span className="small">Replace with</span>
-          <textarea ref={first} className="mdbase-field" rows={3} value={replacement} onChange={(e) => setReplacement(e.target.value)} aria-label="Suggested text" />
+          <span className="small"><Trans>Replace with</Trans></span>
+          <textarea ref={first} className="mdbase-field" rows={3} value={replacement} onChange={(e) => setReplacement(e.target.value)} aria-label={t`Suggested text`} />
         </label>
       )}
       <textarea
@@ -266,17 +272,17 @@ export function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: {
         rows={3}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={suggest ? "Why (optional)" : "Comment"}
-        aria-label={suggest ? "Reason for the suggestion" : "Comment"}
+        placeholder={suggest ? t`Why (optional)` : t`Comment`}
+        aria-label={suggest ? t`Reason for the suggestion` : t`Comment`}
       />
       {error && <p className="small tone-danger" role="alert">{error}</p>}
       <div className="thread-actions">
-        <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || empty} title={`${MOD_LABEL}-Enter`}>
-          {suggest ? "Suggest" : "Comment"}
+        <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || empty} title={t`${MOD_LABEL}-Enter`}>
+          {suggest ? t`Suggest` : t`Comment`}
         </button>
-        <button type="button" className="mdbase-button is-small" onClick={onCancel} disabled={busy}>
+        <button type="button" className="mdbase-button is-small" onClick={onCancel} disabled={busy}><Trans>
           Cancel
-        </button>
+        </Trans></button>
       </div>
     </form>
   );
@@ -303,6 +309,7 @@ const Thread = memo(function Thread({
   onChange(comment: CommentRecord, change: CommentChange): Promise<Result<unknown>>;
   onAccept(placed: PlacedThread): Promise<Result<unknown>>;
 }) {
+  useLingui();
   const repliesWindow = useRowWindow();
   const { thread, at } = placed;
   const { root } = thread;
@@ -314,27 +321,27 @@ const Thread = memo(function Thread({
   const open = root.status === "open";
   const mine = (c: CommentRecord) => !c.createdBy || (people.me !== undefined && c.createdBy.toLowerCase() === people.me.link.toLowerCase());
 
-  const outcome = suggestion?.outcome === "accepted" ? "Accepted" : suggestion?.outcome === "rejected" ? "Rejected" : "Resolved";
-  const resolvedNote = !open ? `${suggestion ? outcome : "Resolved"}${root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""}${root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""}` : null;
+  const outcome = suggestion?.outcome === "accepted" ? t`Accepted` : suggestion?.outcome === "rejected" ? t`Rejected` : t`Resolved`;
+  const resolvedNote = !open ? t`${suggestion ? outcome : "Resolved"}${root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""}${root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""}` : null;
 
   return (
     <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}${isNew ? " is-new" : ""}`} data-thread={root.path}>
-      <button type="button" className="thread-anchor" onClick={() => onSelect(placed)} title={at === null ? "This passage is no longer in the text" : "Show in the editor"}>
-        {isNew && <span className="thread-new small">New since your last visit</span>}
-        {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{plainPassage(root.target.quote.exact) || "(a point in the text)"}</blockquote> : <span className="thread-whole small muted">On the whole record</span>}
-        {at === null && <span className="thread-detached small">Detached: the text has changed</span>}
+      <button type="button" className="thread-anchor" onClick={() => onSelect(placed)} title={at === null ? t`This passage is no longer in the text` : t`Show in the editor`}>
+        {isNew && <span className="thread-new small"><Trans>New since your last visit</Trans></span>}
+        {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{plainPassage(root.target.quote.exact) || t`(a point in the text)`}</blockquote> : <span className="thread-whole small muted"><Trans>On the whole record</Trans></span>}
+        {at === null && <span className="thread-detached small"><Trans>Detached: the text has changed</Trans></span>}
       </button>
       <Comment comment={root} people={people} />
       {thread.replies.slice(0, repliesWindow.size).map((r) => (
         <Comment key={r.path} comment={r} people={people} reply>
           {!r.deletedAt && mine(r) && (
-            <button type="button" className="text-button is-quiet" disabled={busy} onClick={() => void run(() => onChange(r, { kind: "withdraw" }))}>
+            <button type="button" className="text-button is-quiet" disabled={busy} onClick={() => void run(() => onChange(r, { kind: "withdraw" }))}><Trans>
               Withdraw
-            </button>
+            </Trans></button>
           )}
         </Comment>
       ))}
-      {thread.replies.length > repliesWindow.size && <button type="button" className="sidebar-more" onClick={repliesWindow.more}>Show 50 more replies · {thread.replies.length}</button>}
+      {thread.replies.length > repliesWindow.size && <button type="button" className="sidebar-more" onClick={repliesWindow.more}><Trans>Show 50 more replies · {thread.replies.length}</Trans></button>}
       {resolvedNote && <p className="thread-resolved small muted">{resolvedNote}</p>}
       {error && <p className="small tone-danger" role="alert">{error}</p>}
       {replying ? (
@@ -352,41 +359,41 @@ const Thread = memo(function Thread({
             }
           }}
         >
-          <textarea className="mdbase-field" rows={2} autoFocus value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Reply" aria-label="Reply" />
+          <textarea className="mdbase-field" rows={2} autoFocus value={reply} onChange={(e) => setReply(e.target.value)} placeholder={t`Reply`} aria-label={t`Reply`} />
           <div className="thread-actions">
-            <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || !reply.trim()} title={`${MOD_LABEL}-Enter`}>Reply</button>
-            <button type="button" className="mdbase-button is-small" onClick={() => setReplying(false)}>Cancel</button>
+            <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || !reply.trim()} title={t`${MOD_LABEL}-Enter`}><Trans>Reply</Trans></button>
+            <button type="button" className="mdbase-button is-small" onClick={() => setReplying(false)}><Trans>Cancel</Trans></button>
           </div>
         </form>
       ) : (
         <div className="thread-actions">
           {open && suggestion && (
             <>
-              <button type="button" className="mdbase-button is-primary is-small" disabled={busy || at === null} onClick={() => void run(() => onAccept(placed))} title={at === null ? "The suggested text is no longer there" : "Make this edit"}>
+              <button type="button" className="mdbase-button is-primary is-small" disabled={busy || at === null} onClick={() => void run(() => onAccept(placed))} title={at === null ? t`The suggested text is no longer there` : t`Make this edit`}><Trans>
                 Accept
-              </button>
-              <button type="button" className="mdbase-button is-small" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve", outcome: "rejected" }))}>
+              </Trans></button>
+              <button type="button" className="mdbase-button is-small" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve", outcome: "rejected" }))}><Trans>
                 Reject
-              </button>
+              </Trans></button>
             </>
           )}
-          <button type="button" className="text-button" onClick={() => setReplying(true)}>
+          <button type="button" className="text-button" onClick={() => setReplying(true)}><Trans>
             Reply
-          </button>
+          </Trans></button>
           {open && !suggestion && (
-            <button type="button" className="text-button" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve" }))}>
+            <button type="button" className="text-button" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "resolve" }))}><Trans>
               Resolve
-            </button>
+            </Trans></button>
           )}
           {!open && (
-            <button type="button" className="text-button" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "reopen" }))}>
+            <button type="button" className="text-button" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "reopen" }))}><Trans>
               Reopen
-            </button>
+            </Trans></button>
           )}
           {!root.deletedAt && mine(root) && !thread.replies.length && (
-            <button type="button" className="text-button is-quiet" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "withdraw" }))}>
+            <button type="button" className="text-button is-quiet" disabled={busy} onClick={() => void run(() => onChange(root, { kind: "withdraw" }))}><Trans>
               Withdraw
-            </button>
+            </Trans></button>
           )}
         </div>
       )}
@@ -397,6 +404,7 @@ const Thread = memo(function Thread({
 /** A suggested edit as it will read: the text taken out, struck through, and the text put in. */
 /** A comment's text with its light Markdown rendered. */
 function InlineText({ text }: { text: string }) {
+  useLingui();
   return (
     <>
       {inlinePieces(text).map((piece, i) =>
@@ -411,14 +419,15 @@ function InlineText({ text }: { text: string }) {
 }
 
 function Suggestion({ root }: { root: CommentRecord }) {
+  useLingui();
   const exact = root.target?.quote.exact ?? "";
   const replacement = root.suggestion?.replacement ?? "";
   return (
     <span className="thread-suggestion" aria-label={describeSuggestion(root)}>
       <span aria-hidden="true">
-        <span className="thread-suggestion-kind">{exact && replacement ? "Replace" : exact ? "Delete" : "Insert"}</span>{" "}
+        <span className="thread-suggestion-kind">{exact && replacement ? t`Replace` : exact ? t`Delete` : t`Insert`}</span>{" "}
         {exact && <del>{clipPassage(exact)}</del>}
-        {exact && replacement && <span className="thread-suggestion-kind"> with </span>}
+        {exact && replacement && <span className="thread-suggestion-kind"><Trans> with </Trans></span>}
         {replacement && <ins>{clipPassage(replacement)}</ins>}
       </span>
     </span>
@@ -426,20 +435,21 @@ function Suggestion({ root }: { root: CommentRecord }) {
 }
 
 function Comment({ comment, people, reply, children }: { comment: CommentRecord; people: People; reply?: boolean; children?: ReactNode }) {
-  const author = personName(comment.createdBy, people) ?? "Unsigned";
+  useLingui();
+  const author = personName(comment.createdBy, people) ?? t`Unsigned`;
   return (
     <div className={`comment${reply ? " is-reply" : ""}`}>
       <p className="comment-meta small">
-        <strong>{author}</strong> <time dateTime={comment.createdAt} title={new Date(comment.createdAt).toLocaleString()}>{when(comment.createdAt)}</time>
+        <strong>{author}</strong> <time dateTime={comment.createdAt} title={formatDate(new Date(comment.createdAt), { dateStyle: "medium", timeStyle: "short" })}>{when(comment.createdAt)}</time>
         {children}
       </p>
-      {comment.deletedAt ? <p className="small muted">Withdrawn.</p> : comment.text ? <p className="comment-text"><InlineText text={comment.text} /></p> : null}
+      {comment.deletedAt ? <p className="small muted"><Trans>Withdrawn.</Trans></p> : comment.text ? <p className="comment-text"><InlineText text={comment.text} /></p> : null}
     </div>
   );
 }
 
 /** "3 open comments", for the tab's title. */
-export const openCount = (placed: readonly PlacedThread[]) => plural(placed.filter((p) => p.thread.root.status === "open").length, "open comment");
+export const openCount = (placed: readonly PlacedThread[]) => countLabel(placed.filter((p) => p.thread.root.status === "open").length, "open comment");
 
 /**
  * Why new comments are not signed, and where to fix it (a linked account is
@@ -448,6 +458,7 @@ export const openCount = (placed: readonly PlacedThread[]) => plural(placed.filt
  * settings page Connect names for this collection.
  */
 function Signing({ people, onCheck, onReviewAccess }: { people: People; onCheck(): Promise<unknown>; onReviewAccess?(): Promise<Result<unknown>> }) {
+  useLingui();
   const { busy, error, run } = useAction();
   const { signing, settingsUrl } = people;
   if (!signing || signing.kind === "linked") return null;
@@ -457,40 +468,40 @@ function Signing({ people, onCheck, onReviewAccess }: { people: People; onCheck(
         {label}
       </a>
     ) : (
-      <span className="small muted">Link it in mdbase Editor’s settings for this collection.</span>
+      <span className="small muted"><Trans>Link it in mdbase Editor’s settings for this collection.</Trans></span>
     );
   const check = (
-    <button type="button" className="text-button" disabled={busy} onClick={() => void run(async () => (await onCheck(), { ok: true, value: null }))}>
+    <button type="button" className="text-button" disabled={busy} onClick={() => void run(async () => (await onCheck(), { ok: true, value: null }))}><Trans>
       Check again
-    </button>
+    </Trans></button>
   );
   let why: ReactNode;
   let actions: ReactNode;
   switch (signing.kind) {
     case "unlinked":
-      why = "Your account is not linked to a person record in this collection.";
-      actions = <>{link("Link your account")}{check}</>;
+      why = t`Your account is not linked to a person record in this collection.`;
+      actions = <>{link(t`Link your account`)}{check}</>;
       break;
     case "conflict":
-      why = signing.paths.length > 1 ? `${plural(signing.paths.length, "person record")} claim your account, so Writer will not guess which is you.` : "The person record that claims your account is not valid.";
-      actions = <>{link("Fix it in mdbase Editor")}{check}</>;
+      why = signing.paths.length > 1 ? icuPlural(signing.paths.length, { one: "# person record claims your account, so Writer will not guess which is you.", other: "# person records claim your account, so Writer will not guess which is you." }) : t`The person record that claims your account is not valid.`;
+      actions = <>{link(t`Fix it in mdbase Editor`)}{check}</>;
       break;
     case "not-approved":
-      why = "Writer was not allowed to see your account.";
+      why = t`Writer was not allowed to see your account.`;
       actions = onReviewAccess ? (
         <button type="button" className="mdbase-button" disabled={busy} onClick={() => void run(onReviewAccess)}>
-          {busy ? "Waiting for approval…" : "Review access"}
+          {busy ? t`Waiting for approval…` : t`Review access`}
         </button>
       ) : null;
       break;
     case "unavailable":
-      why = `Your account could not be checked (${signing.reason}).`;
+      why = t`Your account could not be checked (${signing.reason}).`;
       actions = check;
       break;
   }
   return (
     <div className="signing is-unsigned" role="status">
-      <p className="small"><strong>Your comments are not signed.</strong> {why}</p>
+      <p className="small"><strong><Trans>Your comments are not signed.</Trans></strong> {why}</p>
       {actions && <div className="thread-actions">{actions}</div>}
       {error && <p className="small tone-danger" role="alert">{error}</p>}
     </div>

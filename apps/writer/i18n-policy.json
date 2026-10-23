@@ -1,0 +1,8 @@
+{
+  "allowIdentical": {},
+  "source": {
+    "include": ["src"],
+    "exclude": ["**/generated/**", "**/test/**"],
+    "brands": ["PDF", "Word", "Typst", "Pandoc", "{#fig-plan}"]
+  }
+}

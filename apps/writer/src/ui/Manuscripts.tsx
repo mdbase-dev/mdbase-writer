@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // Existing manuscript navigation/workspace shared by legacy, sample and SDK
 // backends. This reads only the app's manuscript route; SDK owns collection URL.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -47,6 +50,7 @@ function useManuscriptParam(mayLeave: () => Promise<boolean>): [string | null, (
   return [value, set];
 }
 export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend; collectionPicker?: ReactNode}) {
+  useLingui();
   const currentWorkspace = useRef<ManuscriptWorkspace | null>(null);
   const [navigation, setNavigation] = useState<{message: string; finish(allowed: boolean): void} | null>(null);
   const [path, setPath] = useManuscriptParam(async () => {
@@ -76,12 +80,12 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
   if (!current) return null;
   return <>
     <WorkspaceView key={current.main} workspace={current} since={since} onClose={force => setPath(null, force)} />
-    <Dialog open={Boolean(navigation)} onClose={() => {navigation?.finish(false); setNavigation(null);}} title="Some changes are not saved">
-      <p className="problem">{navigation?.message}</p><p>Download a local copy before leaving if saving cannot be completed.</p>
+    <Dialog open={Boolean(navigation)} onClose={() => {navigation?.finish(false); setNavigation(null);}} title={t`Some changes are not saved`}>
+      <p className="problem">{navigation?.message}</p><p><Trans>Download a local copy before leaving if saving cannot be completed.</Trans></p>
       <div className="compare-actions">
-        <button type="button" className="mdbase-button" onClick={() => downloadLocalDrafts(current)}>Download local drafts</button>
-        <button type="button" className="mdbase-button is-primary" onClick={() => {navigation?.finish(false); setNavigation(null);}}>Keep writing</button>
-        <button type="button" className="mdbase-button" onClick={() => {navigation?.finish(true); setNavigation(null);}}>Leave without saving</button>
+        <button type="button" className="mdbase-button" onClick={() => downloadLocalDrafts(current)}><Trans>Download local drafts</Trans></button>
+        <button type="button" className="mdbase-button is-primary" onClick={() => {navigation?.finish(false); setNavigation(null);}}><Trans>Keep writing</Trans></button>
+        <button type="button" className="mdbase-button" onClick={() => {navigation?.finish(true); setNavigation(null);}}><Trans>Leave without saving</Trans></button>
       </div>
     </Dialog>
   </>;

@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // Problems listed under the editor, in reading order, each with where it is:
 // the record and line, or the setting. It stays open while they are fixed;
 // a row goes to the problem, F8 steps through them.
@@ -5,7 +8,7 @@ import { memo, useMemo } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { AlertIcon, CloseIcon } from "./icons.js";
-import { plural } from "./records.js";
+import { plural as countLabel } from "./records.js";
 
 export interface ProblemRow {
   readonly diagnostic: WriterDiagnostic;
@@ -38,10 +41,10 @@ export function problemRows(diagnostics: readonly WriterDiagnostic[], order: rea
     .map((diagnostic) => ({
       diagnostic,
       where: diagnostic.field
-        ? `Settings · ${diagnostic.field}`
+        ? t`Settings · ${diagnostic.field}`
         : order.length > 1
-          ? `${title(diagnostic.record)} · line ${lineOf(diagnostic.record, diagnostic.from)}`
-          : `Line ${lineOf(diagnostic.record, diagnostic.from)}`,
+          ? t`${title(diagnostic.record)} · line ${lineOf(diagnostic.record, diagnostic.from)}`
+          : t`Line ${lineOf(diagnostic.record, diagnostic.from)}`,
     }));
 }
 
@@ -55,16 +58,17 @@ export const ProblemsStrip = memo(function ProblemsStrip({ diagnostics, order, b
   onPick(d: WriterDiagnostic): void;
   onClose(): void;
 }) {
+  useLingui();
   const rows = useMemo(() => problemRows(diagnostics, order, body, title), [diagnostics, order, body, title]);
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   return (
-    <section className="problems-strip" aria-label="Problems">
+    <section className="problems-strip" aria-label={t`Problems`}>
       <header className="problems-strip-header">
         <AlertIcon />
-        <strong>{plural(diagnostics.length, "problem")}</strong>
-        {errors > 0 && errors < diagnostics.length && <span className="muted">{plural(errors, "error")}, {plural(diagnostics.length - errors, "warning")}</span>}
-        <span className="muted problems-strip-hint">F8 goes to the next</span>
-        <button type="button" className="mdbase-icon-button is-small" aria-label="Hide problems" title="Hide problems" onClick={onClose}>
+        <strong>{countLabel(diagnostics.length, "problem")}</strong>
+        {errors > 0 && errors < diagnostics.length && <span className="muted">{countLabel(errors, "error")}, {countLabel(diagnostics.length - errors, "warning")}</span>}
+        <span className="muted problems-strip-hint"><Trans>F8 goes to the next</Trans></span>
+        <button type="button" className="mdbase-icon-button is-small" aria-label={t`Hide problems`} title={t`Hide problems`} onClick={onClose}>
           <CloseIcon />
         </button>
       </header>

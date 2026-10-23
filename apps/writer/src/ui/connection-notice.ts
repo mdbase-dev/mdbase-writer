@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { createContext, useCallback, useSyncExternalStore } from "react";
 import type { MdbaseSnapshot } from "@mdbase-dev/sdk";
 
@@ -12,9 +13,9 @@ import type { MdbaseSnapshot } from "@mdbase-dev/sdk";
 export type ConnectionNotice = "offline" | "reconnecting" | "saved_on_device";
 
 export const connectionNoticeLabels: Record<ConnectionNotice, string> = {
-  offline: "Offline",
-  reconnecting: "Reconnecting",
-  saved_on_device: "Saved on this device; waiting for sync",
+  get offline() { return t`Offline`; },
+  get reconnecting() { return t`Reconnecting`; },
+  get saved_on_device() { return t`Saved on this device; waiting for sync`; },
 };
 
 type Observed = Partial<

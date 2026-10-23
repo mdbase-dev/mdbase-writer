@@ -81,6 +81,10 @@ label > .mdbase-select { width: 100%; }
 .grant-return { margin: 2rem auto; max-width: 32rem; padding: 0 1rem; text-align: center; color: var(--color-text-soft, inherit); }
 .topbar { display: flex; align-items: center; gap: 0.75rem; height: 48px; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid var(--line); min-width: 0; }
 .topbar-slot { flex: 1; min-width: 0; display: flex; align-items: center; }
+.interface-language { position: relative; flex: 0 1 auto; min-width: 0; max-width: 10rem; }
+.interface-language select { width: 100%; min-width: 0; text-overflow: ellipsis; }
+.interface-language-error { position: absolute; inset-inline-end: 0; top: 100%; z-index: 20; width: min(24rem, 85vw); padding: 0.75rem; background: var(--surface); color: var(--danger); border: 1px solid var(--line); }
+@media (max-width: 600px) { .interface-language { max-width: 7rem; } }
 /* The theme choice sits quietly in the bar but keeps its chevron, so it reads as a control. */
 .topbar-theme.mdbase-select:not(:hover, [aria-expanded="true"]) { border-color: transparent; }
 /* Inside a manuscript the theme moves into its More menu, leaving the bar to the manuscript. */

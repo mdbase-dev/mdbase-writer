@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup } from "@testing-library/react";
+import { render } from "../test/render.js";
 import { EditorView } from "@codemirror/view";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Editor, type EditorProps, type RetainedEditor } from "./Editor.js";

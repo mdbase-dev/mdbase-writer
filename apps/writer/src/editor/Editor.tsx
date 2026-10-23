@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // The Markdown editor for one record. The record session owns the text; the
 // editor reports edits and adopts external changes as remote transactions.
 import { mdbasePopupTheme } from "@mdbase-dev/ui/codemirror";
@@ -6,9 +8,11 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Annotation, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
+import { englishCodeMirrorPhrases, loadCodeMirrorPhrases } from "@mdbase-dev/i18n/codemirror";
+import { isLocale } from "@mdbase-dev/i18n";
+import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
-import { memo, useEffect, useLayoutEffect, useRef } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
@@ -86,6 +90,16 @@ export interface EditorProps {
 }
 
 export const Editor = memo(function Editor({ states, path, text, readOnly, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
+  const { i18n } = useLingui();
+  const locale = i18n.locale;
+  const language = useRef(new Compartment());
+  const phrases = useRef(englishCodeMirrorPhrases);
+  const [phraseProblem, setPhraseProblem] = useState(false);
+  const translatedExtensions = () => [
+    EditorState.phrases.of(phrases.current),
+    placeholder(t`Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table.`),
+    EditorView.contentAttributes.of({ "aria-label": t`Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
+  ];
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -155,8 +169,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
           EditorView.lineWrapping,
           EditorState.readOnly.of(readOnly),
           EditorView.editable.of(!readOnly),
-          placeholder("Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."),
-          EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
+          language.current.of(translatedExtensions()),
           EditorView.updateListener.of((u) => {
             if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);
             if (!u.docChanged || u.transactions.some((tr) => tr.annotation(remote))) return;
@@ -252,6 +265,20 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the view is recreated per record
   }, [path, readOnly]);
 
+  // Language changes reconfigure chrome in place, preserving document, history and selection.
+  useEffect(() => {
+    let current = true;
+    void loadCodeMirrorPhrases(isLocale(locale) ? locale : "en").then((loaded) => {
+      if (!current) return;
+      phrases.current = loaded;
+      setPhraseProblem(false);
+      view.current?.dispatch({ effects: [language.current.reconfigure(translatedExtensions()), refreshChapterCards.of(null), refreshLivePreview.of(null)] });
+    }).catch(() => { if (current) setPhraseProblem(true); });
+    return () => { current = false; };
+    // Only locale changes update language facets, not each editor render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
+
   // Adopt text the session changed underneath us (another view, a resolved conflict).
   useEffect(() => {
     const v = view.current;
@@ -316,5 +343,5 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
     if (v) showAnchors(v, anchors ?? [], activeComment);
   }, [anchors, activeComment, path, readOnly]);
 
-  return <div className="editor" ref={host} />;
+  return <><div className="editor" ref={host} />{phraseProblem && <p role="status">{t`The editor language could not be loaded. You can keep writing.`}</p>}</>;
 });

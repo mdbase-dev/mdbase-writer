@@ -34,14 +34,14 @@ afterEach(() => vi.unstubAllEnvs());
 it("keeps an ordinary LAB demo query on the native entry without an enabled fixture build", async () => {
   await import("./main.js");
   expect(bootstrap.create).toHaveBeenCalledExactlyOnceWith("lab");
-  expect(bootstrap.render.mock.calls[0]![0].props.children.props.children.props.sdk).toBe(bootstrap.entry);
+  expect(bootstrap.render.mock.calls[0]![0].props.children.props.children.props.children.props.sdk).toBe(bootstrap.entry);
 });
 
 it("opens the explicit production demo fixture without allocating a native account entry", async () => {
   vi.stubEnv("VITE_WRITER_DEMO", "1");
   await import("./main.js");
   expect(bootstrap.create).not.toHaveBeenCalled();
-  expect(bootstrap.render.mock.calls[0]![0].props.children.props.children.props.sdk).toBeUndefined();
+  expect(bootstrap.render.mock.calls[0]![0].props.children.props.children.props.children.props.sdk).toBeUndefined();
 });
 
 it("still opens the normal native entry in a fixture-enabled build without the demo query", async () => {
@@ -63,5 +63,5 @@ it("delivers a grant return ahead of an explicitly enabled demo and never alloca
   await import("./main.js");
   expect(bootstrap.deliver).toHaveBeenCalledExactlyOnceWith(location.href);
   expect(bootstrap.create).not.toHaveBeenCalled();
-  expect(bootstrap.render.mock.calls[0]![0].props.children.type).toBe("p");
+  expect(bootstrap.render.mock.calls[0]![0].props.children.props.children.type).toBe("p");
 });

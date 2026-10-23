@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // Completion for citekeys (from the Reader library, found by key, author,
 // title or year), cross-reference labels and embeds (record paths).
 import type { Completion, CompletionContext, CompletionResult, CompletionSource } from "@codemirror/autocomplete";
@@ -22,7 +23,7 @@ export function matchingPaths(paths: readonly string[], query: string, limit = 1
   return found;
 }
 
-const LABEL_KINDS: Record<string, string> = { sec: "Section", fig: "Figure", tbl: "Table", eq: "Equation" };
+const LABEL_KINDS: Record<string, string> = { get sec() { return t`Section`; }, get fig() { return t`Figure`; }, get tbl() { return t`Table`; }, get eq() { return t`Equation`; } };
 
 export function writerCompletions(data: () => CompletionData): CompletionSource {
   const citekeyOption = (entry: LibraryEntry): Completion => ({
@@ -55,7 +56,7 @@ export function writerCompletions(data: () => CompletionData): CompletionSource 
     const lowered = typed.toLowerCase();
     const labelOptions: Completion[] = labels
       .filter((l) => l.toLowerCase().includes(lowered)).slice(0, 100)
-      .map((l) => ({ label: l, detail: LABEL_KINDS[l.split("-")[0] ?? ""] ?? "Label", type: "keyword" }));
+      .map((l) => ({ label: l, detail: LABEL_KINDS[l.split("-")[0] ?? ""] ?? t`Label`, type: "keyword" }));
     // Sources are matched here, not by CodeMirror's label filter, so typing an
     // author or a word of the title finds them too.
     const sources = /^(sec|fig|tbl|eq)-/.test(typed) ? [] : searchLibrary(library, typed, 200, cited).map(citekeyOption);

@@ -1,3 +1,6 @@
+import { Trans, Plural } from "@lingui/react/macro";
+import { t, plural as icuPlural } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
@@ -63,7 +66,7 @@ import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
-import { plural, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
+import { plural as countLabel, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
 import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
@@ -79,7 +82,7 @@ interface Notice {
 }
 
 type ExportFormat = "pdf" | "docx" | "bundle";
-const EXPORT_NAME: Record<ExportFormat, string> = { pdf: "PDF", docx: "Word", bundle: "Pandoc bundle" };
+const EXPORT_NAME: Record<ExportFormat, string> = { pdf: "PDF", docx: "Word", get bundle() { return t`Pandoc bundle`; } };
 const EXPORT_KEY = "mdbase-writer:export";
 /** The format the Export button makes: the one used last (in this browser). */
 function loadExportFormat(): ExportFormat {
@@ -104,19 +107,19 @@ const SETTLE_MS = 1500;
 const NO_POSITIONS: readonly BlockPosition[] = [];
 const NO_MARKS: readonly SourceMark[] = [];
 const INSERTION_SPECS: readonly Omit<InsertCommand, "run">[] = [
-  { id: "citation", label: "Citation", syntax: "[@citekey, p. 12]", keywords: "cite source reference" },
-  { id: "footnote", label: "Footnote", syntax: "[^1] … with its text at the end", keywords: "note" },
-  { id: "crossref", label: "Cross-reference", syntax: "@sec-intro, @fig-plan", keywords: "refer section figure table label" },
-  { id: "figure", label: "Figure from an image…", syntax: "![Caption](figures/plan.png){#fig-plan}", keywords: "image picture photo upload" },
-  { id: "table", label: "Table", syntax: "| … | … | with : Caption {#tbl-x}", keywords: "grid columns rows" },
-  { id: "equation", label: "Equation", syntax: "$$ … $$ {#eq-x}", keywords: "math formula display" },
+  { id: "citation", get label() { return t`Citation`; }, syntax: "[@citekey, p. 12]", get keywords() { return t`cite source reference`; } },
+  { id: "footnote", get label() { return t`Footnote`; }, syntax: "[^1] … with its text at the end", get keywords() { return t`note`; } },
+  { id: "crossref", get label() { return t`Cross-reference`; }, syntax: "@sec-intro, @fig-plan", get keywords() { return t`refer section figure table label`; } },
+  { id: "figure", get label() { return t`Figure from an image…`; }, syntax: "![Caption](figures/plan.png){#fig-plan}", get keywords() { return t`image picture photo upload`; } },
+  { id: "table", get label() { return t`Table`; }, syntax: "| … | … | with : Caption {#tbl-x}", get keywords() { return t`grid columns rows`; } },
+  { id: "equation", get label() { return t`Equation`; }, syntax: "$$ … $$ {#eq-x}", get keywords() { return t`math formula display`; } },
 ];
 
-const THEME_NAME: Record<ThemePreference, string> = { system: "System", light: "Light", dark: "Dark" };
+const THEME_NAME: Record<ThemePreference, string> = { get system() { return t`System`; }, get light() { return t({ message: "Light", context: "color theme" }); }, get dark() { return t({ message: "Dark", context: "color theme" }); } };
 
 const VIEW_ORDER: readonly View[] = ["both", "write", "preview"];
 const SIDEBAR_TABS: readonly SidebarTab[] = ["outline", "sources", "comments"];
-const TAB_NAME: Record<SidebarTab, string> = { outline: "Outline", sources: "Sources", comments: "Comments" };
+const TAB_NAME: Record<SidebarTab, string> = { get outline() { return t`Outline`; }, get sources() { return t`Sources`; }, get comments() { return t`Comments`; } };
 /** The sidebar tab each manuscript was left on, for this page's lifetime; a manuscript opens on its outline. */
 const rememberedTabs = new Map<string, SidebarTab>();
 
@@ -132,7 +135,7 @@ function useNarrow(): boolean {
   }, []);
   return narrow;
 }
-const VIEW_NAME: Record<View, string> = { both: "Editor and preview", write: "Editor only", preview: "Preview only" };
+const VIEW_NAME: Record<View, string> = { get both() { return t`Editor and preview`; }, get write() { return t`Editor only`; }, get preview() { return t`Preview only`; } };
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const isMod = (e: KeyboardEvent) => (isMac ? e.metaKey : e.ctrlKey);
@@ -157,6 +160,7 @@ function useSustained(flag: boolean, delay: number): boolean {
 }
 
 export function WorkspaceView({ workspace, since, onClose }: { workspace: ManuscriptWorkspace; /** When this manuscript was last opened here, so what others wrote since can be marked. */ since?: string | undefined; onClose(force?: boolean): void }) {
+  useLingui();
   const snap = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot);
   const { reportError } = useFeedback();
   const failedSaves = useRef(new Set<string>());
@@ -315,9 +319,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     const { root, replies } = hit.thread;
     return {
       kind: root.motivation === "editing" ? "suggestion" : "comment",
-      author: personName(root.createdBy, snap.people) ?? "Unsigned",
+      author: personName(root.createdBy, snap.people) ?? t`Unsigned`,
       when: when(root.createdAt),
-      text: root.text || (root.suggestion ? `Replace with “${root.suggestion.replacement}”` : ""),
+      text: root.text || (root.suggestion ? t`Replace with “${root.suggestion.replacement}”` : ""),
       replies: replies.filter((r) => !r.deletedAt).length,
       isNew: threadIsNew(hit.thread, since, me),
     };
@@ -544,16 +548,16 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   /** Stores each image in the collection and writes a figure for it at the cursor. */
   const addFigures = useCallback(async (files: readonly File[]) => {
     for (const file of files) {
-      setNotice({ tone: "busy", text: `Storing ${file.name}…` });
+      setNotice({ tone: "busy", text: t`Storing ${file.name}…` });
       const stored = signalFailure(await workspace.addFigure({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), type: file.type }));
-      if (!stored.ok) { setNotice({ tone: "problem", text: `${file.name} could not be stored: ${stored.message}` }); return; }
+      if (!stored.ok) { setNotice({ tone: "problem", text: t`${file.name} could not be stored: ${stored.message}` }); return; }
       setPane("write");
       editor.current?.insertBlock(figureSnippet(stored.value, labels.current));
-      setNotice({ tone: "ok", text: `Stored ${stored.value}. Write the caption.` });
+      setNotice({ tone: "ok", text: t`Stored ${stored.value}. Write the caption.` });
     }
   }, [workspace]);
   const insertFigure = useCallback(() => {
-    if (!workspace.canStoreFiles) { setNotice({ tone: "problem", text: "Image upload is coming soon. Existing image links still work." }); return; }
+    if (!workspace.canStoreFiles) { setNotice({ tone: "problem", text: t`Image upload is coming soon. Existing image links still work.` }); return; }
     figureInput.current?.click();
   }, [workspace]);
   const insertTable = useCallback(() => { setPane("write"); editor.current?.insertBlock(tableSnippet(labelSet)); }, [labelSet]);
@@ -574,7 +578,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     }
   }, [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
   const inserts = useMemo<readonly InsertCommand[]>(() => insertionSpecs.map((spec) => ({ ...spec, run: () => runInsertion(spec.id) })), [insertionSpecs, runInsertion]);
-  const paletteInserts: Command[] = insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: "Insert", label: spec.label, detail: spec.syntax, keywords: spec.keywords, run: () => runInsertion(spec.id) }));
+  const paletteInserts: Command[] = insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: t`Insert`, label: spec.label, detail: spec.syntax, keywords: spec.keywords, run: () => runInsertion(spec.id) }));
   const [insertOpen, setInsertOpen] = useState(false);
   const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);
   const changeComment = async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change));
@@ -629,8 +633,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const exported = (name: string, problems: readonly string[]) =>
     setNotice(
       problems.length
-        ? { tone: "problem", text: `Exported ${name} with ${plural(problems.length, "problem")}: ${problems[0]}` }
-        : { tone: "ok", text: `Exported ${name}.` },
+        ? { tone: "problem", text: icuPlural(problems.length, { one: `Exported ${name} with # problem: ${problems[0]}`, other: `Exported ${name} with # problems: ${problems[0]}` }) }
+        : { tone: "ok", text: t`Exported ${name}.` },
     );
   /** Preflight loads every dependency; no incomplete file downloads without consent. */
   const runExport = (format: ExportFormat) => {
@@ -640,12 +644,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     saveExportFormat(format);
     const controller = new AbortController();
     exportJob.current = controller;
-    setNotice({ tone: "busy", text: format === "docx" ? "Checking chapters and images, then making Word… (first use loads about 16 MB)" : `Checking chapters and images, then making ${EXPORT_NAME[format]}…` });
+    setNotice({ tone: "busy", text: format === "docx" ? t`Checking chapters and images, then making Word… (first use loads about 16 MB)` : t`Checking chapters and images, then making ${EXPORT_NAME[format]}…` });
     void (async () => {
       try {
         const out = await (format === "pdf" ? workspace.exportPdf(controller.signal) : format === "docx" ? workspace.exportDocx(controller.signal) : workspace.exportBundle(controller.signal));
         controller.signal.throwIfAborted();
-        if (!out.bytes) throw new Error("error" in out ? out.error ?? "Export failed." : "Export failed.");
+        if (!out.bytes) throw new Error("error" in out ? out.error ?? t`Export failed.` : t`Export failed.`);
         const type = format === "pdf" ? "application/pdf" : format === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/zip";
         const name = format === "bundle" ? `${fileStem} (Pandoc).zip` : `${fileStem}.${format}`;
         if (out.problems.length) {
@@ -829,13 +833,13 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   if (snap.phase === "failed") {
     return (
-      <ConnectLayout app="writer" title="This manuscript could not be opened" error={snap.problem}>
+      <ConnectLayout app="writer" title={t`This manuscript could not be opened`} error={snap.problem}>
         <FeedbackButton topic="problem" />
-        <button className="mdbase-connect-action" type="button" onClick={() => void workspace.retryOpen()}>Retry opening</button>
-        {snap.recoveredDrafts.size > 0 && <><p>A local draft is still available in this browser.</p><button type="button" className="mdbase-connect-action" onClick={downloadDrafts}>Download local drafts</button></>}
-        <button className="mdbase-connect-action" type="button" onClick={() => onClose()}>
+        <button className="mdbase-connect-action" type="button" onClick={() => void workspace.retryOpen()}><Trans>Retry opening</Trans></button>
+        {snap.recoveredDrafts.size > 0 && <><p><Trans>A local draft is still available in this browser.</Trans></p><button type="button" className="mdbase-connect-action" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></>}
+        <button className="mdbase-connect-action" type="button" onClick={() => onClose()}><Trans>
           Back to manuscripts
-        </button>
+        </Trans></button>
       </ConnectLayout>
     );
   }
@@ -852,9 +856,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     >
       <InTopbar>
         <div className="bar mdbase-settle-host">
-          <button type="button" className="bar-back" onClick={() => void requestClose()} disabled={savingBeforeLeave} aria-label="Manuscripts" title="All manuscripts">
+          <button type="button" className="bar-back" onClick={() => void requestClose()} disabled={savingBeforeLeave} aria-label={t`Manuscripts`} title={t`All manuscripts`}>
             <ChevronLeft />
-            <span>Manuscripts</span>
+            <span><Trans>Manuscripts</Trans></span>
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
@@ -863,8 +867,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             : <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />}
           <CollectionSaveWarning />
           {saveNotice.shortLabel && <SaveNotice tone="attention" label={saveNotice.shortLabel} className="is-short" />}
-          <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
-            {plural(stats.words, "word")}
+          <span className="bar-words" title={icuPlural(order.length, { one: "In # record; citations, code and math are not counted", other: "In # records; citations, code and math are not counted" })}>
+            {countLabel(stats.words, "word")}
           </span>
           <ProblemsButton
             pending={snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready"}
@@ -874,22 +878,22 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             setOpen={setProblemsOpen}
           />
           <span className="bar-spacer" />
-          <div className="bar-layout" role="group" aria-label="Layout">
+          <div className="bar-layout" role="group" aria-label={t`Layout`}>
             <button
               type="button"
               className="mdbase-icon-button"
               aria-pressed={layout.sidebar}
               onClick={() => setLayout((l) => ({ ...l, sidebar: !l.sidebar }))}
-              title={`${layout.sidebar ? "Hide" : "Show"} the sidebar (${MOD_LABEL}-\\)`}
-              aria-label="Sidebar"
+              title={t`${layout.sidebar ? "Hide" : "Show"} the sidebar (${MOD_LABEL}-\\)`}
+              aria-label={t`Sidebar`}
             >
               <SidebarIcon />
             </button>
-            <div className="segmented icons" role="group" aria-label="Editor and preview">
+            <div className="segmented icons" role="group" aria-label={t`Editor and preview`}>
               {VIEW_ORDER.map((v) => {
                 const Icon = v === "both" ? SplitIcon : v === "write" ? EditorOnly : PageIcon;
                 return (
-                  <button key={v} type="button" aria-pressed={layout.view === v} onClick={() => setLayout((l) => ({ ...l, view: v }))} aria-label={VIEW_NAME[v]} title={`${VIEW_NAME[v]} (${MOD_LABEL}-Shift-\\ cycles)`}>
+                  <button key={v} type="button" aria-pressed={layout.view === v} onClick={() => setLayout((l) => ({ ...l, view: v }))} aria-label={VIEW_NAME[v]} title={t`${VIEW_NAME[v]} (${MOD_LABEL}-Shift-\\ cycles)`}>
                     <Icon />
                   </button>
                 );
@@ -897,9 +901,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             </div>
           </div>
           <InsertMenu open={insertOpen} setOpen={setInsertOpen} commands={inserts} disabled={!activeView || activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)} />
-          <button type="button" className="mdbase-button" aria-label="Settings" aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
+          <button type="button" className="mdbase-button" aria-label={t`Settings`} aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={t`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
             <GearIcon />
-            <span className="button-label">Settings</span>
+            <span className="button-label"><Trans>Settings</Trans></span>
             {diagnostics.some((d) => d.field) && <span className="count tone-warning">{diagnostics.filter((d) => d.field).length}</span>}
           </button>
           <ExportMenu
@@ -923,7 +927,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
       </InTopbar>
 
-      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} aria-label="Manuscript sidebar">
+      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} aria-label={t`Manuscript sidebar`}>
         <SidebarTabs
           tab={layout.tab}
           onTab={setSidebarTab}
@@ -940,11 +944,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
         {layout.lowerTab && (
           <div className="sidebar-lower">
-            <div className="sidebar-lower-tabs" role="tablist" aria-label="Lower panel">
+            <div className="sidebar-lower-tabs" role="tablist" aria-label={t`Lower panel`}>
               {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
                 <button key={t} type="button" role="tab" aria-selected={layout.lowerTab === t} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
               ))}
-              <button type="button" className="mdbase-icon-button is-small" aria-label="Close the lower panel" title="Close the lower panel" onClick={() => setLowerTab(null)}><CloseIcon /></button>
+              <button type="button" className="mdbase-icon-button is-small" aria-label={t`Close the lower panel`} title={t`Close the lower panel`} onClick={() => setLowerTab(null)}><CloseIcon /></button>
             </div>
             <div className="sidebar-panel is-lower" role="tabpanel">{panelFor(layout.lowerTab)}</div>
           </div>
@@ -953,7 +957,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       </aside>
 
       {!layout.sidebar && (
-        <nav className="sidebar-rail" aria-label="Sidebar">
+        <nav className="sidebar-rail" aria-label={t`Sidebar`}>
           {SIDEBAR_TABS.map((t) => {
             const Icon = t === "outline" ? OutlineIcon : t === "sources" ? BooksIcon : ChatIcon;
             const count = t === "sources" ? snap.library.length : t === "comments" ? openThreads.length : 0;
@@ -966,7 +970,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           })}
         </nav>
       )}
-      <section className="write" aria-label="Editor">
+      <section className="write" aria-label={t`Editor`}>
         {active !== workspace.main && (
           <header className="pane-header">
             <button type="button" className="link small" onClick={() => setActive(workspace.main)}>
@@ -978,30 +982,30 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         )}
         {(["indexLoad", "libraryLoad", "annotationsLoad"] as const).map((domain) => {
           const state = snap[domain];
-          const name = domain === "indexLoad" ? "Collection index" : domain === "libraryLoad" ? "Sources" : "Annotation index";
+          const name = domain === "indexLoad" ? t`Collection index` : domain === "libraryLoad" ? t`Sources` : t`Annotation index`;
           return state.phase === "ready" ? null : <div key={domain} className="banner" role={state.phase === "failed" ? "alert" : "status"}>
-            <span>{state.phase === "loading" ? `${name} loading; you can keep writing.` : `${name} unavailable: ${state.problem}`}</span>
-            {state.phase === "failed" && <button type="button" className="mdbase-button" onClick={() => void workspace.retryMetadata().catch(() => {})}>Retry loading</button>}
+            <span>{state.phase === "loading" ? t`${name} loading; you can keep writing.` : t`${name} unavailable: ${state.problem}`}</span>
+            {state.phase === "failed" && <button type="button" className="mdbase-button" onClick={() => void workspace.retryMetadata().catch(() => {})}><Trans>Retry loading</Trans></button>}
           </div>;
         })}
-        {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button></div>}
+        {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
         {snap.recoveredDrafts.size > 0 && <div className="banner" role="alert">
-          <span>Review {plural(snap.recoveredDrafts.size, "recovered local draft")}. Editing is paused in {snap.recoveredDrafts.size === 1 ? "that record" : "those records"} until you restore the local draft or use the collection version.</span>
-          {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}>Review {recordTitle(snap.records.get(path), path)}</button>)}
+          <span><Plural value={snap.recoveredDrafts.size} one="Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version." other="Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions." /></span>
+          {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}><Trans>Review {recordTitle(snap.records.get(path), path)}</Trans></button>)}
         </div>}
         {activeView?.snapshot.state === "conflict" && (
           <div className="banner" role="alert">
-            <span>This record changed elsewhere while you were editing it.</span>
-            <button type="button" className="mdbase-button" onClick={() => setComparisonPath(active)}>Compare versions</button>
-            <button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button>
+            <span><Trans>This record changed elsewhere while you were editing it.</Trans></span>
+            <button type="button" className="mdbase-button" onClick={() => setComparisonPath(active)}><Trans>Compare versions</Trans></button>
+            <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           </div>
         )}
-        {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span>This record was deleted elsewhere. Your local text is still available here.</span><button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button></div>}
+        {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span><Trans>This record was deleted elsewhere. Your local text is still available here.</Trans></span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
         {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
           <div className="banner" role="alert">
-            <span>Not saved: {activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.</span>
-            <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active).then(signalResult)}>Retry save</button>
-            <button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button>
+            <span><Trans>Not saved: {activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.</Trans></span>
+            <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active).then(signalResult)}><Trans>Retry save</Trans></button>
+            <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           </div>
         )}
         {activeView ? (
@@ -1030,7 +1034,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             onSelectionAction={onSelectionAction}
           />
         ) : (
-          <p className="muted pad">Opening…</p>
+          <p className="muted pad"><Trans>Opening…</Trans></p>
         )}
         {pendingComment?.draft && !narrow && (
           <InlineComposer key={`${pendingComment.record}:${pendingComment.draft.from}:${pendingComment.kind}`} editor={editor} at={pendingComment.draft.to}>
@@ -1063,51 +1067,51 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         onChange={(split) => setLayout((l) => ({ ...l, split }))}
       />
 
-      <section className="preview-pane" aria-label="Preview">
+      <section className="preview-pane" aria-label={t`Preview`}>
         <div className="preview-top">
         <header className="pane-header preview-header">
           <span
             className="muted small preview-meta"
-            title={timings && !snap.compiling ? `Typeset in ${Math.round(timings.assembleMs + timings.compileMs)} ms` : undefined}
+            title={timings && !snap.compiling ? t`Typeset in ${Math.round(timings.assembleMs + timings.compileMs)} ms` : undefined}
           >
             {slowCompile ? (
-              "Typesetting…"
+              t`Typesetting…`
             ) : snap.result ? (
               <>
-                {errors > 0 && <span className="preview-errors">{plural(errors, "error")} · </span>}
-                <button type="button" className="preview-setting" onClick={() => showSetting("csl")} title="Change the citation style">
+                {errors > 0 && <span className="preview-errors">{countLabel(errors, "error")} · </span>}
+                <button type="button" className="preview-setting" onClick={() => showSetting("csl")} title={t`Change the citation style`}>
                   {styleName(snap.result.meta.style)}
                 </button>
                 <span aria-hidden="true"> · </span>
-                <button type="button" className="preview-setting" onClick={() => showSetting("template")} title="Change the layout">
+                <button type="button" className="preview-setting" onClick={() => showSetting("template")} title={t`Change the layout`}>
                   {templateName(snap.result.meta.template)}
                 </button>
               </>
             ) : null}
           </span>
           <span className="bar-spacer" />
-          {previewView && <span className="muted small page-indicator">Page {previewView.page} of {previewView.pages}</span>}
-          <div className="zoom" role="group" aria-label="Zoom">
-            <button type="button" className="mdbase-icon-button is-small" aria-label="Zoom out" onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, -1) }))}>
+          {previewView && <span className="muted small page-indicator"><Trans>Page {previewView.page} of {previewView.pages}</Trans></span>}
+          <div className="zoom" role="group" aria-label={t`Zoom`}>
+            <button type="button" className="mdbase-icon-button is-small" aria-label={t`Zoom out`} onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, -1) }))}>
               <MinusIcon />
             </button>
             <button
               type="button"
               className="zoom-value"
               onClick={() => setLayout((l) => ({ ...l, zoom: l.zoom === "fit" ? 1 : "fit" }))}
-              title={layout.zoom === "fit" ? "Fitting the width; click for actual size" : "Click to fit the width"}
+              title={layout.zoom === "fit" ? t`Fitting the width; click for actual size` : t`Click to fit the width`}
             >
-              {layout.zoom === "fit" ? `Fit · ${Math.round((previewView?.scale ?? 1) * 100)}%` : `${Math.round(layout.zoom * 100)}%`}
+              {layout.zoom === "fit" ? t`Fit · ${Math.round((previewView?.scale ?? 1) * 100)}%` : t`${Math.round(layout.zoom * 100)}%`}
             </button>
-            <button type="button" className="mdbase-icon-button is-small" aria-label="Zoom in" onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, 1) }))}>
+            <button type="button" className="mdbase-icon-button is-small" aria-label={t`Zoom in`} onClick={() => setLayout((l) => ({ ...l, zoom: nextZoom(previewView?.scale ?? 1, 1) }))}>
               <PlusIcon />
             </button>
           </div>
         </header>
-        {snap.previewProblem && <div className="banner" role="alert"><span>Preview unavailable: {snap.previewProblem}. You can keep writing.</span><button type="button" className="mdbase-button" onClick={() => void workspace.retryPreview()}>Retry preview</button></div>}
+        {snap.previewProblem && <div className="banner" role="alert"><span><Trans>Preview unavailable: {snap.previewProblem}. You can keep writing.</Trans></span><button type="button" className="mdbase-button" onClick={() => void workspace.retryPreview()}><Trans>Retry preview</Trans></button></div>}
         {(snap.assetProblems.size > 0 || snap.recordProblems.size > 0) && <div className="banner" role="alert">
-          <span>Some images or chapters could not be loaded. See Problems for their locations.</span>
-          <button type="button" className="mdbase-button" onClick={() => { void workspace.retryAssets(); void workspace.retryRecords(); }}>Retry dependencies</button>
+          <span><Trans>Some images or chapters could not be loaded. See Problems for their locations.</Trans></span>
+          <button type="button" className="mdbase-button" onClick={() => { void workspace.retryAssets(); void workspace.retryRecords(); }}><Trans>Retry dependencies</Trans></button>
         </div>}
         </div>
         <Preview
@@ -1126,7 +1130,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         />
       </section>
 
-      <nav className="pane-tabs" aria-label="View">
+      <nav className="pane-tabs" aria-label={t`View`}>
         {(["outline", "write", "preview"] as const).map((p) => {
           const Icon = p === "outline" ? OutlineIcon : p === "write" ? PenIcon : PageIcon;
           return (
@@ -1134,13 +1138,13 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               <span className="pane-tab-icon">
                 <Icon />
                 {p === "write" && diagnostics.length > 0 && (
-                  <span className={`tab-badge tone-${errors ? "danger" : "warning"}`} aria-label={plural(diagnostics.length, "problem")}>{diagnostics.length}</span>
+                  <span className={`tab-badge tone-${errors ? "danger" : "warning"}`} aria-label={countLabel(diagnostics.length, "problem")}>{diagnostics.length}</span>
                 )}
                 {p === "outline" && openThreads.length > 0 && (
-                  <span className="tab-badge tone-comments" aria-label={plural(openThreads.length, "open comment")}>{openThreads.length}</span>
+                  <span className="tab-badge tone-comments" aria-label={countLabel(openThreads.length, "open comment")}>{openThreads.length}</span>
                 )}
               </span>
-              {p === "outline" ? "Sidebar" : p === "write" ? "Write" : "Preview"}
+              {p === "outline" ? t`Sidebar` : p === "write" ? t`Write` : t`Preview`}
             </button>
           );
         })}
@@ -1161,37 +1165,37 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
-        label="Writer commands"
+        label={t`Writer commands`}
         commands={[
-          { id: "save", group: "Manuscript", label: "Save all records now", shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
-          { id: "local-drafts", group: "Manuscript", label: "Download local drafts", keywords: "backup unsaved recovery", run: downloadDrafts },
-          { id: "settings", group: "Manuscript", label: "Manuscript settings", shortcut: "mod+,", run: () => setSettingsOpen(true) },
-          { id: "search", group: "Manuscript", label: "Search the manuscript", shortcut: "mod+shift+f", keywords: "find all chapters", run: showSearch },
-          { id: "sources", group: "Manuscript", label: "Find a source", shortcut: "mod+shift+e", run: () => showSources() },
-          { id: "bold", group: "Format", label: "Bold", shortcut: "mod+b", run: () => editor.current?.format("bold") },
-          { id: "italic", group: "Format", label: "Italic", shortcut: "mod+i", run: () => editor.current?.format("italic") },
-          { id: "code", group: "Format", label: "Inline code", run: () => editor.current?.format("code") },
-          { id: "link", group: "Format", label: "Link", shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
+          { id: "save", group: t`Manuscript`, label: t`Save all records now`, shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
+          { id: "local-drafts", group: t`Manuscript`, label: t`Download local drafts`, keywords: t`backup unsaved recovery`, run: downloadDrafts },
+          { id: "settings", group: t`Manuscript`, label: t`Manuscript settings`, shortcut: "mod+,", run: () => setSettingsOpen(true) },
+          { id: "search", group: t`Manuscript`, label: t`Search the manuscript`, shortcut: "mod+shift+f", keywords: t`find all chapters`, run: showSearch },
+          { id: "sources", group: t`Manuscript`, label: t`Find a source`, shortcut: "mod+shift+e", run: () => showSources() },
+          { id: "bold", group: t`Format`, label: t`Bold`, shortcut: "mod+b", run: () => editor.current?.format("bold") },
+          { id: "italic", group: t`Format`, label: t`Italic`, shortcut: "mod+i", run: () => editor.current?.format("italic") },
+          { id: "code", group: t`Format`, label: t`Inline code`, run: () => editor.current?.format("code") },
+          { id: "link", group: t`Format`, label: t`Link`, shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
           ...paletteInserts,
-          { id: "comment", group: "Comments", label: "Comment on the selection", shortcut: "mod+alt+m", run: () => startComment("comment") },
-          { id: "suggest", group: "Comments", label: "Suggest an edit to the selection", shortcut: "mod+alt+s", keywords: "track changes", run: () => startComment("suggest") },
-          { id: "comments", group: "Comments", label: "Show comments", shortcut: "mod+shift+m", run: showComments },
-          { id: "next-comment", group: "Comments", label: "Next comment", shortcut: "F7", run: () => stepComment(1) },
-          { id: "previous-comment", group: "Comments", label: "Previous comment", shortcut: "shift+F7", run: () => stepComment(-1) },
-          { id: "lower-panel", group: "View", label: layout.lowerTab ? "Close the lower sidebar panel" : "Show a second sidebar panel", keywords: "split stack outline comments sources", run: toggleLower },
-          { id: "next-problem", group: "Manuscript", label: "Next problem", shortcut: "F8", run: () => stepProblem(1) },
-          { id: "manuscripts", group: "Manuscript", label: "All manuscripts", keywords: "back home close", run: () => void requestClose() },
-          { id: "sidebar", group: "View", label: layout.sidebar ? "Hide the sidebar" : "Show the sidebar", shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
-          { id: "live-preview", group: "View", label: layout.livePreview ? "Show Markdown as written" : "Read as the manuscript", keywords: "source markup raw live preview chips", run: toggleLivePreview },
-          { id: "problems", group: "Manuscript", label: problemsOpen ? "Hide problems" : "Show problems", keywords: "errors warnings list", run: () => setProblemsOpen(!problemsOpen) },
-          ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: "View", label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
-          ...(snap.phase === "ready" ? [{ id: "export-pdf", group: "Export", label: "Export PDF", run: () => runExport("pdf") }] : []),
-          { id: "export-docx", group: "Export", label: "Export Word (DOCX)", run: () => runExport("docx") },
-          { id: "export-bundle", group: "Export", label: "Export Pandoc bundle (zip)", run: () => runExport("bundle") },
+          { id: "comment", group: t`Comments`, label: t`Comment on the selection`, shortcut: "mod+alt+m", run: () => startComment("comment") },
+          { id: "suggest", group: t`Comments`, label: t`Suggest an edit to the selection`, shortcut: "mod+alt+s", keywords: t`track changes`, run: () => startComment("suggest") },
+          { id: "comments", group: t`Comments`, label: t`Show comments`, shortcut: "mod+shift+m", run: showComments },
+          { id: "next-comment", group: t`Comments`, label: t`Next comment`, shortcut: "F7", run: () => stepComment(1) },
+          { id: "previous-comment", group: t`Comments`, label: t`Previous comment`, shortcut: "shift+F7", run: () => stepComment(-1) },
+          { id: "lower-panel", group: t`View`, label: layout.lowerTab ? t`Close the lower sidebar panel` : t`Show a second sidebar panel`, keywords: t`split stack outline comments sources`, run: toggleLower },
+          { id: "next-problem", group: t`Manuscript`, label: t`Next problem`, shortcut: "F8", run: () => stepProblem(1) },
+          { id: "manuscripts", group: t`Manuscript`, label: t`All manuscripts`, keywords: t`back home close`, run: () => void requestClose() },
+          { id: "sidebar", group: t`View`, label: layout.sidebar ? t`Hide the sidebar` : t`Show the sidebar`, shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
+          { id: "live-preview", group: t`View`, label: layout.livePreview ? t`Show Markdown as written` : t`Read as the manuscript`, keywords: t`source markup raw live preview chips`, run: toggleLivePreview },
+          { id: "problems", group: t`Manuscript`, label: problemsOpen ? t`Hide problems` : t`Show problems`, keywords: t`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
+          ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: t`View`, label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
+          ...(snap.phase === "ready" ? [{ id: "export-pdf", group: t`Export`, label: t`Export PDF`, run: () => runExport("pdf") }] : []),
+          { id: "export-docx", group: t`Export`, label: t`Export Word (DOCX)`, run: () => runExport("docx") },
+          { id: "export-bundle", group: t`Export`, label: t`Export Pandoc bundle (zip)`, run: () => runExport("bundle") },
           ...(themeChoice
-            ? themePreferences.filter((t) => t !== themeChoice.theme).map((t) => ({ id: `theme-${t}`, group: "View", label: `${THEME_NAME[t]} theme`, keywords: "appearance dark light", run: () => themeChoice.setTheme(t) }))
+            ? themePreferences.filter((t) => t !== themeChoice.theme).map((t) => ({ id: `theme-${t}`, group: t`View`, label: t`${THEME_NAME[t]} theme`, keywords: t`appearance dark light`, run: () => themeChoice.setTheme(t) }))
             : []),
-          { id: "shortcuts", group: "Help", label: "Keyboard shortcuts", shortcut: "?", run: () => setShortcutsOpen(true) },
+          { id: "shortcuts", group: t`Help`, label: t`Keyboard shortcuts`, shortcut: "?", run: () => setShortcutsOpen(true) },
         ]}
       />
       <CompareDialog comparison={comparison} canRestore={compared?.state !== "deleted"} onClose={() => setComparisonPath(null)} onDownload={downloadDrafts} onResolve={(choice) => {
@@ -1203,14 +1207,14 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         else workspace.resolveConflict(comparisonPath, choice);
         setComparisonPath(null);
       }} />
-      <Dialog open={Boolean(leaveProblem)} onClose={() => setLeaveProblem(null)} title="Some changes are not saved">
+      <Dialog open={Boolean(leaveProblem)} onClose={() => setLeaveProblem(null)} title={t`Some changes are not saved`}>
         <p className="problem">{leaveProblem}</p>
-        <p>Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup.</p>
+        <p><Trans>Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup.</Trans></p>
         <div className="compare-actions">
-          <button type="button" className="mdbase-button" onClick={downloadDrafts}>Download local drafts</button>
-          <button type="button" className="mdbase-button is-primary" onClick={() => setLeaveProblem(null)}>Keep writing</button>
-          <button type="button" className="mdbase-button" onClick={() => void requestClose()} disabled={savingBeforeLeave}>Retry saving</button>
-          <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}>Leave without saving</button>
+          <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
+          <button type="button" className="mdbase-button is-primary" onClick={() => setLeaveProblem(null)}><Trans>Keep writing</Trans></button>
+          <button type="button" className="mdbase-button" onClick={() => void requestClose()} disabled={savingBeforeLeave}><Trans>Retry saving</Trans></button>
+          <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}><Trans>Leave without saving</Trans></button>
         </div>
       </Dialog>
       <ExportReview pending={pendingExport} onCancel={cancelExport} onExport={(pending) => {
@@ -1220,17 +1224,17 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         signalMdbaseMark("saved");
       }} onError={(error) => {
         reportError({ code: "unknown_error" });
-        setNotice({ tone: "problem", text: `The file could not be downloaded. ${errorMessage(error)}` });
+        setNotice({ tone: "problem", text: t`The file could not be downloaded. ${errorMessage(error)}` });
         signalMdbaseMark("error");
       }} />
       {notice && (
         <div className={`toast tone-${notice.tone}${notice.tone === "ok" ? " mdbase-settle" : ""}`} role={notice.tone === "problem" ? "alert" : "status"}>
           {notice.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : notice.tone === "ok" ? <CheckIcon /> : <AlertIcon />}
           <span>{notice.text}</span>
-          {notice.tone === "busy" && <button type="button" className="text-button" onClick={cancelExport}>Cancel export</button>}
-          {notice.tone === "problem" && <button type="button" className="text-button" onClick={() => runExport(lastExport.current)}>Retry export</button>}
+          {notice.tone === "busy" && <button type="button" className="text-button" onClick={cancelExport}><Trans>Cancel export</Trans></button>}
+          {notice.tone === "problem" && <button type="button" className="text-button" onClick={() => runExport(lastExport.current)}><Trans>Retry export</Trans></button>}
           {notice.tone !== "busy" && (
-            <button type="button" className="mdbase-icon-button is-small" aria-label="Dismiss" onClick={() => setNotice(null)}>
+            <button type="button" className="mdbase-icon-button is-small" aria-label={t`Dismiss`} onClick={() => setNotice(null)}>
               <CloseIcon />
             </button>
           )}
@@ -1242,6 +1246,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
 /** Outline, Sources and Comments, as tabs: ←/→ move between them. A second panel can open beneath. */
 function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSplit }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number; comments: number; commentsTitle: string; split: boolean; onSplit(): void }) {
+  useLingui();
   const tabs = SIDEBAR_TABS;
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
@@ -1252,7 +1257,7 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
     requestAnimationFrame(() => document.getElementById(`sidebar-tab-${next}`)?.focus());
   };
   return (
-    <div className="sidebar-tabs" role="tablist" aria-label="Sidebar" onKeyDown={onKeyDown}>
+    <div className="sidebar-tabs" role="tablist" aria-label={t`Sidebar`} onKeyDown={onKeyDown}>
       {tabs.map((t) => (
         <button
           key={t}
@@ -1263,14 +1268,14 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
           aria-controls={`sidebar-${t}`}
           tabIndex={tab === t ? 0 : -1}
           onClick={() => onTab(t)}
-          title={t === "sources" ? `Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? `${commentsTitle} (${MOD_LABEL}-Shift-M)` : `Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
+          title={t === "sources" ? t`Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? t`${commentsTitle} (${MOD_LABEL}-Shift-M)` : t`Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
         >
           {TAB_NAME[t]}
           {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
           {t === "comments" && comments > 0 && <span className="tab-count">{comments}</span>}
         </button>
       ))}
-      <button type="button" className="mdbase-icon-button is-small sidebar-split" aria-pressed={split} onClick={onSplit} title={split ? "Close the lower panel" : "Show a second panel beneath (outline and comments together)"} aria-label="Second panel">
+      <button type="button" className="mdbase-icon-button is-small sidebar-split" aria-pressed={split} onClick={onSplit} title={split ? t`Close the lower panel` : t`Show a second panel beneath (outline and comments together)`} aria-label={t`Second panel`}>
         <SplitVerticalIcon />
       </button>
     </div>
@@ -1279,6 +1284,7 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
 
 /** A comment composer beside the passage it is for, following the text as it scrolls. */
 function InlineComposer({ editor, at, children }: { editor: React.RefObject<EditorHandle | null>; at: number; children: ReactNode }) {
+  useLingui();
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = box.current;
@@ -1310,10 +1316,11 @@ function InlineComposer({ editor, at, children }: { editor: React.RefObject<Edit
 }
 
 function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { diagnostics: readonly WriterDiagnostic[]; pending: boolean; checking: boolean; open: boolean; setOpen(open: boolean): void }) {
+  useLingui();
   if (!diagnostics.length) {
-    const label = pending ? "Dependencies not checked" : checking ? "Checking…" : "No problems";
+    const label = pending ? t`Dependencies not checked` : checking ? t`Checking…` : t`No problems`;
     return (
-      <span className={`bar-problems ${checking && !pending ? "is-checking" : "is-clear"}`} title={pending ? "Collection dependencies have not been checked yet" : checking ? "The line being typed is checked once typing pauses" : "No problems"}>
+      <span className={`bar-problems ${checking && !pending ? "is-checking" : "is-clear"}`} title={pending ? t`Collection dependencies have not been checked yet` : checking ? t`The line being typed is checked once typing pauses` : t`No problems`}>
         {pending || checking ? <span className="spinner" aria-hidden="true" /> : <CheckIcon />}
         <span className="button-label">{label}</span>
       </span>
@@ -1325,18 +1332,19 @@ function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { dia
       type="button"
       className={`bar-problems tone-${errors ? "danger" : "warning"}`}
       aria-pressed={open}
-      aria-label={plural(diagnostics.length, "problem")}
+      aria-label={countLabel(diagnostics.length, "problem")}
       onClick={() => setOpen(!open)}
-      title={`${open ? "Hide" : "List"} the problems under the editor (F8 goes to the next one)`}
+      title={t`${open ? "Hide" : "List"} the problems under the editor (F8 goes to the next one)`}
     >
       <AlertIcon />
       <span>{diagnostics.length}</span>
-      <span className="button-label">{diagnostics.length === 1 ? "problem" : "problems"}</span>
+      <span className="button-label">{diagnostics.length === 1 ? t`problem` : t`problems`}</span>
     </button>
   );
 }
 
 function Popover({ id, trigger, width, label, align = "start", focus, onClose, children }: { id: string; trigger: React.RefObject<HTMLElement | null>; width: number; label: string; align?: "start" | "end"; focus?: string; onClose(refocus: boolean): void; children: ReactNode }) {
+  useLingui();
   const ref = useRef<HTMLDivElement>(null);
   useMenuPopover(ref, trigger, onClose, { width, align, focus });
   return (
@@ -1348,6 +1356,7 @@ function Popover({ id, trigger, width, label, align = "start", focus, onClose, c
 
 /** What can be inserted at the cursor, each with the Markdown it stands for. */
 function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setOpen(open: boolean): void; commands: readonly InsertCommand[]; disabled: boolean }) {
+  useLingui();
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
   return (
@@ -1359,16 +1368,16 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-        aria-label="Insert"
+        aria-label={t`Insert`}
         disabled={disabled}
         onClick={() => setOpen(!open)}
-        title="Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
+        title={t`Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)`}
       >
         <InsertIcon />
-        <span className="button-label">Insert</span>
+        <span className="button-label"><Trans>Insert</Trans></span>
       </button>
       {open && (
-        <Popover id={id} trigger={trigger} width={340} label="Insert" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+        <Popover id={id} trigger={trigger} width={340} label={t`Insert`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
@@ -1378,7 +1387,7 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
               <small><code>{c.syntax}</code></small>
             </button>
           ))}
-          <p className="popover-note">Or type <kbd>/</kbd> in the text to pick one there.</p>
+          <p className="popover-note"><Trans>Or type <kbd>/</kbd> in the text to pick one there.</Trans></p>
         </Popover>
       )}
     </>
@@ -1387,6 +1396,7 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
 
 /** Export as a split button: the main part makes the format used last; the chevron offers them all. */
 function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: boolean; format: ExportFormat; can: Record<ExportFormat, boolean>; customTemplate: boolean; onExport(format: ExportFormat): void }) {
+  useLingui();
   const { open, setOpen, busy, format, can, customTemplate, onExport } = props;
   const trigger = useRef<HTMLButtonElement>(null);
   const group = useRef<HTMLDivElement>(null);
@@ -1409,17 +1419,17 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
   );
   return (
     <>
-      <div ref={group} className="split-button" role="group" aria-label="Export">
+      <div ref={group} className="split-button" role="group" aria-label={t`Export`}>
         <button
           type="button"
           className="mdbase-button is-primary"
           disabled={!can[format] || busy}
           onClick={() => onExport(format)}
-          aria-label={`Export ${EXPORT_NAME[format]}`}
-          title={can[format] ? format === "docx" && customTemplate ? "Export Word using article styles; your custom Typst layout applies only to PDF" : `Export ${EXPORT_NAME[format]}` : "Opening the manuscript…"}
+          aria-label={t`Export ${EXPORT_NAME[format]}`}
+          title={can[format] ? format === "docx" && customTemplate ? t`Export Word using article styles; your custom Typst layout applies only to PDF` : t`Export ${EXPORT_NAME[format]}` : t`Opening the manuscript…`}
         >
           <DownloadIcon />
-          <span className="button-label">Export {EXPORT_NAME[format]}</span>
+          <span className="button-label"><Trans>Export {EXPORT_NAME[format]}</Trans></span>
         </button>
         <button
           ref={trigger}
@@ -1428,21 +1438,21 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           aria-haspopup="menu"
           aria-expanded={open}
           aria-controls={open ? id : undefined}
-          aria-label="Export formats"
+          aria-label={t`Export formats`}
           onClick={() => setOpen(!open)}
-          title={`Export formats (${MOD_LABEL}-Shift-S)`}
+          title={t`Export formats (${MOD_LABEL}-Shift-S)`}
         >
           <ChevronDown className="chevron" />
         </button>
       </div>
       {open && (
-        <Popover id={id} trigger={group} width={320} label="Export" align="end" focus={`[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
+        <Popover id={id} trigger={group} width={320} label={t`Export`} align="end" focus={`[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
-          {item("pdf", "PDF", "Typeset from your latest text, with chapters and images checked before download")}
-          {item("docx", "Word (DOCX)", customTemplate ? "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB." : "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB.")}
-          {item("bundle", "Pandoc bundle (zip)", "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself")}
+          {item("pdf", "PDF", t`Typeset from your latest text, with chapters and images checked before download`)}
+          {item("docx", t`Word (DOCX)`, customTemplate ? t`Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB.` : t`Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB.`)}
+          {item("bundle", t`Pandoc bundle (zip)`, t`Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself`)}
         </Popover>
       )}
     </>
@@ -1451,6 +1461,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
 
 /** Commands, keyboard shortcuts and the theme, out of the bar's way; on a phone, export too. */
 function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; onExport(format: ExportFormat): void; canExport: boolean; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
+  useLingui();
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
   const run = (action: () => void) => () => {
@@ -1466,37 +1477,37 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-        aria-label="More"
+        aria-label={t`More`}
         onClick={() => setOpen(!open)}
-        title="Commands, shortcuts and theme"
+        title={t`Commands, shortcuts and theme`}
       >
         <MoreIcon />
       </button>
       {open && (
-        <Popover id={id} trigger={trigger} width={240} label="More" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+        <Popover id={id} trigger={trigger} width={240} label={t`More`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
           <button type="button" role="menuitem" className="menu-item is-row" onClick={run(onCommands)}>
-            <span>Commands</span>
-            <kbd>{MOD_LABEL} K</kbd>
+            <span><Trans>Commands</Trans></span>
+            <kbd><Trans>{MOD_LABEL} K</Trans></kbd>
           </button>
           <button type="button" role="menuitem" className="menu-item is-row" onClick={run(onShortcuts)}>
-            <span>Keyboard shortcuts</span>
+            <span><Trans>Keyboard shortcuts</Trans></span>
             <kbd>?</kbd>
           </button>
-          <div role="group" aria-label="Export" className="menu-group phone-only">
-            <span className="menu-label" aria-hidden="true">Export</span>
+          <div role="group" aria-label={t`Export`} className="menu-group phone-only">
+            <span className="menu-label" aria-hidden="true"><Trans>Export</Trans></span>
             {(["pdf", "docx", "bundle"] as const).map((format) => (
               <button key={format} type="button" role="menuitem" className="menu-item is-row" disabled={!canExport} onClick={run(() => onExport(format))}>
-                <span>{format === "bundle" ? "Pandoc bundle (zip)" : format === "docx" ? "Word (DOCX)" : "PDF"}</span>
+                <span>{format === "bundle" ? t`Pandoc bundle (zip)` : format === "docx" ? t`Word (DOCX)` : "PDF"}</span>
                 <DownloadIcon />
               </button>
             ))}
           </div>
           {theme && onTheme && (
-            <div role="group" aria-label="Theme" className="menu-group">
-              <span className="menu-label" aria-hidden="true">Theme</span>
+            <div role="group" aria-label={t`Theme`} className="menu-group">
+              <span className="menu-label" aria-hidden="true"><Trans>Theme</Trans></span>
               {themePreferences.map((t) => (
                 <button key={t} type="button" role="menuitemradio" aria-checked={theme === t} className="menu-item is-row" onClick={() => onTheme(t)}>
                   <span>{THEME_NAME[t]}</span>
@@ -1512,6 +1523,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
 }
 
 function Divider({ split, grid, onChange }: { split: number; grid: React.RefObject<HTMLDivElement | null>; onChange(split: number): void }) {
+  useLingui();
   const measure = () => {
     const write = grid.current?.querySelector<HTMLElement>(".write")?.getBoundingClientRect();
     const preview = grid.current?.querySelector<HTMLElement>(".preview-pane")?.getBoundingClientRect();
@@ -1522,12 +1534,12 @@ function Divider({ split, grid, onChange }: { split: number; grid: React.RefObje
       className="divider"
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize the editor and preview"
+      aria-label={t`Resize the editor and preview`}
       aria-valuemin={20}
       aria-valuemax={80}
       aria-valuenow={Math.round(split * 100)}
       tabIndex={0}
-      title="Drag to resize; double-click to split evenly"
+      title={t`Drag to resize; double-click to split evenly`}
       onDoubleClick={() => onChange(0.5)}
       onKeyDown={(e) => {
         const step = e.key === "ArrowLeft" ? -0.05 : e.key === "ArrowRight" ? 0.05 : 0;
@@ -1568,17 +1580,18 @@ function dragResize(e: React.PointerEvent<HTMLElement>, onMove: (clientX: number
 
 /** The sidebar's right edge: drag, or use the arrow keys, to resize it; double-click restores its width. */
 function SidebarResizer({ width, onChange }: { width: number; onChange(width: number): void }) {
+  useLingui();
   return (
     <div
       className="sidebar-resizer"
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize the sidebar"
+      aria-label={t`Resize the sidebar`}
       aria-valuemin={SIDEBAR_MIN}
       aria-valuemax={SIDEBAR_MAX}
       aria-valuenow={width}
       tabIndex={0}
-      title="Drag to resize; double-click to restore"
+      title={t`Drag to resize; double-click to restore`}
       onDoubleClick={() => onChange(DEFAULT_LAYOUT.sidebarWidth)}
       onKeyDown={(e) => {
         const step = e.key === "ArrowLeft" ? -16 : e.key === "ArrowRight" ? 16 : 0;
@@ -1595,37 +1608,38 @@ function SidebarResizer({ width, onChange }: { width: number; onChange(width: nu
   );
 }
 
-const SHORTCUTS: readonly [string, string][] = [
-  [`${MOD_LABEL} \\`, "Show or hide the sidebar"],
-  [`${MOD_LABEL} Shift \\`, "Editor and preview → editor only → preview only"],
-  [`${MOD_LABEL} Shift F`, "Search the whole manuscript"],
-  [`${MOD_LABEL} Shift E`, "Find a source"],
-  [`${MOD_LABEL} Shift M`, "Show comments"],
-  ["F7 / Shift F7", "Next / previous comment"],
-  ["F2", "Rename the chapter chosen in the outline"],
-  [`${MOD_LABEL} ,`, "Manuscript settings"],
-  [`${MOD_LABEL} B / ${MOD_LABEL} I`, "Bold / italic (again to remove it)"],
-  [`${MOD_LABEL} Shift K`, "Make the selection a link"],
-  [`${MOD_LABEL} ${ALT_LABEL} M`, "Comment on the selection"],
-  [`${MOD_LABEL} ${ALT_LABEL} S`, "Suggest an edit to the selection"],
-  [`${MOD_LABEL} ${ALT_LABEL} F`, "Add a footnote"],
-  ["/", "Insert a footnote, figure, table, equation, cross-reference or citation"],
-  [`${MOD_LABEL} S`, "Save all records now"],
-  [`${MOD_LABEL} Shift S`, "Export"],
-  ["F8 / Shift F8", "Next / previous problem"],
-  [`${MOD_LABEL}-click`, "On a citation: show the source. On a cross-reference: go to what it labels"],
-  ["@ or [@", "Cite a source or refer to a label (by key, author, title or year)"],
-  ["![[", "Embed a record"],
-  [`${MOD_LABEL} F`, "Find and replace in this record"],
-  [`${MOD_LABEL} K`, "Find or run a command"],
-  ["?", "This list"],
-];
+function shortcuts(): readonly [string, string][] { return [
+  [t`${MOD_LABEL} \\`, t`Show or hide the sidebar`],
+  [t`${MOD_LABEL} Shift \\`, t`Editor and preview → editor only → preview only`],
+  [t`${MOD_LABEL} Shift F`, t`Search the whole manuscript`],
+  [t`${MOD_LABEL} Shift E`, t`Find a source`],
+  [t`${MOD_LABEL} Shift M`, t`Show comments`],
+  ["F7 / Shift F7", t`Next / previous comment`],
+  ["F2", t`Rename the chapter chosen in the outline`],
+  [t`${MOD_LABEL} ,`, t`Manuscript settings`],
+  [t`${MOD_LABEL} B / ${MOD_LABEL} I`, t`Bold / italic (again to remove it)`],
+  [t`${MOD_LABEL} Shift K`, t`Make the selection a link`],
+  [t`${MOD_LABEL} ${ALT_LABEL} M`, t`Comment on the selection`],
+  [t`${MOD_LABEL} ${ALT_LABEL} S`, t`Suggest an edit to the selection`],
+  [t`${MOD_LABEL} ${ALT_LABEL} F`, t`Add a footnote`],
+  ["/", t`Insert a footnote, figure, table, equation, cross-reference or citation`],
+  [t`${MOD_LABEL} S`, t`Save all records now`],
+  [t`${MOD_LABEL} Shift S`, t`Export`],
+  ["F8 / Shift F8", t`Next / previous problem`],
+  [t`${MOD_LABEL}-click`, t`On a citation: show the source. On a cross-reference: go to what it labels`],
+  ["@ or [@", t`Cite a source or refer to a label (by key, author, title or year)`],
+  ["![[", t`Embed a record`],
+  [t`${MOD_LABEL} F`, t`Find and replace in this record`],
+  [t`${MOD_LABEL} K`, t`Find or run a command`],
+  ["?", t`This list`],
+]; }
 
 const Shortcuts = memo(function Shortcuts({ open, onClose }: { open: boolean; onClose(): void }) {
+  useLingui();
   return (
-    <Dialog open={open} onClose={onClose} title="Keyboard shortcuts" className="shortcuts-dialog">
+    <Dialog open={open} onClose={onClose} title={t`Keyboard shortcuts`} className="shortcuts-dialog">
       <dl className="shortcuts">
-        {SHORTCUTS.map(([keys, what]) => (
+        {shortcuts().map(([keys, what]) => (
           <div key={keys}>
             <dt><kbd>{keys}</kbd></dt>
             <dd>{what}</dd>
