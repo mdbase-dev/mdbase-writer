@@ -94,6 +94,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
   const locale = i18n.locale;
   const language = useRef(new Compartment());
   const phrases = useRef(englishCodeMirrorPhrases);
+  const phraseLocale = useRef("en");
   const [phraseProblem, setPhraseProblem] = useState(false);
   const translatedExtensions = () => [
     EditorState.phrases.of(phrases.current),
@@ -267,10 +268,18 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
 
   // Language changes reconfigure chrome in place, preserving document, history and selection.
   useEffect(() => {
+    // A new chapter already has these phrases and current translated chrome.
+    // Refreshing its decorations before the first measurement loses the retained
+    // scroll anchor. Only an actual language change needs an async reconfigure.
+    if (phraseLocale.current === locale) {
+      setPhraseProblem(false);
+      return;
+    }
     let current = true;
     void loadCodeMirrorPhrases(isLocale(locale) ? locale : "en").then((loaded) => {
       if (!current) return;
       phrases.current = loaded;
+      phraseLocale.current = locale;
       setPhraseProblem(false);
       view.current?.dispatch({ effects: [language.current.reconfigure(translatedExtensions()), refreshChapterCards.of(null), refreshLivePreview.of(null)] });
     }).catch(() => { if (current) setPhraseProblem(true); });

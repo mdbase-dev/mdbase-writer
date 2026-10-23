@@ -36,6 +36,26 @@ it("advertises paused editing and becomes editable after recovery is reviewed", 
   expect(editor().state.doc.toString()).toBe("Collection text");
 });
 
+it("does not asynchronously refresh an already-localized chapter before its scroll measurement", async () => {
+  const props: EditorProps = {
+    states: new Map<string, RetainedEditor>(), path: "first.md", text: "First chapter",
+    readOnly: false, livePreview: false, diagnostics: [],
+    completion: { library: [], labels: [], recordPaths: [] },
+    insight: { library: new Map(), references: new Map(), labels: new Map() }, onChange: vi.fn(),
+  };
+  const rendered = render(<Editor {...props} />);
+  await act(async () => {});
+  const dispatch = vi.spyOn(EditorView.prototype, "dispatch");
+  rendered.rerender(<Editor {...props} path="second.md" text="Second chapter" />);
+  // Synchronous setup has installed the current language in the new view.
+  // A redundant promise callback must not redraw its retained scroll anchor.
+  dispatch.mockClear();
+  await act(async () => {});
+  expect(dispatch).not.toHaveBeenCalled();
+  const view = EditorView.findFromDOM(rendered.container.querySelector<HTMLElement>(".cm-editor")!)!;
+  expect(view.contentDOM.getAttribute("aria-label")).toBe("Markdown for second.md");
+});
+
 it("keeps every source line visible with workspace defaults, wherever the caret is", () => {
   const text = "first\nsecond\n\nthird\nfourth";
   const props: EditorProps = {
