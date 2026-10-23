@@ -18,7 +18,7 @@ describe("packaged legacy query compatibility", () => {
           // beta.126 QueryRequest.select is Option<Vec<String>>, not maps.
           expect(input.select.every((field) => typeof field === "string")).toBe(true);
           const alias = (input.select[0] as string).replace("projection.", "");
-          expect(input.projections[alias]?.expr).toBe("record.title");
+          expect(input.projections[alias]?.expr).toBe("(has(record.title)) ? (record.title) : null");
           return {
             valid: true,
             diagnostics: [],
@@ -43,6 +43,7 @@ describe("packaged legacy query compatibility", () => {
     expect(
       await client.query({
         output: "metadata",
+        where: "has(record.title)",
         select: [{ name: "title", expression: "record.title" }],
       }),
     ).toMatchObject({
