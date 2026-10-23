@@ -4,18 +4,39 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: Deployment target (validate staging before production)
+        description: Legacy production backport only
         required: true
         type: choice
         options:
-          - staging
           - production
+      expected_sha:
+        description: Exact 40-hex merged release/legacy-query HEAD
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require exact legacy production release HEAD
+        env:
+          TARGET: ${{ inputs.target }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
+          [[ "$TARGET" == production ]]
+          [[ "$GITHUB_REF" == refs/heads/release/legacy-query ]]
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$GITHUB_SHA" == "$EXPECTED_SHA" ]]
+
   ci:
+    needs: guard
     uses: ./.github/workflows/ci.yml
 
   deploy:
@@ -32,11 +53,6 @@ jobs:
     env:
       MDBASE_ENV: ${{ inputs.target }}
     steps:
-      - name: Require main
-        if: github.ref != 'refs/heads/main'
-        run: |
-          echo "::error::Staging and production deploy only from main (got ${GITHUB_REF})."
-          exit 1
       - name: Require Cloudflare credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -47,6 +63,8 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.15.1
