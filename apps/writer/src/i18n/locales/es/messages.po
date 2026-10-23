@@ -2325,607 +2325,607 @@ msgstr "Mostrar las 50 fuentes anteriores"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show problems"
-msgstr ""
+msgstr "Mostrar problemas"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar"
-msgstr ""
+msgstr "Mostrar la barra lateral"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
-msgstr ""
+msgstr "Mostrar este comentario"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
-msgstr ""
+msgstr "Se muestra la última vista previa correcta; puede que no coincida con el texto más reciente."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Sidebar"
-msgstr ""
+msgstr "Barra lateral"
 
 #: src/connect/native-signin-ui.ts
 #: src/i18n/collections.ts
 msgid "Sign in"
-msgstr ""
+msgstr "Iniciar sesión"
 
 #: src/i18n/collections.ts
 msgid "Sign in and choose a collection there."
-msgstr ""
+msgstr "Inicia sesión y elige allí una colección."
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
-msgstr ""
+msgstr "Inicia sesión con tu cuenta de mdbase para sincronizar {appName} en tus dispositivos."
 
 #: src/i18n/collections.ts
 msgid "Sign in with your mdbase account. You'll choose which collection {app} can use."
-msgstr ""
+msgstr "Inicia sesión con tu cuenta de mdbase. Elegirás qué colección puede usar {app}."
 
 #: src/connect/native-signin-ui.ts
 #: src/i18n/collections.ts
 msgid "Sign out"
-msgstr ""
+msgstr "Cerrar sesión"
 
 #: src/i18n/collections.ts
 msgid "Sign out anyway"
-msgstr ""
+msgstr "Cerrar sesión de todos modos"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Sign-in status"
-msgstr ""
+msgstr "Estado de inicio de sesión"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign-in was interrupted. Please try again."
-msgstr ""
+msgstr "Se interrumpió el inicio de sesión. Inténtalo de nuevo."
 
 #: src/connect/connect-popup.ts
 msgid "Sign-in window closed."
-msgstr ""
+msgstr "Se cerró la ventana de inicio de sesión."
 
 #: src/i18n/collections.ts
 msgid "Signed in as {account}"
-msgstr ""
+msgstr "Sesión iniciada como {account}"
 
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
-msgstr ""
+msgstr "Sesión iniciada como {email}"
 
 #. placeholder {0}: selected.displayName
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
-msgstr ""
+msgstr "Sesión iniciada. Abriendo {0}…"
 
 #: src/i18n/collections.ts
 msgid "Signing out…"
-msgstr ""
+msgstr "Cerrando sesión…"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Some changes are not saved"
-msgstr ""
+msgstr "Hay cambios sin guardar"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Some images or chapters could not be loaded. See Problems for their locations."
-msgstr ""
+msgstr "No se pudieron cargar algunas imágenes o capítulos. Consulta Problemas para ver dónde están."
 
 #: src/LegacyApp.tsx
 msgid "Something went wrong"
-msgstr ""
+msgstr "Se produjo un error"
 
 #: src/ui/ConnectGate.tsx
 msgid "Something went wrong."
-msgstr ""
+msgstr "Se produjo un error."
 
 #: src/editor/insight.ts
 msgid "Source"
-msgstr ""
+msgstr "Fuente"
 
 #: src/ui/WorkspaceView.tsx
 msgid "source markup raw live preview chips"
-msgstr ""
+msgstr "fuente marcado sin procesar vista previa en directo fragmentos"
 
 #: src/ui/SourcesPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Sources"
-msgstr ""
+msgstr "Fuentes"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources are not set up in this collection."
-msgstr ""
+msgstr "Las fuentes no están configuradas en esta colección."
 
 #. placeholder {0}: r.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
-msgstr ""
+msgstr "No se pudieron cargar las fuentes: {0}"
 
 #: src/ui/Home.tsx
 msgid "Sources not set up"
-msgstr ""
+msgstr "Fuentes sin configurar"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
-msgstr ""
+msgstr "Fuentes no disponibles: {libraryProblem}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr ""
+msgstr "Fuentes no disponibles: {libraryProblem} <0>Reintentar fuentes</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."
-msgstr ""
+msgstr "Fuentes."
 
 #: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
-msgstr ""
+msgstr "dividir pila esquema comentarios fuentes"
 
 #: src/i18n/collections.ts
 msgid "Starting {app}…"
-msgstr ""
+msgstr "Iniciando {app}…"
 
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
-msgstr ""
+msgstr "Se guardó {0}. Escribe el pie de foto."
 
 #. placeholder {0}: file.name
 #: src/ui/WorkspaceView.tsx
 msgid "Storing {0}…"
-msgstr ""
+msgstr "Guardando {0}…"
 
 #: src/ui/Settings.tsx
 msgid "Subtitle"
-msgstr ""
+msgstr "Subtítulo"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest"
-msgstr ""
+msgstr "Sugerir"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest an edit"
-msgstr ""
+msgstr "Sugerir una edición"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
-msgstr ""
+msgstr "Sugerir una edición para la selección"
 
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr ""
+msgstr "Sugerir una edición para la selección ({MOD_LABEL}-{ALT_LABEL}-S)"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
-msgstr ""
+msgstr "Inserción sugerida"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggested text"
-msgstr ""
+msgstr "Texto sugerido"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
-msgstr ""
+msgstr "Cambiar de colección"
 
 #: src/i18n/collections.ts
 msgid "Switch collection, current: {collection}"
-msgstr ""
+msgstr "Cambiar de colección; actual: {collection}"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection: {name}"
-msgstr ""
+msgstr "Cambiar de colección: {name}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Table"
-msgstr ""
+msgstr "Tabla"
 
 #: src/workspace/workspace.ts
 msgid "That record is not open."
-msgstr ""
+msgstr "Ese registro no está abierto."
 
 #: src/workspace/workspace.ts
 msgid "The chapter is not open."
-msgstr ""
+msgstr "El capítulo no está abierto."
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
-msgstr ""
+msgstr "El proceso de compilación se detuvo."
 
 #: src/LegacyApp.tsx
 msgid "The demo could not be loaded"
-msgstr ""
+msgstr "No se pudo cargar la demostración"
 
 #: src/editor/Editor.tsx
 msgid "The editor language could not be loaded. You can keep writing."
-msgstr ""
+msgstr "No se pudo cargar el idioma del editor. Puedes seguir escribiendo."
 
 #. placeholder {0}: errorMessage(error)
 #: src/ui/WorkspaceView.tsx
 msgid "The file could not be downloaded. {0}"
-msgstr ""
+msgstr "No se pudo descargar el archivo. {0}"
 
 #. placeholder {0}: missingImage[1]
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
-msgstr ""
+msgstr "No se pudo cargar la imagen “{0}” para Word. En su lugar, se incluirá su descripción."
 
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
-msgstr ""
+msgstr "No se pudo cargar el idioma. No se ha cambiado el idioma actual. Inténtalo de nuevo."
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
-msgstr ""
+msgstr "La línea que estás escribiendo se comprueba cuando haces una pausa"
 
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
-msgstr ""
+msgstr "El manuscrito siguió cambiando mientras se cargaban las dependencias de exportación. Deja de editar e inténtalo de nuevo."
 
 #: src/compile/client.ts
 #: src/workspace/workspace.ts
 msgid "The manuscript was closed."
-msgstr ""
+msgstr "Se cerró el manuscrito."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The person record that claims your account is not valid."
-msgstr ""
+msgstr "El registro de persona vinculado a tu cuenta no es válido."
 
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
-msgstr ""
+msgstr "La vista previa tardó demasiado en cargarse. Vuelve a intentarlo."
 
 #: src/compile/client.ts
 msgid "The preview worker returned an unreadable response."
-msgstr ""
+msgstr "El proceso de vista previa devolvió una respuesta ilegible."
 
 #: src/ui/Settings.tsx
 msgid "The style’s own (usually en-US)"
-msgstr ""
+msgstr "El propio del estilo (normalmente en-US)"
 
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr ""
+msgstr "El texto sugerido ya no está en el registro; edítalo a mano y luego resuelve la sugerencia."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr ""
+msgstr "El texto sugerido ya no está"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
-msgstr ""
+msgstr "Tema"
 
 #: src/ui/names.ts
 msgid "Thesis or book"
-msgstr ""
+msgstr "Tesis o libro"
 
 #: src/ui/ConnectGate.tsx
 msgid "This action could not be completed. Please try again."
-msgstr ""
+msgstr "No se pudo completar esta acción. Inténtalo de nuevo."
 
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
-msgstr ""
+msgstr "Esto se aplica en este navegador a todos los manuscritos."
 
 #: src/i18n/collections.ts
 msgid "this collection"
-msgstr ""
+msgstr "esta colección"
 
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
-msgstr ""
+msgstr "Esta colección no acepta archivos de Writer."
 
 #: src/ui/ConnectGate.tsx
 msgid "This collection is unavailable"
-msgstr ""
+msgstr "Esta colección no está disponible"
 
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
-msgstr ""
+msgstr "No se pudo abrir esta vista de colección. Elige otra colección en la barra superior o vuelve a cargar para reintentarlo."
 
 #: src/i18n/collections.ts
 msgid "This device is still listed under your account until you remove it there."
-msgstr ""
+msgstr "Este dispositivo seguirá apareciendo en tu cuenta hasta que lo quites allí."
 
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr ""
+msgstr "Esta es una compilación de desarrollo local. El servicio alojado de mdbase connect solo acepta aplicaciones servidas mediante HTTPS; usa el entorno local de Connect (<0>pnpm dev:environment:up</0> en mdbase-connect) o abre la <1>colección de demostración</1>."
 
 #: src/i18n/collections.ts
 msgid "This is taking longer than usual."
-msgstr ""
+msgstr "Esto está tardando más de lo habitual."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
-msgstr ""
+msgstr "Esta lista"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
-msgstr ""
+msgstr "No se pudo abrir este manuscrito"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr ""
+msgstr "Este pasaje ya no está en el texto"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record changed elsewhere while you were editing it."
-msgstr ""
+msgstr "Este registro cambió en otro lugar mientras lo editabas."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr ""
+msgstr "Este registro se eliminó en otro lugar. El texto local sigue disponible aquí."
 
 #: src/ui/CompareDialog.tsx
 msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr ""
+msgstr "Este registro se eliminó. Descarga el borrador local para conservarlo; no se puede restaurar en un registro eliminado."
 
 #: src/ui/Settings.tsx
 msgid "Title"
-msgstr ""
+msgstr "Título"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr ""
+msgstr "Título, autores, resumen, estilo de cita, diseño e idioma ({MOD_LABEL}-,)"
 
 #. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
 #: src/ui/Home.tsx
 msgid "Title<0/>{0}"
-msgstr ""
+msgstr "Título<0/>{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
-msgstr ""
+msgstr "control de cambios"
 
 #: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
-msgstr ""
+msgstr "Volver a intentarlo"
 
 #: src/i18n/collections.ts
 msgid "Type {collection} to confirm"
-msgstr ""
+msgstr "Escribe {collection} para confirmar"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
-msgstr ""
+msgstr "Escribe para encontrar otros."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset from your latest text, with chapters and images checked before download"
-msgstr ""
+msgstr "Compilar a partir del texto más reciente, con capítulos e imágenes comprobados antes de descargar"
 
 #. placeholder {0}: Math.round(timings.assembleMs + timings.compileMs)
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset in {0} ms"
-msgstr ""
+msgstr "Compilado en {0} ms"
 
 #: src/compile/client.ts
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
-msgstr ""
+msgstr "La composición tardó demasiado. El editor sigue disponible; vuelve a generar la vista previa."
 
 #: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
-msgstr ""
+msgstr "Componiendo…"
 
 #: src/ui/Settings.tsx
 msgid "Typst templates in the collection"
-msgstr ""
+msgstr "Plantillas de Typst en la colección"
 
 #: src/editor/insight.ts
 msgid "Unknown"
-msgstr ""
+msgstr "Desconocido"
 
 #: src/ui/records.ts
 msgid "Unsaved"
-msgstr ""
+msgstr "Sin guardar"
 
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
-msgstr ""
+msgstr "Borradores sin guardar"
 
 #: src/ui/Home.tsx
 msgid "Unsaved in this browser"
-msgstr ""
+msgstr "Sin guardar en este navegador"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr ""
+msgstr "Sin firmar"
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
-msgstr ""
+msgstr "Figura sin título"
 
 #: src/ui/Home.tsx
 msgid "Updating…"
-msgstr ""
+msgstr "Actualizando…"
 
 #: src/i18n/collections.ts
 msgid "Use {app}'s version"
-msgstr ""
+msgstr "Usar la versión de {app}"
 
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
-msgstr ""
+msgstr "Usar una nota existente…"
 
 #: src/ui/Home.tsx
 msgid "Use as manuscript"
-msgstr ""
+msgstr "Usar como manuscrito"
 
 #: src/ui/CompareDialog.tsx
 msgid "Use collection version"
-msgstr ""
+msgstr "Usar la versión de la colección"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB."
-msgstr ""
+msgstr "Usa los estilos de Word del diseño, pero la paginación puede diferir del PDF. La primera vez se descargan unos 16 MB."
 
 #: src/ui/WorkspaceView.tsx
 msgid "View"
-msgstr ""
+msgstr "Vista"
 
 #: src/workspace/workspace.ts
 msgid "Wait for the manuscript to open before exporting."
-msgstr ""
+msgstr "Espera a que se abra el manuscrito antes de exportar."
 
 #: src/connect/native-signin-ui.ts
 msgid "Waiting for approval in the mdbase tab…"
-msgstr ""
+msgstr "Esperando aprobación en la pestaña de mdbase…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Waiting for approval…"
-msgstr ""
+msgstr "Esperando aprobación…"
 
 #: src/ui/CollectionPicker.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
-msgstr ""
+msgstr "Esperando a mdbase connect…"
 
 #: src/i18n/collections.ts
 msgid "What changes"
-msgstr ""
+msgstr "Qué cambia"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
-msgstr ""
+msgstr "De quién son los comentarios"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Why (optional)"
-msgstr ""
+msgstr "Motivo (opcional)"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
-msgstr ""
+msgstr "se añadirán"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be removed"
-msgstr ""
+msgstr "se quitarán"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
-msgstr ""
+msgstr "se actualizarán"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdraw"
-msgstr ""
+msgstr "Retirar"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr ""
+msgstr "Retirado."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
-msgstr ""
+msgstr "Word (DOCX)"
 
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
-msgstr ""
+msgstr "La exportación a Word indicó un problema."
 
 #: src/export/pandoc.ts
 msgid "Word export timed out. Check your connection and try again."
-msgstr ""
+msgstr "Se agotó el tiempo de exportación a Word. Comprueba tu conexión e inténtalo de nuevo."
 
 #: src/ui/Home.tsx
 msgid "Word goal"
-msgstr ""
+msgstr "Objetivo de palabras"
 
 #: src/ui/Home.tsx
 msgid "Words, e.g. 8000"
-msgstr ""
+msgstr "Palabras, p. ej., 8000"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Write"
-msgstr ""
+msgstr "Escribir"
 
 #: src/ui/ConnectGate.tsx
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
-msgstr ""
+msgstr "Escribe desde tu colección"
 
 #: src/editor/Editor.tsx
 msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr ""
+msgstr "Escribe en Markdown. Cita con [@citekey]; escribe / para añadir una nota al pie, figura o tabla."
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"
-msgstr ""
+msgstr "Escribe aquí la cita para editarla; ya no sigue la anotación"
 
 #: src/workspace/workspace.ts
 msgid "Writer cannot ask for access here."
-msgstr ""
+msgstr "Writer no puede solicitar acceso aquí."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
-msgstr ""
+msgstr "Comandos de Writer"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
-msgstr ""
+msgstr "Writer no pudo abrir esta colección"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Writer was not allowed to see your account."
-msgstr ""
+msgstr "Writer no tenía permiso para ver tu cuenta."
 
 #: src/main.tsx
 msgid "You can close this window."
-msgstr ""
+msgstr "Puedes cerrar esta ventana."
 
 #: src/i18n/collections.ts
 msgid "You've signed out of {app} on this device."
-msgstr ""
+msgstr "Has cerrado sesión en {app} en este dispositivo."
 
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
-msgstr ""
+msgstr "No se pudo comprobar tu cuenta ({0})."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your account is not linked to a person record in this collection."
-msgstr ""
+msgstr "Tu cuenta no está vinculada a un registro de persona en esta colección."
 
 #: src/connect/connect-popup.ts
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
-msgstr ""
+msgstr "El navegador bloqueó la pestaña de inicio de sesión."
 
 #: src/i18n/collections.ts
 msgid "Your collections"
-msgstr ""
+msgstr "Tus colecciones"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
-msgstr ""
+msgstr "Tus comentarios no están firmados."
 
 #: src/workspace/workspace.ts
 msgid "Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ."
-msgstr ""
+msgstr "Tu diseño personalizado de Typst solo se aplica al PDF. Word usa los estilos de artículo; la paginación y el diseño serán distintos."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB."
-msgstr ""
+msgstr "Tu diseño personalizado de Typst solo se aplica al PDF. Word usa estilos de artículo y una paginación distinta. La primera vez se descargan unos 16 MB."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup."
-msgstr ""
+msgstr "Los borradores locales se guardan en este navegador cuando hay almacenamiento disponible. Descarga una copia antes de salir si necesitas una copia de seguridad independiente."
 
 #: src/ui/CompareDialog.tsx
 msgid "Your local text"
-msgstr ""
+msgstr "Tu texto local"
 
 #: src/LegacyApp.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
-msgstr ""
+msgstr "El texto guardado está en tu colección. Los borradores locales no enviados se guardan en este navegador cuando hay almacenamiento disponible. Descarga una copia antes de volver a cargar."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom"
-msgstr ""
+msgstr "Zoom"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom in"
-msgstr ""
+msgstr "Acercar"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom out"
-msgstr ""
+msgstr "Alejar"
