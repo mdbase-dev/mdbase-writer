@@ -1,3 +1,6 @@
+import { Trans, Plural } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // Citing from what you have read: the sources this manuscript cites, then the
 // rest of the Reader library; search by author, title, year or key. Cite a
 // source at the cursor (with a page if you like), step through where it is
@@ -95,6 +98,7 @@ export function SourcesPanel({
   canInsert: boolean;
   request?: SourcesRequest | null;
 }) {
+  useLingui();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const libraryWindow = useRowWindow(LIBRARY_PREVIEW);
@@ -214,10 +218,10 @@ export function SourcesPanel({
 
   if (!library.length) {
     return (
-      <section className="sources" aria-label="Sources">
+      <section className="sources" aria-label={t`Sources`}>
         <p className="muted small">
-          {loading ? "Loading sources…" : libraryProblem ? `Sources unavailable: ${libraryProblem}` : notSetUp ? "Sources are not set up in this collection." : "No sources in this collection yet."} {libraryProblem && retryLibrary && <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button>} {!loading && !libraryProblem && <>Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.</>}
-          {!loading && !libraryProblem && readerSourceHref() && <> <a href={readerSourceHref()} target="_blank" rel="noopener">Open Reader to add a source</a>.</>}
+          {loading ? t`Loading sources…` : libraryProblem ? t`Sources unavailable: ${libraryProblem}` : notSetUp ? t`Sources are not set up in this collection.` : t`No sources in this collection yet.`} {libraryProblem && retryLibrary && <button type="button" className="text-button" onClick={retryLibrary}><Trans>Retry sources</Trans></button>} {!loading && !libraryProblem && <><Trans>Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.</Trans></>}
+          {!loading && !libraryProblem && readerSourceHref() && <> <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open Reader to add a source</Trans></a>.</>}
         </p>
       </section>
     );
@@ -248,7 +252,7 @@ export function SourcesPanel({
   const shownCited = inManuscript.slice(citedWindow.from, citedWindow.from + citedWindow.size);
 
   return (
-    <section ref={panel} className="sources" aria-label="Sources" onKeyDown={onListKey}>
+    <section ref={panel} className="sources" aria-label={t`Sources`} onKeyDown={onListKey}>
       <div className="sources-search">
         <SearchIcon />
         <input
@@ -258,25 +262,25 @@ export function SourcesPanel({
           value={query}
           onChange={(e) => { setQuery(e.target.value); libraryWindow.reset(); citedWindow.reset(); }}
           onKeyDown={onSearchKey}
-          placeholder="Search by author, title, year or key"
-          aria-label="Find a source"
+          placeholder={t`Search by author, title, year or key`}
+          aria-label={t`Find a source`}
           aria-describedby="sources-keys"
         />
       </div>
-      {libraryProblem && <p className="muted small" role="alert">Sources unavailable: {libraryProblem} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></p>}
-      <span id="sources-keys" className="visually-hidden">Down arrow moves to the sources; Enter cites the first match.</span>
+      {libraryProblem && <p className="muted small" role="alert"><Trans>Sources unavailable: {libraryProblem} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></Trans></p>}
+      <span id="sources-keys" className="visually-hidden"><Trans>Down arrow moves to the sources; Enter cites the first match.</Trans></span>
       {query.trim() ? (
         <>
           <div className="source-group">
-            <ul aria-label="Matching sources">{results.map(row)}</ul>
-            {results.length === 0 && !inHighlights.length && <p className="muted small">{highlightSearch && highlightIndex.pending > 0 ? `No source matches “${query}”; searching highlights…` : `Nothing matches “${query}”.`}</p>}
+            <ul aria-label={t`Matching sources`}>{results.map(row)}</ul>
+            {results.length === 0 && !inHighlights.length && <p className="muted small">{highlightSearch && highlightIndex.pending > 0 ? t`No source matches “${query}”; searching highlights…` : t`Nothing matches “${query}”.`}</p>}
           </div>
           {highlightSearch && (inHighlights.length > 0 || (results.length > 0 && highlightIndex.pending > 0)) && (
             <div className="source-group">
-              <h3 className="sidebar-heading" id="sources-highlights">
+              <h3 className="sidebar-heading" id="sources-highlights"><Trans>
                 In highlights <span className="heading-count">{inHighlights.length}</span>
-                {highlightIndex.pending > 0 && <span className="heading-count">· searching {highlightIndex.pending} more</span>}
-              </h3>
+                {highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>}
+              </Trans></h3>
               <ul aria-labelledby="sources-highlights">
                 {inHighlights.map(({ entry, annotation }) => (
                   <li key={entry.key}>
@@ -294,24 +298,24 @@ export function SourcesPanel({
       ) : (
         <>
           <div className="source-group">
-            <h3 className="sidebar-heading" id="sources-cited">
+            <h3 className="sidebar-heading" id="sources-cited"><Trans>
               In this manuscript <span className="heading-count">{inManuscript.length}</span>
-            </h3>
-            {inManuscript.length ? <ul aria-labelledby="sources-cited">{shownCited.map(row)}</ul> : <p className="muted small">Nothing cited yet. Cite a source below, or type <code>[@</code> in the editor.</p>}
+            </Trans></h3>
+            {inManuscript.length ? <ul aria-labelledby="sources-cited">{shownCited.map(row)}</ul> : <p className="muted small"><Trans>Nothing cited yet. Cite a source below, or type <code>[@</code> in the editor.</Trans></p>}
           </div>
-          {citedWindow.from > 0 && <button type="button" className="sidebar-more" onClick={citedWindow.previous}>Show previous 50 cited sources</button>}
-          {inManuscript.length > citedWindow.from + citedWindow.size && <button type="button" className="sidebar-more" onClick={citedWindow.more}>Show 50 more cited sources · {inManuscript.length}</button>}
+          {citedWindow.from > 0 && <button type="button" className="sidebar-more" onClick={citedWindow.previous}><Trans>Show previous 50 cited sources</Trans></button>}
+          {inManuscript.length > citedWindow.from + citedWindow.size && <button type="button" className="sidebar-more" onClick={citedWindow.more}><Trans>Show 50 more cited sources · {inManuscript.length}</Trans></button>}
           {rest.length > 0 && (
             <div className="source-group">
-              <h3 className="sidebar-heading" id="sources-library">
+              <h3 className="sidebar-heading" id="sources-library"><Trans>
                 Library <span className="heading-count">{rest.length}</span>
-              </h3>
+              </Trans></h3>
               <ul aria-labelledby="sources-library">{shownRest.map(row)}</ul>
-              {libraryWindow.from > 0 && <button type="button" className="sidebar-more" onClick={libraryWindow.previous}>Show previous 50 sources</button>}
+              {libraryWindow.from > 0 && <button type="button" className="sidebar-more" onClick={libraryWindow.previous}><Trans>Show previous 50 sources</Trans></button>}
               {rest.length > libraryWindow.from + shownRest.length && (
-                <button type="button" className="sidebar-more" onClick={libraryWindow.more}>
+                <button type="button" className="sidebar-more" onClick={libraryWindow.more}><Trans>
                   Show 50 more sources · {rest.length}
-                </button>
+                </Trans></button>
               )}
             </div>
           )}
@@ -356,6 +360,7 @@ const SourceRow = memo(function SourceRow({
   onStep(key: string, direction: 1 | -1): void;
   href: string | undefined;
 }) {
+  useLingui();
   const highlightsWindow = useRowWindow();
   useEffect(() => highlightsWindow.reset(), [annotations]);
   const [locator, setLocator] = useState(() => locators.get(entry.key) ?? "");
@@ -377,12 +382,12 @@ const SourceRow = memo(function SourceRow({
           <span className="source-title">{entry.title}</span>
           <span className="source-meta">
             {authorYear(entry) || entry.key}
-            {uses > 0 && <span className="source-uses" title="In this manuscript">{uses === 1 ? "cited once" : `cited ${uses}×`}</span>}
+            {uses > 0 && <span className="source-uses" title={t`In this manuscript`}>{uses === 1 ? t`cited once` : t`cited ${uses}×`}</span>}
           </span>
         </button>
-        <button type="button" className="cite-button" hidden={expanded} disabled={!canInsert} tabIndex={-1} onClick={() => onInsert(citationFor(entry.key))} aria-label={`Cite ${entry.title}`} title={`Insert [@${entry.key}] at the cursor (Enter)`}>
+        <button type="button" className="cite-button" hidden={expanded} disabled={!canInsert} tabIndex={-1} onClick={() => onInsert(citationFor(entry.key))} aria-label={t`Cite ${entry.title}`} title={t`Insert [@${entry.key}] at the cursor (Enter)`}><Trans>
           Cite
-        </button>
+        </Trans></button>
       </div>
       {expanded && (
         <div className="source-detail" id={detail}>
@@ -398,17 +403,17 @@ const SourceRow = memo(function SourceRow({
               className="mdbase-field"
               value={locator}
               onChange={(e) => setLocator(e.target.value)}
-              placeholder="Page (optional)"
-              aria-label={`Page or locator for ${entry.title}`}
-              title="A page (12, 12–14) or a locator (ch. 3, sec. 2)"
+              placeholder={t`Page (optional)`}
+              aria-label={t`Page or locator for ${entry.title}`}
+              title={t`A page (12, 12–14) or a locator (ch. 3, sec. 2)`}
             />
             <button type="submit" className="mdbase-button is-primary" disabled={!canInsert}>
-              Cite{locator.trim() ? ` at ${/^\d/.test(locator.trim()) ? `p. ${locator.trim()}` : locator.trim()}` : ""}
+              {locator.trim() ? t`Cite at ${locator.trim()}` : t`Cite`}
             </button>
           </form>
           {sites.length > 0 && (
             <p className="source-sites small">
-              <span className="muted">Cited in </span>
+              <span className="muted"><Trans>Cited in </Trans></span>
               {sites.map((site, i) => (
                 <span key={`${site.record}:${site.offset}`}>
                   {i > 0 && <span className="muted">, </span>}
@@ -420,12 +425,12 @@ const SourceRow = memo(function SourceRow({
           <div className="source-facts">
             {uses > 0 ? (
               <span className="source-uses-nav">
-                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(entry.key, -1)} aria-label="Previous citation" title="Previous citation"><ChevronLeft /></button>
-                <span className="small">Cited {uses === 1 ? "once" : `${uses} times`}</span>
-                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(entry.key, 1)} aria-label="Next citation" title="Next citation"><ChevronRight /></button>
+                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(entry.key, -1)} aria-label={t`Previous citation`} title={t`Previous citation`}><ChevronLeft /></button>
+                <span className="small"><Plural value={uses} one="Cited once" other="Cited # times" /></span>
+                <button type="button" className="mdbase-icon-button is-small" onClick={() => onStep(entry.key, 1)} aria-label={t`Next citation`} title={t`Next citation`}><ChevronRight /></button>
               </span>
             ) : (
-              <span className="muted small">Not cited yet</span>
+              <span className="muted small"><Trans>Not cited yet</Trans></span>
             )}
             <span className="source-links">
               <button
@@ -436,20 +441,20 @@ const SourceRow = memo(function SourceRow({
                   void navigator.clipboard?.writeText(entry.key).then(() => setCopied(true));
                 }}
               >
-                {copied ? "Copied" : "Copy key"}
+                {copied ? t`Copied` : t`Copy key`}
               </button>
               {href && (
-                <a className="text-button" href={href} target="_blank" rel="noopener">
+                <a className="text-button" href={href} target="_blank" rel="noopener"><Trans>
                   Open in Reader <ExternalIcon />
-                </a>
+                </Trans></a>
               )}
             </span>
           </div>
-          {annotations === null && !problem && <p className="muted small" role="status">Loading annotations…</p>}
-          {problem && <p className="muted small" role="alert">Annotations unavailable: {problem} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></p>}
-          {annotations?.length === 0 && <p className="muted small">{annotationsNotSetUp ? "Highlights are not set up in this collection." : "No annotations on this source."}</p>}
+          {annotations === null && !problem && <p className="muted small" role="status"><Trans>Loading annotations…</Trans></p>}
+          {problem && <p className="muted small" role="alert"><Trans>Annotations unavailable: {problem} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></Trans></p>}
+          {annotations?.length === 0 && <p className="muted small">{annotationsNotSetUp ? t`Highlights are not set up in this collection.` : t`No annotations on this source.`}</p>}
           {notes.length > 0 && (
-            <ul className="annotations" aria-label="Highlights from Reader">
+            <ul className="annotations" aria-label={t`Highlights from Reader`}>
               {notes.slice(0, highlightsWindow.size).map((a) => (
                 <li key={a.path}>
                   {a.quote && <blockquote>{a.quote}</blockquote>}
@@ -457,14 +462,14 @@ const SourceRow = memo(function SourceRow({
                   <div className="annotation-actions">
                     {a.locator && <span className="muted small">{a.locator}</span>}
                     <button type="button" className="text-button" disabled={!canInsert} onClick={() => onInsert(a.quote ? quotationFor(entry.key, a) : citationFor(entry.key, a.locator))}>
-                      {a.quote ? "Insert quotation" : "Cite here"}
+                      {a.quote ? t`Insert quotation` : t`Cite here`}
                     </button>
                   </div>
                 </li>
               ))}
             </ul>
           )}
-          {notes.length > highlightsWindow.size && <button type="button" className="sidebar-more" onClick={highlightsWindow.more}>Show 50 more highlights · {notes.length}</button>}
+          {notes.length > highlightsWindow.size && <button type="button" className="sidebar-more" onClick={highlightsWindow.more}><Trans>Show 50 more highlights · {notes.length}</Trans></button>}
         </div>
       )}
     </li>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { AppWebSignInSession } from "@mdbase-dev/sdk/app-host";
 import type {
   AppWebSignInSessionOptions,
@@ -19,14 +20,14 @@ export type NativeSignInSession = Pick<
 >;
 
 export const signInCopy = Object.freeze({
-  signIn: "Sign in",
-  waiting: "Waiting for approval in the mdbase tab…",
-  reopen: "Open the mdbase tab again",
-  tabBlocked: "Your browser blocked the sign-in tab.",
-  openSignIn: "Open sign-in",
-  interrupted: "Sign-in was interrupted. Please try again.",
-  signOut: "Sign out",
-  unavailable: "Opening collections isn't available in this build yet.",
+  get signIn() { return t`Sign in`; },
+  get waiting() { return t`Waiting for approval in the mdbase tab…`; },
+  get reopen() { return t`Open the mdbase tab again`; },
+  get tabBlocked() { return t`Your browser blocked the sign-in tab.`; },
+  get openSignIn() { return t`Open sign-in`; },
+  get interrupted() { return t`Sign-in was interrupted. Please try again.`; },
+  get signOut() { return t`Sign out`; },
+  get unavailable() { return t`Opening collections isn't available in this build yet.`; },
 });
 
 /** UI-only public portal capability. The SDK supplies the validated URI. */
@@ -115,7 +116,7 @@ export function signInPresentation(
   const paired =
     snapshot.status !== "closed" && snapshot.signIn?.state === "paired";
   const email = paired ? snapshot.signIn?.accountEmail : null;
-  const identity = email ? `Signed in as ${email}` : null;
+  const identity = email ? t`Signed in as ${email}` : null;
   const selected = snapshot.collections.find(
     ({ collectionId }) => collectionId === snapshot.selectedCollectionId,
   );
@@ -130,11 +131,11 @@ export function signInPresentation(
         : waiting
           ? signInCopy.waiting
           : snapshot.status === "opening" && selected
-            ? `Signed in. Opening ${selected.displayName}…`
+            ? t`Signed in. Opening ${selected.displayName}…`
             : (identity ??
               (paired
                 ? signInCopy.unavailable
-                : `Sign in with your mdbase account to sync ${appName} across your devices.`));
+                : t`Sign in with your mdbase account to sync ${appName} across your devices.`));
   return {
     message,
     identity: identity === message ? null : identity,

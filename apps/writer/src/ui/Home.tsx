@@ -1,3 +1,8 @@
+import { Trans } from "@lingui/react/macro";
+import { t, plural as icuPlural } from "@lingui/core/macro";
+import { plural as countLabel } from "./records.js";
+import { formatNumber } from "../i18n/presentation.js";
+import { useLingui } from "@lingui/react";
 // The collection's manuscripts, and creating a new one.
 import { TEMPLATES, type TemplateName } from "@mdbase-writer/core/meta";
 import { pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
@@ -24,10 +29,11 @@ const SEARCH_FROM = 6;
 const NOTES_SHOWN = 8;
 /** Notes without a type listed before "Show all". */
 const UNTYPED_SHOWN = 20;
-const TEMPLATE_OPTIONS = TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
-const STYLE_OPTIONS = STYLES.map((s) => ({ value: s.id, label: s.title }));
+const templateOptions = () => TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
+const styleOptions = () => STYLES.map((s) => ({ value: s.id, label: styleName(s.id) }));
 
 export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode }) {
+  useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [backgroundProblem, setBackgroundProblem] = useState<string | null>(null);
@@ -65,11 +71,11 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     void pending.then(() => backend.library()).then((r) => {
       if (!live) return;
       if (r.ok) setSources(r.value.length);
-      else setBackgroundProblem(`Sources could not be loaded: ${r.message}`);
+      else setBackgroundProblem(t`Sources could not be loaded: ${r.message}`);
     }).catch((error: unknown) => { if (live) setBackgroundProblem(errorMessage(error)); });
     void pending.then(() => backend.index()).then((r) => {
       if (!live) return;
-      if (!r.ok) { setBackgroundProblem(`Index could not be loaded: ${r.message}`); return; }
+      if (!r.ok) { setBackgroundProblem(t`Index could not be loaded: ${r.message}`); return; }
       setNotes([...r.value.notePaths].sort());
       setUntyped([...r.value.untypedPaths ?? []].sort());
       setUnavailable(r.value.unavailableTypes ?? []);
@@ -153,10 +159,10 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     return { ...d, manuscript, title: byPath.get(d.path)?.title ?? noteName(d.path) };
   }), [drafts, byPath, manuscripts, summaries]);
   const newButton = (
-    <button type="button" className="mdbase-button is-primary" onClick={() => setDialog(true)}>
+    <button type="button" className="mdbase-button is-primary" onClick={() => setDialog(true)}><Trans>
       <PlusIcon />
       New manuscript
-    </button>
+    </Trans></button>
   );
 
   return (
@@ -164,62 +170,62 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       <section>
         <header className="home-header">
           <div>
-            <h1>Manuscripts</h1>
-            <p className="muted">
+            <h1><Trans>Manuscripts</Trans></h1>
+            <p className="muted"><Trans>
               In {collectionPicker ?? <strong>{backend.collectionName}</strong>}
-              {backend.kind === "connect" && <> via mdbase Connect</>}
-              {sources !== null && sources > 0 && <> · {sources} {sources === 1 ? "source" : "sources"} to cite from mdbase Reader</>}
-              {sources === 0 && <> · {backend.setupStatus?.sources === false ? "Sources not set up" : "No sources yet"}</>}
-              {backend.setupStatus?.comments === false && <> · Comments not set up</>}
-            </p>
+              {backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>}
+              {sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>}
+              {sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>}
+              {backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>}
+            </Trans></p>
           </div>
           {manuscripts && manuscripts.length > 0 && newButton}
         </header>
-        {!backgroundProblem && (sources === null || recordPaths === null) && <p className="muted small" role="status">Loading collection data…</p>}
-        {backgroundProblem && <p className="muted" role="alert">{backgroundProblem} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}>Retry background data</button></p>}
-        {manuscripts === null && !problem && <p className="muted" role="status">Loading…</p>}
+        {!backgroundProblem && (sources === null || recordPaths === null) && <p className="muted small" role="status"><Trans>Loading collection data…</Trans></p>}
+        {backgroundProblem && <p className="muted" role="alert">{backgroundProblem} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}><Trans>Retry background data</Trans></button></p>}
+        {manuscripts === null && !problem && <p className="muted" role="status"><Trans>Loading…</Trans></p>}
         {manuscripts?.length === 0 && (
           <div className="first-run">
             <ol>
               <li>
-                <strong>Sources.</strong>{" "}
+                <strong><Trans>Sources.</Trans></strong>{" "}
                 {sources === null
-                  ? "Looking for sources…"
+                  ? t`Looking for sources…`
                   : sources > 0
-                    ? `${sources} ${sources === 1 ? "source" : "sources"} from mdbase Reader can be cited here.`
-                    : <>None yet. {readerSourceHref() ? <a href={readerSourceHref()} target="_blank" rel="noopener">Open mdbase Reader</a> : "Open mdbase Reader"} to import a PDF, a DOI or a BibTeX file; each source gets a citekey.</>}
+                    ? icuPlural(sources, { one: "# source from mdbase Reader can be cited here.", other: "# sources from mdbase Reader can be cited here." })
+                    : <><Trans>None yet. {readerSourceHref() ? <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open mdbase Reader</Trans></a> : t`Open mdbase Reader`} to import a PDF, a DOI or a BibTeX file; each source gets a citekey.</Trans></>}
               </li>
-              <li>
+              <li><Trans>
                 <strong>A manuscript.</strong> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection.
-              </li>
-              <li>
+              </Trans></li>
+              <li><Trans>
                 <strong>Write.</strong> Cite with <code>[@citekey, p. 12]</code> (or find sources by author and title in the Sources panel), label with{" "}
                 <code>{"{#fig-plan}"}</code> and refer with <code>@fig-plan</code>, embed chapters with <code>![[chapters/one]]</code>. Export a PDF or a Word
                 document.
-              </li>
+              </Trans></li>
             </ol>
             {newButton}
           </div>
         )}
         {draftRows.length > 0 && (
-          <section className="home-drafts" aria-label="Unsaved drafts">
-            <h2>Unsaved in this browser</h2>
+          <section className="home-drafts" aria-label={t`Unsaved drafts`}>
+            <h2><Trans>Unsaved in this browser</Trans></h2>
             <ul>
               {draftRows.map((d) => (
                 <li key={d.path}>
                   <span className="home-draft-text">
                     <strong>{d.title}</strong>
-                    <span className="muted small">
-                      {d.manuscript && d.manuscript.path !== d.path ? `in ${d.manuscript.title} · ` : ""}backed up {relativeTime(d.updated)}
-                    </span>
+                    <span className="muted small"><Trans>
+                      {d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""}backed up {relativeTime(d.updated)}
+                    </Trans></span>
                   </span>
                   {d.manuscript
-                    ? <button type="button" className="mdbase-button is-small" onClick={() => onOpen(d.manuscript!.path)}>Review</button>
-                    : <span className="muted small">Open its manuscript to review it</span>}
+                    ? <button type="button" className="mdbase-button is-small" onClick={() => onOpen(d.manuscript!.path)}><Trans>Review</Trans></button>
+                    : <span className="muted small"><Trans>Open its manuscript to review it</Trans></span>}
                 </li>
               ))}
             </ul>
-            <p className="muted small">A draft is what was typed but not saved to the collection. Opening its manuscript offers it back.</p>
+            <p className="muted small"><Trans>A draft is what was typed but not saved to the collection. Opening its manuscript offers it back.</Trans></p>
           </section>
         )}
         {continuing && manuscripts && manuscripts.length > 0 && (
@@ -234,7 +240,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
         {manuscripts && manuscripts.length >= SEARCH_FROM && (
           <label className="home-search">
             <SearchIcon />
-            <input className="mdbase-field" type="search" value={filter} onChange={(e) => { setFilter(e.target.value); setLimit(50); }} placeholder="Find a manuscript" aria-label="Find a manuscript" />
+            <input className="mdbase-field" type="search" value={filter} onChange={(e) => { setFilter(e.target.value); setLimit(50); }} placeholder={t`Find a manuscript`} aria-label={t`Find a manuscript`} />
           </label>
         )}
         {manuscripts && manuscripts.length > 0 && (
@@ -247,9 +253,9 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
                     {[
                       m.template ? templateName(m.template) : null,
                       m.style ? styleName(m.style) : null,
-                      (summaries.get(m.path)?.embeds ?? m.embeds) ? `${summaries.get(m.path)?.embeds ?? m.embeds} chapters` : null,
+                      (summaries.get(m.path)?.embeds ?? m.embeds) ? icuPlural(summaries.get(m.path)?.embeds ?? m.embeds ?? 0, { one: "# chapter", other: "# chapters" }) : null,
                       wordsLabel(summaries.get(m.path)?.words ?? m.words),
-                      m.modified ? `edited ${relativeTime(m.modified)}` : null,
+                      m.modified ? t`edited ${relativeTime(m.modified)}` : null,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -259,24 +265,24 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
             ))}
           </ul>
         )}
-        {shown.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}>Show 50 more manuscripts · {shown.length}</button>}
-        {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted">No manuscript matches “{filter}”.</p>}
+        {shown.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}><Trans>Show 50 more manuscripts · {shown.length}</Trans></button>}
+        {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted"><Trans>No manuscript matches “{filter}”.</Trans></p>}
         {unavailable.length > 0 && <div className="home-unavailable" role="status">
           {unavailable.map((t) => <p key={t.name} className="muted">{t.message}</p>)}
         </div>}
-        {untypedShown.length > 0 && <section className="home-untyped" aria-label="Notes without a type">
-          <h2>Notes without a type</h2>
+        {untypedShown.length > 0 && <section className="home-untyped" aria-label={t`Notes without a type`}>
+          <h2><Trans>Notes without a type</Trans></h2>
           <ul className="manuscripts">
             {(allUntyped ? untypedShown : untypedShown.slice(0, UNTYPED_SHOWN)).map((path) => <li key={path}>
               <button type="button" className="manuscript-row" onClick={() => onOpen(path)} title={path}>
                 <span className="manuscript-title">{noteName(path)}</span>
-                <span className="manuscript-meta">No type · {path}</span>
+                <span className="manuscript-meta"><Trans>No type · {path}</Trans></span>
               </button>
             </li>)}
           </ul>
-          {!allUntyped && untypedShown.length > UNTYPED_SHOWN && <button type="button" className="sidebar-more" onClick={() => setAllUntyped(true)}>Show all {untypedShown.length} notes without a type</button>}
+          {!allUntyped && untypedShown.length > UNTYPED_SHOWN && <button type="button" className="sidebar-more" onClick={() => setAllUntyped(true)}><Trans>Show all {untypedShown.length} notes without a type</Trans></button>}
         </section>}
-        {problem && !dialog && !unavailable.some((t) => t.message === problem) && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}>Retry loading</button></div>}
+        {problem && !dialog && !unavailable.some((t) => t.message === problem) && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}><Trans>Retry loading</Trans></button></div>}
       </section>
 
       <NewManuscriptDialog backend={backend} open={dialog} onClose={() => setDialog(false)} onOpen={onOpen} candidates={candidates} />
@@ -292,6 +298,7 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
   onOpen(path: string): void;
   candidates: readonly string[];
 }) {
+  useLingui();
   const [title, setTitle] = useState("");
   const [template, setTemplate] = useState<TemplateName>("article");
   const [style, setStyle] = useState<StyleId>("chicago-notes-bibliography");
@@ -331,7 +338,7 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
         signalMdbaseMark("error");
       }
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "Could not create the manuscript. Please try again.");
+      setProblem(error instanceof Error ? error.message : t`Could not create the manuscript. Please try again.`);
       signalMdbaseMark("error");
     } finally {
       setCreating(false);
@@ -352,7 +359,7 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
         signalMdbaseMark("error");
       }
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "Could not use the note as a manuscript. Please try again.");
+      setProblem(error instanceof Error ? error.message : t`Could not use the note as a manuscript. Please try again.`);
       signalMdbaseMark("error");
     } finally {
       setAdopting(false);
@@ -368,11 +375,11 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
           setUntitled(false);
           setProblem(null);
         }}
-        title="New manuscript"
+        title={t`New manuscript`}
         className="new-dialog"
       >
         <form className="new-manuscript" onSubmit={(e) => void create(e)}>
-          <label className="span-2">
+          <label className="span-2"><Trans>
             Title
             <input
               ref={titleField}
@@ -382,43 +389,43 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
                 setTitle(e.target.value);
                 setUntitled(false);
               }}
-              placeholder="On the formation of coral reefs"
+              placeholder={t`On the formation of coral reefs`}
               aria-invalid={untitled || undefined}
               aria-describedby={untitled ? "new-title-problem" : undefined}
               autoFocus
             />
-            {untitled && <span id="new-title-problem" className="field-problem severity-error">Give the manuscript a title; it can be changed later.</span>}
-          </label>
-          <label>
+            {untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>}
+          </Trans></label>
+          <label><Trans>
             Layout
-            <Select aria-label="Layout" value={template} options={TEMPLATE_OPTIONS} onChange={setTemplate} />
-          </label>
-          <label>
+            <Select aria-label={t`Layout`} value={template} options={templateOptions()} onChange={setTemplate} />
+          </Trans></label>
+          <label><Trans>
             Citation style
-            <Select aria-label="Citation style" value={style} options={STYLE_OPTIONS} onChange={setStyle} />
-          </label>
-          <label className="span-2 starter-option"><input type="checkbox" checked={starter} onChange={(event) => setStarter(event.target.checked)} /> Include a worked example of citations, figures and chapters</label>
+            <Select aria-label={t`Citation style`} value={style} options={styleOptions()} onChange={setStyle} />
+          </Trans></label>
+          <label className="span-2 starter-option"><Trans><input type="checkbox" checked={starter} onChange={(event) => setStarter(event.target.checked)} /> Include a worked example of citations, figures and chapters</Trans></label>
           <button className="mdbase-button is-primary" type="submit" disabled={creating || adopting}>
-            {creating ? "Creating…" : "Create manuscript"}
+            {creating ? t`Creating…` : t`Create manuscript`}
           </button>
         </form>
         {adoptOpen ? (
           <>
-            <div className="or-divider" role="separator"><span>or use a note you already have</span></div>
+            <div className="or-divider" role="separator"><span><Trans>or use a note you already have</Trans></span></div>
             <form className="adopt-note" onSubmit={(e) => void adopt(e)}>
               <NotePicker notes={candidates} value={notePath} onChange={setNotePath} />
               <button className="mdbase-button" type="submit" disabled={creating || adopting || !candidates.includes(notePath)}>
-                {adopting ? "Updating…" : "Use as manuscript"}
+                {adopting ? t`Updating…` : t`Use as manuscript`}
               </button>
             </form>
-            <p className="muted small">Adds the manuscript type to the note. Its other types, text and location stay as they are.</p>
+            <p className="muted small"><Trans>Adds the manuscript type to the note. Its other types, text and location stay as they are.</Trans></p>
           </>
         ) : (
           candidates.length > 0 && (
             <p className="adopt-offer">
-              <button type="button" className="text-button" onClick={() => setAdoptOpen(true)}>
+              <button type="button" className="text-button" onClick={() => setAdoptOpen(true)}><Trans>
                 Use a note you already have…
-              </button>
+              </Trans></button>
             </p>
           )
         )}
@@ -427,7 +434,7 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
   );
 }
 
-const wordsLabel = (words: number | undefined) => (words === undefined ? null : `${words.toLocaleString()} ${words === 1 ? "word" : "words"}`);
+const wordsLabel = (words: number | undefined) => words === undefined ? null : countLabel(words, "word");
 
 /**
  * Words in the records a body embeds on lines of their own, and in the
@@ -449,6 +456,7 @@ async function chapterWords(read: (path: string) => Promise<Result<string>>, fro
 
 /** Finds a note by its name or folder; the notes listed are the closest matches. */
 function NotePicker({ notes, value, onChange }: { notes: readonly string[]; value: string; onChange(path: string): void }) {
+  useLingui();
   const [query, setQuery] = useState("");
   const listId = useId();
   const matches = useMemo(() => {
@@ -459,14 +467,14 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
   const more = notes.length > NOTES_SHOWN && matches.length === NOTES_SHOWN;
   return (
     <div className="note-picker">
-      <label>
+      <label><Trans>
         Note
-        <input className="mdbase-field" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find a note by name or folder" aria-controls={listId} />
-      </label>
+        <input className="mdbase-field" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t`Find a note by name or folder`} aria-controls={listId} />
+      </Trans></label>
       {notes.length === 0 ? (
-        <p className="muted small">No other notes in this collection.</p>
+        <p className="muted small"><Trans>No other notes in this collection.</Trans></p>
       ) : (
-        <ul id={listId} className="note-list" role="listbox" aria-label="Notes">
+        <ul id={listId} className="note-list" role="listbox" aria-label={t`Notes`}>
           {matches.map((p) => {
             const folder = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
             return (
@@ -478,8 +486,8 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
               </li>
             );
           })}
-          {!matches.length && <li className="muted small">No note matches “{query}”.</li>}
-          {more && <li className="muted small">Type to find others.</li>}
+          {!matches.length && <li className="muted small"><Trans>No note matches “{query}”.</Trans></li>}
+          {more && <li className="muted small"><Trans>Type to find others.</Trans></li>}
         </ul>
       )}
     </div>
@@ -488,6 +496,7 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
 
 /** The manuscript opened last: pick up where writing stopped, and see how far it is against a goal. */
 function ContinueCard({ manuscript, words, goal, onGoal, onOpen }: { manuscript: ManuscriptSummary; words: number | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void }) {
+  useLingui();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(goal ? String(goal) : "");
   const goalId = useId();
@@ -506,32 +515,32 @@ function ContinueCard({ manuscript, words, goal, onGoal, onOpen }: { manuscript:
   return (
     <section className="continue-card" aria-labelledby={`${goalId}-title`}>
       <div className="continue-text">
-        <span className="muted small">Continue writing</span>
+        <span className="muted small"><Trans>Continue writing</Trans></span>
         <h2 id={`${goalId}-title`} className="continue-title">{manuscript.title}</h2>
         <span className="muted small">
-          {[wordsLabel(words), manuscript.modified ? `edited ${relativeTime(manuscript.modified)}` : null].filter(Boolean).join(" · ")}
-          {goal && words !== undefined && <> · {Math.round((words / goal) * 100)}% of {goal.toLocaleString()}</>}
+          {[wordsLabel(words), manuscript.modified ? t`edited ${relativeTime(manuscript.modified)}` : null].filter(Boolean).join(" · ")}
+          {goal && words !== undefined && <><Trans> · {Math.round((words / goal) * 100)}% of {formatNumber(goal)}</Trans></>}
         </span>
-        {progress !== null && <span className="continue-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label="Progress to the word goal"><span style={{ width: `${progress * 100}%` }} /></span>}
+        {progress !== null && <span className="continue-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={t`Progress to the word goal`}><span style={{ width: `${progress * 100}%` }} /></span>}
         {editing ? (
           <form className="goal-form" onSubmit={submit}>
             <label>
-              <span className="visually-hidden">Word goal</span>
-              <input className="mdbase-field" inputMode="numeric" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Words, e.g. 8000" autoFocus />
+              <span className="visually-hidden"><Trans>Word goal</Trans></span>
+              <input className="mdbase-field" inputMode="numeric" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={t`Words, e.g. 8000`} autoFocus />
             </label>
-            <button type="submit" className="mdbase-button is-small">Set goal</button>
-            {goal && <button type="button" className="text-button is-quiet" onClick={() => { onGoal(null); setEditing(false); }}>Remove</button>}
-            <button type="button" className="text-button is-quiet" onClick={() => setEditing(false)}>Cancel</button>
+            <button type="submit" className="mdbase-button is-small"><Trans>Set goal</Trans></button>
+            {goal && <button type="button" className="text-button is-quiet" onClick={() => { onGoal(null); setEditing(false); }}><Trans>Remove</Trans></button>}
+            <button type="button" className="text-button is-quiet" onClick={() => setEditing(false)}><Trans>Cancel</Trans></button>
           </form>
         ) : (
-          <button type="button" className="text-button is-quiet continue-goal" onClick={() => setEditing(true)}>{goal ? "Change the word goal" : "Set a word goal"}</button>
+          <button type="button" className="text-button is-quiet continue-goal" onClick={() => setEditing(true)}>{goal ? t`Change the word goal` : t`Set a word goal`}</button>
         )}
       </div>
-      <button type="button" className="mdbase-button is-primary" onClick={onOpen}>
+      <button type="button" className="mdbase-button is-primary" onClick={onOpen}><Trans>
         <PenIcon />
         Continue
         <ChevronRight className="chevron" />
-      </button>
+      </Trans></button>
     </section>
   );
 }

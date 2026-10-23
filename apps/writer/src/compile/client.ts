@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // Typed, bounded handle on the compile worker. Every request settles on failure/disposal.
 import type { CompileResult, FromWorker, ToWorker } from "./protocol.js";
 
@@ -20,7 +21,7 @@ export class CompileClient {
     this.ready = new Promise((resolve, reject) => { resolveReady = resolve; this.rejectReady = reject; });
     // The workspace listens for failures; consumers may additionally await readiness.
     void this.ready.catch(() => {});
-    this.initTimer = setTimeout(() => this.fail("The preview took too long to load. Retry the preview."), 60_000);
+    this.initTimer = setTimeout(() => this.fail(t`The preview took too long to load. Retry the preview.`), 60_000);
     this.worker.onmessage = (event: MessageEvent<FromWorker>) => {
       const m = event.data;
       if (m.type === "ready") { clearTimeout(this.initTimer); resolveReady(m.initMs); }
@@ -29,11 +30,11 @@ export class CompileClient {
         this.compileTimer = undefined;
         for (const l of this.resultListeners) l(m);
       }
-      else if (m.type === "pdf") this.pdfWaiters.get(m.id)?.(m);
+      else if (m.type === "pdf") this.pdfWaiters.get(m.id)?.(m.reason === "document-errors" ? { error: t`The document has errors; fix them to export.` } : m);
       else if (m.type === "failure") this.fail(m.message);
     };
-    this.worker.onerror = (event) => { event.preventDefault(); this.fail(event.message || "The compile worker stopped."); };
-    this.worker.onmessageerror = () => this.fail("The preview worker returned an unreadable response.");
+    this.worker.onerror = (event) => { event.preventDefault(); this.fail(event.message || t`The compile worker stopped.`); };
+    this.worker.onmessageerror = () => this.fail(t`The preview worker returned an unreadable response.`);
   }
   private fail(message: string): void {
     if (this.stopped) return;
@@ -48,7 +49,7 @@ export class CompileClient {
   send(message: ToWorker, transfer: Transferable[] = []): void {
     if (this.stopped) return;
     if (message.type !== "prepare" && message.type !== "init" && message.type !== "export-pdf" && this.compileTimer === undefined) {
-      this.compileTimer = setTimeout(() => this.fail("Typesetting took too long. Your editor is still available; retry the preview."), 60_000);
+      this.compileTimer = setTimeout(() => this.fail(t`Typesetting took too long. Your editor is still available; retry the preview.`), 60_000);
     }
     try { this.worker.postMessage(message, transfer); }
     catch (error) { this.fail(error instanceof Error ? error.message : String(error)); }
@@ -71,13 +72,13 @@ export class CompileClient {
         this.pdfWaiters.delete(id);
         resolve(outcome);
       };
-      const abort = () => finish({ error: "Export cancelled." });
-      const timer = setTimeout(() => finish({ error: "PDF export timed out. Retry the preview and export again." }), 60_000);
+      const abort = () => finish({ error: t`Export cancelled.` });
+      const timer = setTimeout(() => finish({ error: t`PDF export timed out. Retry the preview and export again.` }), 60_000);
       this.pdfWaiters.set(id, finish);
       signal?.addEventListener("abort", abort, { once: true });
       if (signal?.aborted) return abort();
       this.send({ type: "export-pdf", id, ...(sources ? { sources } : {}) });
     });
   }
-  terminate(): void { this.fail("The manuscript was closed."); }
+  terminate(): void { this.fail(t`The manuscript was closed.`); }
 }

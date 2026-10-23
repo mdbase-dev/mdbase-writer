@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { diagnosticMessage } from "../i18n/diagnostics.js";
 // One open manuscript: its record sessions, the compile worker, and a single
 // snapshot the UI renders from.
 //
@@ -300,11 +302,11 @@ export class ManuscriptWorkspace {
       await Promise.all(annotations ? Object.values(this.metadataJobs) : [index ? this.metadataJobs.indexLoad : undefined, this.metadataJobs.libraryLoad]);
       if (this.disposed || generation === this.metadataGeneration) break;
     }
-    if (this.disposed) throw new Error("The manuscript was closed.");
+    if (this.disposed) throw new Error(t`The manuscript was closed.`);
     // Annotation discovery is optional: a real failure is visible, not a preview/export gate.
     for (const domain of (index ? ["indexLoad", "libraryLoad"] : ["libraryLoad"]) as MetadataDomain[]) {
       const state = this.current[domain];
-      if (state.phase !== "ready") throw new Error(state.problem ?? "Collection metadata is still loading.");
+      if (state.phase !== "ready") throw new Error(state.problem ?? t`Collection metadata is still loading.`);
     }
   }
 
@@ -385,7 +387,7 @@ export class ManuscriptWorkspace {
 
   /** Asks Connect to approve Writer again (to allow the identity permission), then checks the account. */
   async reviewIdentityAccess(): Promise<Result<void>> {
-    if (!this.backend.reviewIdentityAccess) return fail("Writer cannot ask for access here.");
+    if (!this.backend.reviewIdentityAccess) return fail(t`Writer cannot ask for access here.`);
     const reviewed = await this.backend.reviewIdentityAccess();
     if (reviewed.ok) await this.refreshPeople();
     return reviewed;
@@ -565,7 +567,7 @@ export class ManuscriptWorkspace {
     const staged = this.stagedSettings.get(path);
     if (staged || raw.dirty || raw.state === "conflict" || raw.state === "error" || raw.state === "deleted" && raw.body !== raw.record.body) {
       const stored = this.drafts.write(path, { version: 1, body: raw.body, frontmatter: { ...raw.frontmatter, ...staged }, baseBody: raw.record.body ?? "", baseFrontmatter: raw.record.frontmatter, revision: raw.record.revision, updated: new Date().toISOString() });
-      if (!stored) this.update({ draftProblem: "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails." });
+      if (!stored) this.update({ draftProblem: t`Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails.` });
     } else this.drafts.remove(path);
   }
 
@@ -642,12 +644,12 @@ export class ManuscriptWorkspace {
       for (const image of translated.images) {
         const asset = resolveLinkTarget(image.target, path, candidates, "");
         const problem = asset && this.current.assetProblems.get(asset);
-        if (problem) diagnostics.push({ record: path, from: image.from, to: image.to, severity: "error" as const, origin: "writer" as const, message: `Image could not be loaded: ${problem}` });
+        if (problem) diagnostics.push({ record: path, from: image.from, to: image.to, severity: "error" as const, origin: "writer" as const, message: t`Image could not be loaded: ${problem}` });
       }
       for (const embed of translated.includes) {
         const target = resolveLinkTarget(embed.target, path, recordPaths);
         const problem = target && this.current.recordProblems.get(target);
-        if (problem) diagnostics.push({ record: path, from: embed.from, to: embed.to, severity: "error" as const, origin: "writer" as const, message: `Embedded record could not be loaded: ${problem}` });
+        if (problem) diagnostics.push({ record: path, from: embed.from, to: embed.to, severity: "error" as const, origin: "writer" as const, message: t`Embedded record could not be loaded: ${problem}` });
       }
     }
     return diagnostics;
@@ -745,7 +747,7 @@ export class ManuscriptWorkspace {
    */
   async addChapter(title: string, intent?: string): Promise<Result<string>> {
     const name = title.trim();
-    if (!name) return fail("A chapter needs a title.");
+    if (!name) return fail(t`A chapter needs a title.`);
     const first = this.chapterPaths().find((p): p is string => Boolean(p));
     const folder = first?.includes("/") ? first.slice(0, first.lastIndexOf("/")) : "chapters";
     const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`, intent);
@@ -769,9 +771,9 @@ export class ManuscriptWorkspace {
    */
   renameChapter(path: string, title: string): Result<void> {
     const name = title.trim();
-    if (!name) return fail("A chapter needs a title.");
+    if (!name) return fail(t`A chapter needs a title.`);
     const view = this.current.records.get(path);
-    if (!view || view.snapshot.state === "deleted") return fail("The chapter is not open.");
+    if (!view || view.snapshot.state === "deleted") return fail(t`The chapter is not open.`);
     if (typeof view.snapshot.frontmatter["title"] === "string") {
       this.patchFrontmatter(path, { title: name });
       return ok(undefined);
@@ -797,9 +799,9 @@ export class ManuscriptWorkspace {
    * fresh listing.
    */
   async addFigure(file: { name: string; bytes: Uint8Array; type?: string }): Promise<Result<string>> {
-    if (!this.backend.writeFile) return fail("This collection does not accept files from Writer.");
+    if (!this.backend.writeFile) return fail(t`This collection does not accept files from Writer.`);
     const extension = /\.[a-z0-9]{1,5}$/i.exec(file.name)?.[0]?.toLowerCase() ?? "";
-    if (!IMAGE_EXTENSION.test(extension)) return fail("Figures must be PNG, JPEG, GIF, SVG or WebP images.");
+    if (!IMAGE_EXTENSION.test(extension)) return fail(t`Figures must be PNG, JPEG, GIF, SVG or WebP images.`);
     const stem = manuscriptSlug(file.name.slice(0, file.name.length - extension.length)) || "figure";
     const used = [...this.current.fileIndex].find((p) => IMAGE_EXTENSION.test(p) && p.includes("/"));
     const folder = used ? used.slice(0, used.lastIndexOf("/")) : "figures";
@@ -908,9 +910,9 @@ export class ManuscriptWorkspace {
    */
   async acceptSuggestion(record: string, suggestion: CommentRecord): Promise<Result<CommentRecord>> {
     const body = this.current.records.get(record)?.snapshot.body;
-    if (body === undefined || !suggestion.target || !suggestion.suggestion) return fail("That record is not open.");
+    if (body === undefined || !suggestion.target || !suggestion.suggestion) return fail(t`That record is not open.`);
     const next = applySuggestion(body, suggestion.target, suggestion.suggestion.replacement);
-    if (next === null) return fail("The suggested text is no longer in the record; edit it by hand, then resolve the suggestion.");
+    if (next === null) return fail(t`The suggested text is no longer in the record; edit it by hand, then resolve the suggestion.`);
     this.setBody(record, next);
     return this.changeComment(suggestion, { kind: "resolve", outcome: "accepted" });
   }
@@ -928,12 +930,12 @@ export class ManuscriptWorkspace {
     const problems: string[] = [];
     await Promise.all([...this.leases].filter(([at]) => !path || at === path).map(async ([at, { lease }]) => {
       try {
-        if (lease.session.getSnapshot().state === "deleted") { problems.push(`${at}: this record was deleted; download the local draft before leaving.`); return; }
+        if (lease.session.getSnapshot().state === "deleted") { problems.push(t`${at}: this record was deleted; download the local draft before leaving.`); return; }
         const out = await lease.session.flush({ timeoutMs: 15_000 });
         if (!out.ok) problems.push(`${at}: ${out.problem.message ?? out.problem.code}`);
       } catch (error) { problems.push(`${at}: ${errorMessage(error)}`); }
     }));
-    if (this.current.recoveredDrafts.size) problems.push("Review the recovered local drafts before leaving.");
+    if (this.current.recoveredDrafts.size) problems.push(t`Review the recovered local drafts before leaving.`);
     return problems.length ? fail(problems.join("\n")) : ok(undefined);
   }
 
@@ -972,8 +974,8 @@ export class ManuscriptWorkspace {
   private async preflight(signal?: AbortSignal) {
     const check = () => {
       signal?.throwIfAborted();
-      if (this.disposed) throw new Error("The manuscript was closed.");
-      if (this.current.phase !== "ready") throw new Error("Wait for the manuscript to open before exporting.");
+      if (this.disposed) throw new Error(t`The manuscript was closed.`);
+      if (this.current.phase !== "ready") throw new Error(t`Wait for the manuscript to open before exporting.`);
     };
     check();
     this.commitSettings();
@@ -999,11 +1001,11 @@ export class ManuscriptWorkspace {
       const assets = assembly.assets.filter((path) => !attemptedAssets.has(path));
       if (!records.length && !assets.length) {
         const problems = [...new Set([
-          ...(snap.annotationsLoad.phase === "failed" ? [`Annotation discovery unavailable: ${snap.annotationsLoad.problem}. Quotation metadata may be incomplete.`] : []),
-          ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnostic.message}`),
-          ...assembly.unloaded.map((path) => `${path}: ${snap.recordProblems.get(path) ?? "Not loaded; it will be left out."}`),
+          ...(snap.annotationsLoad.phase === "failed" ? [t`Annotation discovery unavailable: ${snap.annotationsLoad.problem ?? ""}. Quotation metadata may be incomplete.`] : []),
+          ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnosticMessage(diagnostic.message, diagnostic.copy)}`),
+          ...assembly.unloaded.map((path) => `${path}: ${snap.recordProblems.get(path) ?? t`Not loaded; it will be left out.`}`),
           ...assembly.assets.flatMap((path) => snap.assetProblems.has(path) ? [`${path}: ${snap.assetProblems.get(path)}`] : []),
-          ...assembly.order.flatMap((path) => snap.recoveredDrafts.has(path) ? [`${path}: A recovered draft has not been reviewed; the collection version will be exported.`] : []),
+          ...assembly.order.flatMap((path) => snap.recoveredDrafts.has(path) ? [t`${path}: A recovered draft has not been reviewed; the collection version will be exported.`] : []),
         ])];
         return { input, assembly, problems };
       }
@@ -1014,7 +1016,7 @@ export class ManuscriptWorkspace {
         this.loadAssets(assets),
       ]);
     }
-    throw new Error("The manuscript kept changing while export dependencies were loading. Pause editing and try again.");
+    throw new Error(t`The manuscript kept changing while export dependencies were loading. Pause editing and try again.`);
   }
 
   async exportPdf(signal?: AbortSignal): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {
@@ -1028,7 +1030,7 @@ export class ManuscriptWorkspace {
 
   private async materialize(crossReferences: "quarto" | "resolved", signal?: AbortSignal) {
     const prepared = await this.preflight(signal);
-    const out = materialize({ ...prepared.input, crossReferences });
+    const out = materialize({ ...prepared.input, crossReferences, formatProblem: diagnosticMessage });
     const problems = [...new Set([...prepared.problems, ...out.problems])];
     const media: [string, Uint8Array][] = [];
     for (const [collectionPath, bundled] of out.media) {
@@ -1062,7 +1064,7 @@ export class ManuscriptWorkspace {
    */
   async exportDocx(signal?: AbortSignal): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {
     const { out, media, problems, meta } = await this.materialize("resolved", signal);
-    if (meta.customTemplate) problems.push("Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ.");
+    if (meta.customTemplate) problems.push(t`Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ.`);
     const template = meta.customTemplate ? "article" : meta.template;
     // The layout's Word styles (public/docx, from scripts/reference-docx.mjs).
     const referenceResponse = await fetchChecked(`${import.meta.env.BASE_URL}docx/${template}.docx`, signal);

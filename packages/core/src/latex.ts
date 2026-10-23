@@ -6,10 +6,13 @@
 // 2. mitex accepts malformed input silently, so structural errors (unbalanced
 //    braces, \left without \right, mismatched environments) are linted here.
 
+import type { DiagnosticCopy } from "./diagnostics.js";
+
 export interface MathProblem {
   /** Offset within the LaTeX source. */
   readonly offset: number;
   readonly message: string;
+  readonly copy?: DiagnosticCopy;
 }
 
 const SIZED_DELIMITER = /\\(?:left|right|middle|big|Big|bigg|Bigg)[lrm]?$/;
@@ -64,9 +67,9 @@ export function lintMath(latex: string): MathProblem[] {
           if (name === "begin") envs.push({ name: env[1] ?? "", offset: i });
           else {
             const open = envs.pop();
-            if (!open) problems.push({ offset: i, message: `\\end{${env[1]}} has no matching \\begin.` });
+            if (!open) problems.push({ offset: i, message: `\\end{${env[1]}} has no matching \\begin.`, copy: { code: "math-end-unmatched", values: [env[1] ?? ""] } });
             else if (open.name !== env[1]) {
-              problems.push({ offset: i, message: `\\end{${env[1]}} closes \\begin{${open.name}}.` });
+              problems.push({ offset: i, message: `\\end{${env[1]}} closes \\begin{${open.name}}.`, copy: { code: "math-env-mismatch", values: [env[1] ?? "", open.name] } });
             }
           }
         }
@@ -76,15 +79,15 @@ export function lintMath(latex: string): MathProblem[] {
     }
     if (ch === "{") braces.push(i);
     else if (ch === "}") {
-      if (braces.pop() === undefined) problems.push({ offset: i, message: "Unmatched closing brace." });
+      if (braces.pop() === undefined) problems.push({ offset: i, message: "Unmatched closing brace.", copy: { code: "math-brace-unmatched" } });
     }
   }
-  for (const at of braces) problems.push({ offset: at, message: "Unclosed brace." });
-  for (const env of envs) problems.push({ offset: env.offset, message: `\\begin{${env.name}} is never closed.` });
+  for (const at of braces) problems.push({ offset: at, message: "Unclosed brace.", copy: { code: "math-brace-unclosed" } });
+  for (const env of envs) problems.push({ offset: env.offset, message: `\\begin{${env.name}} is never closed.`, copy: { code: "math-env-unclosed", values: [env.name] } });
   const leftCount = (latex.match(/\\left(?![A-Za-z])/g) ?? []).length;
   const rightCount = (latex.match(/\\right(?![A-Za-z])/g) ?? []).length;
   if (leftCount !== rightCount) {
-    problems.push({ offset: Math.max(0, latex.search(/\\(left|right)(?![A-Za-z])/)), message: `${leftCount} \\left but ${rightCount} \\right.` });
+    problems.push({ offset: Math.max(0, latex.search(/\\(left|right)(?![A-Za-z])/)), message: `${leftCount} \\left but ${rightCount} \\right.`, copy: { code: "math-delimiters", values: [leftCount, rightCount] } });
   }
   return problems.sort((a, b) => a.offset - b.offset);
 }

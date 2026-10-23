@@ -1,3 +1,5 @@
+import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react";
 import "@mdbase-dev/ui/fonts.css";
 import "@mdbase-dev/ui/tokens.css";
 import "@mdbase-dev/ui/brand.css";
@@ -10,6 +12,7 @@ import "./feedback-shell.css";
 import "./styles.css";
 
 import { StrictMode } from "react";
+import { AppI18nProvider } from "./i18n/provider.js";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App.js";
@@ -32,8 +35,8 @@ const sdk = grantReturn || writerDemoRequested() ? undefined : writerMdbaseForBu
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root");
 createRoot(root).render(
-  <StrictMode>
-    {grantReturn ? <p className="grant-return">You can close this window.</p>
+  <StrictMode><AppI18nProvider>
+    {grantReturn ? <p className="grant-return"><Trans>You can close this window.</Trans></p>
       : <FeedbackRoot><App {...(sdk ? {sdk} : {})} /></FeedbackRoot>}
-  </StrictMode>,
+  </AppI18nProvider></StrictMode>,
 );

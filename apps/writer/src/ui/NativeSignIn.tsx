@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import {
@@ -17,10 +20,12 @@ interface NativeSignInProps {
 
 /** Presentation/actions only: no polling, custody, grants or session engine. */
 export function NativeSignIn(props: NativeSignInProps) {
+  useLingui();
   return <NativeSignInView key={props.binding.viewKey} {...props} />;
 }
 
 function NativeSignInView({ binding, onSignedOut }: NativeSignInProps) {
+  useLingui();
   const { session, portal } = binding;
   const snapshot = useSyncExternalStore(
     (listener) => session.subscribe(listener),
@@ -107,8 +112,8 @@ function NativeSignInView({ binding, onSignedOut }: NativeSignInProps) {
   const authorize = () => authorizeNativeSignIn(session, portal);
 
   return (
-    <ConnectLayout app="writer" title="Write from your collection">
-      <section aria-label="Sign-in status">
+    <ConnectLayout app="writer" title={t`Write from your collection`}>
+      <section aria-label={t`Sign-in status`}>
         {view.identity ? <p>{view.identity}</p> : null}
         <p role={view.error ? "alert" : "status"} aria-live="polite">
           {view.message}
@@ -153,9 +158,9 @@ function NativeSignInView({ binding, onSignedOut }: NativeSignInProps) {
                 const collectionId = snapshot.selectedCollectionId;
                 if (collectionId) void act(() => session.forget(collectionId));
               }}
-            >
+            ><Trans>
               Forget collection
-            </button>
+            </Trans></button>
           ) : null}
         </div>
       </section>

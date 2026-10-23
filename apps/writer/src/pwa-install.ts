@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // Keep this small, dependency-free module aligned across writer, reader and editor.
 interface InstallEvent extends Event {
   prompt(): Promise<void>;
@@ -57,16 +58,16 @@ export function setupPwaInstall(appName: string): () => void {
     }
     banner = document.createElement("section");
     banner.className = "pwa-install";
-    banner.setAttribute("aria-label", `Install ${appName}`);
+    banner.setAttribute("aria-label", t`Install ${appName}`);
     const message = document.createElement("p");
     message.textContent = pending
-      ? `Install ${appName} for quick access in its own window.`
-      : `Add ${appName} to your Home Screen: tap Share, then Add to Home Screen.`;
+      ? t`Install ${appName} for quick access in its own window.`
+      : t`Add ${appName} to your Home Screen: tap Share, then Add to Home Screen.`;
     banner.append(message);
     if (pending) {
       const install = document.createElement("button");
       install.type = "button";
-      install.textContent = "Install";
+      install.textContent = t`Install`;
       const installApp = async (): Promise<void> => {
         const event = pending;
         if (!event) {
@@ -93,7 +94,7 @@ export function setupPwaInstall(appName: string): () => void {
     }
     const later = document.createElement("button");
     later.type = "button";
-    later.textContent = "Not now";
+    later.textContent = t`Not now`;
     later.addEventListener("click", dismiss);
     banner.append(later);
     document.body.append(banner);

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // What the editor can tell about a citation or cross-reference: hover a
 // `@key` to see the source's bibliography entry or the labelled block it
 // points to; Mod-click it to go there. Label attributes (`{#sec-intro}`) and
@@ -174,7 +175,7 @@ function tip(kind: string, body: (el: HTMLElement) => void, hint?: string): HTML
   return dom;
 }
 
-export const LABEL_KINDS: Record<string, string> = { sec: "Section", fig: "Figure", tbl: "Table", eq: "Equation", lst: "Listing" };
+export const LABEL_KINDS: Record<string, string> = { get sec() { return t`Section`; }, get fig() { return t`Figure`; }, get tbl() { return t`Table`; }, get eq() { return t`Equation`; }, get lst() { return t`Listing`; } };
 
 function resolve(insight: EditorInsight, key: string): FollowTarget | null {
   const label = insight.labels.get(key);
@@ -194,12 +195,12 @@ export function referenceTooltip(view: EditorView, pos: number, data: EditorInsi
       above: true,
       create: () => {
         if (target?.kind === "label") {
-          const kind = LABEL_KINDS[ref.key.split("-")[0] ?? ""] ?? "Label";
+          const kind = LABEL_KINDS[ref.key.split("-")[0] ?? ""] ?? t`Label`;
           return {
             dom: tip(
               kind,
               (el) => (el.textContent = target.target.text || ref.key),
-              `${target.target.record} · ${MOD_LABEL}-click to go there`,
+              t`${target.target.record} · ${MOD_LABEL}-click to go there`,
             ),
           };
         }
@@ -208,13 +209,13 @@ export function referenceTooltip(view: EditorView, pos: number, data: EditorInsi
           const reference = data.references.get(ref.key);
           return {
             dom: tip(
-              "Source",
+              t`Source`,
               (el) => (reference ? renderMarkup(parseReference(reference), el) : (el.textContent = `${authorYear(entry)}. ${entry.title}`)),
-              `${MOD_LABEL}-click to show in Sources`,
+              t`${MOD_LABEL}-click to show in Sources`,
             ),
           };
         }
-        return { dom: tip("Unknown", (el) => (el.textContent = `No source or label is called “${ref.key}”.`)) };
+        return { dom: tip(t`Unknown`, (el) => (el.textContent = t`No source or label is called “${ref.key}”.`)) };
       },
     };
 }

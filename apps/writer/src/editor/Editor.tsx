@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // The Markdown editor for one record. The record session owns the text; the
 // editor reports edits and adopts external changes as remote transactions.
 import { mdbasePopupTheme } from "@mdbase-dev/ui/codemirror";
@@ -6,9 +8,11 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Annotation, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
+import { englishCodeMirrorPhrases, loadCodeMirrorPhrases } from "@mdbase-dev/i18n/codemirror";
+import { isLocale } from "@mdbase-dev/i18n";
+import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
-import { memo, useEffect, useLayoutEffect, useRef } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
@@ -24,6 +28,10 @@ import { slashCommands, type InsertCommand } from "./slash.js";
 import { nextFootnoteId, type Snippet } from "./snippets.js";
 
 const remote = Annotation.define<boolean>();
+// WorkspaceView keys editors by chapter. Keep resolved phrases outside that
+// lifetime so a remounted chapter starts localized, without a deferred redraw
+// racing CodeMirror's retained-scroll measurement. English stays synchronous.
+const phraseCache = new Map([["en", englishCodeMirrorPhrases]]);
 
 export interface EditorHandle {
   /** Scrolls to `offset` (selecting up to `to`, when given) and focuses the editor unless `focus` is false. */
@@ -86,6 +94,18 @@ export interface EditorProps {
 }
 
 export const Editor = memo(function Editor({ states, path, text, readOnly, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
+  const { i18n } = useLingui();
+  const locale = isLocale(i18n.locale) ? i18n.locale : "en";
+  const language = useRef(new Compartment());
+  const cachedPhrases = phraseCache.get(locale);
+  const phrases = useRef(cachedPhrases ?? englishCodeMirrorPhrases);
+  const phraseLocale = useRef(cachedPhrases ? locale : "en");
+  const [phraseProblem, setPhraseProblem] = useState(false);
+  const translatedExtensions = () => [
+    EditorState.phrases.of(phrases.current),
+    placeholder(t`Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table.`),
+    EditorView.contentAttributes.of({ "aria-label": t`Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
+  ];
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   // Texts this editor reported, newest last. The session echoes them back
@@ -155,8 +175,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
           EditorView.lineWrapping,
           EditorState.readOnly.of(readOnly),
           EditorView.editable.of(!readOnly),
-          placeholder("Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."),
-          EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
+          language.current.of(translatedExtensions()),
           EditorView.updateListener.of((u) => {
             if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);
             if (!u.docChanged || u.transactions.some((tr) => tr.annotation(remote))) return;
@@ -252,6 +271,33 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the view is recreated per record
   }, [path, readOnly]);
 
+  // Language changes reconfigure chrome in place, preserving document, history and selection.
+  useEffect(() => {
+    // A new chapter already has these phrases and current translated chrome.
+    // Refreshing its decorations before the first measurement loses the retained
+    // scroll anchor. Only an actual language change needs an async reconfigure.
+    if (phraseLocale.current === locale) {
+      setPhraseProblem(false);
+      return;
+    }
+    let current = true;
+    const apply = (loaded: typeof englishCodeMirrorPhrases) => {
+      phraseCache.set(locale, loaded);
+      if (!current) return;
+      phrases.current = loaded;
+      phraseLocale.current = locale;
+      setPhraseProblem(false);
+      view.current?.dispatch({ effects: [language.current.reconfigure(translatedExtensions()), refreshChapterCards.of(null), refreshLivePreview.of(null)] });
+    };
+    const cached = phraseCache.get(locale);
+    if (cached) apply(cached);
+    else void loadCodeMirrorPhrases(locale).then(apply).catch(() => { if (current) setPhraseProblem(true); });
+    return () => { current = false; };
+    // Also cancel a pending phrase load when the active record changes, so
+    // its old path cannot overwrite the new editor’s accessible name.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, path]);
+
   // Adopt text the session changed underneath us (another view, a resolved conflict).
   useEffect(() => {
     const v = view.current;
@@ -316,5 +362,5 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
     if (v) showAnchors(v, anchors ?? [], activeComment);
   }, [anchors, activeComment, path, readOnly]);
 
-  return <div className="editor" ref={host} />;
+  return <><div className="editor" ref={host} />{phraseProblem && <p role="status">{t`The editor language could not be loaded. You can keep writing.`}</p>}</>;
 });
