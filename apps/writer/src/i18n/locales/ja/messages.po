@@ -11,1096 +11,1096 @@ msgstr ""
 #. placeholder {1}: formatNumber(goal)
 #: src/ui/Home.tsx
 msgid " · {0}% of {1}"
-msgstr ""
+msgstr " · {0}%（目標{1}語）"
 
 #: src/ui/Home.tsx
 msgid " · Comments not set up"
-msgstr ""
+msgstr " · コメント未設定"
 
 #: src/ui/Home.tsx
 msgid " via mdbase Connect"
-msgstr ""
+msgstr " via mdbase Connect"
 
 #: src/ui/CommentsPanel.tsx
 msgid " with "
-msgstr ""
+msgstr "を"
 
 #. placeholder {0}: highlightIndex.pending
 #: src/ui/SourcesPanel.tsx
 msgid "· searching {0} more"
-msgstr ""
+msgstr "· さらに{0}件を検索中"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr ""
+msgstr "（本文中の位置）"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
-msgstr ""
+msgstr "（削除された箇所）"
 
 #. placeholder {0}: info.replies
 #: src/editor/comments.ts
 msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr ""
+msgstr "{0, plural, =0 {クリックしてコメントを開く} other {返信#件 · クリックしてコメントを開く}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
-msgstr ""
+msgstr "{0, plural, other {#章}}"
 
 #. placeholder {0}: this.ids.length
 #: src/editor/comments.ts
 msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr ""
+msgstr "{0, plural, one {この行にコメントが#件あります} other {この行にコメントが#件あります}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
-msgstr ""
+msgstr "{0, plural, other {アカウントに紐づく人物レコードが#件あります。どれが本人かWriterが推測することはありません。}}"
 
 #. placeholder {0}: words[ranks.get(h)!] ?? 0
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
-msgstr ""
+msgstr "{0, plural, other {このセクションの単語数：#語}}"
 
 #. placeholder {0}: problems.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
-msgstr ""
+msgstr "{0, plural, one {{name}をエクスポートしました（問題#件: {firstProblem}）} other {{name}をエクスポートしました（問題#件: {firstProblem}）}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr ""
+msgstr "{0, plural, other {#件のレコード内（引用・コード・数式は除く）}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr ""
+msgstr "{0, plural, other {復元したローカル下書き#件を確認してください。復元するかコレクション版を使うまで、対象レコードの編集は一時停止されます。}}"
 
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
-msgstr ""
+msgstr "{0, plural, one {全#件中、先頭の{listedCount}件} other {全#件中、先頭の{listedCount}件}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
 msgid "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
-msgstr ""
+msgstr "{0, plural, other {組版プレビュー：全#ページ}}"
 
 #. placeholder {0}: target.target.record
 #: src/editor/insight.ts
 msgid "{0} · {MOD_LABEL}-click to go there"
-msgstr ""
+msgstr "{0} · {MOD_LABEL}-クリックで移動"
 
 #. placeholder {0}: card.cite
 #: src/editor/chapter-cards.ts
 msgid "{0} · from Reader"
-msgstr ""
+msgstr "{0} · Readerから"
 
 #. placeholder {0}: title(diagnostic.record)
 #. placeholder {1}: lineOf(diagnostic.record, diagnostic.from)
 #: src/ui/ProblemsStrip.tsx
 msgid "{0} · line {1}"
-msgstr ""
+msgstr "{0} · {1}行目"
 
 #. placeholder {0}: VIEW_NAME[v]
 #: src/ui/WorkspaceView.tsx
 msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr ""
+msgstr "{0}（{MOD_LABEL}-Shift-\\で切り替え）"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
 #: src/ui/WorkspaceView.tsx
 msgid "{0} could not be stored: {1}"
-msgstr ""
+msgstr "{0}を保存できませんでした：{1}"
 
 #. placeholder {0}: THEME_NAME[t]
 #: src/ui/WorkspaceView.tsx
 msgid "{0} theme"
-msgstr ""
+msgstr "{0}テーマ"
 
 #. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
-msgstr ""
+msgstr "{0}バックアップ：{1}"
 
 #: src/workspace/workspace.ts
 msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr ""
+msgstr "{at}：このレコードは削除されています。移動する前にローカル下書きをダウンロードしてください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr ""
+msgstr "{commentsTitle}（{MOD_LABEL}-Shift-M）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} M"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} M"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} S"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} S"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} B / {MOD_LABEL} I"
-msgstr ""
+msgstr "{MOD_LABEL} B / {MOD_LABEL} I"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} F"
-msgstr ""
+msgstr "{MOD_LABEL} F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} K"
-msgstr ""
+msgstr "{MOD_LABEL} K"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} S"
-msgstr ""
+msgstr "{MOD_LABEL} S"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift \\"
-msgstr ""
+msgstr "{MOD_LABEL} Shift \\"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift E"
-msgstr ""
+msgstr "{MOD_LABEL} Shift E"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift F"
-msgstr ""
+msgstr "{MOD_LABEL} Shift F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift K"
-msgstr ""
+msgstr "{MOD_LABEL} Shift K"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift M"
-msgstr ""
+msgstr "{MOD_LABEL} Shift M"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift S"
-msgstr ""
+msgstr "{MOD_LABEL} Shift S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
-msgstr ""
+msgstr "{MOD_LABEL}-B"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL}-click"
-msgstr ""
+msgstr "{MOD_LABEL}-クリック"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
-msgstr ""
+msgstr "{MOD_LABEL}-クリックで資料に表示"
 
 #: src/ui/CommentsPanel.tsx
 msgid "{MOD_LABEL}-Enter"
-msgstr ""
+msgstr "{MOD_LABEL}-Enter"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-I"
-msgstr ""
+msgstr "{MOD_LABEL}-I"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-Shift-K"
-msgstr ""
+msgstr "{MOD_LABEL}-Shift-K"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
-msgstr ""
+msgstr "{n, plural, other {エラー#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# match} other {# matches}}"
-msgstr ""
+msgstr "{n, plural, other {一致#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# open comment} other {# open comments}}"
-msgstr ""
+msgstr "{n, plural, other {未解決コメント#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# person record} other {# person records}}"
-msgstr ""
+msgstr "{n, plural, other {人物レコード#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# problem} other {# problems}}"
-msgstr ""
+msgstr "{n, plural, other {問題#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# record} other {# records}}"
-msgstr ""
+msgstr "{n, plural, other {レコード#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# recovered local draft} other {# recovered local drafts}}"
-msgstr ""
+msgstr "{n, plural, other {復元したローカル下書き#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# warning} other {# warnings}}"
-msgstr ""
+msgstr "{n, plural, other {警告#件}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# word} other {# words}}"
-msgstr ""
+msgstr "{n, plural, other {単語#語}}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{name} loading; you can keep writing."
-msgstr ""
+msgstr "{name}を読み込み中です。執筆を続けられます。"
 
 #. placeholder {0}: state.problem ?? ""
 #: src/ui/WorkspaceView.tsx
 msgid "{name} unavailable: {0}"
-msgstr ""
+msgstr "{name}を利用できません：{0}"
 
 #: src/workspace/workspace.ts
 msgid "{path}: A recovered draft has not been reviewed; the collection version will be exported."
-msgstr ""
+msgstr "{path}：復元した下書きが未確認です。移動するとコレクション版が書き出されます。"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source from mdbase Reader can be cited here.} other {# sources from mdbase Reader can be cited here.}}"
-msgstr ""
+msgstr "{sources, plural, other {mdbase Readerの資料#件をここで引用できます。}}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
-msgstr ""
+msgstr "{sources, plural, other {mdbase Readerから引用する資料#件}}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
-msgstr ""
+msgstr "{uses, plural, other {#回引用済み}}"
 
 #: src/i18n/diagnostics.ts
 msgid "{value} is not loaded; it was left out."
-msgstr ""
+msgstr "{value}は読み込まれていないため、省略されました。"
 
 #: src/ui/OutlinePanel.tsx
 msgid "<0/> Add chapter"
-msgstr ""
+msgstr "<0/>章を追加"
 
 #: src/ui/Home.tsx
 msgid "<0/> Include a worked example of citations, figures and chapters"
-msgstr ""
+msgstr "<0/>引用、図、章の具体例を含める"
 
 #: src/ui/CommentsPanel.tsx
 msgid "<0/> On the record"
-msgstr ""
+msgstr "<0/>レコード全体にコメント"
 
 #: src/ui/Settings.tsx
 msgid "<0/>Add author"
-msgstr ""
+msgstr "<0/>著者を追加"
 
 #: src/ui/Home.tsx
 msgid "<0/>Continue<1/>"
-msgstr ""
+msgstr "<0/>続ける<1/>"
 
 #: src/ui/Home.tsx
 msgid "<0/>New manuscript"
-msgstr ""
+msgstr "<0/>新しい原稿"
 
 #: src/ui/Home.tsx
 msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr ""
+msgstr "<0>原稿。</0>新しく作成するか、すでにあるノートを使えます。コレクション内の通常のMarkdownレコードとして保持されます。"
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
-msgstr ""
+msgstr "<0>書く。</0><1>[@citekey, p. 12]</1>の形式で引用できます（または「資料」パネルで著者名やタイトルから資料を検索）。<2>{#fig-plan}</2>でラベルを付け、<3>@fig-plan</3>で参照し、<4>![[chapters/one]]</4>で章を埋め込みます。PDFまたはWord文書を書き出せます。"
 
 #: src/workspace/workspace.ts
 msgid "A chapter needs a title."
-msgstr ""
+msgstr "章にはタイトルが必要です。"
 
 #: src/i18n/diagnostics.ts
 msgid "A citation cannot mix cross-references and citekeys."
-msgstr ""
+msgstr "引用に相互参照とcitekeyを混在させることはできません。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
-msgstr ""
+msgstr "レコード全体へのコメントで、本文箇所へのコメントではありません（本文箇所にコメントするには、エディターでテキストを選択してください）"
 
 #: src/ui/Home.tsx
 msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
-msgstr ""
+msgstr "下書きは入力されたものの、コレクションに保存されていない内容です。その原稿を開くと下書きを復元できます。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "A local draft is still available in this browser."
-msgstr ""
+msgstr "このブラウザーにローカル下書きが残っています。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "A page (12, 12–14) or a locator (ch. 3, sec. 2)"
-msgstr ""
+msgstr "ページ（12、12–14）または位置（第3章、第2節）"
 
 #: src/ui/Settings.tsx
 msgid "Abstract"
-msgstr ""
+msgstr "要旨"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accept"
-msgstr ""
+msgstr "承認"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
-msgstr ""
+msgstr "承認済み"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
-msgstr ""
+msgstr "追加"
 
 #: src/pwa-install.ts
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
-msgstr ""
+msgstr "ホーム画面に{appName}を追加：共有をタップし、「ホーム画面に追加」を選択してください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Add a footnote"
-msgstr ""
+msgstr "脚注を追加"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
-msgstr ""
+msgstr "資料はmdbase Readerで追加し、ここでは<0>[@citekey]</0>で引用します。"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Adding…"
-msgstr ""
+msgstr "追加中…"
 
 #: src/ui/Home.tsx
 msgid "Adds the manuscript type to the note. Its other types, text and location stay as they are."
-msgstr ""
+msgstr "ノートに原稿のタイプを追加します。ほかのタイプ、本文、場所は変更されません。"
 
 #: src/ui/Settings.tsx
 msgid "Affiliation"
-msgstr ""
+msgstr "所属"
 
 #: src/ui/WorkspaceView.tsx
 msgid "All manuscripts"
-msgstr ""
+msgstr "すべての原稿"
 
 #: src/ui/ConnectGate.tsx
 msgid "already present"
-msgstr ""
+msgstr "すでに存在します"
 
 #. placeholder {0}: snap.annotationsLoad.problem ?? ""
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
-msgstr ""
+msgstr "注釈の検出を利用できません：{0}。引用のメタデータが不完全な可能性があります。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Annotation index"
-msgstr ""
+msgstr "注釈インデックス"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr ""
+msgstr "注釈を利用できません：{problem} <0>注釈を再試行</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
-msgstr ""
+msgstr "APA第7版"
 
 #: src/ui/WorkspaceView.tsx
 msgid "appearance dark light"
-msgstr ""
+msgstr "外観 ダーク ライト"
 
 #: src/ui/names.ts
 msgid "Article"
-msgstr ""
+msgstr "論文"
 
 #: src/ui/CommentsPanel.tsx
 msgid "as {signer} · "
-msgstr ""
+msgstr "署名者：{signer} · "
 
 #: src/ui/Settings.tsx
 msgid "as it should appear"
-msgstr ""
+msgstr "表示する形式で"
 
 #: src/ui/CommentsPanel.tsx
 msgid "At the cursor"
-msgstr ""
+msgstr "カーソル位置"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} affiliation"
-msgstr ""
+msgstr "著者{0}の所属"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} name"
-msgstr ""
+msgstr "著者{0}の名前"
 
 #: src/ui/Settings.tsx
 msgid "Authors"
-msgstr ""
+msgstr "著者"
 
 #: src/ui/WorkspaceView.tsx
 msgid "back home close"
-msgstr ""
+msgstr "戻る ホーム 閉じる"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Back to manuscripts"
-msgstr ""
+msgstr "原稿一覧に戻る"
 
 #: src/ui/WorkspaceView.tsx
 msgid "backup unsaved recovery"
-msgstr ""
+msgstr "下書き 未保存 バックアップ 復元"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Bold"
-msgstr ""
+msgstr "太字"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Bold / italic (again to remove it)"
-msgstr ""
+msgstr "太字／斜体（もう一度クリックで解除）"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
-msgstr ""
+msgstr "キャンセル"
 
 #: src/ui/ExportReview.tsx
 msgid "Cancel and fix problems"
-msgstr ""
+msgstr "キャンセルして問題を修正"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cancel export"
-msgstr ""
+msgstr "出力をキャンセル"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the citation style"
-msgstr ""
+msgstr "引用スタイルを変更"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the layout"
-msgstr ""
+msgstr "レイアウトを変更"
 
 #: src/ui/Home.tsx
 msgid "Change the word goal"
-msgstr ""
+msgstr "単語数の目標を変更"
 
 #: src/ui/records.ts
 msgid "Changed elsewhere"
-msgstr ""
+msgstr "別の場所で変更されました"
 
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
-msgstr ""
+msgstr "入力すると変更内容が原稿のメタデータに保存され、プレビューにも反映されます。"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
-msgstr ""
+msgstr "章のタイトル"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
 msgid "Chapters <0>{0}</0>"
-msgstr ""
+msgstr "章 <0>{0}</0>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Check again"
-msgstr ""
+msgstr "もう一度確認"
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making {0}…"
-msgstr ""
+msgstr "章と画像を確認してから{0}を作成しています…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
-msgstr ""
+msgstr "章と画像を確認してからWordを作成しています…（初回は約16 MBを読み込みます）"
 
 #: src/ui/ConnectGate.tsx
 msgid "Checking the collection"
-msgstr ""
+msgstr "コレクションを確認しています"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
-msgstr ""
+msgstr "確認中…"
 
 #: src/ui/names.ts
 msgid "Chicago (author-date)"
-msgstr ""
+msgstr "シカゴ（著者・出版年方式）"
 
 #: src/ui/names.ts
 msgid "Chicago (notes and bibliography)"
-msgstr ""
+msgstr "シカゴ（注・参考文献方式）"
 
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
-msgstr ""
+msgstr "別のコレクションを選択"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
-msgstr ""
+msgstr "引用"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Citation style"
-msgstr ""
+msgstr "引用スタイル"
 
 #: src/ui/Home.tsx
 msgid "Citation style<0/>"
-msgstr ""
+msgstr "引用スタイル<0/>"
 
 #: src/i18n/diagnostics.ts
 msgid "Citations have no terms for \"{value}\"; they use {other}."
-msgstr ""
+msgstr "「{value}」の引用用語がないため、{other}を使用します。"
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
-msgstr ""
+msgstr "引用元を示し、図表を表示します。マークはカーソルが該当行に達するまで非表示です。本文は変更されません。"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/SourcesPanel.tsx
 msgid "Cite"
-msgstr ""
+msgstr "引用"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
-msgstr ""
+msgstr "{0}を引用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr ""
+msgstr "出典を引用するか、キー・著者・タイトル・年でラベルを参照"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
 msgid "Cite at {0}"
-msgstr ""
+msgstr "{0}を引用"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cite here"
-msgstr ""
+msgstr "ここに引用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "cite source reference"
-msgstr ""
+msgstr "出典を引用"
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited {uses}×"
-msgstr ""
+msgstr "{uses}回引用"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cited in "
-msgstr ""
+msgstr "引用箇所："
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited once"
-msgstr ""
+msgstr "1回引用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Click to fit the width"
-msgstr ""
+msgstr "幅に合わせる"
 
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
-msgstr ""
+msgstr "閉じる（Escape）"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
-msgstr ""
+msgstr "設定を閉じる"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower panel"
-msgstr ""
+msgstr "下部パネルを閉じる"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower sidebar panel"
-msgstr ""
+msgstr "下部サイドバーパネルを閉じる"
 
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
-msgstr ""
+msgstr "コード"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
-msgstr ""
+msgstr "コレクションの依存関係はまだ確認されていません"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection index"
-msgstr ""
+msgstr "コレクションの索引"
 
 #: src/workspace/workspace.ts
 msgid "Collection metadata is still loading."
-msgstr ""
+msgstr "コレクションのメタデータを読み込み中です。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Collection version"
-msgstr ""
+msgstr "コレクションのバージョン"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Collections"
-msgstr ""
+msgstr "コレクション"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands"
-msgstr ""
+msgstr "コマンド"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands, shortcuts and theme"
-msgstr ""
+msgstr "コマンド、ショートカット、テーマ"
 
 #: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Comment"
-msgstr ""
+msgstr "コメント"
 
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "Comment"
-msgstr ""
+msgstr "コメント"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Comment on the selection"
-msgstr ""
+msgstr "選択範囲にコメント"
 
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr ""
+msgstr "選択範囲にコメント（{MOD_LABEL}-{ALT_LABEL}-M）"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
-msgstr ""
+msgstr "コメント"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comments are not set up in this collection."
-msgstr ""
+msgstr "このコレクションではコメントが設定されていません。"
 
 #. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
 msgid "Comments unavailable: {problem} {0}"
-msgstr ""
+msgstr "コメントを利用できません：{problem} {0}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
-msgstr ""
+msgstr "競合するバージョンを比較"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Compare versions"
-msgstr ""
+msgstr "バージョンを比較"
 
 #: src/ui/records.ts
 msgid "Conflict"
-msgstr ""
+msgstr "競合"
 
 #: src/ui/ConnectGate.tsx
 msgid "conflicts with an existing file"
-msgstr ""
+msgstr "既存のファイルと競合しています"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connect a collection"
-msgstr ""
+msgstr "コレクションを接続"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connect another collection…"
-msgstr ""
+msgstr "別のコレクションを接続…"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connected collections"
-msgstr ""
+msgstr "接続済みコレクション"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connecting to mdbase connect"
-msgstr ""
+msgstr "mdbase connect に接続しています"
 
 #: src/ui/Home.tsx
 msgid "Continue writing"
-msgstr ""
+msgstr "執筆を続ける"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copied"
-msgstr ""
+msgstr "コピーしました"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copy key"
-msgstr ""
+msgstr "キーをコピー"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
-msgstr ""
+msgstr "別のコレクションに接続できませんでした。"
 
 #: src/ui/Home.tsx
 msgid "Could not create the manuscript. Please try again."
-msgstr ""
+msgstr "原稿を作成できませんでした。もう一度お試しください。"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not switch collections."
-msgstr ""
+msgstr "コレクションを切り替えられませんでした。"
 
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
-msgstr ""
+msgstr "ノートを原稿として使用できませんでした。もう一度お試しください。"
 
 #: src/ui/Home.tsx
 msgid "Create manuscript"
-msgstr ""
+msgstr "原稿を作成"
 
 #: src/ui/Home.tsx
 msgid "Creating…"
-msgstr ""
+msgstr "作成中…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cross-reference"
-msgstr ""
+msgstr "相互参照"
 
 #: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
-msgstr ""
+msgstr "ダーク"
 
 #: src/ui/Settings.tsx
 msgid "Date"
-msgstr ""
+msgstr "日付"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Delete"
-msgstr ""
+msgstr "削除"
 
 #. placeholder {0}: clip(exact)
 #: src/ui/comments.ts
 msgid "Delete {0}"
-msgstr ""
+msgstr "{0}を削除"
 
 #: src/ui/records.ts
 msgid "Deleted"
-msgstr ""
+msgstr "削除済み"
 
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
-msgstr ""
+msgstr "別の場所で削除されました"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
-msgstr ""
+msgstr "依存関係は確認されていません"
 
 #: src/editor/chapter-cards.ts
 msgid "Detach"
-msgstr ""
+msgstr "切り離す"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Detached: the text has changed"
-msgstr ""
+msgstr "切り離されました：テキストが変更されています"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr ""
+msgstr "閉じる"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
-msgstr ""
+msgstr "ダブルクリックまたはF2キーで名前を変更"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Down arrow moves to the sources; Enter cites the first match."
-msgstr ""
+msgstr "下矢印キーで出典に移動し、Enter キーで最初の候補を引用します。"
 
 #: src/ui/Manuscripts.tsx
 msgid "Download a local copy before leaving if saving cannot be completed."
-msgstr ""
+msgstr "保存を完了できない場合は、画面を離れる前にローカルコピーをダウンロードしてください。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Download local draft"
-msgstr ""
+msgstr "ローカルの下書きをダウンロード"
 
 #: src/LegacyApp.tsx
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Download local drafts"
-msgstr ""
+msgstr "ローカルの下書きをダウンロード"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to restore"
-msgstr ""
+msgstr "ドラッグしてサイズを変更、ダブルクリックで元に戻します"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to split evenly"
-msgstr ""
+msgstr "ドラッグしてサイズを変更、ダブルクリックで均等に分割します"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Drag, or Alt-↑/↓, to reorder"
-msgstr ""
+msgstr "ドラッグまたはAlt-↑/↓で並べ替え"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
 #: src/ui/Home.tsx
 msgid "edited {0}"
-msgstr ""
+msgstr "{0}に編集"
 
 #: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
-msgstr ""
+msgstr "エディター"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor and preview"
-msgstr ""
+msgstr "エディターとプレビュー"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor and preview → editor only → preview only"
-msgstr ""
+msgstr "エディターとプレビュー → エディターのみ → プレビューのみ"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor only"
-msgstr ""
+msgstr "エディターのみ"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Embed a record"
-msgstr ""
+msgstr "レコードを埋め込む"
 
 #: src/workspace/workspace.ts
 msgid "Embedded record could not be loaded: {problem}"
-msgstr ""
+msgstr "埋め込みレコードを読み込めませんでした：{problem}"
 
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
-msgstr ""
+msgstr "ここに{value}を埋め込むと、自分自身の中に含めることになります。"
 
 #: src/ui/ManuscriptSearch.tsx
 msgid "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
-msgstr ""
+msgstr "Enter キーと Shift+Enter キーで次または前の一致箇所に移動し、下矢印キーで一致箇所の一覧に移動します。"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/editor/live-preview.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Equation"
-msgstr ""
+msgstr "数式"
 
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
-msgstr ""
+msgstr "エラーと警告の一覧"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Everyone"
-msgstr ""
+msgstr "全員"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
-msgstr ""
+msgstr "エクスポート"
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
 msgid "Export {0}"
-msgstr ""
+msgstr "{0}をエクスポート"
 
 #: src/ui/ExportReview.tsx
 msgid "Export anyway"
-msgstr ""
+msgstr "そのままエクスポート"
 
 #: src/compile/client.ts
 #: src/export/pandoc.ts
 msgid "Export cancelled."
-msgstr ""
+msgstr "エクスポートをキャンセルしました。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export failed."
-msgstr ""
+msgstr "エクスポートに失敗しました。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export formats"
-msgstr ""
+msgstr "エクスポート形式"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export formats ({MOD_LABEL}-Shift-S)"
-msgstr ""
+msgstr "エクスポート形式（{MOD_LABEL}-Shift-S）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Pandoc bundle (zip)"
-msgstr ""
+msgstr "Pandoc バンドル（zip）をエクスポート"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export PDF"
-msgstr ""
+msgstr "PDF をエクスポート"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Word (DOCX)"
-msgstr ""
+msgstr "Word（DOCX）をエクスポート"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Word using article styles; your custom Typst layout applies only to PDF"
-msgstr ""
+msgstr "論文用スタイルで Word をエクスポートします。カスタム Typst レイアウトは PDF のみに適用されます"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Exported {name}."
-msgstr ""
+msgstr "{name} をエクスポートしました。"
 
 #: src/ui/ProblemsStrip.tsx
 msgid "F8 goes to the next"
-msgstr ""
+msgstr "F8 キーで次へ移動"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 msgid "Figure"
-msgstr ""
+msgstr "図"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Figure from an image…"
-msgstr ""
+msgstr "画像から図を作成…"
 
 #: src/workspace/workspace.ts
 msgid "Figures must be PNG, JPEG, GIF, SVG or WebP images."
-msgstr ""
+msgstr "図には PNG、JPEG、GIF、SVG、WebP 形式の画像を指定してください。"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Filter collections"
-msgstr ""
+msgstr "コレクションを絞り込む"
 
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
-msgstr ""
+msgstr "原稿を検索"
 
 #: src/ui/Home.tsx
 msgid "Find a note by name or folder"
-msgstr ""
+msgstr "名前またはフォルダーでノートを検索"
 
 #: src/ui/SourcesPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Find a source"
-msgstr ""
+msgstr "出典を検索"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Find a source ({MOD_LABEL}-Shift-E)"
-msgstr ""
+msgstr "出典を検索（{MOD_LABEL}-Shift-E）"
 
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
-msgstr ""
+msgstr "この箇所の出典を検索し、その後に引用を挿入"
 
 #: src/ui/WorkspaceView.tsx
 msgid "find all chapters"
-msgstr ""
+msgstr "すべての章を検索"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Find and replace in this record"
-msgstr ""
+msgstr "このレコード内を検索して置換"
 
 #: src/editor/fixes.ts
 msgid "Find in Sources"
-msgstr ""
+msgstr "出典内を検索"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Find or run a command"
-msgstr ""
+msgstr "コマンドを検索または実行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
-msgstr ""
+msgstr "全体表示 · {zoomLabel}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
-msgstr ""
+msgstr "幅に合わせています。クリックすると実際のサイズになります"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Fix it in mdbase Editor"
-msgstr ""
+msgstr "mdbase Editor で修正"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Footnote"
-msgstr ""
+msgstr "脚注"
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] has no definition."
-msgstr ""
+msgstr "脚注[^{value}]の定義がありません。"
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] is never referenced."
-msgstr ""
+msgstr "脚注[^{value}]は参照されていません。"
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] is referenced more than once."
-msgstr ""
+msgstr "脚注[^{value}]は複数回参照されています。"
 
 #: src/ui/Settings.tsx
 msgid "for citation terms and hyphenation"
-msgstr ""
+msgstr "引用用語とハイフネーションの設定"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Forget collection"
-msgstr ""
+msgstr "コレクションを登録解除"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Format"
-msgstr ""
+msgstr "形式"
 
 #: src/editor/chapter-cards.ts
 msgid "From Reader · its source is not in the library"
-msgstr ""
+msgstr "Reader から · 出典はライブラリにありません"
 
 #: src/ui/Settings.tsx
 msgid "From the collection"
-msgstr ""
+msgstr "コレクションから"
 
 #: src/ui/Home.tsx
 msgid "Give the manuscript a title; it can be changed later."
-msgstr ""
+msgstr "原稿にタイトルを付けてください。後から変更できます。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "grid columns rows"
-msgstr ""
+msgstr "グリッド、列、行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
-msgstr ""
+msgstr "ヘルプ"
 
 #: src/ui/ProblemsStrip.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Hide problems"
-msgstr ""
+msgstr "問題を非表示"
 
 #. placeholder {0}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "Hide the headings of {0}"
-msgstr ""
+msgstr "{0}の見出しを非表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "エディター下の問題一覧を非表示（F8で次の問題へ）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the sidebar"
-msgstr ""
+msgstr "サイドバーを非表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "サイドバーを非表示（{MOD_LABEL}-\\）"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
-msgstr ""
+msgstr "このコレクションではハイライトが設定されていません。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights from Reader"
-msgstr ""
+msgstr "Reader のハイライト"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Hosted by mdbase"
-msgstr ""
+msgstr "mdbase がホスト"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
-msgstr ""
+msgstr "画像「{value}」がありません。コレクションに追加するか、パスを修正してください。"
 
 #: src/workspace/workspace.ts
 msgid "Image could not be loaded: {problem}"
-msgstr ""
+msgstr "画像を読み込めませんでした：{problem}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "image picture photo upload"
-msgstr ""
+msgstr "画像、写真をアップロード"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Image upload is coming soon. Existing image links still work."
-msgstr ""
+msgstr "画像のアップロード機能は近日対応予定です。既存の画像リンクは引き続き使用できます。"
 
 #: src/i18n/diagnostics.ts
 msgid "Images must be files in the collection ({value})."
-msgstr ""
+msgstr "画像はコレクション内のファイルである必要があります（{value}）。"
 
 #. placeholder {0}: d.manuscript.title
 #: src/ui/Home.tsx
 msgid "in {0} · "
-msgstr ""
+msgstr "{0} 内 · "
 
 #. placeholder {0}: collectionPicker ?? <strong>{backend.collectionName}</strong>
 #. placeholder {1}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
@@ -1109,1681 +1109,1681 @@ msgstr ""
 #. placeholder {4}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
 #: src/ui/Home.tsx
 msgid "In {0}{1}{2}{3}{4}"
-msgstr ""
+msgstr "{0}{1}{2}{3}{4} 内"
 
 #. placeholder {0}: inHighlights.length
 #. placeholder {1}: highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>
 #: src/ui/SourcesPanel.tsx
 msgid "In highlights <0>{0}</0>{1}"
-msgstr ""
+msgstr "ハイライト内 <0>{0}</0>{1}"
 
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
-msgstr ""
+msgstr "原稿全体（引用、コード、数式は含みません）"
 
 #: src/ui/SourcesPanel.tsx
 msgid "In this manuscript"
-msgstr ""
+msgstr "この原稿内"
 
 #. placeholder {0}: inManuscript.length
 #: src/ui/SourcesPanel.tsx
 msgid "In this manuscript <0>{0}</0>"
-msgstr ""
+msgstr "この原稿内 <0>{0}</0>"
 
 #. placeholder {0}: r.message
 #: src/ui/Home.tsx
 msgid "Index could not be loaded: {0}"
-msgstr ""
+msgstr "インデックスを読み込めませんでした：{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Inline code"
-msgstr ""
+msgstr "インラインコード"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Insert"
-msgstr ""
+msgstr "挿入"
 
 #. placeholder {0}: entry.key
 #: src/ui/SourcesPanel.tsx
 msgid "Insert [@{0}] at the cursor (Enter)"
-msgstr ""
+msgstr "カーソル位置に [@{0}] を挿入（Enter）"
 
 #. placeholder {0}: clip(replacement)
 #: src/ui/comments.ts
 msgid "Insert {0}"
-msgstr ""
+msgstr "{0}を挿入"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
-msgstr ""
+msgstr "引用、脚注、相互参照、図、表、数式を挿入（または本文で / を入力）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a footnote, figure, table, equation, cross-reference or citation"
-msgstr ""
+msgstr "脚注、図、表、数式、相互参照、引用を挿入"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Insert at the cursor"
-msgstr ""
+msgstr "カーソル位置に挿入"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Insert quotation"
-msgstr ""
+msgstr "引用文を挿入"
 
 #: src/pwa-install.ts
 msgid "Install"
-msgstr ""
+msgstr "インストール"
 
 #: src/pwa-install.ts
 msgid "Install {appName}"
-msgstr ""
+msgstr "{appName}をインストール"
 
 #: src/pwa-install.ts
 msgid "Install {appName} for quick access in its own window."
-msgstr ""
+msgstr "{appName}を専用ウィンドウで開いてすぐ使えるようにします。"
 
 #: src/i18n/provider.tsx
 #: src/ui/Settings.tsx
 msgid "Interface language"
-msgstr ""
+msgstr "表示言語"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Italic"
-msgstr ""
+msgstr "斜体"
 
 #: src/ui/CompareDialog.tsx
 msgid "Keep mine"
-msgstr ""
+msgstr "自分の変更を保持"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Keep writing"
-msgstr ""
+msgstr "執筆を続ける"
 
 #: src/ui/ConnectGate.tsx
 msgid "kept as it is"
-msgstr ""
+msgstr "そのまま保持"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
-msgstr ""
+msgstr "キーボードショートカット"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/editor/live-preview.ts
 msgid "Label"
-msgstr ""
+msgstr "ラベル"
 
 #: src/ui/Settings.tsx
 msgid "Language"
-msgstr ""
+msgstr "言語"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Layout"
-msgstr ""
+msgstr "レイアウト"
 
 #: src/ui/Home.tsx
 msgid "Layout<0/>"
-msgstr ""
+msgstr "レイアウト<0/>"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Leave without saving"
-msgstr ""
+msgstr "保存せずに移動"
 
 #. placeholder {0}: rest.length
 #: src/ui/SourcesPanel.tsx
 msgid "Library <0>{0}</0>"
-msgstr ""
+msgstr "ライブラリ <0>{0}</0>"
 
 #: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Light"
-msgstr ""
+msgstr "ライト"
 
 #. placeholder {0}: lineOf(diagnostic.record, diagnostic.from)
 #: src/ui/ProblemsStrip.tsx
 msgid "Line {0}"
-msgstr ""
+msgstr "{0}行目"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Link"
-msgstr ""
+msgstr "リンク"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Link it in mdbase Editor’s settings for this collection."
-msgstr ""
+msgstr "このコレクションのmdbase Editor設定でリンクしてください。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Link your account"
-msgstr ""
+msgstr "アカウントをリンク"
 
 #: src/ui/WorkspaceView.tsx
 msgid "List the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "エディター下に問題一覧を表示（F8で次の問題へ）"
 
 #: src/editor/insight.ts
 msgid "Listing"
-msgstr ""
+msgstr "一覧"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading annotations…"
-msgstr ""
+msgstr "注釈を読み込み中…"
 
 #: src/ui/Home.tsx
 msgid "Loading collection data…"
-msgstr ""
+msgstr "コレクションデータを読み込み中…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Loading comments…"
-msgstr ""
+msgstr "コメントを読み込み中…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
-msgstr ""
+msgstr "出典を読み込み中…"
 
 #: src/ui/Home.tsx
 msgid "Loading…"
-msgstr ""
+msgstr "読み込み中…"
 
 #: src/workspace/workspace.ts
 msgid "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails."
-msgstr ""
+msgstr "ローカル下書きのバックアップを利用できません（ブラウザーのストレージがいっぱいか、ブロックされている可能性があります）。保存できない場合は、移動する前に下書きをダウンロードしてください。"
 
 #: src/ui/Home.tsx
 msgid "Looking for sources…"
-msgstr ""
+msgstr "出典を検索中…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Lower panel"
-msgstr ""
+msgstr "下部パネル"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Make the selection a link"
-msgstr ""
+msgstr "選択範囲をリンクにする"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
-msgstr ""
+msgstr "この編集を適用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
-msgstr ""
+msgstr "原稿"
 
 #: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript settings"
-msgstr ""
+msgstr "原稿の設定"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript sidebar"
-msgstr ""
+msgstr "原稿サイドバー"
 
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscripts"
-msgstr ""
+msgstr "原稿"
 
 #: src/editor/Editor.tsx
 msgid "Markdown for {path}"
-msgstr ""
+msgstr "{path}のMarkdown"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Matching sources"
-msgstr ""
+msgstr "一致する出典"
 
 #: src/ui/WorkspaceView.tsx
 msgid "math formula display"
-msgstr ""
+msgstr "数式の表示"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {begin} is never closed."
-msgstr ""
+msgstr "数式: {begin}が閉じられていません。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {end} closes {begin}."
-msgstr ""
+msgstr "数式: {end}で{begin}を閉じています。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {end} has no matching \\begin."
-msgstr ""
+msgstr "数式: {end}に対応する\\beginがありません。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {value} \\left but {other} \\right."
-msgstr ""
+msgstr "数式: {value}は\\leftですが、{other}は\\rightです。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: Unclosed brace."
-msgstr ""
+msgstr "数式: 中括弧が閉じられていません。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: Unmatched closing brace."
-msgstr ""
+msgstr "数式: 対応する開き中括弧のない閉じ中括弧があります。"
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase connect is unavailable"
-msgstr ""
+msgstr "mdbase Connectを利用できません"
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer can't use this collection"
-msgstr ""
+msgstr "mdbase writerはこのコレクションを使用できません"
 
 #. placeholder {0}: snapshot.info.displayName
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
-msgstr ""
+msgstr "mdbase writerには<0>{0}</0>に2種類のレコード契約が必要です。原稿用と、引用に使うReaderの出典用です。設定では不足分だけを追加し、既存のレコードは変更しません。"
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library. Connect a collection to choose what it can access."
-msgstr ""
+msgstr "mdbase writerは、mdbaseコレクション内のMarkdownレコードを組版し、mdbase Readerライブラリの引用を含むPDFやWord文書を作成します。コレクションを接続して、アクセスを許可する対象を選んでください。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
-msgstr ""
+msgstr "統合されたMarkdown<0/><1>統合テキストには、コレクションのバージョンにローカル設定の変更が反映されています。</1>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Mine"
-msgstr ""
+msgstr "自分のもの"
 
 #: src/ui/names.ts
 msgid "MLA 9th edition"
-msgstr ""
+msgstr "MLA第9版"
 
 #: src/ui/WorkspaceView.tsx
 msgid "More"
-msgstr ""
+msgstr "その他"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Move author {0} up"
-msgstr ""
+msgstr "著者{0}を上へ移動"
 
 #: src/ui/Settings.tsx
 msgid "Move up"
-msgstr ""
+msgstr "上へ移動"
 
 #. placeholder {0}: recordTitle(records.get(path), path)
 #. placeholder {1}: to + 1
 #. placeholder {2}: chapters.length
 #: src/ui/OutlinePanel.tsx
 msgid "Moved {0} to chapter {1} of {2}."
-msgstr ""
+msgstr "{0}を{2}の第{1}章に移動しました。"
 
 #: src/ui/Settings.tsx
 msgid "Name"
-msgstr ""
+msgstr "名前"
 
 #: src/ui/OutlinePanel.tsx
 msgid "New chapter title"
-msgstr ""
+msgstr "新しい章のタイトル"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New comment"
-msgstr ""
+msgstr "新しいコメント"
 
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "New comment"
-msgstr ""
+msgstr "新しいコメント"
 
 #: src/ui/Home.tsx
 msgid "New manuscript"
-msgstr ""
+msgstr "新しい原稿"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New since last visit ({newCount})"
-msgstr ""
+msgstr "前回の訪問以降の新着（{newCount}件）"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New since your last visit"
-msgstr ""
+msgstr "前回の訪問以降の新着"
 
 #: src/editor/comments.ts
 msgid "New suggestion"
-msgstr ""
+msgstr "新しい提案"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous comment"
-msgstr ""
+msgstr "次／前のコメント"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous problem"
-msgstr ""
+msgstr "次／前の問題"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
-msgstr ""
+msgstr "次の引用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next comment"
-msgstr ""
+msgstr "次のコメント"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next problem"
-msgstr ""
+msgstr "次の問題"
 
 #: src/ui/SourcesPanel.tsx
 msgid "No annotations on this source."
-msgstr ""
+msgstr "この出典には注釈がありません。"
 
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
-msgstr ""
+msgstr "「{0}」に一致するコレクションはありません。"
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
-msgstr ""
+msgstr "まだファイルはダウンロードされていません。画像や章が不足していると、このエクスポートが不完全になる可能性があります。共有または提出する前に、これらの問題を確認してください。"
 
 #: src/i18n/diagnostics.ts
 msgid "No file in the collection matches the citation style {value}."
-msgstr ""
+msgstr "コレクション内に引用スタイル{value}に一致するファイルがありません。"
 
 #: src/i18n/diagnostics.ts
 msgid "No file in the collection matches the template {value}."
-msgstr ""
+msgstr "コレクション内にテンプレート{value}に一致するファイルがありません。"
 
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
-msgstr ""
+msgstr "「{filter}」に一致する原稿はありません。"
 
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
-msgstr ""
+msgstr "「{query}」に一致するノートはありません。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "No open comments"
-msgstr ""
+msgstr "未解決のコメントはありません"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
-msgstr ""
+msgstr "このコレクションには他のノートはありません。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "No problems"
-msgstr ""
+msgstr "問題はありません"
 
 #. placeholder {0}: this.target
 #: src/editor/chapter-cards.ts
 msgid "No record matches ![[{0}]]"
-msgstr ""
+msgstr "![[{0}]]に一致するレコードはありません"
 
 #: src/i18n/diagnostics.ts
 msgid "No record matches the embed ![[{value}]]."
-msgstr ""
+msgstr "埋め込み![[{value}]]に一致するレコードがありません。"
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
-msgstr ""
+msgstr "ライブラリにcitekey {value}を持つ出典がありません。"
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library matches {value}, so the quotation from {other} is not cited."
-msgstr ""
+msgstr "ライブラリに{value}に一致する出典がないため、{other}からの引用は出典表示されません。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "No source matches “{query}”; searching highlights…"
-msgstr ""
+msgstr "「{query}」に一致する出典はありません。ハイライトを検索中…"
 
 #. placeholder {0}: ref.key
 #: src/editor/insight.ts
 msgid "No source or label is called “{0}”."
-msgstr ""
+msgstr "「{0}」という出典またはラベルはありません。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "No sources in this collection yet."
-msgstr ""
+msgstr "このコレクションにはまだ出典がありません。"
 
 #: src/ui/Home.tsx
 msgid "No sources yet"
-msgstr ""
+msgstr "まだ出典がありません"
 
 #: src/ui/Home.tsx
 msgid "No type · {path}"
-msgstr ""
+msgstr "タイプなし · {path}"
 
 #. placeholder {0}: readerSourceHref() ? <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open mdbase Reader</Trans></a> : t`Open mdbase Reader`
 #: src/ui/Home.tsx
 msgid "None yet. {0} to import a PDF, a DOI or a BibTeX file; each source gets a citekey."
-msgstr ""
+msgstr "まだありません。{0}と、PDF、DOI、またはBibTeXファイルをインポートできます。各出典には引用キーが割り当てられます。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Not cited yet"
-msgstr ""
+msgstr "まだ引用されていません"
 
 #: src/workspace/workspace.ts
 msgid "Not loaded; it will be left out."
-msgstr ""
+msgstr "読み込まれていないため、省略されます。"
 
 #: src/pwa-install.ts
 msgid "Not now"
-msgstr ""
+msgstr "後で"
 
 #: src/ui/records.ts
 msgid "Not saved"
-msgstr ""
+msgstr "未保存"
 
 #. placeholder {0}: activeView.snapshot.problem.message ?? activeView.snapshot.problem.code
 #: src/ui/WorkspaceView.tsx
 msgid "Not saved: {0}. Your text is kept here."
-msgstr ""
+msgstr "保存できませんでした：{0}。テキストはここに保持されています。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "note"
-msgstr ""
+msgstr "ノート"
 
 #: src/ui/Home.tsx
 msgid "Note<0/>"
-msgstr ""
+msgstr "ノート<0/>"
 
 #: src/ui/Home.tsx
 msgid "Notes"
-msgstr ""
+msgstr "ノート"
 
 #: src/ui/Home.tsx
 msgid "Notes without a type"
-msgstr ""
+msgstr "タイプのないノート"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
-msgstr ""
+msgstr "まだ何も引用されていません。下の出典を引用するか、エディターで<0>[@</0>と入力してください。"
 
 #: src/i18n/diagnostics.ts
 msgid "Nothing is labelled {value}."
-msgstr ""
+msgstr "{value}というラベルはありません。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
-msgstr ""
+msgstr "選択するまで何も置き換えられません。ハイライトされた箇所はバージョン間で異なります。"
 
 #. placeholder {0}: query.trim()
 #: src/ui/ManuscriptSearch.tsx
 msgid "Nothing matches “{0}”."
-msgstr ""
+msgstr "「{0}」に一致するものはありません。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing matches “{query}”."
-msgstr ""
+msgstr "「{query}」に一致するものはありません。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr ""
+msgstr "まだ解決済みのコメントはありません。"
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
-msgstr ""
+msgstr "オフライン"
 
 #: src/ui/WorkspaceView.tsx
 msgid "On a citation: show the source. On a cross-reference: go to what it labels"
-msgstr ""
+msgstr "引用では出典を表示します。相互参照では、ラベルが示す対象に移動します"
 
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
-msgstr ""
+msgstr "サンゴ礁の形成について"
 
 #: src/ui/CommentsPanel.tsx
 msgid "On the whole record"
-msgstr ""
+msgstr "レコード全体"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
-msgstr ""
+msgstr "お使いのコンピューター上"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Open"
-msgstr ""
+msgstr "未解決"
 
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
 msgid "Open"
-msgstr ""
+msgstr "開く"
 
 #. placeholder {0}: card.title
 #: src/editor/chapter-cards.ts
 msgid "Open {0}"
-msgstr ""
+msgstr "{0}を開く"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Open in Reader <0/>"
-msgstr ""
+msgstr "Readerで開く<0/>"
 
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
-msgstr ""
+msgstr "原稿を開いて確認してください"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
-msgstr ""
+msgstr "mdbase Readerを開く"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Open now"
-msgstr ""
+msgstr "現在開いています"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Open Reader to add a source"
-msgstr ""
+msgstr "Readerを開いて出典を追加"
 
 #: src/connect/native-signin-ui.ts
 msgid "Open sign-in"
-msgstr ""
+msgstr "サインインを開く"
 
 #: src/connect/native-signin-ui.ts
 msgid "Open the mdbase tab again"
-msgstr ""
+msgstr "mdbaseのタブをもう一度開いてください"
 
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
-msgstr ""
+msgstr "この箇所をReaderで開く"
 
 #: src/connect/native-signin-ui.ts
 msgid "Opening collections isn't available in this build yet."
-msgstr ""
+msgstr "このビルドではまだコレクションを開けません。"
 
 #: src/App.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
-msgstr ""
+msgstr "mdbase writerを開いています"
 
 #: src/LegacyApp.tsx
 msgid "Opening the demo collection"
-msgstr ""
+msgstr "デモコレクションを開いています"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Opening the manuscript…"
-msgstr ""
+msgstr "原稿を開いています…"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Opening Writer"
-msgstr ""
+msgstr "Writerを開いています"
 
 #: src/ui/NativeWriterView.tsx
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening Writer…"
-msgstr ""
+msgstr "Writerを開いています…"
 
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening your collection"
-msgstr ""
+msgstr "コレクションを開いています"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Opening…"
-msgstr ""
+msgstr "開いています…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Or type <0>/</0> in the text to pick one there."
-msgstr ""
+msgstr "または本文で<0>/</0>と入力して、そこで選択できます。"
 
 #: src/ui/Home.tsx
 msgid "or use a note you already have"
-msgstr ""
+msgstr "またはすでにあるノートを使用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
-msgstr ""
+msgstr "アウトライン"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr ""
+msgstr "アウトラインと原稿を検索（{MOD_LABEL}-Shift-F）"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
-msgstr ""
+msgstr "ページ（任意）"
 
 #. placeholder {0}: i + 1
 #: src/preview/Preview.tsx
 msgid "Page {0}"
-msgstr ""
+msgstr "{0}ページ"
 
 #. placeholder {0}: previewView.page
 #. placeholder {1}: previewView.pages
 #: src/ui/WorkspaceView.tsx
 msgid "Page {0} of {1}"
-msgstr ""
+msgstr "{1}ページ中の{0}ページ"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Page or locator for {0}"
-msgstr ""
+msgstr "{0}のページまたは位置"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc bundle"
-msgstr ""
+msgstr "Pandocバンドル"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc bundle (zip)"
-msgstr ""
+msgstr "Pandocバンドル（zip）"
 
 #: src/export/pandoc.ts
 msgid "Pandoc produced no document."
-msgstr ""
+msgstr "Pandocが文書を生成しませんでした。"
 
 #: src/export/pandoc.ts
 msgid "Pandoc returned an unreadable response."
-msgstr ""
+msgstr "Pandocが読み取れない応答を返しました。"
 
 #: src/export/pandoc.ts
 msgid "Pandoc stopped."
-msgstr ""
+msgstr "Pandocが停止しました。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself"
-msgstr ""
+msgstr "出典、スタイル、画像を含むPandoc/Quarto Markdown（他の形式をご自身でビルドできます）"
 
 #: src/compile/client.ts
 msgid "PDF export timed out. Retry the preview and export again."
-msgstr ""
+msgstr "PDFエクスポートがタイムアウトしました。プレビューを再試行してから、もう一度エクスポートしてください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Preview"
-msgstr ""
+msgstr "プレビュー"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
-msgstr ""
+msgstr "プレビューのみ"
 
 #: src/preview/Preview.tsx
 msgid "Preview rendering failed: {renderProblem}. Your text is still available in the editor."
-msgstr ""
+msgstr "プレビューのレンダリングに失敗しました：{renderProblem}。テキストはエディターに残っています。"
 
 #. placeholder {0}: snap.previewProblem
 #: src/ui/WorkspaceView.tsx
 msgid "Preview unavailable: {0}. You can keep writing."
-msgstr ""
+msgstr "プレビューを利用できません：{0}。執筆を続けられます。"
 
 #: src/preview/Preview.tsx
 msgid "Preview unavailable. You can keep writing."
-msgstr ""
+msgstr "プレビューを利用できません。執筆を続けられます。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
-msgstr ""
+msgstr "前の引用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Previous comment"
-msgstr ""
+msgstr "前のコメント"
 
 #: src/ui/ConnectGate.tsx
 msgid "Previously connected"
-msgstr ""
+msgstr "以前に接続したコレクション"
 
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
-msgstr ""
+msgstr "問題"
 
 #: src/ui/WorkspaceView.tsx
 msgid "problems"
-msgstr ""
+msgstr "問題"
 
 #: src/ui/ProblemsStrip.tsx
 msgid "Problems"
-msgstr ""
+msgstr "問題"
 
 #: src/ui/Home.tsx
 msgid "Progress to the word goal"
-msgstr ""
+msgstr "単語数目標への進捗"
 
 #: src/i18n/diagnostics.ts
 msgid "Raw HTML is not rendered in PDF output."
-msgstr ""
+msgstr "生のHTMLはPDF出力に描画されません。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Read as the manuscript"
-msgstr ""
+msgstr "原稿として読む"
 
 #: src/ui/Settings.tsx
 msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
-msgstr ""
+msgstr "原稿として読む<0>オフにすると、Markdownをそのまま表示します</0>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reason for the suggestion"
-msgstr ""
+msgstr "提案の理由"
 
 #: src/ui/ConnectGate.tsx
 msgid "Reconnect"
-msgstr ""
+msgstr "再接続"
 
 #: src/ui/connection-notice.ts
 msgid "Reconnecting"
-msgstr ""
+msgstr "再接続中"
 
 #: src/ui/records.ts
 msgid "Recovering save…"
-msgstr ""
+msgstr "保存内容を復元しています…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "refer section figure table label"
-msgstr ""
+msgstr "参照 セクション 図 表 ラベル"
 
 #: src/editor/live-preview.ts
 msgid "Refer to this with @{id}"
-msgstr ""
+msgstr "@{id}で参照"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reject"
-msgstr ""
+msgstr "却下"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Rejected"
-msgstr ""
+msgstr "却下済み"
 
 #: src/LegacyApp.tsx
 msgid "Reload"
-msgstr ""
+msgstr "再読み込み"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Remove"
-msgstr ""
+msgstr "削除"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
-msgstr ""
+msgstr "著者{0}を削除"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Rename the chapter chosen in the outline"
-msgstr ""
+msgstr "アウトラインで選択した章の名前を変更"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
-msgstr ""
+msgstr "再度開く"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace"
-msgstr ""
+msgstr "置換"
 
 #. placeholder {0}: clip(exact)
 #. placeholder {1}: clip(replacement)
 #: src/ui/comments.ts
 msgid "Replace {0} with {1}"
-msgstr ""
+msgstr "{0}を{1}に置換"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace with"
-msgstr ""
+msgstr "置換するテキスト"
 
 #. placeholder {0}: root.suggestion.replacement
 #: src/ui/WorkspaceView.tsx
 msgid "Replace with “{0}”"
-msgstr ""
+msgstr "「{0}」に置換"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reply"
-msgstr ""
+msgstr "返信"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the editor and preview"
-msgstr ""
+msgstr "エディターとプレビューのサイズを変更"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the sidebar"
-msgstr ""
+msgstr "サイドバーのサイズを変更"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolve"
-msgstr ""
+msgstr "解決済みにする"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
-msgstr ""
+msgstr "解決済み"
 
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
-msgstr ""
+msgstr "ローカル下書きを復元"
 
 #: src/ui/Home.tsx
 msgid "Retry background data"
-msgstr ""
+msgstr "バックグラウンドデータを再試行"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Retry comments"
-msgstr ""
+msgstr "コメントを再試行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry dependencies"
-msgstr ""
+msgstr "依存関係を再試行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry export"
-msgstr ""
+msgstr "エクスポートを再試行"
 
 #: src/LegacyApp.tsx
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Retry loading"
-msgstr ""
+msgstr "読み込みを再試行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry opening"
-msgstr ""
+msgstr "開く操作を再試行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
-msgstr ""
+msgstr "プレビューを再試行"
 
 #: src/preview/Preview.tsx
 msgid "Retry rendering"
-msgstr ""
+msgstr "レンダリングを再試行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry save"
-msgstr ""
+msgstr "保存を再試行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry saving"
-msgstr ""
+msgstr "保存を再試行"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Retry sources"
-msgstr ""
+msgstr "出典を再試行"
 
 #: src/ui/Home.tsx
 msgid "Review"
-msgstr ""
+msgstr "確認"
 
 #. placeholder {0}: recordTitle(snap.records.get(path), path)
 #: src/ui/WorkspaceView.tsx
 msgid "Review {0}"
-msgstr ""
+msgstr "{0}を確認"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Review access"
-msgstr ""
+msgstr "アクセスを確認"
 
 #: src/ui/records.ts
 msgid "Review drafts"
-msgstr ""
+msgstr "下書きを確認"
 
 #: src/ui/ExportReview.tsx
 msgid "Review export problems"
-msgstr ""
+msgstr "エクスポートの問題を確認"
 
 #: src/ui/records.ts
 msgid "Review local drafts"
-msgstr ""
+msgstr "ローカル下書きを確認"
 
 #: src/ui/CompareDialog.tsx
 msgid "Review recovered local draft"
-msgstr ""
+msgstr "復元したローカル下書きを確認"
 
 #: src/workspace/workspace.ts
 msgid "Review the recovered local drafts before leaving."
-msgstr ""
+msgstr "移動する前に、復元したローカル下書きを確認してください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Save all records now"
-msgstr ""
+msgstr "すべてのレコードを今すぐ保存"
 
 #: src/ui/CompareDialog.tsx
 msgid "Save merged version"
-msgstr ""
+msgstr "統合したバージョンを保存"
 
 #: src/ui/records.ts
 msgid "Saved"
-msgstr ""
+msgstr "保存済み"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
 msgid "Saved on this device; waiting for sync"
-msgstr ""
+msgstr "このデバイスに保存済みです。同期を待っています。"
 
 #: src/ui/records.ts
 msgid "Saving…"
-msgstr ""
+msgstr "保存中…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Search by author, title, year or key"
-msgstr ""
+msgstr "著者名、タイトル、年、キーで検索"
 
 #: src/ui/ManuscriptSearch.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
-msgstr ""
+msgstr "原稿を検索"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Search the whole manuscript"
-msgstr ""
+msgstr "原稿全体を検索"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Second panel"
-msgstr ""
+msgstr "第2パネル"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 msgid "Section"
-msgstr ""
+msgstr "セクション"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
-msgstr ""
+msgstr "テキストを選択し、<0>{MOD_LABEL}-{ALT_LABEL}-M</0>を押してコメントするか、<1>{MOD_LABEL}-{ALT_LABEL}-S</1>を押して編集を提案してください。"
 
 #: src/editor/selection-bar.tsx
 msgid "Selection"
-msgstr ""
+msgstr "選択範囲"
 
 #: src/ui/Home.tsx
 msgid "Set a word goal"
-msgstr ""
+msgstr "単語数の目標を設定"
 
 #: src/ui/Home.tsx
 msgid "Set goal"
-msgstr ""
+msgstr "目標を設定"
 
 #: src/ui/ConnectGate.tsx
 msgid "Set up collection"
-msgstr ""
+msgstr "コレクションをセットアップ"
 
 #: src/ui/ConnectGate.tsx
 msgid "Set up this collection for writing"
-msgstr ""
+msgstr "執筆用にこのコレクションをセットアップ"
 
 #: src/ui/ConnectGate.tsx
 msgid "Setting up…"
-msgstr ""
+msgstr "セットアップ中…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Settings"
-msgstr ""
+msgstr "設定"
 
 #. placeholder {0}: diagnostic.field
 #: src/ui/ProblemsStrip.tsx
 msgid "Settings · {0}"
-msgstr ""
+msgstr "設定 · {0}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Settings also differ"
-msgstr ""
+msgstr "設定も異なります"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Show"
-msgstr ""
+msgstr "表示"
 
 #. placeholder {0}: rest.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more chapters · {0}"
-msgstr ""
+msgstr "さらに50章を表示 · {0}"
 
 #. placeholder {0}: inManuscript.length
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more cited sources · {0}"
-msgstr ""
+msgstr "引用された出典をさらに50件表示 · {0}"
 
 #. placeholder {0}: logical.length
 #: src/ui/CommentsPanel.tsx
 msgid "Show 50 more comments · {0}"
-msgstr ""
+msgstr "コメントをさらに50件表示 · {0}"
 
 #. placeholder {0}: list.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more headings · {0}"
-msgstr ""
+msgstr "見出しをさらに50件表示 · {0}"
 
 #. placeholder {0}: notes.length
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more highlights · {0}"
-msgstr ""
+msgstr "ハイライトをさらに50件表示 · {0}"
 
 #. placeholder {0}: shown.length
 #: src/ui/Home.tsx
 msgid "Show 50 more manuscripts · {0}"
-msgstr ""
+msgstr "原稿をさらに50件表示 · {0}"
 
 #. placeholder {0}: thread.replies.length
 #: src/ui/CommentsPanel.tsx
 msgid "Show 50 more replies · {0}"
-msgstr ""
+msgstr "返信をさらに50件表示 · {0}"
 
 #. placeholder {0}: rest.length
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more sources · {0}"
-msgstr ""
+msgstr "出典をさらに50件表示 · {0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show a second panel beneath (outline and comments together)"
-msgstr ""
+msgstr "下に2つ目のパネルを表示（アウトラインとコメントをまとめて表示）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show a second sidebar panel"
-msgstr ""
+msgstr "2つ目のサイドバーパネルを表示"
 
 #. placeholder {0}: untypedShown.length
 #: src/ui/Home.tsx
 msgid "Show all {0} notes without a type"
-msgstr ""
+msgstr "タイプのないノート{0}件をすべて表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show comments"
-msgstr ""
+msgstr "コメントを表示"
 
 #: src/preview/Preview.tsx
 msgid "Show in Sources"
-msgstr ""
+msgstr "出典に表示"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Show in the editor"
-msgstr ""
+msgstr "エディターで表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
-msgstr ""
+msgstr "Markdownをそのまま表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show or hide the sidebar"
-msgstr ""
+msgstr "サイドバーを表示／非表示"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 chapters"
-msgstr ""
+msgstr "前の50章を表示"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 cited sources"
-msgstr ""
+msgstr "前の50件の引用された出典を表示"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Show previous 50 comments"
-msgstr ""
+msgstr "前の50件のコメントを表示"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 headings"
-msgstr ""
+msgstr "前の50件の見出しを表示"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 sources"
-msgstr ""
+msgstr "前の50件の出典を表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show problems"
-msgstr ""
+msgstr "問題を表示"
 
 #. placeholder {0}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "Show the headings of {0}"
-msgstr ""
+msgstr "{0}の見出しを表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar"
-msgstr ""
+msgstr "サイドバーを表示"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "サイドバーを表示（{MOD_LABEL}-\\）"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
-msgstr ""
+msgstr "このコメントを表示"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
-msgstr ""
+msgstr "最後に成功したプレビューを表示しています。最新の本文と一致しない場合があります。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Sidebar"
-msgstr ""
+msgstr "サイドバー"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in"
-msgstr ""
+msgstr "サインイン"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
-msgstr ""
+msgstr "mdbaseアカウントでサインインすると、{appName}をデバイス間で同期できます。"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign out"
-msgstr ""
+msgstr "サインアウト"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Sign-in status"
-msgstr ""
+msgstr "サインインの状態"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign-in was interrupted. Please try again."
-msgstr ""
+msgstr "サインインが中断されました。もう一度お試しください。"
 
 #: src/connect/connect-popup.ts
 msgid "Sign-in window closed."
-msgstr ""
+msgstr "サインインウィンドウが閉じられました。"
 
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
-msgstr ""
+msgstr "{email}としてサインインしています"
 
 #. placeholder {0}: selected.displayName
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
-msgstr ""
+msgstr "サインインしました。{0}を開いています…"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Some changes are not saved"
-msgstr ""
+msgstr "一部の変更は保存されていません"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Some images or chapters could not be loaded. See Problems for their locations."
-msgstr ""
+msgstr "一部の画像や章を読み込めませんでした。該当箇所は「問題」で確認してください。"
 
 #: src/LegacyApp.tsx
 msgid "Something went wrong"
-msgstr ""
+msgstr "問題が発生しました"
 
 #: src/ui/ConnectGate.tsx
 msgid "Something went wrong."
-msgstr ""
+msgstr "問題が発生しました。"
 
 #: src/editor/insight.ts
 msgid "Source"
-msgstr ""
+msgstr "出典"
 
 #: src/ui/WorkspaceView.tsx
 msgid "source markup raw live preview chips"
-msgstr ""
+msgstr "ソース マークアップ そのまま ライブ プレビュー チップ"
 
 #: src/ui/SourcesPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Sources"
-msgstr ""
+msgstr "出典"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources are not set up in this collection."
-msgstr ""
+msgstr "このコレクションでは出典が設定されていません。"
 
 #. placeholder {0}: r.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
-msgstr ""
+msgstr "出典を読み込めませんでした：{0}"
 
 #: src/ui/Home.tsx
 msgid "Sources not set up"
-msgstr ""
+msgstr "出典未設定"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
-msgstr ""
+msgstr "出典を利用できません：{libraryProblem}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr ""
+msgstr "出典を利用できません：{libraryProblem} <0>出典を再試行</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."
-msgstr ""
+msgstr "出典。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
-msgstr ""
+msgstr "分割 スタック アウトライン コメント 出典"
 
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
-msgstr ""
+msgstr "{0}を保存しました。キャプションを入力してください。"
 
 #. placeholder {0}: file.name
 #: src/ui/WorkspaceView.tsx
 msgid "Storing {0}…"
-msgstr ""
+msgstr "{0}を保存しています…"
 
 #: src/ui/Settings.tsx
 msgid "Subtitle"
-msgstr ""
+msgstr "サブタイトル"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest"
-msgstr ""
+msgstr "提案"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest an edit"
-msgstr ""
+msgstr "編集を提案"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
-msgstr ""
+msgstr "選択範囲への編集を提案"
 
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr ""
+msgstr "選択範囲への編集を提案（{MOD_LABEL}-{ALT_LABEL}-S）"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
-msgstr ""
+msgstr "提案された挿入"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggested text"
-msgstr ""
+msgstr "提案されたテキスト"
 
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "Suggestion"
-msgstr ""
+msgstr "提案"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
-msgstr ""
+msgstr "コレクションを切り替え"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection: {name}"
-msgstr ""
+msgstr "コレクションを切り替え：{name}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "System"
-msgstr ""
+msgstr "システム"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Table"
-msgstr ""
+msgstr "表"
 
 #: src/workspace/workspace.ts
 msgid "That record is not open."
-msgstr ""
+msgstr "そのレコードは開いていません。"
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
-msgstr ""
+msgstr "注釈{value}には埋め込む引用文がありません。"
 
 #: src/workspace/workspace.ts
 msgid "The chapter is not open."
-msgstr ""
+msgstr "その章は開いていません。"
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
-msgstr ""
+msgstr "コンパイルワーカーが停止しました。"
 
 #: src/LegacyApp.tsx
 msgid "The demo could not be loaded"
-msgstr ""
+msgstr "デモを読み込めませんでした"
 
 #: src/compile/client.ts
 msgid "The document has errors; fix them to export."
-msgstr ""
+msgstr "文書にエラーがあります。修正してからエクスポートしてください。"
 
 #: src/editor/Editor.tsx
 msgid "The editor language could not be loaded. You can keep writing."
-msgstr ""
+msgstr "エディターの言語を読み込めませんでした。執筆を続けられます。"
 
 #: src/i18n/diagnostics.ts
 msgid "The embed ![[{value}]] in {other} was left out."
-msgstr ""
+msgstr "{other}内の埋め込み![[{value}]]は省略されました。"
 
 #. placeholder {0}: errorMessage(error)
 #: src/ui/WorkspaceView.tsx
 msgid "The file could not be downloaded. {0}"
-msgstr ""
+msgstr "ファイルをダウンロードできませんでした。{0}"
 
 #. placeholder {0}: missingImage[1] ?? ""
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
-msgstr ""
+msgstr "画像「{0}」をWord用に読み込めませんでした。代わりに説明文が含まれます。"
 
 #: src/i18n/diagnostics.ts
 msgid "The label {value} is used more than once."
-msgstr ""
+msgstr "ラベル{value}が複数回使われています。"
 
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
-msgstr ""
+msgstr "言語を読み込めませんでした。現在の言語は変更されていません。もう一度お試しください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
-msgstr ""
+msgstr "入力中の行は、入力が止まるとチェックされます"
 
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
-msgstr ""
+msgstr "エクスポートの依存関係を読み込んでいる間も原稿が変更され続けました。編集を一時停止して、もう一度お試しください。"
 
 #: src/compile/client.ts
 #: src/workspace/workspace.ts
 msgid "The manuscript was closed."
-msgstr ""
+msgstr "原稿が閉じられました。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "The person record that claims your account is not valid."
-msgstr ""
+msgstr "アカウントに紐づく人物レコードが有効ではありません。"
 
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
-msgstr ""
+msgstr "プレビューの読み込みに時間がかかりすぎました。プレビューを再試行してください。"
 
 #: src/compile/client.ts
 msgid "The preview worker returned an unreadable response."
-msgstr ""
+msgstr "プレビューワーカーから読み取れない応答が返されました。"
 
 #: src/ui/Settings.tsx
 msgid "The style’s own (usually en-US)"
-msgstr ""
+msgstr "スタイル自体の言語（通常 en-US）"
 
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr ""
+msgstr "提案されたテキストはレコード内にありません。手動で編集してから、提案を解決済みにしてください。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr ""
+msgstr "提案されたテキストはもうありません"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
-msgstr ""
+msgstr "テーマ"
 
 #: src/ui/names.ts
 msgid "Thesis or book"
-msgstr ""
+msgstr "学位論文または書籍"
 
 #: src/ui/ConnectGate.tsx
 msgid "This action could not be completed. Please try again."
-msgstr ""
+msgstr "この操作を完了できませんでした。もう一度お試しください。"
 
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
-msgstr ""
+msgstr "このブラウザーのすべての原稿に適用されます。"
 
 #: src/ui/Settings.tsx
 msgid "This changes the interface in this browser, not the manuscript’s language."
-msgstr ""
+msgstr "これはこのブラウザーのインターフェース言語を変更します。原稿の言語は変わりません。"
 
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
-msgstr ""
+msgstr "このコレクションは Writer からのファイルを受け付けません。"
 
 #: src/ui/ConnectGate.tsx
 msgid "This collection is unavailable"
-msgstr ""
+msgstr "このコレクションは利用できません"
 
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
-msgstr ""
+msgstr "このコレクションビューを開けませんでした。上のバーから別のコレクションを選択するか、再読み込みして再試行してください。"
 
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr ""
+msgstr "これはローカル開発用ビルドです。ホスト型の mdbase connect サービスは HTTPS で提供されるアプリケーションのみを受け付けるため、Connect のローカル環境（mdbase-connect の <0>pnpm dev:environment:up</0>）を使用するか、<1>デモコレクション</1>を開いてください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
-msgstr ""
+msgstr "このリスト"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
-msgstr ""
+msgstr "この原稿を開けませんでした"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr ""
+msgstr "この箇所は本文にありません"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record changed elsewhere while you were editing it."
-msgstr ""
+msgstr "編集中に、このレコードが別の場所で変更されました。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr ""
+msgstr "このレコードは別の場所で削除されました。ローカルのテキストはここに残っています。"
 
 #: src/ui/CompareDialog.tsx
 msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr ""
+msgstr "このレコードは削除されました。残すにはローカル下書きをダウンロードしてください。削除されたレコードには復元できません。"
 
 #: src/ui/Settings.tsx
 msgid "Title"
-msgstr ""
+msgstr "タイトル"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr ""
+msgstr "タイトル、著者、要旨、引用スタイル、レイアウト、言語（{MOD_LABEL}-,）"
 
 #. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
 #: src/ui/Home.tsx
 msgid "Title<0/>{0}"
-msgstr ""
+msgstr "タイトル<0/>{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
-msgstr ""
+msgstr "変更履歴"
 
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
-msgstr ""
+msgstr "再試行"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
-msgstr ""
+msgstr "入力すると他のノートを検索できます。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset from your latest text, with chapters and images checked before download"
-msgstr ""
+msgstr "最新のテキストから組版し、ダウンロード前に章と画像を確認します"
 
 #. placeholder {0}: Math.round(timings.assembleMs + timings.compileMs)
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset in {0} ms"
-msgstr ""
+msgstr "{0}ミリ秒で組版しました"
 
 #: src/compile/client.ts
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
-msgstr ""
+msgstr "組版に時間がかかりすぎました。エディターは引き続き利用できます。プレビューを再試行してください。"
 
 #: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
-msgstr ""
+msgstr "組版中…"
 
 #: src/ui/Settings.tsx
 msgid "Typst templates in the collection"
-msgstr ""
+msgstr "コレクション内の Typst テンプレート"
 
 #: src/i18n/diagnostics.ts
 msgid "Unclosed $$ math block."
-msgstr ""
+msgstr "$$数式ブロックが閉じられていません。"
 
 #: src/editor/insight.ts
 msgid "Unknown"
-msgstr ""
+msgstr "不明"
 
 #: src/i18n/diagnostics.ts
 msgid "Unknown citation style \"{value}\"; using {other}."
-msgstr ""
+msgstr "不明な引用スタイル「{value}」です。{other}を使用します。"
 
 #: src/i18n/diagnostics.ts
 msgid "Unknown template \"{value}\"; using article."
-msgstr ""
+msgstr "不明なテンプレート「{value}」です。articleを使用します。"
 
 #: src/ui/records.ts
 msgid "Unsaved"
-msgstr ""
+msgstr "未保存"
 
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
-msgstr ""
+msgstr "未保存の下書き"
 
 #: src/ui/Home.tsx
 msgid "Unsaved in this browser"
-msgstr ""
+msgstr "このブラウザー内の未保存の下書き"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr ""
+msgstr "未署名"
 
 #: src/i18n/diagnostics.ts
 msgid "Unsupported Markdown block: {value}."
-msgstr ""
+msgstr "サポートされていないMarkdownブロック: {value}。"
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
-msgstr ""
+msgstr "無題の図"
 
 #: src/ui/Home.tsx
 msgid "Updating…"
-msgstr ""
+msgstr "更新中…"
 
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
-msgstr ""
+msgstr "すでにあるノートを使用…"
 
 #: src/ui/Home.tsx
 msgid "Use as manuscript"
-msgstr ""
+msgstr "原稿として使用"
 
 #: src/ui/CompareDialog.tsx
 msgid "Use collection version"
-msgstr ""
+msgstr "コレクションのバージョンを使用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB."
-msgstr ""
+msgstr "レイアウトの Word スタイルを使用しますが、改ページ位置が PDF と異なる場合があります。初回利用時は約 16 MB をダウンロードします。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "View"
-msgstr ""
+msgstr "表示"
 
 #: src/workspace/workspace.ts
 msgid "Wait for the manuscript to open before exporting."
-msgstr ""
+msgstr "原稿が開くまで待ってからエクスポートしてください。"
 
 #: src/connect/native-signin-ui.ts
 msgid "Waiting for approval in the mdbase tab…"
-msgstr ""
+msgstr "mdbase タブでの承認を待っています…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Waiting for approval…"
-msgstr ""
+msgstr "承認を待っています…"
 
 #: src/ui/CollectionPicker.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
-msgstr ""
+msgstr "mdbase connect を待っています…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
-msgstr ""
+msgstr "誰のコメント"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Why (optional)"
-msgstr ""
+msgstr "理由（任意）"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
-msgstr ""
+msgstr "追加されます"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be removed"
-msgstr ""
+msgstr "削除されます"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
-msgstr ""
+msgstr "更新されます"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdraw"
-msgstr ""
+msgstr "取り下げる"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr ""
+msgstr "取り下げました。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
-msgstr ""
+msgstr "Word（DOCX）"
 
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
-msgstr ""
+msgstr "Word エクスポートで問題が報告されました。"
 
 #: src/export/pandoc.ts
 msgid "Word export timed out. Check your connection and try again."
-msgstr ""
+msgstr "Word エクスポートがタイムアウトしました。接続を確認して、もう一度お試しください。"
 
 #: src/ui/Home.tsx
 msgid "Word goal"
-msgstr ""
+msgstr "単語数の目標"
 
 #: src/ui/Home.tsx
 msgid "Words, e.g. 8000"
-msgstr ""
+msgstr "単語数（例：8000）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Write"
-msgstr ""
+msgstr "執筆"
 
 #: src/ui/ConnectGate.tsx
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
-msgstr ""
+msgstr "コレクションから執筆"
 
 #: src/editor/Editor.tsx
 msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr ""
+msgstr "Markdown で執筆してください。[@citekey] の形式で引用し、/ と入力すると脚注・図・表を追加できます。"
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"
-msgstr ""
+msgstr "ここに引用文を書き込んで編集します。注釈には連動しなくなります"
 
 #: src/workspace/workspace.ts
 msgid "Writer cannot ask for access here."
-msgstr ""
+msgstr "Writer はここでアクセスを要求できません。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
-msgstr ""
+msgstr "Writer コマンド"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
-msgstr ""
+msgstr "Writer はこのコレクションを開けませんでした"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Writer was not allowed to see your account."
-msgstr ""
+msgstr "Writer によるアカウントの表示は許可されませんでした。"
 
 #: src/main.tsx
 msgid "You can close this window."
-msgstr ""
+msgstr "このウィンドウは閉じてかまいません。"
 
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
-msgstr ""
+msgstr "アカウントを確認できませんでした（{0}）。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your account is not linked to a person record in this collection."
-msgstr ""
+msgstr "アカウントがこのコレクションの人物レコードにリンクされていません。"
 
 #: src/connect/connect-popup.ts
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
-msgstr ""
+msgstr "ブラウザーによりサインインタブがブロックされました。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
-msgstr ""
+msgstr "コメントは署名されていません。"
 
 #: src/workspace/workspace.ts
 msgid "Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ."
-msgstr ""
+msgstr "カスタム Typst レイアウトは PDF にのみ適用されます。Word では論文用スタイルを使用するため、改ページ位置とレイアウトが異なります。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB."
-msgstr ""
+msgstr "カスタム Typst レイアウトは PDF 専用です。Word では論文用スタイルを使用し、改ページ位置が異なります。初回利用時は約 16 MB をダウンロードします。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup."
-msgstr ""
+msgstr "ローカル下書きは、ストレージが利用可能な場合にこのブラウザーにバックアップされます。独立したバックアップが必要な場合は、移動する前にコピーをダウンロードしてください。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Your local text"
-msgstr ""
+msgstr "ローカルのテキスト"
 
 #: src/LegacyApp.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
-msgstr ""
+msgstr "保存したテキストはコレクションにあります。未送信のローカル下書きは、ストレージが利用可能な場合にこのブラウザーにバックアップされます。再読み込みする前にコピーをダウンロードしてください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom"
-msgstr ""
+msgstr "ズーム"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom in"
-msgstr ""
+msgstr "拡大"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom out"
-msgstr ""
+msgstr "縮小"
