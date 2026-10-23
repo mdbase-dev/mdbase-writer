@@ -208,10 +208,11 @@ from Writer's own deployment. The browser language is the default; an explicit c
 remembered in this browser. This never changes manuscript text, frontmatter, citation
 language or exported prose.
 
-All nine locale controls are enabled on this branch, but incomplete authored catalogues
-intentionally block `pnpm check` and builds. See [translation status and authoring](docs/translations.md).
-The kit is temporarily vendored for coordinated development; replace it with the published
-npm version at merge time. CI only validates local-agent-authored translations and never
+All eight target-language catalogues are merged and all nine locale controls are enabled
+on this branch. Strict completeness and app/library composition checks run in normal checks
+and builds. See [translation status and authoring](docs/translations.md).
+The kit and shared UI are temporarily vendored for coordinated development; replace both
+with their published npm versions at merge time. CI only validates local-agent-authored translations and never
 calls a translation service.
 
 ## License
