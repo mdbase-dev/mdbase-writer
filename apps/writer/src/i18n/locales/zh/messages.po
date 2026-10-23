@@ -41,52 +41,52 @@ msgstr "（文本片段已删除）"
 #. placeholder {0}: info.replies
 #: src/editor/comments.ts
 msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr "{0, plural, =0 {点击在评论中打开} one {# 条回复 · 点击在评论中打开} other {# 条回复 · 点击在评论中打开}}"
+msgstr "{0, plural, =0 {点击在评论中打开} other {# 条回复 · 点击在评论中打开}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
-msgstr "{0, plural, one {# 章} other {# 章}}"
+msgstr "{0, plural, other {# 章}}"
 
 #. placeholder {0}: this.ids.length
 #: src/editor/comments.ts
 msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr "{0, plural, one {此行有 # 条评论} other {此行有 # 条评论}}"
+msgstr "{0, plural, other {此行有 # 条评论}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
-msgstr "{0, plural, one {有 # 条人员记录关联到你的账户，因此 Writer 不会擅自猜测哪条记录是你本人。} other {有 # 条人员记录关联到你的账户，因此 Writer 不会擅自猜测哪条记录是你本人。}}"
+msgstr "{0, plural, other {有 # 条人员记录关联到你的账户，因此 Writer 不会擅自猜测哪条记录是你本人。}}"
 
 #. placeholder {0}: words[ranks.get(h)!] ?? 0
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
-msgstr "{0, plural, one {本节 # 个字} other {本节 # 个字}}"
+msgstr "{0, plural, other {本节 # 个字}}"
 
 #. placeholder {0}: problems.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
-msgstr "{0, plural, one {已导出 {name}，有 # 个问题：{firstProblem}} other {已导出 {name}，有 # 个问题：{firstProblem}}}"
+msgstr "{0, plural, other {已导出 {name}，有 # 个问题：{firstProblem}}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr "{0, plural, one {位于 # 条记录中；引文、代码和数学公式不计入} other {位于 # 条记录中；引文、代码和数学公式不计入}}"
+msgstr "{0, plural, other {位于 # 条记录中；引文、代码和数学公式不计入}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr "{0, plural, one {请检查 # 个已恢复的本地草稿。在恢复本地草稿或使用集合版本前，该记录将暂停编辑。} other {请检查 # 个已恢复的本地草稿。在恢复本地草稿或使用集合版本前，这些记录将暂停编辑。}}"
+msgstr "{0, plural, other {请检查 # 个已恢复的本地草稿。在恢复本地草稿或使用集合版本前，这些记录将暂停编辑。}}"
 
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
-msgstr "{0, plural, one {# 个匹配项中的前 {listedCount} 个} other {# 个匹配项中的前 {listedCount} 个}}"
+msgstr "{0, plural, other {# 个匹配项中的前 {listedCount} 个}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
 msgid "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
-msgstr "{0, plural, one {排版预览，共 # 页} other {排版预览，共 # 页}}"
+msgstr "{0, plural, other {排版预览，共 # 页}}"
 
 #. placeholder {0}: target.target.record
 #: src/editor/insight.ts
@@ -212,39 +212,39 @@ msgstr "{MOD_LABEL}-Shift-K 快捷键"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
-msgstr "{n, plural, one {# 个错误} other {# 个错误}}"
+msgstr "{n, plural, other {# 个错误}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# match} other {# matches}}"
-msgstr "{n, plural, one {# 个匹配项} other {# 个匹配项}}"
+msgstr "{n, plural, other {# 个匹配项}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# open comment} other {# open comments}}"
-msgstr "{n, plural, one {# 条未解决的评论} other {# 条未解决的评论}}"
+msgstr "{n, plural, other {# 条未解决的评论}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# person record} other {# person records}}"
-msgstr "{n, plural, one {# 条人员记录} other {# 条人员记录}}"
+msgstr "{n, plural, other {# 条人员记录}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# problem} other {# problems}}"
-msgstr "{n, plural, one {# 个问题} other {# 个问题}}"
+msgstr "{n, plural, other {# 个问题}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# record} other {# records}}"
-msgstr "{n, plural, one {# 条记录} other {# 条记录}}"
+msgstr "{n, plural, other {# 条记录}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# recovered local draft} other {# recovered local drafts}}"
-msgstr "{n, plural, one {# 个已恢复的本地草稿} other {# 个已恢复的本地草稿}}"
+msgstr "{n, plural, other {# 个已恢复的本地草稿}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# warning} other {# warnings}}"
-msgstr "{n, plural, one {# 条警告} other {# 条警告}}"
+msgstr "{n, plural, other {# 条警告}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# word} other {# words}}"
-msgstr "{n, plural, one {# 个字} other {# 个字}}"
+msgstr "{n, plural, other {# 个字}}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{name} loading; you can keep writing."
@@ -261,15 +261,15 @@ msgstr "{path}：已恢复的草稿尚未检查，导出时将使用集合版本
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source from mdbase Reader can be cited here.} other {# sources from mdbase Reader can be cited here.}}"
-msgstr "{sources, plural, one {此处可以引用来自 mdbase Reader 的 # 个来源。} other {此处可以引用来自 mdbase Reader 的 # 个来源。}}"
+msgstr "{sources, plural, other {此处可以引用来自 mdbase Reader 的 # 个来源。}}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
-msgstr "{sources, plural, one {# 个可从 mdbase Reader 引用的来源} other {# 个可从 mdbase Reader 引用的来源}}"
+msgstr "{sources, plural, other {# 个可从 mdbase Reader 引用的来源}}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
-msgstr "{uses, plural, one {引用过一次} other {已引用 # 次}}"
+msgstr "{uses, plural, other {已引用 # 次}}"
 
 #: src/i18n/diagnostics.ts
 msgid "{value} is not loaded; it was left out."

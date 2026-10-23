@@ -46,7 +46,7 @@
     "@mdbase-dev/connect-protocol": "file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz",
     "@mdbase-dev/i18n": "file:../../vendor/mdbase-dev-i18n-0.1.0-beta.141-b4134d71.tgz",
     "@mdbase-dev/sdk": "file:../../vendor/sdk-eaa4e697-production-beta141.tgz",
-    "@mdbase-dev/ui": "file:../../vendor/mdbase-dev-ui-0.1.0-beta.141-9041442d.tgz",
+    "@mdbase-dev/ui": "file:../../vendor/mdbase-dev-ui-0.1.0-beta.141-98d9526d.tgz",
     "@mdbase-writer/core": "workspace:*",
     "@myriaddreamin/typst-ts-renderer": "0.7.0",
     "@myriaddreamin/typst-ts-web-compiler": "0.7.0",

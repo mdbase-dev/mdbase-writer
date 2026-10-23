@@ -269,7 +269,7 @@ msgstr "{sources, plural, other {mdbase Reader에서 인용할 자료 #개}}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
-msgstr "{uses, plural, one {한 번 인용됨} other {#회 인용됨}}"
+msgstr "{uses, plural, other {#회 인용됨}}"
 
 #: src/i18n/diagnostics.ts
 msgid "{value} is not loaded; it was left out."

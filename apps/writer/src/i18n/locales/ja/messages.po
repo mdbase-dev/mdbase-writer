@@ -51,7 +51,7 @@ msgstr "{0, plural, other {#章}}"
 #. placeholder {0}: this.ids.length
 #: src/editor/comments.ts
 msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr "{0, plural, one {この行にコメントが#件あります} other {この行にコメントが#件あります}}"
+msgstr "{0, plural, other {この行にコメントが#件あります}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
@@ -66,7 +66,7 @@ msgstr "{0, plural, other {このセクションの単語数：#語}}"
 #. placeholder {0}: problems.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
-msgstr "{0, plural, one {{name}をエクスポートしました（問題#件: {firstProblem}）} other {{name}をエクスポートしました（問題#件: {firstProblem}）}}"
+msgstr "{0, plural, other {{name}をエクスポートしました（問題#件: {firstProblem}）}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
@@ -81,7 +81,7 @@ msgstr "{0, plural, other {復元したローカル下書き#件を確認して�
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
-msgstr "{0, plural, one {全#件中、先頭の{listedCount}件} other {全#件中、先頭の{listedCount}件}}"
+msgstr "{0, plural, other {全#件中、先頭の{listedCount}件}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
