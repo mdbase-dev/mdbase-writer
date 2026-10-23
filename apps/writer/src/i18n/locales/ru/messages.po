@@ -156,7 +156,7 @@ msgstr "{at}: эта запись удалена; скачайте локаль�
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr "{commentsTitle} ({MOD_LABEL}-Shift-M)"
+msgstr "{commentsTitle} (сочетание клавиш: {MOD_LABEL}-Shift-M)"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
