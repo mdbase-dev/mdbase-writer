@@ -54,6 +54,12 @@ try {
   await page.screenshot({ path: "out/i18n/narrow-language-control.png", fullPage: true });
   const bounds = await picker.boundingBox();
   assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 390 && bounds.y >= 0 && bounds.y + bounds.height <= 844, "language setting remains reachable on a narrow viewport");
+  // Chinese is an authored product catalogue, not just a translated editor phrase set.
+  await picker.selectOption("zh");
+  await page.waitForFunction(() => document.documentElement.lang === "zh");
+  assert.match(await picker.getAttribute("aria-label"), /[\u3400-\u9fff]/);
+  assert.equal(await manuscriptSource(), before);
+  await page.screenshot({ path: "out/i18n/chinese-settings-narrow.png", fullPage: true });
   assert.deepEqual(errors, []);
   await context.close();
 
@@ -76,7 +82,7 @@ try {
   await failedPage.waitForFunction(() => document.documentElement.lang === "ja");
   assert.equal(await failedPage.locator(".interface-language-error").count(), 0, "a successful retry clears the prior error");
   await failure.close();
-  console.log("i18n browser: synchronous English, selection/persistence, Japanese CodeMirror, unchanged manuscript, narrow picker and chunk-failure retention passed. Product-catalogue German/Japanese layout review still requires authored translations.");
+  console.log("i18n browser: synchronous English, selection/persistence, Japanese CodeMirror, unchanged manuscript, narrow picker, authored Chinese settings and chunk-failure retention passed. Product-catalogue German/Japanese layout review still requires authored translations.");
 } finally {
   await browser.close();
 }

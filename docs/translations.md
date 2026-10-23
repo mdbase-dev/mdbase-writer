@@ -21,6 +21,8 @@ pnpm i18n:compile
 pnpm i18n:check
 ```
 
+`i18n-policy.json` explicitly allowlists reviewed unchanged keyboard key legends, `ID`, Word/DOCX, Spanish/Portuguese Editor/Zoom, and Portuguese Layout / “via mdbase Connect”. It does not exempt whole catalogues or English prose. New identical terms need review; for example, English “click” in a Chinese shortcut hint is not accepted as a keyboard key name.
+
 Use `Trans` for complete sentences with rich markup and ICU plurals for counts. Use `t` in presentation helpers and accessible labels. Add semantic context to ambiguous short messages. Module-level option labels must be lazy getters or rendered on demand, never translations captured before locale selection. Stable command IDs, keyboard bindings, format keys and record values remain untranslated.
 
 The shared collection components receive a translated `CollectionCopy` dictionary. Its `{app}`, `{collection}`, `{account}`, `{id}` and `{query}` substitution tokens are preserved for the shared component's final substitution; values remain user data. The protected `{#fig-plan}` example is Markdown syntax, not translatable prose.

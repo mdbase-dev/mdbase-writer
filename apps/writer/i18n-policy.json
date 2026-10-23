@@ -1,5 +1,10 @@
 {
-  "allowIdentical": {},
+  "allowIdentical": {
+    "es": ["GPQyjo", "6stxj1", "D2fBSU", "WBbQ6j", "YNmZG2", "kjd02W", "quZLv8", "bvnb9m", "ef0nW8", "PKDyzC", "uBAxNB", "_ldIs1", "fUDM0u", "ACjxWW"],
+    "ko": ["GPQyjo", "6stxj1", "D2fBSU", "WBbQ6j", "YNmZG2", "kjd02W", "quZLv8", "oRJEwT", "oCl6qZ", "YPtBzd", "3c6Jwh", "L0jxRL", "x4F4rp", "bvnb9m", "ef0nW8", "PKDyzC", "4_lfk6", "_ldIs1"],
+    "pt": ["vZtY0S", "GPQyjo", "6stxj1", "D2fBSU", "WBbQ6j", "YNmZG2", "kjd02W", "quZLv8", "oRJEwT", "oCl6qZ", "YPtBzd", "3c6Jwh", "L0jxRL", "x4F4rp", "bvnb9m", "ef0nW8", "PKDyzC", "4_lfk6", "uBAxNB", "_ldIs1", "rdU729", "eavifN", "fUDM0u", "ACjxWW"],
+    "zh": ["GPQyjo", "6stxj1", "D2fBSU", "WBbQ6j", "YNmZG2", "kjd02W", "quZLv8", "oRJEwT", "oCl6qZ", "YPtBzd", "3c6Jwh", "L0jxRL", "x4F4rp", "bvnb9m", "ef0nW8", "PKDyzC", "4_lfk6", "_ldIs1"]
+  },
   "source": {
     "include": ["src"],
     "exclude": ["**/generated/**", "**/test/**"],
