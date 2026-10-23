@@ -126,30 +126,6 @@ msgstr ""
 msgid "{0}backed up {1}"
 msgstr "{0}{1} 백업됨"
 
-#: src/i18n/collections.ts
-msgid "{app} can't open collections here"
-msgstr "여기서 {app} 컬렉션을 열 수 없습니다."
-
-#: src/i18n/collections.ts
-msgid "{app} doesn't have access to any collections yet. Choose one you have, or create a new one."
-msgstr "{app}에 접근 권한이 있는 컬렉션이 없습니다. 보유한 컬렉션을 선택하거나 새로 만드세요."
-
-#: src/i18n/collections.ts
-msgid "{app} has stopped"
-msgstr "{app}이(가) 중지되었습니다."
-
-#: src/i18n/collections.ts
-msgid "{app} needs to add a few things to this collection before it can use it."
-msgstr "{app}에서 이 컬렉션을 사용하려면 먼저 몇 가지 항목을 추가해야 합니다."
-
-#: src/i18n/collections.ts
-msgid "{app} needs your approval in mdbase before it can open it."
-msgstr "열기 전에 mdbase에서 {app}을(를) 승인해야 합니다."
-
-#: src/i18n/collections.ts
-msgid "{app} stops showing it on this device. Nothing in the collection is deleted, and {app} keeps its access. To end access, use Manage access."
-msgstr "이 기기에서 {app}이(가) 표시되지 않게 됩니다. 컬렉션의 내용은 삭제되지 않으며 {app}의 접근 권한도 유지됩니다. 접근을 종료하려면 접근 관리에서 처리하세요."
-
 #: src/workspace/workspace.ts
 msgid "{at}: this record was deleted; download the local draft before leaving."
 msgstr "{at}: 이 레코드는 삭제되었습니다. 나가기 전에 로컬 초안을 다운로드하세요."
@@ -367,14 +343,6 @@ msgstr "수락"
 msgid "Accepted"
 msgstr "수락됨"
 
-#: src/i18n/collections.ts
-msgid "Access wasn't given."
-msgstr "접근 권한이 부여되지 않았습니다."
-
-#: src/i18n/collections.ts
-msgid "Access wasn't given. You can try again or choose a different collection."
-msgstr "접근 권한이 부여되지 않았습니다. 다시 시도하거나 다른 컬렉션을 선택할 수 있습니다."
-
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
 msgstr "추가"
@@ -383,17 +351,9 @@ msgstr "추가"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "홈 화면에 {appName}을(를) 추가하려면 공유를 탭한 다음 홈 화면에 추가를 선택하세요."
 
-#: src/i18n/collections.ts
-msgid "Add a collection…"
-msgstr "컬렉션 추가…"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Add a footnote"
 msgstr "각주 추가"
-
-#: src/i18n/collections.ts
-msgid "Add a Private collection"
-msgstr "비공개 컬렉션 추가"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -491,23 +451,6 @@ msgstr "굵게"
 msgid "Bold / italic (again to remove it)"
 msgstr "굵게 / 기울임꼴(다시 누르면 해제)"
 
-#: src/i18n/collections.ts
-msgid "Can edit"
-msgstr "편집 가능"
-
-#: src/i18n/collections.ts
-msgid "Can view"
-msgstr "보기 가능"
-
-#: src/i18n/collections.ts
-msgid "Can't continue"
-msgstr "계속할 수 없습니다."
-
-#: src/i18n/collections.ts
-msgid "Can't open {collection}"
-msgstr "{collection}을(를) 열 수 없습니다."
-
-#: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -568,10 +511,6 @@ msgstr "장과 이미지를 확인한 다음 Word 파일을 만듭니다… (처
 msgid "Checking the collection"
 msgstr "컬렉션 확인 중"
 
-#: src/i18n/collections.ts
-msgid "Checking what setup will change…"
-msgstr "설정으로 변경될 내용 확인 중…"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
 msgstr "확인 중…"
@@ -584,21 +523,9 @@ msgstr "Chicago(저자-날짜)"
 msgid "Chicago (notes and bibliography)"
 msgstr "Chicago(각주 및 참고문헌)"
 
-#: src/i18n/collections.ts
-msgid "Choose a collection"
-msgstr "컬렉션 선택"
-
-#: src/i18n/collections.ts
-msgid "Choose a different collection"
-msgstr "다른 컬렉션 선택"
-
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
 msgstr "다른 컬렉션 선택"
-
-#: src/i18n/collections.ts
-msgid "Choose or create a collection there."
-msgstr "해당 화면에서 컬렉션을 선택하거나 만드세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
@@ -664,10 +591,6 @@ msgstr "한 번 인용됨"
 msgid "Click to fit the width"
 msgstr "너비에 맞추려면 클릭"
 
-#: src/i18n/collections.ts
-msgid "Close"
-msgstr "닫기"
-
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr "닫기(Escape)"
@@ -689,10 +612,6 @@ msgctxt "inline code formatting action"
 msgid "Code"
 msgstr "코드"
 
-#: src/i18n/collections.ts
-msgid "Collection"
-msgstr "컬렉션"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
 msgstr "컬렉션 종속 항목을 아직 확인하지 않았습니다."
@@ -709,7 +628,6 @@ msgstr "컬렉션 메타데이터를 불러오는 중입니다."
 msgid "Collection version"
 msgstr "컬렉션 버전"
 
-#: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Collections"
 msgstr "컬렉션"
@@ -787,14 +705,6 @@ msgstr "연결된 컬렉션"
 msgid "Connecting to mdbase connect"
 msgstr "mdbase connect에 연결 중"
 
-#: src/i18n/collections.ts
-msgid "Continue"
-msgstr "계속"
-
-#: src/i18n/collections.ts
-msgid "Continue in the mdbase window"
-msgstr "mdbase 창에서 계속"
-
 #: src/ui/Home.tsx
 msgid "Continue writing"
 msgstr "계속 작성"
@@ -853,18 +763,6 @@ msgstr "삭제"
 msgid "Delete {0}"
 msgstr "{0} 삭제"
 
-#: src/i18n/collections.ts
-msgid "Delete {collection}?"
-msgstr "{collection}을(를) 삭제할까요?"
-
-#: src/i18n/collections.ts
-msgid "Delete collection"
-msgstr "컬렉션 삭제"
-
-#: src/i18n/collections.ts
-msgid "Delete collection…"
-msgstr "컬렉션 삭제…"
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "삭제됨"
@@ -872,10 +770,6 @@ msgstr "삭제됨"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "다른 곳에서 삭제됨"
-
-#: src/i18n/collections.ts
-msgid "Deleting…"
-msgstr "삭제 중…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
@@ -981,10 +875,6 @@ msgstr "오류 및 경고 목록"
 msgid "Everyone"
 msgstr "모든 사용자"
 
-#: src/i18n/collections.ts
-msgid "Everyone, including you, loses access to it on every device and app right away. This can't be undone."
-msgstr "사용자를 포함한 모든 사람이 모든 기기와 앱에서 즉시 접근 권한을 잃습니다. 이 작업은 되돌릴 수 없습니다."
-
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
 msgstr "내보내기"
@@ -1055,10 +945,6 @@ msgstr "그림은 PNG, JPEG, GIF, SVG 또는 WebP 이미지여야 합니다."
 #: src/ui/CollectionPicker.tsx
 msgid "Filter collections"
 msgstr "컬렉션 필터"
-
-#: src/i18n/collections.ts
-msgid "Find a collection"
-msgstr "컬렉션 찾기"
 
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
@@ -1145,18 +1031,6 @@ msgstr "Reader에서 가져옴 · 출처가 라이브러리에 없음"
 msgid "From the collection"
 msgstr "컬렉션에서"
 
-#: src/i18n/collections.ts
-msgid "Give {app} a collection"
-msgstr "{app}에 컬렉션 제공"
-
-#: src/i18n/collections.ts
-msgid "Give {app} access to {collection}?"
-msgstr "{app}에 {collection} 접근 권한을 부여할까요?"
-
-#: src/i18n/collections.ts
-msgid "Give {app} access to this collection?"
-msgstr "{app}에 이 컬렉션 접근 권한을 부여할까요?"
-
 #: src/ui/Home.tsx
 msgid "Give the manuscript a title; it can be changed later."
 msgstr "원고 제목을 입력하세요. 나중에 변경할 수 있습니다."
@@ -1202,10 +1076,6 @@ msgstr "Reader의 하이라이트"
 #: src/ui/CollectionPicker.tsx
 msgid "Hosted by mdbase"
 msgstr "mdbase에서 호스팅"
-
-#: src/i18n/collections.ts
-msgid "ID {id}"
-msgstr "ID {id}"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
@@ -1335,10 +1205,6 @@ msgstr "계속 작성"
 msgid "kept as it is"
 msgstr "그대로 유지됨"
 
-#: src/i18n/collections.ts
-msgid "Kept on your computers, not stored by mdbase"
-msgstr "mdbase에 저장되지 않고 사용자의 컴퓨터에 보관됩니다."
-
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "키보드 단축키"
@@ -1444,10 +1310,6 @@ msgstr "선택 영역을 링크로 만들기"
 msgid "Make this edit"
 msgstr "이 수정 적용"
 
-#: src/i18n/collections.ts
-msgid "Manage access"
-msgstr "접근 관리"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "원고"
@@ -1535,10 +1397,6 @@ msgstr "MLA 9판"
 msgid "More"
 msgstr "더 보기"
 
-#: src/i18n/collections.ts
-msgid "More for {collection}"
-msgstr "{collection} 추가 정보"
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Move author {0} up"
@@ -1558,10 +1416,6 @@ msgstr "{0}을(를) {2}의 {1}장으로 이동했습니다."
 #: src/ui/Settings.tsx
 msgid "Name"
 msgstr "이름"
-
-#: src/i18n/collections.ts
-msgid "Needs a decision"
-msgstr "결정 필요"
 
 #: src/ui/OutlinePanel.tsx
 msgid "New chapter title"
@@ -1620,14 +1474,6 @@ msgstr "이 출처에 주석이 없습니다."
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
 msgstr "“{0}”과(와) 일치하는 컬렉션이 없습니다."
-
-#: src/i18n/collections.ts
-msgid "No collection was added."
-msgstr "컬렉션이 추가되지 않았습니다."
-
-#: src/i18n/collections.ts
-msgid "No collections match “{query}”."
-msgstr "“{query}”와(과) 일치하는 컬렉션이 없습니다."
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
@@ -1745,10 +1591,6 @@ msgstr "유형이 없는 메모"
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr "아직 인용한 항목이 없습니다. 아래 출처를 인용하거나 편집기에서 <0>[@</0>를 입력하세요."
 
-#: src/i18n/collections.ts
-msgid "Nothing in your collection will change."
-msgstr "컬렉션의 내용은 변경되지 않습니다."
-
 #: src/i18n/diagnostics.ts
 msgid "Nothing is labelled {value}."
 msgstr ""
@@ -1816,7 +1658,6 @@ msgstr "검토하려면 해당 원고 열기"
 msgid "Open mdbase Reader"
 msgstr "mdbase Reader 열기"
 
-#: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Open now"
 msgstr "지금 열기"
@@ -1833,21 +1674,9 @@ msgstr "로그인 열기"
 msgid "Open the mdbase tab again"
 msgstr "mdbase 탭 다시 열기"
 
-#: src/i18n/collections.ts
-msgid "Open the mdbase window again"
-msgstr "mdbase 창 다시 열기"
-
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
 msgstr "Reader에서 이 본문 구간 열기"
-
-#: src/i18n/collections.ts
-msgid "Open your collections in {app}"
-msgstr "{app}에서 컬렉션 열기"
-
-#: src/i18n/collections.ts
-msgid "Opening {collection}"
-msgstr "{collection} 여는 중"
 
 #: src/connect/native-signin-ui.ts
 msgid "Opening collections isn't available in this build yet."
@@ -1857,10 +1686,6 @@ msgstr "이 빌드에서는 아직 컬렉션 열기를 사용할 수 없습니�
 #: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
 msgstr "mdbase writer 여는 중"
-
-#: src/i18n/collections.ts
-msgid "Opening mdbase…"
-msgstr "mdbase 여는 중…"
 
 #: src/LegacyApp.tsx
 msgid "Opening the demo collection"
@@ -1879,12 +1704,10 @@ msgstr "Writer 여는 중"
 msgid "Opening Writer…"
 msgstr "Writer 여는 중…"
 
-#: src/i18n/collections.ts
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening your collection"
 msgstr "컬렉션 여는 중"
 
-#: src/i18n/collections.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Opening…"
 msgstr "여는 중…"
@@ -1904,10 +1727,6 @@ msgstr "개요"
 #: src/ui/WorkspaceView.tsx
 msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
 msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Owner"
-msgstr "소유자"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -1990,10 +1809,6 @@ msgstr "이전 댓글"
 msgid "Previously connected"
 msgstr "이전에 연결됨"
 
-#: src/i18n/collections.ts
-msgid "Private"
-msgstr "비공개"
-
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
 msgstr "문제"
@@ -2054,33 +1869,19 @@ msgstr "거부"
 msgid "Rejected"
 msgstr "거부됨"
 
-#: src/i18n/collections.ts
 #: src/LegacyApp.tsx
 msgid "Reload"
 msgstr "새로고침"
 
-#: src/i18n/collections.ts
-msgid "Reload to continue."
-msgstr "계속하려면 새로고침하세요."
-
-#: src/i18n/collections.ts
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Remove"
 msgstr "삭제"
 
-#: src/i18n/collections.ts
-msgid "Remove {collection} from this list?"
-msgstr "이 목록에서 {collection}을(를) 삭제할까요?"
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "저자 {0} 삭제"
-
-#: src/i18n/collections.ts
-msgid "Remove from this list"
-msgstr "이 목록에서 삭제"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Rename the chapter chosen in the outline"
@@ -2188,14 +1989,9 @@ msgstr "검토"
 msgid "Review {0}"
 msgstr "{0} 검토"
 
-#: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Review access"
 msgstr "접근 권한 검토"
-
-#: src/i18n/collections.ts
-msgid "Review access to {collection} there."
-msgstr "해당 화면에서 {collection} 접근 권한을 검토하세요."
 
 #: src/ui/records.ts
 msgid "Review drafts"
@@ -2276,14 +2072,6 @@ msgstr "단어 목표 설정"
 msgid "Set goal"
 msgstr "목표 설정"
 
-#: src/i18n/collections.ts
-msgid "Set up"
-msgstr "설정"
-
-#: src/i18n/collections.ts
-msgid "Set up {collection} for {app}"
-msgstr "{app}용 {collection} 설정"
-
 #: src/ui/ConnectGate.tsx
 msgid "Set up collection"
 msgstr "컬렉션 설정"
@@ -2292,7 +2080,6 @@ msgstr "컬렉션 설정"
 msgid "Set up this collection for writing"
 msgstr "이 컬렉션을 글쓰기용으로 설정"
 
-#: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Setting up…"
 msgstr "설정 중…"
@@ -2437,30 +2224,16 @@ msgid "Sidebar"
 msgstr "사이드바"
 
 #: src/connect/native-signin-ui.ts
-#: src/i18n/collections.ts
 msgid "Sign in"
 msgstr "로그인"
-
-#: src/i18n/collections.ts
-msgid "Sign in and choose a collection there."
-msgstr "로그인한 다음 해당 화면에서 컬렉션을 선택하세요."
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
 msgstr "mdbase 계정으로 로그인하여 모든 기기에서 {appName}을(를) 동기화하세요."
 
-#: src/i18n/collections.ts
-msgid "Sign in with your mdbase account. You'll choose which collection {app} can use."
-msgstr "mdbase 계정으로 로그인하세요. {app}에서 사용할 컬렉션을 선택할 수 있습니다."
-
 #: src/connect/native-signin-ui.ts
-#: src/i18n/collections.ts
 msgid "Sign out"
 msgstr "로그아웃"
-
-#: src/i18n/collections.ts
-msgid "Sign out anyway"
-msgstr "그래도 로그아웃"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Sign-in status"
@@ -2474,10 +2247,6 @@ msgstr "로그인이 중단되었습니다. 다시 시도하세요."
 msgid "Sign-in window closed."
 msgstr "로그인 창이 닫혔습니다."
 
-#: src/i18n/collections.ts
-msgid "Signed in as {account}"
-msgstr "{account}(으)로 로그인됨"
-
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
 msgstr "{email}(으)로 로그인됨"
@@ -2486,10 +2255,6 @@ msgstr "{email}(으)로 로그인됨"
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
 msgstr "로그인되었습니다. {0} 여는 중…"
-
-#: src/i18n/collections.ts
-msgid "Signing out…"
-msgstr "로그아웃 중…"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
@@ -2550,10 +2315,6 @@ msgstr "출처."
 msgid "split stack outline comments sources"
 msgstr "분할 스택 개요 댓글 출처"
 
-#: src/i18n/collections.ts
-msgid "Starting {app}…"
-msgstr "{app} 시작 중…"
-
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2601,10 +2362,6 @@ msgstr ""
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
 msgstr "컬렉션 전환"
-
-#: src/i18n/collections.ts
-msgid "Switch collection, current: {collection}"
-msgstr "컬렉션 전환, 현재: {collection}"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection: {name}"
@@ -2727,10 +2484,6 @@ msgstr "이 설정은 이 브라우저의 모든 원고에 적용됩니다."
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "this collection"
-msgstr "이 컬렉션"
-
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "이 컬렉션은 Writer에서 파일을 받지 않습니다."
@@ -2743,17 +2496,9 @@ msgstr "이 컬렉션을 사용할 수 없습니다."
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "이 컬렉션 뷰를 열지 못했습니다. 위쪽 표시줄에서 다른 컬렉션을 선택하거나 새로고침하여 다시 시도하세요."
 
-#: src/i18n/collections.ts
-msgid "This device is still listed under your account until you remove it there."
-msgstr "해당 기기에서 삭제할 때까지 계정에 계속 표시됩니다."
-
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
 msgstr "이 버전은 로컬 개발 빌드입니다. 호스팅된 mdbase connect 서비스는 HTTPS로 제공되는 앱만 허용하므로 Connect의 로컬 환경(mdbase-connect에서 <0>pnpm dev:environment:up</0> 실행)을 사용하거나 <1>데모 컬렉션</1>을 여세요."
-
-#: src/i18n/collections.ts
-msgid "This is taking longer than usual."
-msgstr "평소보다 시간이 오래 걸리고 있습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
@@ -2796,14 +2541,9 @@ msgstr "제목<0/>{0}"
 msgid "track changes"
 msgstr "변경 내용 추적"
 
-#: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
 msgstr "다시 시도"
-
-#: src/i18n/collections.ts
-msgid "Type {collection} to confirm"
-msgstr "확인하려면 {collection} 입력"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2876,10 +2616,6 @@ msgstr "제목 없는 그림"
 msgid "Updating…"
 msgstr "업데이트 중…"
 
-#: src/i18n/collections.ts
-msgid "Use {app}'s version"
-msgstr "{app} 버전 사용"
-
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
 msgstr "기존 메모 사용…"
@@ -2916,10 +2652,6 @@ msgstr "승인 대기 중…"
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
 msgstr "mdbase connect 대기 중…"
-
-#: src/i18n/collections.ts
-msgid "What changes"
-msgstr "변경 사항"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -3006,10 +2738,6 @@ msgstr "Writer에서 계정 정보를 볼 수 있는 권한이 없습니다."
 msgid "You can close this window."
 msgstr "이 창을 닫아도 됩니다."
 
-#: src/i18n/collections.ts
-msgid "You've signed out of {app} on this device."
-msgstr "이 기기에서 {app}에서 로그아웃했습니다."
-
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
@@ -3023,10 +2751,6 @@ msgstr "계정이 이 컬렉션의 사람 레코드에 연결되어 있지 않�
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
 msgstr "브라우저에서 로그인 탭을 차단했습니다."
-
-#: src/i18n/collections.ts
-msgid "Your collections"
-msgstr "내 컬렉션"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."

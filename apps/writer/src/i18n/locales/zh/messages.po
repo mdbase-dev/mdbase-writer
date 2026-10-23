@@ -126,30 +126,6 @@ msgstr ""
 msgid "{0}backed up {1}"
 msgstr "{0}已备份于{1}"
 
-#: src/i18n/collections.ts
-msgid "{app} can't open collections here"
-msgstr "无法在此处打开集合（{app}）"
-
-#: src/i18n/collections.ts
-msgid "{app} doesn't have access to any collections yet. Choose one you have, or create a new one."
-msgstr "{app} 尚无可访问的集合。请选择已有集合，或新建一个。"
-
-#: src/i18n/collections.ts
-msgid "{app} has stopped"
-msgstr "{app} 已停止运行"
-
-#: src/i18n/collections.ts
-msgid "{app} needs to add a few things to this collection before it can use it."
-msgstr "{app} 需要先向此集合添加少量内容才能使用。"
-
-#: src/i18n/collections.ts
-msgid "{app} needs your approval in mdbase before it can open it."
-msgstr "{app} 需要先在 mdbase 中获得你的批准，才能打开此集合。"
-
-#: src/i18n/collections.ts
-msgid "{app} stops showing it on this device. Nothing in the collection is deleted, and {app} keeps its access. To end access, use Manage access."
-msgstr "{app} 将不再在此设备上显示该集合。集合中的内容不会被删除，且 {app} 仍保留访问权限。如需撤销访问权限，请使用“管理访问权限”。"
-
 #: src/workspace/workspace.ts
 msgid "{at}: this record was deleted; download the local draft before leaving."
 msgstr "{at}：此记录已删除；离开前请下载本地草稿。"
@@ -367,14 +343,6 @@ msgstr "接受"
 msgid "Accepted"
 msgstr "已接受"
 
-#: src/i18n/collections.ts
-msgid "Access wasn't given."
-msgstr "未获授权。"
-
-#: src/i18n/collections.ts
-msgid "Access wasn't given. You can try again or choose a different collection."
-msgstr "未获授权。你可以重试或选择其他集合。"
-
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
 msgstr "添加"
@@ -383,17 +351,9 @@ msgstr "添加"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "将 {appName} 添加到主屏幕：轻点“分享”，然后选择“添加到主屏幕”。"
 
-#: src/i18n/collections.ts
-msgid "Add a collection…"
-msgstr "添加集合…"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Add a footnote"
 msgstr "添加脚注"
-
-#: src/i18n/collections.ts
-msgid "Add a Private collection"
-msgstr "添加私有集合"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -491,23 +451,6 @@ msgstr "粗体"
 msgid "Bold / italic (again to remove it)"
 msgstr "粗体 / 斜体（再次按下可取消）"
 
-#: src/i18n/collections.ts
-msgid "Can edit"
-msgstr "可编辑"
-
-#: src/i18n/collections.ts
-msgid "Can view"
-msgstr "可查看"
-
-#: src/i18n/collections.ts
-msgid "Can't continue"
-msgstr "无法继续"
-
-#: src/i18n/collections.ts
-msgid "Can't open {collection}"
-msgstr "无法打开集合“{collection}”"
-
-#: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -568,10 +511,6 @@ msgstr "正在检查章节和图片，然后生成 Word 文档…（首次使用
 msgid "Checking the collection"
 msgstr "正在检查集合"
 
-#: src/i18n/collections.ts
-msgid "Checking what setup will change…"
-msgstr "正在检查设置将进行哪些更改…"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
 msgstr "正在检查…"
@@ -584,21 +523,9 @@ msgstr "Chicago（作者-日期制）"
 msgid "Chicago (notes and bibliography)"
 msgstr "Chicago（注释与参考文献制）"
 
-#: src/i18n/collections.ts
-msgid "Choose a collection"
-msgstr "选择集合"
-
-#: src/i18n/collections.ts
-msgid "Choose a different collection"
-msgstr "选择其他集合"
-
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
 msgstr "选择其他集合"
-
-#: src/i18n/collections.ts
-msgid "Choose or create a collection there."
-msgstr "在该处选择或创建集合。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
@@ -664,10 +591,6 @@ msgstr "引用过一次"
 msgid "Click to fit the width"
 msgstr "单击以适应宽度"
 
-#: src/i18n/collections.ts
-msgid "Close"
-msgstr "关闭"
-
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr "关闭（Esc）"
@@ -689,10 +612,6 @@ msgctxt "inline code formatting action"
 msgid "Code"
 msgstr "代码"
 
-#: src/i18n/collections.ts
-msgid "Collection"
-msgstr "集合"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
 msgstr "尚未检查集合依赖项"
@@ -709,7 +628,6 @@ msgstr "仍在加载集合元数据。"
 msgid "Collection version"
 msgstr "集合版本"
 
-#: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Collections"
 msgstr "集合"
@@ -787,14 +705,6 @@ msgstr "已连接的集合"
 msgid "Connecting to mdbase connect"
 msgstr "正在连接到 mdbase Connect"
 
-#: src/i18n/collections.ts
-msgid "Continue"
-msgstr "继续"
-
-#: src/i18n/collections.ts
-msgid "Continue in the mdbase window"
-msgstr "在 mdbase 窗口中继续"
-
 #: src/ui/Home.tsx
 msgid "Continue writing"
 msgstr "继续写作"
@@ -853,18 +763,6 @@ msgstr "删除"
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
-#: src/i18n/collections.ts
-msgid "Delete {collection}?"
-msgstr "删除集合“{collection}”？"
-
-#: src/i18n/collections.ts
-msgid "Delete collection"
-msgstr "删除集合"
-
-#: src/i18n/collections.ts
-msgid "Delete collection…"
-msgstr "删除集合…"
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "已删除"
@@ -872,10 +770,6 @@ msgstr "已删除"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "已在其他位置删除"
-
-#: src/i18n/collections.ts
-msgid "Deleting…"
-msgstr "正在删除…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
@@ -981,10 +875,6 @@ msgstr "错误 警告 列表"
 msgid "Everyone"
 msgstr "所有人"
 
-#: src/i18n/collections.ts
-msgid "Everyone, including you, loses access to it on every device and app right away. This can't be undone."
-msgstr "包括你在内的所有人都会立即在所有设备和应用上失去对此集合的访问权限。此操作无法撤销。"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
 msgstr "导出"
@@ -1055,10 +945,6 @@ msgstr "插图必须使用 PNG、JPEG、GIF、SVG 或 WebP 图片。"
 #: src/ui/CollectionPicker.tsx
 msgid "Filter collections"
 msgstr "筛选集合"
-
-#: src/i18n/collections.ts
-msgid "Find a collection"
-msgstr "查找集合"
 
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
@@ -1145,18 +1031,6 @@ msgstr "来自 Reader · 其来源不在资料库中"
 msgid "From the collection"
 msgstr "来自集合"
 
-#: src/i18n/collections.ts
-msgid "Give {app} a collection"
-msgstr "为 {app} 提供一个集合"
-
-#: src/i18n/collections.ts
-msgid "Give {app} access to {collection}?"
-msgstr "允许 {app} 访问集合“{collection}”？"
-
-#: src/i18n/collections.ts
-msgid "Give {app} access to this collection?"
-msgstr "允许 {app} 访问此集合？"
-
 #: src/ui/Home.tsx
 msgid "Give the manuscript a title; it can be changed later."
 msgstr "为手稿命名；之后仍可更改。"
@@ -1202,10 +1076,6 @@ msgstr "来自 Reader 的高亮"
 #: src/ui/CollectionPicker.tsx
 msgid "Hosted by mdbase"
 msgstr "由 mdbase 托管"
-
-#: src/i18n/collections.ts
-msgid "ID {id}"
-msgstr "ID {id}"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
@@ -1335,10 +1205,6 @@ msgstr "继续写作"
 msgid "kept as it is"
 msgstr "保持原样"
 
-#: src/i18n/collections.ts
-msgid "Kept on your computers, not stored by mdbase"
-msgstr "仅保存在你的设备上，不存储在 mdbase 中"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
@@ -1444,10 +1310,6 @@ msgstr "将所选内容设为链接"
 msgid "Make this edit"
 msgstr "应用此编辑"
 
-#: src/i18n/collections.ts
-msgid "Manage access"
-msgstr "管理访问权限"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "手稿"
@@ -1535,10 +1397,6 @@ msgstr "MLA 第 9 版"
 msgid "More"
 msgstr "更多"
 
-#: src/i18n/collections.ts
-msgid "More for {collection}"
-msgstr "{collection} 的更多内容"
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Move author {0} up"
@@ -1558,10 +1416,6 @@ msgstr "已将 {0} 移至第 {2} 章中的第 {1} 章位置。"
 #: src/ui/Settings.tsx
 msgid "Name"
 msgstr "名称"
-
-#: src/i18n/collections.ts
-msgid "Needs a decision"
-msgstr "需要决定"
 
 #: src/ui/OutlinePanel.tsx
 msgid "New chapter title"
@@ -1620,14 +1474,6 @@ msgstr "此来源没有注释。"
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
 msgstr "没有匹配“{0}”的集合。"
-
-#: src/i18n/collections.ts
-msgid "No collection was added."
-msgstr "未添加集合。"
-
-#: src/i18n/collections.ts
-msgid "No collections match “{query}”."
-msgstr "没有匹配“{query}”的集合。"
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
@@ -1745,10 +1591,6 @@ msgstr "无类型的笔记"
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr "尚未引用任何内容。请在下方引用来源，或在编辑器中输入 <0>[@</0>。"
 
-#: src/i18n/collections.ts
-msgid "Nothing in your collection will change."
-msgstr "集合中的内容不会发生变化。"
-
 #: src/i18n/diagnostics.ts
 msgid "Nothing is labelled {value}."
 msgstr ""
@@ -1816,7 +1658,6 @@ msgstr "打开对应手稿以进行审阅"
 msgid "Open mdbase Reader"
 msgstr "打开 mdbase Reader"
 
-#: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Open now"
 msgstr "立即打开"
@@ -1833,21 +1674,9 @@ msgstr "打开登录页面"
 msgid "Open the mdbase tab again"
 msgstr "重新打开 mdbase 标签页"
 
-#: src/i18n/collections.ts
-msgid "Open the mdbase window again"
-msgstr "重新打开 mdbase 窗口"
-
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
 msgstr "在 Reader 中打开此段落"
-
-#: src/i18n/collections.ts
-msgid "Open your collections in {app}"
-msgstr "在 {app} 中打开你的集合"
-
-#: src/i18n/collections.ts
-msgid "Opening {collection}"
-msgstr "正在打开 {collection}"
 
 #: src/connect/native-signin-ui.ts
 msgid "Opening collections isn't available in this build yet."
@@ -1857,10 +1686,6 @@ msgstr "此版本暂不支持打开集合。"
 #: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
 msgstr "正在打开 mdbase writer"
-
-#: src/i18n/collections.ts
-msgid "Opening mdbase…"
-msgstr "正在打开 mdbase…"
 
 #: src/LegacyApp.tsx
 msgid "Opening the demo collection"
@@ -1879,12 +1704,10 @@ msgstr "正在打开 Writer"
 msgid "Opening Writer…"
 msgstr "正在打开 Writer…"
 
-#: src/i18n/collections.ts
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening your collection"
 msgstr "正在打开你的集合"
 
-#: src/i18n/collections.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Opening…"
 msgstr "正在打开…"
@@ -1904,10 +1727,6 @@ msgstr "大纲"
 #: src/ui/WorkspaceView.tsx
 msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
 msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Owner"
-msgstr "所有者"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -1990,10 +1809,6 @@ msgstr "上一条评论"
 msgid "Previously connected"
 msgstr "之前已连接"
 
-#: src/i18n/collections.ts
-msgid "Private"
-msgstr "私有"
-
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
 msgstr "问题"
@@ -2054,33 +1869,19 @@ msgstr "拒绝"
 msgid "Rejected"
 msgstr "已拒绝"
 
-#: src/i18n/collections.ts
 #: src/LegacyApp.tsx
 msgid "Reload"
 msgstr "重新加载"
 
-#: src/i18n/collections.ts
-msgid "Reload to continue."
-msgstr "请重新加载以继续。"
-
-#: src/i18n/collections.ts
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Remove"
 msgstr "移除"
 
-#: src/i18n/collections.ts
-msgid "Remove {collection} from this list?"
-msgstr "要从此列表中移除 {collection} 吗？"
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "移除作者 {0}"
-
-#: src/i18n/collections.ts
-msgid "Remove from this list"
-msgstr "从此列表中移除"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Rename the chapter chosen in the outline"
@@ -2188,14 +1989,9 @@ msgstr "审阅"
 msgid "Review {0}"
 msgstr "审阅 {0}"
 
-#: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Review access"
 msgstr "查看访问权限"
-
-#: src/i18n/collections.ts
-msgid "Review access to {collection} there."
-msgstr "在此处查看对 {collection} 的访问权限。"
 
 #: src/ui/records.ts
 msgid "Review drafts"
@@ -2276,14 +2072,6 @@ msgstr "设置字数目标"
 msgid "Set goal"
 msgstr "设置目标"
 
-#: src/i18n/collections.ts
-msgid "Set up"
-msgstr "设置"
-
-#: src/i18n/collections.ts
-msgid "Set up {collection} for {app}"
-msgstr "为 {app} 设置 {collection}"
-
 #: src/ui/ConnectGate.tsx
 msgid "Set up collection"
 msgstr "设置集合"
@@ -2292,7 +2080,6 @@ msgstr "设置集合"
 msgid "Set up this collection for writing"
 msgstr "设置此集合以进行写作"
 
-#: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Setting up…"
 msgstr "正在设置…"
@@ -2437,30 +2224,16 @@ msgid "Sidebar"
 msgstr "侧边栏"
 
 #: src/connect/native-signin-ui.ts
-#: src/i18n/collections.ts
 msgid "Sign in"
 msgstr "登录"
-
-#: src/i18n/collections.ts
-msgid "Sign in and choose a collection there."
-msgstr "登录并在此处选择集合。"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
 msgstr "使用 mdbase 账户登录，以便在各设备间同步 {appName}。"
 
-#: src/i18n/collections.ts
-msgid "Sign in with your mdbase account. You'll choose which collection {app} can use."
-msgstr "使用 mdbase 账户登录。你可以选择 {app} 可使用的集合。"
-
 #: src/connect/native-signin-ui.ts
-#: src/i18n/collections.ts
 msgid "Sign out"
 msgstr "退出登录"
-
-#: src/i18n/collections.ts
-msgid "Sign out anyway"
-msgstr "仍要退出登录"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Sign-in status"
@@ -2474,10 +2247,6 @@ msgstr "登录过程已中断。请重试。"
 msgid "Sign-in window closed."
 msgstr "登录窗口已关闭。"
 
-#: src/i18n/collections.ts
-msgid "Signed in as {account}"
-msgstr "已以 {account} 身份登录"
-
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
 msgstr "已以 {email} 身份登录"
@@ -2486,10 +2255,6 @@ msgstr "已以 {email} 身份登录"
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
 msgstr "已登录。正在打开 {0}…"
-
-#: src/i18n/collections.ts
-msgid "Signing out…"
-msgstr "正在退出登录…"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
@@ -2550,10 +2315,6 @@ msgstr "来源。"
 msgid "split stack outline comments sources"
 msgstr "分栏、堆叠、大纲、评论、来源"
 
-#: src/i18n/collections.ts
-msgid "Starting {app}…"
-msgstr "正在启动 {app}…"
-
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2601,10 +2362,6 @@ msgstr ""
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
 msgstr "切换集合"
-
-#: src/i18n/collections.ts
-msgid "Switch collection, current: {collection}"
-msgstr "切换集合，当前：{collection}"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection: {name}"
@@ -2727,10 +2484,6 @@ msgstr "此设置适用于此浏览器中的所有手稿。"
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "this collection"
-msgstr "此集合"
-
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "此集合不接受来自 Writer 的文件。"
@@ -2743,17 +2496,9 @@ msgstr "此集合不可用"
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "无法打开此集合视图。请从上方栏中选择其他集合，或重新加载后重试。"
 
-#: src/i18n/collections.ts
-msgid "This device is still listed under your account until you remove it there."
-msgstr "在账户中移除此设备之前，它仍会显示在设备列表中。"
-
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
 msgstr "这是本地开发版本。托管的 mdbase connect 服务仅接受通过 HTTPS 提供的应用，因此请使用 Connect 本地环境（在 mdbase-connect 中运行 <0>pnpm dev:environment:up</0>），或打开<1>演示集合</1>。"
-
-#: src/i18n/collections.ts
-msgid "This is taking longer than usual."
-msgstr "这比平时花费的时间更长。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
@@ -2796,14 +2541,9 @@ msgstr "标题<0/>{0}"
 msgid "track changes"
 msgstr "修订"
 
-#: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
 msgstr "重试"
-
-#: src/i18n/collections.ts
-msgid "Type {collection} to confirm"
-msgstr "输入 {collection} 以确认"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2876,10 +2616,6 @@ msgstr "无标题插图"
 msgid "Updating…"
 msgstr "正在更新…"
 
-#: src/i18n/collections.ts
-msgid "Use {app}'s version"
-msgstr "使用 {app} 的版本"
-
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
 msgstr "使用已有笔记…"
@@ -2916,10 +2652,6 @@ msgstr "正在等待批准…"
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
 msgstr "正在等待 mdbase connect…"
-
-#: src/i18n/collections.ts
-msgid "What changes"
-msgstr "更改内容"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -3006,10 +2738,6 @@ msgstr "Writer 无权查看你的账户。"
 msgid "You can close this window."
 msgstr "你可以关闭此窗口。"
 
-#: src/i18n/collections.ts
-msgid "You've signed out of {app} on this device."
-msgstr "你已在此设备上退出 {app}。"
-
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
@@ -3023,10 +2751,6 @@ msgstr "你的账户未关联到此集合中的人员记录。"
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
 msgstr "浏览器已拦截登录标签页。"
-
-#: src/i18n/collections.ts
-msgid "Your collections"
-msgstr "你的集合"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."

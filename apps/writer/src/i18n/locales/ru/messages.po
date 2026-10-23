@@ -126,30 +126,6 @@ msgstr ""
 msgid "{0}backed up {1}"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "{app} can't open collections here"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "{app} doesn't have access to any collections yet. Choose one you have, or create a new one."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "{app} has stopped"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "{app} needs to add a few things to this collection before it can use it."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "{app} needs your approval in mdbase before it can open it."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "{app} stops showing it on this device. Nothing in the collection is deleted, and {app} keeps its access. To end access, use Manage access."
-msgstr ""
-
 #: src/workspace/workspace.ts
 msgid "{at}: this record was deleted; download the local draft before leaving."
 msgstr ""
@@ -367,14 +343,6 @@ msgstr ""
 msgid "Accepted"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Access wasn't given."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Access wasn't given. You can try again or choose a different collection."
-msgstr ""
-
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
 msgstr ""
@@ -383,16 +351,8 @@ msgstr ""
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Add a collection…"
-msgstr ""
-
 #: src/ui/WorkspaceView.tsx
 msgid "Add a footnote"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Add a Private collection"
 msgstr ""
 
 #: src/ui/SourcesPanel.tsx
@@ -491,23 +451,6 @@ msgstr ""
 msgid "Bold / italic (again to remove it)"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Can edit"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Can view"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Can't continue"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Can't open {collection}"
-msgstr ""
-
-#: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -568,10 +511,6 @@ msgstr ""
 msgid "Checking the collection"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Checking what setup will change…"
-msgstr ""
-
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
 msgstr ""
@@ -584,20 +523,8 @@ msgstr ""
 msgid "Chicago (notes and bibliography)"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Choose a collection"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Choose a different collection"
-msgstr ""
-
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Choose or create a collection there."
 msgstr ""
 
 #: src/ui/WorkspaceView.tsx
@@ -664,10 +591,6 @@ msgstr ""
 msgid "Click to fit the width"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Close"
-msgstr ""
-
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr ""
@@ -689,10 +612,6 @@ msgctxt "inline code formatting action"
 msgid "Code"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Collection"
-msgstr ""
-
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
 msgstr ""
@@ -709,7 +628,6 @@ msgstr ""
 msgid "Collection version"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Collections"
 msgstr ""
@@ -787,14 +705,6 @@ msgstr ""
 msgid "Connecting to mdbase connect"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Continue"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Continue in the mdbase window"
-msgstr ""
-
 #: src/ui/Home.tsx
 msgid "Continue writing"
 msgstr ""
@@ -853,28 +763,12 @@ msgstr ""
 msgid "Delete {0}"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Delete {collection}?"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Delete collection"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Delete collection…"
-msgstr ""
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr ""
 
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Deleting…"
 msgstr ""
 
 #: src/ui/WorkspaceView.tsx
@@ -981,10 +875,6 @@ msgstr ""
 msgid "Everyone"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Everyone, including you, loses access to it on every device and app right away. This can't be undone."
-msgstr ""
-
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
 msgstr ""
@@ -1054,10 +944,6 @@ msgstr ""
 
 #: src/ui/CollectionPicker.tsx
 msgid "Filter collections"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Find a collection"
 msgstr ""
 
 #: src/ui/Home.tsx
@@ -1145,18 +1031,6 @@ msgstr ""
 msgid "From the collection"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Give {app} a collection"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Give {app} access to {collection}?"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Give {app} access to this collection?"
-msgstr ""
-
 #: src/ui/Home.tsx
 msgid "Give the manuscript a title; it can be changed later."
 msgstr ""
@@ -1201,10 +1075,6 @@ msgstr ""
 
 #: src/ui/CollectionPicker.tsx
 msgid "Hosted by mdbase"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "ID {id}"
 msgstr ""
 
 #: src/i18n/diagnostics.ts
@@ -1335,10 +1205,6 @@ msgstr ""
 msgid "kept as it is"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Kept on your computers, not stored by mdbase"
-msgstr ""
-
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr ""
@@ -1444,10 +1310,6 @@ msgstr ""
 msgid "Make this edit"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Manage access"
-msgstr ""
-
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr ""
@@ -1535,10 +1397,6 @@ msgstr ""
 msgid "More"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "More for {collection}"
-msgstr ""
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Move author {0} up"
@@ -1557,10 +1415,6 @@ msgstr ""
 
 #: src/ui/Settings.tsx
 msgid "Name"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Needs a decision"
 msgstr ""
 
 #: src/ui/OutlinePanel.tsx
@@ -1619,14 +1473,6 @@ msgstr ""
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "No collection was added."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "No collections match “{query}”."
 msgstr ""
 
 #: src/ui/ExportReview.tsx
@@ -1745,10 +1591,6 @@ msgstr ""
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Nothing in your collection will change."
-msgstr ""
-
 #: src/i18n/diagnostics.ts
 msgid "Nothing is labelled {value}."
 msgstr ""
@@ -1816,7 +1658,6 @@ msgstr ""
 msgid "Open mdbase Reader"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Open now"
 msgstr ""
@@ -1833,20 +1674,8 @@ msgstr ""
 msgid "Open the mdbase tab again"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Open the mdbase window again"
-msgstr ""
-
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Open your collections in {app}"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Opening {collection}"
 msgstr ""
 
 #: src/connect/native-signin-ui.ts
@@ -1856,10 +1685,6 @@ msgstr ""
 #: src/App.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Opening mdbase…"
 msgstr ""
 
 #: src/LegacyApp.tsx
@@ -1879,12 +1704,10 @@ msgstr ""
 msgid "Opening Writer…"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening your collection"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Opening…"
 msgstr ""
@@ -1903,10 +1726,6 @@ msgstr ""
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Owner"
 msgstr ""
 
 #: src/ui/SourcesPanel.tsx
@@ -1990,10 +1809,6 @@ msgstr ""
 msgid "Previously connected"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Private"
-msgstr ""
-
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
 msgstr ""
@@ -2054,32 +1869,18 @@ msgstr ""
 msgid "Rejected"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/LegacyApp.tsx
 msgid "Reload"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Reload to continue."
-msgstr ""
-
-#: src/i18n/collections.ts
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Remove"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Remove {collection} from this list?"
-msgstr ""
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Remove from this list"
 msgstr ""
 
 #: src/ui/WorkspaceView.tsx
@@ -2188,13 +1989,8 @@ msgstr ""
 msgid "Review {0}"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Review access"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Review access to {collection} there."
 msgstr ""
 
 #: src/ui/records.ts
@@ -2276,14 +2072,6 @@ msgstr ""
 msgid "Set goal"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Set up"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Set up {collection} for {app}"
-msgstr ""
-
 #: src/ui/ConnectGate.tsx
 msgid "Set up collection"
 msgstr ""
@@ -2292,7 +2080,6 @@ msgstr ""
 msgid "Set up this collection for writing"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Setting up…"
 msgstr ""
@@ -2437,29 +2224,15 @@ msgid "Sidebar"
 msgstr ""
 
 #: src/connect/native-signin-ui.ts
-#: src/i18n/collections.ts
 msgid "Sign in"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Sign in and choose a collection there."
 msgstr ""
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Sign in with your mdbase account. You'll choose which collection {app} can use."
-msgstr ""
-
 #: src/connect/native-signin-ui.ts
-#: src/i18n/collections.ts
 msgid "Sign out"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Sign out anyway"
 msgstr ""
 
 #: src/ui/NativeSignIn.tsx
@@ -2474,10 +2247,6 @@ msgstr ""
 msgid "Sign-in window closed."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Signed in as {account}"
-msgstr ""
-
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
 msgstr ""
@@ -2485,10 +2254,6 @@ msgstr ""
 #. placeholder {0}: selected.displayName
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Signing out…"
 msgstr ""
 
 #: src/ui/Manuscripts.tsx
@@ -2550,10 +2315,6 @@ msgstr ""
 msgid "split stack outline comments sources"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Starting {app}…"
-msgstr ""
-
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2600,10 +2361,6 @@ msgstr ""
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Switch collection, current: {collection}"
 msgstr ""
 
 #: src/ui/CollectionPicker.tsx
@@ -2727,10 +2484,6 @@ msgstr ""
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "this collection"
-msgstr ""
-
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr ""
@@ -2743,16 +2496,8 @@ msgstr ""
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "This device is still listed under your account until you remove it there."
-msgstr ""
-
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "This is taking longer than usual."
 msgstr ""
 
 #: src/ui/WorkspaceView.tsx
@@ -2796,13 +2541,8 @@ msgstr ""
 msgid "track changes"
 msgstr ""
 
-#: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Type {collection} to confirm"
 msgstr ""
 
 #: src/ui/Home.tsx
@@ -2876,10 +2616,6 @@ msgstr ""
 msgid "Updating…"
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "Use {app}'s version"
-msgstr ""
-
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
 msgstr ""
@@ -2915,10 +2651,6 @@ msgstr ""
 #: src/ui/CollectionPicker.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "What changes"
 msgstr ""
 
 #: src/ui/CommentsPanel.tsx
@@ -3006,10 +2738,6 @@ msgstr ""
 msgid "You can close this window."
 msgstr ""
 
-#: src/i18n/collections.ts
-msgid "You've signed out of {app} on this device."
-msgstr ""
-
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
@@ -3022,10 +2750,6 @@ msgstr ""
 #: src/connect/connect-popup.ts
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
-msgstr ""
-
-#: src/i18n/collections.ts
-msgid "Your collections"
 msgstr ""
 
 #: src/ui/CommentsPanel.tsx
