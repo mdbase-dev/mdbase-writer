@@ -1,20 +1,11 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2026-10-23 22:05+1100\n"
+"POT-Creation-Date: 2026-10-23 23:32+1100\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
 "Language: ru\n"
-
-#. placeholder {0}: diff.suffix
-#: src/ui/CompareDialog.tsx
-#~ msgid ""
-#~ "\n"
-#~ "{0}"
-#~ msgstr ""
-#~ "\n"
-#~ "{0}"
 
 #. placeholder {0}: Math.round((words / goal) * 100)
 #. placeholder {1}: formatNumber(goal)
@@ -62,13 +53,6 @@ msgstr "{0, plural, one {# глава} few {# главы} many {# глав} othe
 msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
 msgstr ""
 
-#. placeholder {0}: result.total
-#. placeholder {1}: formatCount(result.groups.length)
-#. placeholder {2}: formatCount(result.groups.length)
-#: src/ui/ManuscriptSearch.tsx
-#~ msgid "{0, plural, one {# match in {1} records} other {# matches in {2} records}}"
-#~ msgstr "{0, plural, one {# совпадение · записей: {1}} few {# совпадения · записей: {2}} many {# совпадений · записей: {2}} other {# совпадения · записей: {2}}}"
-
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
@@ -78,9 +62,6 @@ msgstr "{0, plural, one {# запись о пользователе связан
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
 msgstr "{0, plural, one {# слово в этом разделе} few {# слова в этом разделе} many {# слов в этом разделе} other {# слова в этом разделе}}"
-
-#~ msgid "{0, plural, one {Exported {name} with # problem: {1}} other {Exported {name} with # problems: {2}}}"
-#~ msgstr "{0, plural, one {Экспорт в {name} завершён, обнаружена # проблема: {1}} few {Экспорт в {name} завершён, обнаружено # проблемы: {2}} many {Экспорт в {name} завершён, обнаружено # проблем: {2}} other {Экспорт в {name} завершён, обнаружено # проблемы: {2}}}"
 
 #. placeholder {0}: problems.length
 #: src/ui/WorkspaceView.tsx
@@ -97,9 +78,6 @@ msgstr "{0, plural, one {В # записи; ссылки на источники
 msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
 msgstr "{0, plural, one {Проверьте # восстановленный локальный черновик. Редактирование этой записи приостановлено, пока вы не восстановите черновик или не выберете версию коллекции.} few {Проверьте # восстановленных локальных черновика. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} many {Проверьте # восстановленных локальных черновиков. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} other {Проверьте # восстановленного локального черновика. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.}}"
 
-#~ msgid "{0, plural, one {The first {1} of # match} other {The first {2} of # matches}}"
-#~ msgstr "{0, plural, one {Первые {1} из # совпадения} few {Первые {2} из # совпадений} many {Первые {2} из # совпадений} other {Первые {2} из # совпадения}}"
-
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
@@ -109,13 +87,6 @@ msgstr ""
 #: src/preview/Preview.tsx
 msgid "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
 msgstr "{0, plural, one {Предпросмотр вёрстки: # страница} few {Предпросмотр вёрстки: # страницы} many {Предпросмотр вёрстки: # страниц} other {Предпросмотр вёрстки: # страницы}}"
-
-#. placeholder {0}: diff.prefix
-#: src/ui/CompareDialog.tsx
-#~ msgid "{0}\n"
-#~ ""
-#~ msgstr "{0}\n"
-#~ ""
 
 #. placeholder {0}: target.target.record
 #: src/editor/insight.ts
@@ -144,74 +115,16 @@ msgstr "{0} ({MOD_LABEL}-Shift-\\ — циклическое переключе�
 msgid "{0} could not be stored: {1}"
 msgstr "{0} не удалось сохранить: {1}"
 
-#. placeholder {0}: shows(path) ? "Hide" : "Show"
-#. placeholder {1}: recordTitle(view, path)
-#: src/ui/OutlinePanel.tsx
-#~ msgid "{0} the headings of {1}"
-#~ msgstr "{0} заголовки в {1}"
-
-#. placeholder {0}: open ? "Hide" : "List"
-#: src/ui/WorkspaceView.tsx
-#~ msgid "{0} the problems under the editor (F8 goes to the next one)"
-#~ msgstr "{0} проблемы под редактором (F8 — к следующей)"
-
-#. placeholder {0}: layout.sidebar ? "Hide" : "Show"
-#: src/ui/WorkspaceView.tsx
-#~ msgid "{0} the sidebar ({MOD_LABEL}-\\)"
-#~ msgstr "{0} боковую панель ({MOD_LABEL}-\\)"
-
 #. placeholder {0}: THEME_NAME[t]
 #: src/ui/WorkspaceView.tsx
 msgid "{0} theme"
 msgstr ""
-
-#. placeholder {0}: info.kind === "suggestion" ? "Suggestion" : "Comment"
-#. placeholder {1}: info.isNew ? " · new" : ""
-#: src/editor/comments.ts
-#~ msgid "{0}{1}"
-#~ msgstr "{0}{1}"
-
-#. placeholder {0}: suggestion ? outcome : "Resolved"
-#. placeholder {1}: root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""
-#. placeholder {2}: root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""
-#: src/ui/CommentsPanel.tsx
-#~ msgid "{0}{1}{2}"
-#~ msgstr "{0}{1}{2}"
-
-#. placeholder {0}: Math.round(layout.zoom * 100)
-#: src/ui/WorkspaceView.tsx
-#~ msgid "{0}%"
-#~ msgstr "{0}%"
 
 #. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
 msgstr "{0}резервная копия создана {1}"
-
-#: src/i18n/collections.ts
-#~ msgid "{app} can't open collections here"
-#~ msgstr "{app} не может открывать коллекции здесь"
-
-#: src/i18n/collections.ts
-#~ msgid "{app} doesn't have access to any collections yet. Choose one you have, or create a new one."
-#~ msgstr "{app} пока не имеет доступа ни к одной коллекции. Выберите коллекцию или создайте новую."
-
-#: src/i18n/collections.ts
-#~ msgid "{app} has stopped"
-#~ msgstr "Работа {app} остановлена"
-
-#: src/i18n/collections.ts
-#~ msgid "{app} needs to add a few things to this collection before it can use it."
-#~ msgstr "Прежде чем использовать эту коллекцию, {app} нужно добавить в неё несколько элементов."
-
-#: src/i18n/collections.ts
-#~ msgid "{app} needs your approval in mdbase before it can open it."
-#~ msgstr "{app} требуется ваше подтверждение в mdbase, чтобы открыть коллекцию."
-
-#: src/i18n/collections.ts
-#~ msgid "{app} stops showing it on this device. Nothing in the collection is deleted, and {app} keeps its access. To end access, use Manage access."
-#~ msgstr "{app} перестанет отображать её на этом устройстве. Ничего в коллекции не удаляется, а доступ {app} сохраняется. Чтобы отозвать доступ, откройте «Управление доступом»."
 
 #: src/workspace/workspace.ts
 msgid "{at}: this record was deleted; download the local draft before leaving."
@@ -220,9 +133,6 @@ msgstr "{at}: эта запись удалена; скачайте локаль�
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
 msgstr ""
-
-#~ msgid "{MOD_LABEL} ,"
-#~ msgstr "{MOD_LABEL} ,"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
@@ -235,10 +145,6 @@ msgstr "{MOD_LABEL} {ALT_LABEL} M"
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} S"
 msgstr "{MOD_LABEL} {ALT_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-#~ msgid "{MOD_LABEL} \\"
-#~ msgstr "{MOD_LABEL} \\"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} B / {MOD_LABEL} I"
@@ -349,20 +255,9 @@ msgstr "Загрузка {name} продолжается; можно продо�
 msgid "{name} unavailable: {0}"
 msgstr "Не удалось открыть {name}: {0}"
 
-#. placeholder {0}: snap.recordProblems.get(path) ?? "Not loaded; it will be left out."
-#: src/workspace/workspace.ts
-#~ msgid "{path}: {0}"
-#~ msgstr "{path}: {0}"
-
 #: src/workspace/workspace.ts
 msgid "{path}: A recovered draft has not been reviewed; the collection version will be exported."
 msgstr "{path}: Восстановленный черновик ещё не проверен; при экспорте будет использована версия из коллекции."
-
-#. placeholder {0}: direct ? " · drag, or Alt-↑/↓, to reorder" : ""
-#. placeholder {1}: onRename ? " · double-click or F2 to rename" : ""
-#: src/ui/OutlinePanel.tsx
-#~ msgid "{path}{0}{1}"
-#~ msgstr "{path}{0}{1}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source from mdbase Reader can be cited here.} other {# sources from mdbase Reader can be cited here.}}"
@@ -448,14 +343,6 @@ msgstr "Принять"
 msgid "Accepted"
 msgstr "Принято"
 
-#: src/i18n/collections.ts
-#~ msgid "Access wasn't given."
-#~ msgstr "Доступ не предоставлен."
-
-#: src/i18n/collections.ts
-#~ msgid "Access wasn't given. You can try again or choose a different collection."
-#~ msgstr "Доступ не предоставлен. Повторите попытку или выберите другую коллекцию."
-
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
 msgstr "Добавить"
@@ -464,17 +351,9 @@ msgstr "Добавить"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "Добавьте {appName} на главный экран: нажмите «Поделиться», затем «На главный экран»."
 
-#: src/i18n/collections.ts
-#~ msgid "Add a collection…"
-#~ msgstr "Добавить коллекцию…"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Add a footnote"
 msgstr "Добавить сноску"
-
-#: src/i18n/collections.ts
-#~ msgid "Add a Private collection"
-#~ msgstr "Добавить закрытую коллекцию"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -572,22 +451,6 @@ msgstr "Полужирный"
 msgid "Bold / italic (again to remove it)"
 msgstr "Полужирный / курсив (нажмите ещё раз, чтобы убрать форматирование)"
 
-#: src/i18n/collections.ts
-#~ msgid "Can edit"
-#~ msgstr "Может редактировать"
-
-#: src/i18n/collections.ts
-#~ msgid "Can view"
-#~ msgstr "Может просматривать"
-
-#: src/i18n/collections.ts
-#~ msgid "Can't continue"
-#~ msgstr "Не удаётся продолжить"
-
-#: src/i18n/collections.ts
-#~ msgid "Can't open {collection}"
-#~ msgstr "Не удаётся открыть коллекцию «{collection}»"
-
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -648,10 +511,6 @@ msgstr "Проверяем главы и изображения, затем со
 msgid "Checking the collection"
 msgstr "Проверка коллекции"
 
-#: src/i18n/collections.ts
-#~ msgid "Checking what setup will change…"
-#~ msgstr "Проверяем, что изменится при настройке…"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
 msgstr "Проверка…"
@@ -664,21 +523,9 @@ msgstr "Chicago (автор-дата)"
 msgid "Chicago (notes and bibliography)"
 msgstr "Chicago (сноски и библиография)"
 
-#: src/i18n/collections.ts
-#~ msgid "Choose a collection"
-#~ msgstr "Выберите коллекцию"
-
-#: src/i18n/collections.ts
-#~ msgid "Choose a different collection"
-#~ msgstr "Выберите другую коллекцию"
-
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
 msgstr "Выбрать другую коллекцию"
-
-#: src/i18n/collections.ts
-#~ msgid "Choose or create a collection there."
-#~ msgstr "Там выберите или создайте коллекцию."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
@@ -744,10 +591,6 @@ msgstr "цитируется один раз"
 msgid "Click to fit the width"
 msgstr "Нажмите, чтобы подогнать по ширине"
 
-#: src/i18n/collections.ts
-#~ msgid "Close"
-#~ msgstr "Закрыть"
-
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr "Закрыть (Escape)"
@@ -768,10 +611,6 @@ msgstr "Закрыть нижнюю боковую панель"
 msgctxt "inline code formatting action"
 msgid "Code"
 msgstr "Код"
-
-#: src/i18n/collections.ts
-#~ msgid "Collection"
-#~ msgstr "Коллекция"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
@@ -866,14 +705,6 @@ msgstr "Подключённые коллекции"
 msgid "Connecting to mdbase connect"
 msgstr "Подключение к mdbase Connect"
 
-#: src/i18n/collections.ts
-#~ msgid "Continue"
-#~ msgstr "Продолжить"
-
-#: src/i18n/collections.ts
-#~ msgid "Continue in the mdbase window"
-#~ msgstr "Продолжить в окне mdbase"
-
 #: src/ui/Home.tsx
 msgid "Continue writing"
 msgstr "Продолжить работу"
@@ -932,18 +763,6 @@ msgstr "Удалить"
 msgid "Delete {0}"
 msgstr "Удалить {0}"
 
-#: src/i18n/collections.ts
-#~ msgid "Delete {collection}?"
-#~ msgstr "Удалить коллекцию «{collection}»?"
-
-#: src/i18n/collections.ts
-#~ msgid "Delete collection"
-#~ msgstr "Удалить коллекцию"
-
-#: src/i18n/collections.ts
-#~ msgid "Delete collection…"
-#~ msgstr "Удалить коллекцию…"
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "Удалено"
@@ -951,10 +770,6 @@ msgstr "Удалено"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "Удалена в другом месте"
-
-#: src/i18n/collections.ts
-#~ msgid "Deleting…"
-#~ msgstr "Удаление…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
@@ -1060,10 +875,6 @@ msgstr "ошибки предупреждения список"
 msgid "Everyone"
 msgstr "Все"
 
-#: src/i18n/collections.ts
-#~ msgid "Everyone, including you, loses access to it on every device and app right away. This can't be undone."
-#~ msgstr "Все, включая вас, сразу потеряют к ней доступ на всех устройствах и в любых приложениях. Это действие нельзя отменить."
-
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
 msgstr "Экспорт"
@@ -1135,10 +946,6 @@ msgstr "Рисунки должны быть изображениями PNG, JPE
 msgid "Filter collections"
 msgstr "Фильтр коллекций"
 
-#: src/i18n/collections.ts
-#~ msgid "Find a collection"
-#~ msgstr "Найти коллекцию"
-
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
 msgstr "Найти рукопись"
@@ -1175,9 +982,6 @@ msgstr "Найти в «Источниках»"
 #: src/ui/WorkspaceView.tsx
 msgid "Find or run a command"
 msgstr "Найти или выполнить команду"
-
-#~ msgid "Fit · {0}%"
-#~ msgstr "По ширине · {0}%"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
@@ -1227,18 +1031,6 @@ msgstr "Из Reader · источника нет в библиотеке"
 msgid "From the collection"
 msgstr "Из коллекции"
 
-#: src/i18n/collections.ts
-#~ msgid "Give {app} a collection"
-#~ msgstr "Предоставьте {app} коллекцию"
-
-#: src/i18n/collections.ts
-#~ msgid "Give {app} access to {collection}?"
-#~ msgstr "Предоставить {app} доступ к коллекции «{collection}»?"
-
-#: src/i18n/collections.ts
-#~ msgid "Give {app} access to this collection?"
-#~ msgstr "Предоставить {app} доступ к этой коллекции?"
-
 #: src/ui/Home.tsx
 msgid "Give the manuscript a title; it can be changed later."
 msgstr "Дайте рукописи название; его можно изменить позже."
@@ -1284,10 +1076,6 @@ msgstr "Выделения из Reader"
 #: src/ui/CollectionPicker.tsx
 msgid "Hosted by mdbase"
 msgstr "Размещена в mdbase"
-
-#: src/i18n/collections.ts
-#~ msgid "ID {id}"
-#~ msgstr "ID: {id}"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
@@ -1417,10 +1205,6 @@ msgstr "Продолжить писать"
 msgid "kept as it is"
 msgstr "остаётся без изменений"
 
-#: src/i18n/collections.ts
-#~ msgid "Kept on your computers, not stored by mdbase"
-#~ msgstr "Хранится на ваших компьютерах, а не в mdbase"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "Сочетания клавиш"
@@ -1526,10 +1310,6 @@ msgstr "Сделать выделенный текст ссылкой"
 msgid "Make this edit"
 msgstr "Внести эту правку"
 
-#: src/i18n/collections.ts
-#~ msgid "Manage access"
-#~ msgstr "Управление доступом"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "Рукопись"
@@ -1617,10 +1397,6 @@ msgstr "MLA, 9-е издание"
 msgid "More"
 msgstr "Ещё"
 
-#: src/i18n/collections.ts
-#~ msgid "More for {collection}"
-#~ msgstr "Ещё для «{collection}»"
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Move author {0} up"
@@ -1640,10 +1416,6 @@ msgstr "Перемещено: «{0}» — глава {1} из {2}."
 #: src/ui/Settings.tsx
 msgid "Name"
 msgstr "Имя"
-
-#: src/i18n/collections.ts
-#~ msgid "Needs a decision"
-#~ msgstr "Требуется решение"
 
 #: src/ui/OutlinePanel.tsx
 msgid "New chapter title"
@@ -1702,14 +1474,6 @@ msgstr "У этого источника нет аннотаций."
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
 msgstr "Коллекций по запросу «{0}» не найдено."
-
-#: src/i18n/collections.ts
-#~ msgid "No collection was added."
-#~ msgstr "Коллекция не добавлена."
-
-#: src/i18n/collections.ts
-#~ msgid "No collections match “{query}”."
-#~ msgstr "Коллекций по запросу «{query}» не найдено."
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
@@ -1827,10 +1591,6 @@ msgstr "Заметки без типа"
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr "Пока ничего не процитировано. Процитируйте источник ниже или введите <0>[@</0> в редакторе."
 
-#: src/i18n/collections.ts
-#~ msgid "Nothing in your collection will change."
-#~ msgstr "В вашей коллекции ничего не изменится."
-
 #: src/i18n/diagnostics.ts
 msgid "Nothing is labelled {value}."
 msgstr ""
@@ -1914,21 +1674,9 @@ msgstr "Открыть окно входа"
 msgid "Open the mdbase tab again"
 msgstr "Снова открыть вкладку mdbase"
 
-#: src/i18n/collections.ts
-#~ msgid "Open the mdbase window again"
-#~ msgstr "Снова открыть окно mdbase"
-
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
 msgstr "Открыть этот фрагмент в Reader"
-
-#: src/i18n/collections.ts
-#~ msgid "Open your collections in {app}"
-#~ msgstr "Откройте свои коллекции в {app}"
-
-#: src/i18n/collections.ts
-#~ msgid "Opening {collection}"
-#~ msgstr "Открытие коллекции «{collection}»"
 
 #: src/connect/native-signin-ui.ts
 msgid "Opening collections isn't available in this build yet."
@@ -1938,10 +1686,6 @@ msgstr "В этой сборке пока нельзя открывать кол
 #: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
 msgstr "Открытие mdbase writer"
-
-#: src/i18n/collections.ts
-#~ msgid "Opening mdbase…"
-#~ msgstr "Открытие mdbase…"
 
 #: src/LegacyApp.tsx
 msgid "Opening the demo collection"
@@ -1983,10 +1727,6 @@ msgstr "Структура"
 #: src/ui/WorkspaceView.tsx
 msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
 msgstr ""
-
-#: src/i18n/collections.ts
-#~ msgid "Owner"
-#~ msgstr "Владелец"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -2069,10 +1809,6 @@ msgstr "Предыдущий комментарий"
 msgid "Previously connected"
 msgstr "Ранее подключённые"
 
-#: src/i18n/collections.ts
-#~ msgid "Private"
-#~ msgstr "Закрытая"
-
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
 msgstr "проблема"
@@ -2137,27 +1873,15 @@ msgstr "Отклонено"
 msgid "Reload"
 msgstr "Перезагрузить"
 
-#: src/i18n/collections.ts
-#~ msgid "Reload to continue."
-#~ msgstr "Перезагрузите страницу, чтобы продолжить."
-
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Remove"
 msgstr "Убрать"
 
-#: src/i18n/collections.ts
-#~ msgid "Remove {collection} from this list?"
-#~ msgstr "Убрать «{collection}» из этого списка?"
-
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "Убрать автора {0}"
-
-#: src/i18n/collections.ts
-#~ msgid "Remove from this list"
-#~ msgstr "Убрать из этого списка"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Rename the chapter chosen in the outline"
@@ -2269,10 +1993,6 @@ msgstr "Проверить «{0}»"
 msgid "Review access"
 msgstr "Проверить доступ"
 
-#: src/i18n/collections.ts
-#~ msgid "Review access to {collection} there."
-#~ msgstr "Проверьте там доступ к {collection}."
-
 #: src/ui/records.ts
 msgid "Review drafts"
 msgstr "Проверить черновики"
@@ -2351,14 +2071,6 @@ msgstr "Задать цель по количеству слов"
 #: src/ui/Home.tsx
 msgid "Set goal"
 msgstr "Задать цель"
-
-#: src/i18n/collections.ts
-#~ msgid "Set up"
-#~ msgstr "Настроить"
-
-#: src/i18n/collections.ts
-#~ msgid "Set up {collection} for {app}"
-#~ msgstr "Настройка коллекции «{collection}» для {app}"
 
 #: src/ui/ConnectGate.tsx
 msgid "Set up collection"
@@ -2515,25 +2227,13 @@ msgstr "Боковая панель"
 msgid "Sign in"
 msgstr "Войти"
 
-#: src/i18n/collections.ts
-#~ msgid "Sign in and choose a collection there."
-#~ msgstr "Войдите и выберите там коллекцию."
-
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
 msgstr "Войдите с учётной записью mdbase, чтобы синхронизировать {appName} между вашими устройствами."
 
-#: src/i18n/collections.ts
-#~ msgid "Sign in with your mdbase account. You'll choose which collection {app} can use."
-#~ msgstr "Войдите с учётной записью mdbase. Вы выберете, какую коллекцию сможет использовать {app}."
-
 #: src/connect/native-signin-ui.ts
 msgid "Sign out"
 msgstr "Выйти"
-
-#: src/i18n/collections.ts
-#~ msgid "Sign out anyway"
-#~ msgstr "Всё равно выйти"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Sign-in status"
@@ -2547,10 +2247,6 @@ msgstr "Вход прерван. Повторите попытку."
 msgid "Sign-in window closed."
 msgstr "Окно входа закрыто."
 
-#: src/i18n/collections.ts
-#~ msgid "Signed in as {account}"
-#~ msgstr "Вы вошли как {account}"
-
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
 msgstr "Вы вошли как {email}"
@@ -2559,10 +2255,6 @@ msgstr "Вы вошли как {email}"
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
 msgstr "Вход выполнен. Открываем «{0}»…"
-
-#: src/i18n/collections.ts
-#~ msgid "Signing out…"
-#~ msgstr "Выход…"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
@@ -2623,10 +2315,6 @@ msgstr "Источники."
 msgid "split stack outline comments sources"
 msgstr "разделить вторая панель структура комментарии источники"
 
-#: src/i18n/collections.ts
-#~ msgid "Starting {app}…"
-#~ msgstr "Запуск {app}…"
-
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2674,10 +2362,6 @@ msgstr ""
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
 msgstr "Сменить коллекцию"
-
-#: src/i18n/collections.ts
-#~ msgid "Switch collection, current: {collection}"
-#~ msgstr "Сменить коллекцию, текущая: «{collection}»"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection: {name}"
@@ -2800,10 +2484,6 @@ msgstr "Действует в этом браузере для всех руко
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr ""
 
-#: src/i18n/collections.ts
-#~ msgid "this collection"
-#~ msgstr "этой коллекции"
-
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "Эта коллекция не принимает файлы от mdbase writer."
@@ -2816,17 +2496,9 @@ msgstr "Эта коллекция недоступна"
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "Не удалось открыть представление этой коллекции. Выберите другую коллекцию на панели выше или перезагрузите страницу, чтобы повторить попытку."
 
-#: src/i18n/collections.ts
-#~ msgid "This device is still listed under your account until you remove it there."
-#~ msgstr "Это устройство остаётся в списке вашей учётной записи, пока вы не удалите его там."
-
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
 msgstr "Это локальная сборка для разработки. Облачная служба mdbase Connect принимает только приложения, работающие по HTTPS, поэтому используйте локальную среду Connect (<0>pnpm dev:environment:up</0> в mdbase-connect) или откройте <1>демонстрационную коллекцию</1>."
-
-#: src/i18n/collections.ts
-#~ msgid "This is taking longer than usual."
-#~ msgstr "Это занимает больше времени, чем обычно."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
@@ -2872,10 +2544,6 @@ msgstr "отслеживание изменений исправления пр�
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
 msgstr "Повторить попытку"
-
-#: src/i18n/collections.ts
-#~ msgid "Type {collection} to confirm"
-#~ msgstr "Для подтверждения введите «{collection}»"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2948,10 +2616,6 @@ msgstr "Рисунок без названия"
 msgid "Updating…"
 msgstr "Обновление…"
 
-#: src/i18n/collections.ts
-#~ msgid "Use {app}'s version"
-#~ msgstr "Использовать версию {app}"
-
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
 msgstr "Использовать уже имеющуюся заметку…"
@@ -2988,10 +2652,6 @@ msgstr "Ожидание подтверждения…"
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
 msgstr "Ожидание mdbase Connect…"
-
-#: src/i18n/collections.ts
-#~ msgid "What changes"
-#~ msgstr "Что изменится"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -3078,10 +2738,6 @@ msgstr "У mdbase writer нет разрешения видеть вашу уч�
 msgid "You can close this window."
 msgstr "Это окно можно закрыть."
 
-#: src/i18n/collections.ts
-#~ msgid "You've signed out of {app} on this device."
-#~ msgstr "Вы вышли из {app} на этом устройстве."
-
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
@@ -3095,10 +2751,6 @@ msgstr "Ваша учётная запись не связана с запись
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
 msgstr "Браузер заблокировал вкладку входа."
-
-#: src/i18n/collections.ts
-#~ msgid "Your collections"
-#~ msgstr "Ваши коллекции"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
