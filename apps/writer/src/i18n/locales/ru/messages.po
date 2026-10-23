@@ -296,7 +296,7 @@ msgstr "{n, plural, one {# совпадение} few {# совпадения} ma
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# open comment} other {# open comments}}"
-msgstr "{n, plural, one {# незакрытый комментарий} few {# незакрытых комментария} many {# незакрытых комментариев} other {# незакрытого комментария}}"
+msgstr "{n, plural, one {# открытый комментарий} few {# открытых комментария} many {# открытых комментариев} other {# открытого комментария}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# person record} other {# person records}}"
@@ -693,7 +693,7 @@ msgstr "Цитировать здесь"
 
 #: src/ui/WorkspaceView.tsx
 msgid "cite source reference"
-msgstr "цитировать источник ссылаться"
+msgstr "цитировать цитата источник ссылка"
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited {uses}×"
@@ -1507,531 +1507,531 @@ msgstr "Ещё для «{collection}»"
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Move author {0} up"
-msgstr ""
+msgstr "Переместить автора {0} вверх"
 
 #: src/ui/Settings.tsx
 msgid "Move up"
-msgstr ""
+msgstr "Переместить вверх"
 
 #. placeholder {0}: recordTitle(records.get(path), path)
 #. placeholder {1}: to + 1
 #. placeholder {2}: chapters.length
 #: src/ui/OutlinePanel.tsx
 msgid "Moved {0} to chapter {1} of {2}."
-msgstr ""
+msgstr "«{0}» перемещена: глава {1} из {2}."
 
 #: src/ui/Settings.tsx
 msgid "Name"
-msgstr ""
+msgstr "Имя"
 
 #: src/i18n/collections.ts
 msgid "Needs a decision"
-msgstr ""
+msgstr "Требуется решение"
 
 #: src/ui/OutlinePanel.tsx
 msgid "New chapter title"
-msgstr ""
+msgstr "Заголовок новой главы"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New comment"
-msgstr ""
+msgstr "Новый комментарий"
 
 #: src/ui/Home.tsx
 msgid "New manuscript"
-msgstr ""
+msgstr "Новая рукопись"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New since last visit ({newCount})"
-msgstr ""
+msgstr "Новые с прошлого посещения ({newCount})"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New since your last visit"
-msgstr ""
+msgstr "Новые с вашего прошлого посещения"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous comment"
-msgstr ""
+msgstr "Следующий / предыдущий комментарий"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous problem"
-msgstr ""
+msgstr "Следующая / предыдущая проблема"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
-msgstr ""
+msgstr "Следующее цитирование"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next comment"
-msgstr ""
+msgstr "Следующий комментарий"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next problem"
-msgstr ""
+msgstr "Следующая проблема"
 
 #: src/ui/SourcesPanel.tsx
 msgid "No annotations on this source."
-msgstr ""
+msgstr "У этого источника нет аннотаций."
 
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
-msgstr ""
+msgstr "Коллекций по запросу «{0}» не найдено."
 
 #: src/i18n/collections.ts
 msgid "No collection was added."
-msgstr ""
+msgstr "Коллекция не добавлена."
 
 #: src/i18n/collections.ts
 msgid "No collections match “{query}”."
-msgstr ""
+msgstr "Коллекций по запросу «{query}» не найдено."
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
-msgstr ""
+msgstr "Файл ещё не скачан. Из-за отсутствующих изображений или глав экспорт может получиться неполным. Проверьте эти проблемы, прежде чем делиться файлом или отправлять его."
 
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
-msgstr ""
+msgstr "Рукописей по запросу «{filter}» не найдено."
 
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
-msgstr ""
+msgstr "Заметок по запросу «{query}» не найдено."
 
 #: src/ui/CommentsPanel.tsx
 msgid "No open comments"
-msgstr ""
+msgstr "Нет открытых комментариев"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
-msgstr ""
+msgstr "В этой коллекции нет других заметок."
 
 #: src/ui/WorkspaceView.tsx
 msgid "No problems"
-msgstr ""
+msgstr "Проблем нет"
 
 #. placeholder {0}: this.target
 #: src/editor/chapter-cards.ts
 msgid "No record matches ![[{0}]]"
-msgstr ""
+msgstr "Запись для ![[{0}]] не найдена"
 
 #: src/ui/SourcesPanel.tsx
 msgid "No source matches “{query}”; searching highlights…"
-msgstr ""
+msgstr "Источников по запросу «{query}» не найдено; ищем среди выделений…"
 
 #. placeholder {0}: ref.key
 #: src/editor/insight.ts
 msgid "No source or label is called “{0}”."
-msgstr ""
+msgstr "Нет источника или метки с названием «{0}»."
 
 #: src/ui/SourcesPanel.tsx
 msgid "No sources in this collection yet."
-msgstr ""
+msgstr "В этой коллекции пока нет источников."
 
 #: src/ui/Home.tsx
 msgid "No sources yet"
-msgstr ""
+msgstr "Источников пока нет"
 
 #: src/ui/Home.tsx
 msgid "No type · {path}"
-msgstr ""
+msgstr "Без типа · {path}"
 
 #. placeholder {0}: readerSourceHref() ? <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open mdbase Reader</Trans></a> : t`Open mdbase Reader`
 #: src/ui/Home.tsx
 msgid "None yet. {0} to import a PDF, a DOI or a BibTeX file; each source gets a citekey."
-msgstr ""
+msgstr "Пока ничего нет. {0}, чтобы импортировать PDF, DOI или файл BibTeX; каждый источник получает ключ цитирования (citekey)."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Not cited yet"
-msgstr ""
+msgstr "Пока не цитируется"
 
 #: src/pwa-install.ts
 msgid "Not now"
-msgstr ""
+msgstr "Не сейчас"
 
 #: src/ui/records.ts
 msgid "Not saved"
-msgstr ""
+msgstr "Сохранить не удалось"
 
 #. placeholder {0}: activeView.snapshot.problem.message ?? activeView.snapshot.problem.code
 #: src/ui/WorkspaceView.tsx
 msgid "Not saved: {0}. Your text is kept here."
-msgstr ""
+msgstr "Не сохранено: {0}. Ваш текст остаётся здесь."
 
 #: src/ui/WorkspaceView.tsx
 msgid "note"
-msgstr ""
+msgstr "заметка сноска примечание"
 
 #: src/ui/Home.tsx
 msgid "Note<0/>"
-msgstr ""
+msgstr "Заметка<0/>"
 
 #: src/ui/Home.tsx
 msgid "Notes"
-msgstr ""
+msgstr "Заметки"
 
 #: src/ui/Home.tsx
 msgid "Notes without a type"
-msgstr ""
+msgstr "Заметки без типа"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
-msgstr ""
+msgstr "Пока ничего не процитировано. Процитируйте источник ниже или введите <0>[@</0> в редакторе."
 
 #: src/i18n/collections.ts
 msgid "Nothing in your collection will change."
-msgstr ""
+msgstr "В вашей коллекции ничего не изменится."
 
 #: src/ui/CompareDialog.tsx
 msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
-msgstr ""
+msgstr "Ничего не заменяется, пока вы не сделаете выбор. Выделенные фрагменты различаются в этих версиях."
 
 #. placeholder {0}: query.trim()
 #: src/ui/ManuscriptSearch.tsx
 msgid "Nothing matches “{0}”."
-msgstr ""
+msgstr "По запросу «{0}» ничего не найдено."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing matches “{query}”."
-msgstr ""
+msgstr "По запросу «{query}» ничего не найдено."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr ""
+msgstr "Закрытых комментариев пока нет."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
-msgstr ""
+msgstr "Не в сети"
 
 #: src/ui/WorkspaceView.tsx
 msgid "On a citation: show the source. On a cross-reference: go to what it labels"
-msgstr ""
+msgstr "На ссылке на источник — показать источник; на перекрёстной ссылке — перейти к объекту, на который она указывает"
 
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
-msgstr ""
+msgstr "Об образовании коралловых рифов"
 
 #: src/ui/CommentsPanel.tsx
 msgid "On the whole record"
-msgstr ""
+msgstr "Ко всей записи"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
-msgstr ""
+msgstr "На вашем компьютере"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Open"
-msgstr ""
+msgstr "Открыто"
 
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
 msgid "Open"
-msgstr ""
+msgstr "Открыть"
 
 #. placeholder {0}: card.title
 #: src/editor/chapter-cards.ts
 msgid "Open {0}"
-msgstr ""
+msgstr "Открыть {0}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Open in Reader <0/>"
-msgstr ""
+msgstr "Открыть в Reader <0/>"
 
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
-msgstr ""
+msgstr "Откройте рукопись, к которой он относится, чтобы проверить его."
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
-msgstr ""
+msgstr "Откройте mdbase Reader"
 
 #: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Open now"
-msgstr ""
+msgstr "Открыть сейчас"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Open Reader to add a source"
-msgstr ""
+msgstr "Откройте Reader, чтобы добавить источник"
 
 #: src/connect/native-signin-ui.ts
 msgid "Open sign-in"
-msgstr ""
+msgstr "Открыть окно входа"
 
 #: src/connect/native-signin-ui.ts
 msgid "Open the mdbase tab again"
-msgstr ""
+msgstr "Снова открыть вкладку mdbase"
 
 #: src/i18n/collections.ts
 msgid "Open the mdbase window again"
-msgstr ""
+msgstr "Снова открыть окно mdbase"
 
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
-msgstr ""
+msgstr "Открыть этот фрагмент в Reader"
 
 #: src/i18n/collections.ts
 msgid "Open your collections in {app}"
-msgstr ""
+msgstr "Откройте свои коллекции в {app}"
 
 #: src/i18n/collections.ts
 msgid "Opening {collection}"
-msgstr ""
+msgstr "Открытие коллекции «{collection}»"
 
 #: src/connect/native-signin-ui.ts
 msgid "Opening collections isn't available in this build yet."
-msgstr ""
+msgstr "В этой сборке пока нельзя открывать коллекции."
 
 #: src/App.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
-msgstr ""
+msgstr "Открытие mdbase writer"
 
 #: src/i18n/collections.ts
 msgid "Opening mdbase…"
-msgstr ""
+msgstr "Открытие mdbase…"
 
 #: src/LegacyApp.tsx
 msgid "Opening the demo collection"
-msgstr ""
+msgstr "Открытие демонстрационной коллекции"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Opening the manuscript…"
-msgstr ""
+msgstr "Открытие рукописи…"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Opening Writer"
-msgstr ""
+msgstr "Открытие mdbase writer"
 
 #: src/ui/NativeWriterView.tsx
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening Writer…"
-msgstr ""
+msgstr "Открытие mdbase writer…"
 
 #: src/i18n/collections.ts
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening your collection"
-msgstr ""
+msgstr "Открытие вашей коллекции"
 
 #: src/i18n/collections.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Opening…"
-msgstr ""
+msgstr "Открытие…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Or type <0>/</0> in the text to pick one there."
-msgstr ""
+msgstr "Или введите <0>/</0> прямо в тексте, чтобы выбрать нужный элемент."
 
 #: src/ui/Home.tsx
 msgid "or use a note you already have"
-msgstr ""
+msgstr "или используйте уже имеющуюся заметку"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
-msgstr ""
+msgstr "Структура"
 
 #: src/i18n/collections.ts
 msgid "Owner"
-msgstr ""
+msgstr "Владелец"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
-msgstr ""
+msgstr "Страница (необязательно)"
 
 #. placeholder {0}: i + 1
 #: src/preview/Preview.tsx
 msgid "Page {0}"
-msgstr ""
+msgstr "Страница {0}"
 
 #. placeholder {0}: previewView.page
 #. placeholder {1}: previewView.pages
 #: src/ui/WorkspaceView.tsx
 msgid "Page {0} of {1}"
-msgstr ""
+msgstr "Страница {0} из {1}"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Page or locator for {0}"
-msgstr ""
+msgstr "Страница или локатор для «{0}»"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc bundle"
-msgstr ""
+msgstr "пакет Pandoc"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc bundle (zip)"
-msgstr ""
+msgstr "Пакет Pandoc (zip)"
 
 #: src/export/pandoc.ts
 msgid "Pandoc returned an unreadable response."
-msgstr ""
+msgstr "Pandoc вернул ответ, который не удалось прочитать."
 
 #: src/export/pandoc.ts
 msgid "Pandoc stopped."
-msgstr ""
+msgstr "Pandoc прекратил работу."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself"
-msgstr ""
+msgstr "Markdown для Pandoc/Quarto с источниками, стилем и изображениями — чтобы самостоятельно собирать другие форматы"
 
 #: src/compile/client.ts
 msgid "PDF export timed out. Retry the preview and export again."
-msgstr ""
+msgstr "Время ожидания экспорта PDF истекло. Повторите предпросмотр и экспортируйте снова."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Preview"
-msgstr ""
+msgstr "Предпросмотр"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
-msgstr ""
+msgstr "Только предпросмотр"
 
 #: src/preview/Preview.tsx
 msgid "Preview rendering failed: {renderProblem}. Your text is still available in the editor."
-msgstr ""
+msgstr "Не удалось построить предпросмотр: {renderProblem}. Ваш текст по-прежнему доступен в редакторе."
 
 #. placeholder {0}: snap.previewProblem
 #: src/ui/WorkspaceView.tsx
 msgid "Preview unavailable: {0}. You can keep writing."
-msgstr ""
+msgstr "Предпросмотр недоступен: {0}. Можно продолжать писать."
 
 #: src/preview/Preview.tsx
 msgid "Preview unavailable. You can keep writing."
-msgstr ""
+msgstr "Предпросмотр недоступен. Можно продолжать писать."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
-msgstr ""
+msgstr "Предыдущее цитирование"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Previous comment"
-msgstr ""
+msgstr "Предыдущий комментарий"
 
 #: src/ui/ConnectGate.tsx
 msgid "Previously connected"
-msgstr ""
+msgstr "Ранее подключённые"
 
 #: src/i18n/collections.ts
 msgid "Private"
-msgstr ""
+msgstr "Закрытая"
 
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
-msgstr ""
+msgstr "проблема"
 
 #: src/ui/WorkspaceView.tsx
 msgid "problems"
-msgstr ""
+msgstr "проблемы"
 
 #: src/ui/ProblemsStrip.tsx
 msgid "Problems"
-msgstr ""
+msgstr "Проблемы"
 
 #: src/ui/Home.tsx
 msgid "Progress to the word goal"
-msgstr ""
+msgstr "Прогресс к цели по количеству слов"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Read as the manuscript"
-msgstr ""
+msgstr "Читать как рукопись"
 
 #: src/ui/Settings.tsx
 msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
-msgstr ""
+msgstr "Читать как рукопись<0>Если выключено, Markdown показывается как написан</0>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reason for the suggestion"
-msgstr ""
+msgstr "Причина правки"
 
 #: src/ui/ConnectGate.tsx
 msgid "Reconnect"
-msgstr ""
+msgstr "Подключиться снова"
 
 #: src/ui/connection-notice.ts
 msgid "Reconnecting"
-msgstr ""
+msgstr "Повторное подключение"
 
 #: src/ui/records.ts
 msgid "Recovering save…"
-msgstr ""
+msgstr "Восстановление сохранения…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "refer section figure table label"
-msgstr ""
+msgstr "ссылка раздел рисунок таблица метка перекрёстная"
 
 #: src/editor/live-preview.ts
 msgid "Refer to this with @{id}"
-msgstr ""
+msgstr "Ссылайтесь на это через @{id}"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reject"
-msgstr ""
+msgstr "Отклонить"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Rejected"
-msgstr ""
+msgstr "Отклонено"
 
 #: src/i18n/collections.ts
 #: src/LegacyApp.tsx
 msgid "Reload"
-msgstr ""
+msgstr "Перезагрузить"
 
 #: src/i18n/collections.ts
 msgid "Reload to continue."
-msgstr ""
+msgstr "Перезагрузите страницу, чтобы продолжить."
 
 #: src/i18n/collections.ts
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Remove"
-msgstr ""
+msgstr "Убрать"
 
 #: src/i18n/collections.ts
 msgid "Remove {collection} from this list?"
-msgstr ""
+msgstr "Убрать «{collection}» из этого списка?"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
-msgstr ""
+msgstr "Убрать автора {0}"
 
 #: src/i18n/collections.ts
 msgid "Remove from this list"
-msgstr ""
+msgstr "Убрать из этого списка"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Rename the chapter chosen in the outline"
-msgstr ""
+msgstr "Переименовать главу, выбранную в структуре"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
-msgstr ""
+msgstr "Открыть снова"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace"
-msgstr ""
+msgstr "Заменить"
 
 #. placeholder {0}: clip(exact)
 #. placeholder {1}: clip(replacement)
 #: src/ui/comments.ts
 msgid "Replace {0} with {1}"
-msgstr ""
+msgstr "Заменить {0} на {1}"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace with"
-msgstr ""
+msgstr "Заменить на"
 
 #. placeholder {0}: root.suggestion.replacement
 #: src/ui/WorkspaceView.tsx
 msgid "Replace with “{0}”"
-msgstr ""
+msgstr "Заменить на «{0}»"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reply"
-msgstr ""
+msgstr "Ответить"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the editor and preview"
-msgstr ""
+msgstr "Изменить размер редактора и предпросмотра"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the sidebar"
