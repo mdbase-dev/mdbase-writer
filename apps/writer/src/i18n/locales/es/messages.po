@@ -540,506 +540,506 @@ msgstr "Negrita"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Bold / italic (again to remove it)"
-msgstr ""
+msgstr "Negrita / cursiva (pulsa otra vez para quitar el formato)"
 
 #: src/i18n/collections.ts
 msgid "Can edit"
-msgstr ""
+msgstr "Puede editar"
 
 #: src/i18n/collections.ts
 msgid "Can view"
-msgstr ""
+msgstr "Puede ver"
 
 #: src/i18n/collections.ts
 msgid "Can't continue"
-msgstr ""
+msgstr "No se puede continuar"
 
 #: src/i18n/collections.ts
 msgid "Can't open {collection}"
-msgstr ""
+msgstr "No se puede abrir {collection}"
 
 #: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #: src/ui/ExportReview.tsx
 msgid "Cancel and fix problems"
-msgstr ""
+msgstr "Cancelar y corregir los problemas"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cancel export"
-msgstr ""
+msgstr "Cancelar la exportación"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the citation style"
-msgstr ""
+msgstr "Cambiar el estilo de cita"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the layout"
-msgstr ""
+msgstr "Cambiar el diseño"
 
 #: src/ui/Home.tsx
 msgid "Change the word goal"
-msgstr ""
+msgstr "Cambiar el objetivo de palabras"
 
 #: src/ui/records.ts
 msgid "Changed elsewhere"
-msgstr ""
+msgstr "Modificado en otro lugar"
 
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
-msgstr ""
+msgstr "Los cambios se guardan en la cabecera (frontmatter) del manuscrito mientras escribes, y se reflejan en la vista previa."
 
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
-msgstr ""
+msgstr "Título del capítulo"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
 msgid "Chapters <0>{0}</0>"
-msgstr ""
+msgstr "Capítulos <0>{0}</0>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Check again"
-msgstr ""
+msgstr "Comprobar de nuevo"
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making {0}…"
-msgstr ""
+msgstr "Comprobando los capítulos y las imágenes antes de generar {0}…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
-msgstr ""
+msgstr "Comprobando los capítulos y las imágenes antes de generar el documento de Word… (la primera vez se descargan unos 16 MB)"
 
 #: src/ui/ConnectGate.tsx
 msgid "Checking the collection"
-msgstr ""
+msgstr "Comprobando la colección"
 
 #: src/i18n/collections.ts
 msgid "Checking what setup will change…"
-msgstr ""
+msgstr "Comprobando qué cambiará la configuración…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
-msgstr ""
+msgstr "Comprobando…"
 
 #: src/ui/names.ts
 msgid "Chicago (author-date)"
-msgstr ""
+msgstr "Chicago (autor-fecha)"
 
 #: src/ui/names.ts
 msgid "Chicago (notes and bibliography)"
-msgstr ""
+msgstr "Chicago (notas y bibliografía)"
 
 #: src/i18n/collections.ts
 msgid "Choose a collection"
-msgstr ""
+msgstr "Elige una colección"
 
 #: src/i18n/collections.ts
 msgid "Choose a different collection"
-msgstr ""
+msgstr "Elige otra colección"
 
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
-msgstr ""
+msgstr "Elige otra colección"
 
 #: src/i18n/collections.ts
 msgid "Choose or create a collection there."
-msgstr ""
+msgstr "Elige o crea una colección allí."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
-msgstr ""
+msgstr "Cita"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Citation style"
-msgstr ""
+msgstr "Estilo de cita"
 
 #: src/ui/Home.tsx
 msgid "Citation style<0/>"
-msgstr ""
+msgstr "Estilo de cita<0/>"
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
-msgstr ""
+msgstr "Las citas muestran a quién citan, las figuras y tablas se representan visualmente y las marcas se ocultan hasta que el cursor llega a su línea. El texto no se modifica."
 
 #: src/editor/selection-bar.tsx
 #: src/ui/SourcesPanel.tsx
 msgid "Cite"
-msgstr ""
+msgstr "Citar"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
-msgstr ""
+msgstr "Citar {0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr ""
+msgstr "Cita una fuente o haz referencia a una etiqueta (por clave, autor, título o año)"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
 msgid "Cite at {0}"
-msgstr ""
+msgstr "Citar en {0}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cite here"
-msgstr ""
+msgstr "Citar aquí"
 
 #: src/ui/WorkspaceView.tsx
 msgid "cite source reference"
-msgstr ""
+msgstr "cita fuente referencia"
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited {uses}×"
-msgstr ""
+msgstr "citada {uses}×"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cited in "
-msgstr ""
+msgstr "Citada en "
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited once"
-msgstr ""
+msgstr "citada una vez"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Click to fit the width"
-msgstr ""
+msgstr "Haz clic para ajustar al ancho"
 
 #: src/i18n/collections.ts
 msgid "Close"
-msgstr ""
+msgstr "Cerrar"
 
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
-msgstr ""
+msgstr "Cerrar (Esc)"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
-msgstr ""
+msgstr "Cerrar ajustes"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower panel"
-msgstr ""
+msgstr "Cerrar el panel inferior"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower sidebar panel"
-msgstr ""
+msgstr "Cerrar el panel inferior de la barra lateral"
 
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
-msgstr ""
+msgstr "Código"
 
 #: src/i18n/collections.ts
 msgid "Collection"
-msgstr ""
+msgstr "Colección"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
-msgstr ""
+msgstr "Aún no se han comprobado las dependencias de la colección"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection index"
-msgstr ""
+msgstr "Índice de la colección"
 
 #: src/workspace/workspace.ts
 msgid "Collection metadata is still loading."
-msgstr ""
+msgstr "Los metadatos de la colección siguen cargándose."
 
 #: src/ui/CompareDialog.tsx
 msgid "Collection version"
-msgstr ""
+msgstr "Versión de la colección"
 
 #: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Collections"
-msgstr ""
+msgstr "Colecciones"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands"
-msgstr ""
+msgstr "Comandos"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands, shortcuts and theme"
-msgstr ""
+msgstr "Comandos, atajos de teclado y tema"
 
 #: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Comment"
-msgstr ""
+msgstr "Comentario"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Comment on the selection"
-msgstr ""
+msgstr "Comentar la selección"
 
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr ""
+msgstr "Comentar la selección ({MOD_LABEL}-{ALT_LABEL}-M)"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
-msgstr ""
+msgstr "Comentarios"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comments are not set up in this collection."
-msgstr ""
+msgstr "Los comentarios no están configurados en esta colección."
 
 #. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
 msgid "Comments unavailable: {problem} {0}"
-msgstr ""
+msgstr "Comentarios no disponibles: {problem} {0}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
-msgstr ""
+msgstr "Comparar versiones en conflicto"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Compare versions"
-msgstr ""
+msgstr "Comparar versiones"
 
 #: src/ui/records.ts
 msgid "Conflict"
-msgstr ""
+msgstr "Conflicto"
 
 #: src/ui/ConnectGate.tsx
 msgid "conflicts with an existing file"
-msgstr ""
+msgstr "entra en conflicto con un archivo existente"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connect a collection"
-msgstr ""
+msgstr "Conectar una colección"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connect another collection…"
-msgstr ""
+msgstr "Conectar otra colección…"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connected collections"
-msgstr ""
+msgstr "Colecciones conectadas"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connecting to mdbase connect"
-msgstr ""
+msgstr "Conectando con mdbase Connect"
 
 #: src/i18n/collections.ts
 msgid "Continue"
-msgstr ""
+msgstr "Continuar"
 
 #: src/i18n/collections.ts
 msgid "Continue in the mdbase window"
-msgstr ""
+msgstr "Continuar en la ventana de mdbase"
 
 #: src/ui/Home.tsx
 msgid "Continue writing"
-msgstr ""
+msgstr "Seguir escribiendo"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copied"
-msgstr ""
+msgstr "Copiada"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copy key"
-msgstr ""
+msgstr "Copiar clave"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
-msgstr ""
+msgstr "No se pudo conectar a otra colección."
 
 #: src/ui/Home.tsx
 msgid "Could not create the manuscript. Please try again."
-msgstr ""
+msgstr "No se pudo crear el manuscrito. Inténtalo de nuevo."
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not switch collections."
-msgstr ""
+msgstr "No se pudo cambiar de colección."
 
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
-msgstr ""
+msgstr "No se pudo usar la nota como manuscrito. Inténtalo de nuevo."
 
 #: src/ui/Home.tsx
 msgid "Create manuscript"
-msgstr ""
+msgstr "Crear manuscrito"
 
 #: src/ui/Home.tsx
 msgid "Creating…"
-msgstr ""
+msgstr "Creando…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cross-reference"
-msgstr ""
+msgstr "Referencia cruzada"
 
 #: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
-msgstr ""
+msgstr "Oscuro"
 
 #: src/ui/Settings.tsx
 msgid "Date"
-msgstr ""
+msgstr "Fecha"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
 #. placeholder {0}: clip(exact)
 #: src/ui/comments.ts
 msgid "Delete {0}"
-msgstr ""
+msgstr "Eliminar {0}"
 
 #: src/i18n/collections.ts
 msgid "Delete {collection}?"
-msgstr ""
+msgstr "¿Eliminar {collection}?"
 
 #: src/i18n/collections.ts
 msgid "Delete collection"
-msgstr ""
+msgstr "Eliminar colección"
 
 #: src/i18n/collections.ts
 msgid "Delete collection…"
-msgstr ""
+msgstr "Eliminar colección…"
 
 #: src/ui/records.ts
 msgid "Deleted"
-msgstr ""
+msgstr "Eliminado"
 
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
-msgstr ""
+msgstr "Eliminado en otro lugar"
 
 #: src/i18n/collections.ts
 msgid "Deleting…"
-msgstr ""
+msgstr "Eliminando…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
-msgstr ""
+msgstr "Dependencias sin comprobar"
 
 #: src/editor/chapter-cards.ts
 msgid "Detach"
-msgstr ""
+msgstr "Desvincular"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Detached: the text has changed"
-msgstr ""
+msgstr "Anclaje desvinculado: el texto ha cambiado"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr ""
+msgstr "Cerrar aviso"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Down arrow moves to the sources; Enter cites the first match."
-msgstr ""
+msgstr "La flecha abajo lleva el foco a las fuentes; con Intro se cita la primera coincidencia."
 
 #: src/ui/Manuscripts.tsx
 msgid "Download a local copy before leaving if saving cannot be completed."
-msgstr ""
+msgstr "Descarga una copia local antes de salir si no se puede completar el guardado."
 
 #: src/ui/CompareDialog.tsx
 msgid "Download local draft"
-msgstr ""
+msgstr "Descargar borrador local"
 
 #: src/LegacyApp.tsx
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Download local drafts"
-msgstr ""
+msgstr "Descargar borradores locales"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to restore"
-msgstr ""
+msgstr "Arrastra para cambiar el tamaño; haz doble clic para restablecerlo."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to split evenly"
-msgstr ""
+msgstr "Arrastra para cambiar el tamaño; haz doble clic para dividirlo en partes iguales."
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
 #: src/ui/Home.tsx
 msgid "edited {0}"
-msgstr ""
+msgstr "editado {0}"
 
 #: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
-msgstr ""
+msgstr "Editor"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor and preview"
-msgstr ""
+msgstr "Editor y vista previa"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor and preview → editor only → preview only"
-msgstr ""
+msgstr "Editor y vista previa → solo editor → solo vista previa"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor only"
-msgstr ""
+msgstr "Solo el editor"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Embed a record"
-msgstr ""
+msgstr "Incrustar un registro"
 
 #: src/workspace/workspace.ts
 msgid "Embedded record could not be loaded: {problem}"
-msgstr ""
+msgstr "No se pudo cargar el registro incrustado: {problem}"
 
 #: src/ui/ManuscriptSearch.tsx
 msgid "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
-msgstr ""
+msgstr "Intro y Mayús+Intro van a la coincidencia siguiente y anterior; la flecha abajo mueve el foco a la lista de coincidencias."
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/editor/live-preview.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Equation"
-msgstr ""
+msgstr "Ecuación"
 
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
-msgstr ""
+msgstr "errores advertencias lista"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Everyone"
-msgstr ""
+msgstr "Todo el mundo"
 
 #: src/i18n/collections.ts
 msgid "Everyone, including you, loses access to it on every device and app right away. This can't be undone."
-msgstr ""
+msgstr "Todo el mundo, también tú, perderá inmediatamente el acceso a esta colección desde todos los dispositivos y aplicaciones. Esta acción no se puede deshacer."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
-msgstr ""
+msgstr "Exportar"
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
 msgid "Export {0}"
-msgstr ""
+msgstr "Exportar {0}"
 
 #: src/ui/ExportReview.tsx
 msgid "Export anyway"
-msgstr ""
+msgstr "Exportar de todos modos"
 
 #: src/compile/client.ts
 #: src/export/pandoc.ts
 msgid "Export cancelled."
-msgstr ""
+msgstr "Se canceló la exportación."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export failed."
-msgstr ""
+msgstr "Error al exportar."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export formats"
-msgstr ""
+msgstr "Formatos de exportación"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export formats ({MOD_LABEL}-Shift-S)"
