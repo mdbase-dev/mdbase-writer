@@ -200,6 +200,20 @@ privately as described in the [security policy](SECURITY.md).
 For local setup, tests, deployment, and implementation details, see the
 [development guide](docs/development.md) and [architecture notes](docs/architecture.md).
 
+### Interface translations (integration branch)
+
+Writer shares the `@mdbase-dev/i18n` Lingui runtime and strict catalogue checks with the
+other mdbase apps. English loads synchronously; other interface languages are lazy chunks
+from Writer's own deployment. The browser language is the default; an explicit choice is
+remembered in this browser. This never changes manuscript text, frontmatter, citation
+language or exported prose.
+
+All nine locale controls are enabled on this branch, but incomplete authored catalogues
+intentionally block `pnpm check` and builds. See [translation status and authoring](docs/translations.md).
+The kit is temporarily vendored for coordinated development; replace it with the published
+npm version at merge time. CI only validates local-agent-authored translations and never
+calls a translation service.
+
 ## License
 
 mdbase writer is available under the [MIT License](LICENSE). Bundled fonts, Typst packages, and
