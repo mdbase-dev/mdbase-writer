@@ -192,7 +192,7 @@ msgstr "{MOD_LABEL}-B"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL}-click"
-msgstr "{MOD_LABEL}-click"
+msgstr "{MOD_LABEL}-Klick"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
