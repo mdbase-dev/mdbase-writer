@@ -12,531 +12,531 @@ msgstr ""
 msgid ""
 "\n"
 "{0}"
-msgstr ""
+msgstr "\n{0}"
 
 #. placeholder {0}: Math.round((words / goal) * 100)
 #. placeholder {1}: formatNumber(goal)
 #: src/ui/Home.tsx
 msgid " · {0}% of {1}"
-msgstr ""
+msgstr " · {0}% из {1}"
 
 #: src/ui/Home.tsx
 msgid " · Comments not set up"
-msgstr ""
+msgstr " · Комментарии не настроены"
 
 #: src/ui/Home.tsx
 msgid " via mdbase Connect"
-msgstr ""
+msgstr " через mdbase Connect"
 
 #: src/ui/CommentsPanel.tsx
 msgid " with "
-msgstr ""
+msgstr " с "
 
 #. placeholder {0}: highlightIndex.pending
 #: src/ui/SourcesPanel.tsx
 msgid "· searching {0} more"
-msgstr ""
+msgstr "· ищем ещё {0}"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr ""
+msgstr "(место в тексте)"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
-msgstr ""
+msgstr "(фрагмент удалён)"
 
 #. placeholder {0}: info.replies
 #: src/editor/comments.ts
 msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr ""
+msgstr "{0, plural, =0 {Нажмите, чтобы открыть комментарии} one {# ответ · Нажмите, чтобы открыть комментарии} few {# ответа · Нажмите, чтобы открыть комментарии} many {# ответов · Нажмите, чтобы открыть комментарии} other {# ответа · Нажмите, чтобы открыть комментарии}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
-msgstr ""
+msgstr "{0, plural, one {# глава} few {# главы} many {# глав} other {# главы}}"
 
 #. placeholder {0}: result.total
 #. placeholder {1}: formatCount(result.groups.length)
 #. placeholder {2}: formatCount(result.groups.length)
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {# match in {1} records} other {# matches in {2} records}}"
-msgstr ""
+msgstr "{0, plural, one {# совпадение в {1} записи} few {# совпадения в {2} записях} many {# совпадений в {2} записях} other {# совпадения в {2} записях}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
-msgstr ""
+msgstr "{0, plural, one {# запись о пользователе связана с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.} few {# записи о пользователях связаны с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.} many {# записей о пользователях связаны с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.} other {# записи о пользователях связаны с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.}}"
 
 #. placeholder {0}: words[ranks.get(h)!] ?? 0
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
-msgstr ""
+msgstr "{0, plural, one {# слово в этом разделе} few {# слова в этом разделе} many {# слов в этом разделе} other {# слова в этом разделе}}"
 
 #. placeholder {0}: problems.length
 #. placeholder {1}: problems[0]
 #. placeholder {2}: problems[0]
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Exported {name} with # problem: {1}} other {Exported {name} with # problems: {2}}}"
-msgstr ""
+msgstr "{0, plural, one {При экспорте {name} обнаружена # проблема: {1}} few {При экспорте {name} обнаружены # проблемы: {2}} many {При экспорте {name} обнаружено # проблем: {2}} other {При экспорте {name} обнаружено # проблемы: {2}}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr ""
+msgstr "{0, plural, one {В # записи; цитаты, код и формулы не учитываются} few {В # записях; цитаты, код и формулы не учитываются} many {В # записях; цитаты, код и формулы не учитываются} other {В # записи; цитаты, код и формулы не учитываются}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr ""
+msgstr "{0, plural, one {Проверьте # восстановленный локальный черновик. Редактирование этой записи приостановлено, пока вы не восстановите черновик или не выберете версию коллекции.} few {Проверьте # восстановленных локальных черновика. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} many {Проверьте # восстановленных локальных черновиков. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} other {Проверьте # восстановленного локального черновика. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.}}"
 
 #. placeholder {0}: result.total
 #. placeholder {1}: formatCount(listed)
 #. placeholder {2}: formatCount(listed)
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {1} of # match} other {The first {2} of # matches}}"
-msgstr ""
+msgstr "{0, plural, one {Первые {1} из # совпадения} few {Первые {2} из # совпадений} many {Первые {2} из # совпадений} other {Первые {2} из # совпадения}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
 msgid "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
-msgstr ""
+msgstr "{0, plural, one {Предпросмотр вёрстки: # страница} few {Предпросмотр вёрстки: # страницы} many {Предпросмотр вёрстки: # страниц} other {Предпросмотр вёрстки: # страницы}}"
 
 #. placeholder {0}: diff.prefix
 #: src/ui/CompareDialog.tsx
 msgid "{0}\n"
 ""
-msgstr ""
+msgstr "{0}\n"
 
 #. placeholder {0}: target.target.record
 #: src/editor/insight.ts
 msgid "{0} · {MOD_LABEL}-click to go there"
-msgstr ""
+msgstr "{0} · щёлкните, удерживая {MOD_LABEL}, чтобы перейти"
 
 #. placeholder {0}: card.cite
 #: src/editor/chapter-cards.ts
 msgid "{0} · from Reader"
-msgstr ""
+msgstr "{0} · из Reader"
 
 #. placeholder {0}: title(diagnostic.record)
 #. placeholder {1}: lineOf(diagnostic.record, diagnostic.from)
 #: src/ui/ProblemsStrip.tsx
 msgid "{0} · line {1}"
-msgstr ""
+msgstr "{0} · строка {1}"
 
 #. placeholder {0}: VIEW_NAME[v]
 #: src/ui/WorkspaceView.tsx
 msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr ""
+msgstr "{0} ({MOD_LABEL}-Shift-\\ — циклическое переключение)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
 #: src/ui/WorkspaceView.tsx
 msgid "{0} could not be stored: {1}"
-msgstr ""
+msgstr "{0} не удалось сохранить: {1}"
 
 #. placeholder {0}: shows(path) ? "Hide" : "Show"
 #. placeholder {1}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "{0} the headings of {1}"
-msgstr ""
+msgstr "{0} заголовки в {1}"
 
 #. placeholder {0}: open ? "Hide" : "List"
 #: src/ui/WorkspaceView.tsx
 msgid "{0} the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "{0} проблемы под редактором (F8 — к следующей)"
 
 #. placeholder {0}: layout.sidebar ? "Hide" : "Show"
 #: src/ui/WorkspaceView.tsx
 msgid "{0} the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "{0} боковую панель ({MOD_LABEL}-\\)"
 
 #. placeholder {0}: info.kind === "suggestion" ? "Suggestion" : "Comment"
 #. placeholder {1}: info.isNew ? " · new" : ""
 #: src/editor/comments.ts
 msgid "{0}{1}"
-msgstr ""
+msgstr "{0}{1}"
 
 #. placeholder {0}: suggestion ? outcome : "Resolved"
 #. placeholder {1}: root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""
 #. placeholder {2}: root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""
 #: src/ui/CommentsPanel.tsx
 msgid "{0}{1}{2}"
-msgstr ""
+msgstr "{0}{1}{2}"
 
 #. placeholder {0}: Math.round(layout.zoom * 100)
 #: src/ui/WorkspaceView.tsx
 msgid "{0}%"
-msgstr ""
+msgstr "{0}%"
 
 #. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
-msgstr ""
+msgstr "{0} — создана резервная копия: {1}"
 
 #: src/i18n/collections.ts
 msgid "{app} can't open collections here"
-msgstr ""
+msgstr "{app} не может открывать коллекции здесь"
 
 #: src/i18n/collections.ts
 msgid "{app} doesn't have access to any collections yet. Choose one you have, or create a new one."
-msgstr ""
+msgstr "{app} пока не имеет доступа ни к одной коллекции. Выберите коллекцию или создайте новую."
 
 #: src/i18n/collections.ts
 msgid "{app} has stopped"
-msgstr ""
+msgstr "{app} перестало работать"
 
 #: src/i18n/collections.ts
 msgid "{app} needs to add a few things to this collection before it can use it."
-msgstr ""
+msgstr "Перед использованием {app} нужно добавить в эту коллекцию несколько необходимых элементов."
 
 #: src/i18n/collections.ts
 msgid "{app} needs your approval in mdbase before it can open it."
-msgstr ""
+msgstr "{app} требуется ваше разрешение в mdbase, чтобы открыть коллекцию."
 
 #: src/i18n/collections.ts
 msgid "{app} stops showing it on this device. Nothing in the collection is deleted, and {app} keeps its access. To end access, use Manage access."
-msgstr ""
+msgstr "{app} перестанет отображать её на этом устройстве. Ничего в коллекции не удаляется, а доступ {app} сохраняется. Чтобы отозвать доступ, откройте «Управление доступом»."
 
 #: src/workspace/workspace.ts
 msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr ""
+msgstr "{at}: эта запись удалена; скачайте локальный черновик, прежде чем выйти."
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} ,"
-msgstr ""
+msgstr "{MOD_LABEL} ,"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} M"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} M"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} S"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} S"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} \\"
-msgstr ""
+msgstr "{MOD_LABEL} \\"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} B / {MOD_LABEL} I"
-msgstr ""
+msgstr "{MOD_LABEL} B / {MOD_LABEL} I"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} F"
-msgstr ""
+msgstr "{MOD_LABEL} F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} K"
-msgstr ""
+msgstr "{MOD_LABEL} K"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} S"
-msgstr ""
+msgstr "{MOD_LABEL} S"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift \\"
-msgstr ""
+msgstr "{MOD_LABEL} Shift \\"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift E"
-msgstr ""
+msgstr "{MOD_LABEL} Shift E"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift F"
-msgstr ""
+msgstr "{MOD_LABEL} Shift F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift K"
-msgstr ""
+msgstr "{MOD_LABEL} Shift K"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift M"
-msgstr ""
+msgstr "{MOD_LABEL} Shift M"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift S"
-msgstr ""
+msgstr "{MOD_LABEL} Shift S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
-msgstr ""
+msgstr "{MOD_LABEL}-B"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL}-click"
-msgstr ""
+msgstr "{MOD_LABEL}-click"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
-msgstr ""
+msgstr "{MOD_LABEL}-click, чтобы показать в источниках"
 
 #: src/ui/CommentsPanel.tsx
 msgid "{MOD_LABEL}-Enter"
-msgstr ""
+msgstr "{MOD_LABEL}-Enter"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-I"
-msgstr ""
+msgstr "{MOD_LABEL}-I"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-Shift-K"
-msgstr ""
+msgstr "{MOD_LABEL}-Shift-K"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
-msgstr ""
+msgstr "{n, plural, one {# ошибка} few {# ошибки} many {# ошибок} other {# ошибки}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# match} other {# matches}}"
-msgstr ""
+msgstr "{n, plural, one {# совпадение} few {# совпадения} many {# совпадений} other {# совпадения}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# open comment} other {# open comments}}"
-msgstr ""
+msgstr "{n, plural, one {# незакрытый комментарий} few {# незакрытых комментария} many {# незакрытых комментариев} other {# незакрытого комментария}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# person record} other {# person records}}"
-msgstr ""
+msgstr "{n, plural, one {# запись о пользователе} few {# записи о пользователях} many {# записей о пользователях} other {# записи о пользователях}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# problem} other {# problems}}"
-msgstr ""
+msgstr "{n, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# record} other {# records}}"
-msgstr ""
+msgstr "{n, plural, one {# запись} few {# записи} many {# записей} other {# записи}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# recovered local draft} other {# recovered local drafts}}"
-msgstr ""
+msgstr "{n, plural, one {# восстановленный локальный черновик} few {# восстановленных локальных черновика} many {# восстановленных локальных черновиков} other {# восстановленного локального черновика}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# warning} other {# warnings}}"
-msgstr ""
+msgstr "{n, plural, one {# предупреждение} few {# предупреждения} many {# предупреждений} other {# предупреждения}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# word} other {# words}}"
-msgstr ""
+msgstr "{n, plural, one {# слово} few {# слова} many {# слов} other {# слова}}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{name} loading; you can keep writing."
-msgstr ""
+msgstr "Загрузка {name} продолжается; можно продолжать писать."
 
 #. placeholder {0}: state.problem
 #: src/ui/WorkspaceView.tsx
 msgid "{name} unavailable: {0}"
-msgstr ""
+msgstr "Не удалось открыть {name}: {0}"
 
 #. placeholder {0}: snap.recordProblems.get(path) ?? "Not loaded; it will be left out."
 #: src/workspace/workspace.ts
 msgid "{path}: {0}"
-msgstr ""
+msgstr "{path}: {0}"
 
 #: src/workspace/workspace.ts
 msgid "{path}: A recovered draft has not been reviewed; the collection version will be exported."
-msgstr ""
+msgstr "{path}: Восстановленный черновик ещё не проверен; при экспорте будет использована версия из коллекции."
 
 #. placeholder {0}: direct ? " · drag, or Alt-↑/↓, to reorder" : ""
 #. placeholder {1}: onRename ? " · double-click or F2 to rename" : ""
 #: src/ui/OutlinePanel.tsx
 msgid "{path}{0}{1}"
-msgstr ""
+msgstr "{path}{0}{1}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source from mdbase Reader can be cited here.} other {# sources from mdbase Reader can be cited here.}}"
-msgstr ""
+msgstr "{sources, plural, one {Из mdbase Reader можно цитировать # источник.} few {Из mdbase Reader можно цитировать # источника.} many {Из mdbase Reader можно цитировать # источников.} other {Из mdbase Reader можно цитировать # источника.}}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
-msgstr ""
+msgstr "{sources, plural, one {# источник для цитирования из mdbase Reader} few {# источника для цитирования из mdbase Reader} many {# источников для цитирования из mdbase Reader} other {# источника для цитирования из mdbase Reader}}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
-msgstr ""
+msgstr "{uses, plural, one {Цитировали один раз} few {Цитировали # раза} many {Цитировали # раз} other {Цитировали # раза}}"
 
 #: src/ui/OutlinePanel.tsx
 msgid "<0/> Add chapter"
-msgstr ""
+msgstr "<0/> Добавить главу"
 
 #: src/ui/Home.tsx
 msgid "<0/> Include a worked example of citations, figures and chapters"
-msgstr ""
+msgstr "<0/> Добавьте пример с цитатами, рисунками и главами"
 
 #: src/ui/CommentsPanel.tsx
 msgid "<0/> On the record"
-msgstr ""
+msgstr "<0/> В записи"
 
 #: src/ui/Settings.tsx
 msgid "<0/>Add author"
-msgstr ""
+msgstr "<0/>Добавить автора"
 
 #: src/ui/Home.tsx
 msgid "<0/>Continue<1/>"
-msgstr ""
+msgstr "<0/>Продолжить<1/>"
 
 #: src/ui/Home.tsx
 msgid "<0/>New manuscript"
-msgstr ""
+msgstr "<0/>Новая рукопись"
 
 #: src/ui/Home.tsx
 msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr ""
+msgstr "<0>Рукопись.</0> Создайте её или используйте уже имеющуюся заметку. Она останется обычной записью Markdown в этой коллекции."
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
-msgstr ""
+msgstr "<0>Пишите.</0> Добавляйте цитаты в формате <1>[@citekey, p. 12]</1> (или находите источники по автору и названию на панели «Источники»), помечайте рисунки как <2>{#fig-plan}</2> и ссылайтесь на них через <3>@fig-plan</3>, встраивайте главы с помощью <4>![[chapters/one]]</4>. Экспортируйте в PDF или документ Word."
 
 #: src/workspace/workspace.ts
 msgid "A chapter needs a title."
-msgstr ""
+msgstr "У главы должен быть заголовок."
 
 #: src/ui/CommentsPanel.tsx
 msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
-msgstr ""
+msgstr "Комментарий ко всей записи, а не к фрагменту (выделите текст в редакторе, чтобы прокомментировать его)"
 
 #: src/ui/Home.tsx
 msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
-msgstr ""
+msgstr "Черновик — это набранный, но не сохранённый в коллекции текст. Откройте рукопись, чтобы вернуть его."
 
 #: src/ui/WorkspaceView.tsx
 msgid "A local draft is still available in this browser."
-msgstr ""
+msgstr "Локальный черновик всё ещё доступен в этом браузере."
 
 #: src/ui/SourcesPanel.tsx
 msgid "A page (12, 12–14) or a locator (ch. 3, sec. 2)"
-msgstr ""
+msgstr "Страница (12, 12–14) или локатор (гл. 3, разд. 2)"
 
 #: src/ui/Settings.tsx
 msgid "Abstract"
-msgstr ""
+msgstr "Аннотация"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accept"
-msgstr ""
+msgstr "Принять"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
-msgstr ""
+msgstr "Принято"
 
 #: src/i18n/collections.ts
 msgid "Access wasn't given."
-msgstr ""
+msgstr "Доступ не предоставлен."
 
 #: src/i18n/collections.ts
 msgid "Access wasn't given. You can try again or choose a different collection."
-msgstr ""
+msgstr "Доступ не предоставлен. Повторите попытку или выберите другую коллекцию."
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
-msgstr ""
+msgstr "Добавить"
 
 #: src/pwa-install.ts
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
-msgstr ""
+msgstr "Добавьте {appName} на главный экран: нажмите «Поделиться», затем «На главный экран»."
 
 #: src/i18n/collections.ts
 msgid "Add a collection…"
-msgstr ""
+msgstr "Добавить коллекцию…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Add a footnote"
-msgstr ""
+msgstr "Добавить сноску"
 
 #: src/i18n/collections.ts
 msgid "Add a Private collection"
-msgstr ""
+msgstr "Добавить закрытую коллекцию"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
-msgstr ""
+msgstr "Добавьте источники в mdbase Reader; цитируйте их здесь с помощью <0>[@citekey]</0>."
 
 #: src/ui/OutlinePanel.tsx
 msgid "Adding…"
-msgstr ""
+msgstr "Добавление…"
 
 #: src/ui/Home.tsx
 msgid "Adds the manuscript type to the note. Its other types, text and location stay as they are."
-msgstr ""
+msgstr "Добавляет к заметке тип рукописи. Остальные типы, текст и расположение останутся без изменений."
 
 #: src/ui/Settings.tsx
 msgid "Affiliation"
-msgstr ""
+msgstr "Аффилиация"
 
 #: src/ui/WorkspaceView.tsx
 msgid "All manuscripts"
-msgstr ""
+msgstr "Все рукописи"
 
 #: src/ui/ConnectGate.tsx
 msgid "already present"
-msgstr ""
+msgstr "уже есть"
 
 #. placeholder {0}: snap.annotationsLoad.problem
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
-msgstr ""
+msgstr "Не удалось обнаружить аннотации: {0}. Метаданные цитаты могут быть неполными."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Annotation index"
-msgstr ""
+msgstr "Индекс аннотаций"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr ""
+msgstr "Аннотации недоступны: {problem} <0>Повторить загрузку аннотаций</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
-msgstr ""
+msgstr "APA, 7-е издание"
 
 #: src/ui/names.ts
 msgid "Article"
-msgstr ""
+msgstr "Статья"
 
 #: src/ui/CommentsPanel.tsx
 msgid "as {signer} · "
-msgstr ""
+msgstr "от имени {signer} · "
 
 #: src/ui/Settings.tsx
 msgid "as it should appear"
-msgstr ""
+msgstr "как должно отображаться"
 
 #: src/ui/CommentsPanel.tsx
 msgid "At the cursor"
-msgstr ""
+msgstr "В позиции курсора"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} affiliation"
-msgstr ""
+msgstr "Аффилиация автора {0}"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} name"
-msgstr ""
+msgstr "Имя автора {0}"
 
 #: src/ui/Settings.tsx
 msgid "Authors"
-msgstr ""
+msgstr "Авторы"
 
 #: src/ui/WorkspaceView.tsx
 msgid "back home close"
-msgstr ""
+msgstr "Назад, домой, закрыть"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Back to manuscripts"
-msgstr ""
+msgstr "К списку рукописей"
 
 #: src/ui/WorkspaceView.tsx
 msgid "backup unsaved recovery"
-msgstr ""
+msgstr "Резервная копия, несохранённое, восстановление"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Bold"
-msgstr ""
+msgstr "Жирный"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Bold / italic (again to remove it)"
