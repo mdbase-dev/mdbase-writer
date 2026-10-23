@@ -1000,9 +1000,9 @@ export class ManuscriptWorkspace {
       const assets = assembly.assets.filter((path) => !attemptedAssets.has(path));
       if (!records.length && !assets.length) {
         const problems = [...new Set([
-          ...(snap.annotationsLoad.phase === "failed" ? [t`Annotation discovery unavailable: ${snap.annotationsLoad.problem}. Quotation metadata may be incomplete.`] : []),
+          ...(snap.annotationsLoad.phase === "failed" ? [t`Annotation discovery unavailable: ${snap.annotationsLoad.problem ?? ""}. Quotation metadata may be incomplete.`] : []),
           ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnostic.message}`),
-          ...assembly.unloaded.map((path) => t`${path}: ${snap.recordProblems.get(path) ?? "Not loaded; it will be left out."}`),
+          ...assembly.unloaded.map((path) => `${path}: ${snap.recordProblems.get(path) ?? t`Not loaded; it will be left out.`}`),
           ...assembly.assets.flatMap((path) => snap.assetProblems.has(path) ? [`${path}: ${snap.assetProblems.get(path)}`] : []),
           ...assembly.order.flatMap((path) => snap.recoveredDrafts.has(path) ? [t`${path}: A recovered draft has not been reviewed; the collection version will be exported.`] : []),
         ])];

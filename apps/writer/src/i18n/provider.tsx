@@ -13,7 +13,7 @@ export function InterfaceLanguage() {
   useLingui();
   const [failed, setFailed] = useState(false);
   return <span className="interface-language">
-    <LanguagePicker className="mdbase-field" label={t`Interface language`} onError={() => setFailed(true)} onFocus={() => setFailed(false)} />
+    <LanguagePicker className="mdbase-field" label={t`Interface language`} onError={() => setFailed(true)} onFocus={() => setFailed(false)} onChangeCapture={() => setFailed(false)} />
     {failed && <span role="alert" className="interface-language-error">{t`The language could not be loaded. Your current language is unchanged. Try again.`}</span>}
   </span>;
 }

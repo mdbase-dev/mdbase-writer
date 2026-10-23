@@ -1,4 +1,5 @@
 import { createI18nRuntime } from "@mdbase-dev/i18n";
+import { i18n } from "@lingui/core";
 import english from "./locales/en/messages.json";
 
 const chunks = {
@@ -13,6 +14,7 @@ const chunks = {
 };
 const storageKey = "mdbase-writer:interface-locale";
 export const runtime = createI18nRuntime({
+  i18n,
   english,
   loadLocale: async (locale) => (await chunks[locale]()).default,
   storage: {
@@ -26,4 +28,4 @@ export const runtime = createI18nRuntime({
     },
   },
 });
-export const i18n = runtime.i18n;
+export { i18n };

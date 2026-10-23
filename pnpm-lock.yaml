@@ -65,6 +65,9 @@ importers:
       '@mdbase-dev/connect-protocol':
         specifier: file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz
         version: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz
+      '@mdbase-dev/i18n':
+        specifier: file:../../vendor/mdbase-dev-i18n-0.1.0-beta.141-096d80bf.tgz
+        version: file:vendor/mdbase-dev-i18n-0.1.0-beta.141-096d80bf.tgz(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)
       '@mdbase-dev/sdk':
         specifier: file:../../vendor/sdk-eaa4e697-production-beta141.tgz
         version: file:vendor/sdk-eaa4e697-production-beta141.tgz
@@ -581,6 +584,15 @@ packages:
   '@mdbase-dev/connect@file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz':
     resolution: {integrity: sha512-DbmsalmFBZg1sKn3WQ92WtHsZwDUVGtQAV2MzkC3F4kJmJGY1w+TBGWMlE1YLIxiVNKHo9eL4qeGErMpJPYJbg==, tarball: file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz}
     version: 0.1.0-beta.125
+
+  '@mdbase-dev/i18n@file:vendor/mdbase-dev-i18n-0.1.0-beta.141-096d80bf.tgz':
+    resolution: {integrity: sha512-rEsnDmBNPSkzEtTXL8r5lwR1VPZryXcpqC3zm1mVwSI30BUH1mcuj62KkhKh7RHyiTWEH25NwFCnjWHf8gUX9w==, tarball: file:vendor/mdbase-dev-i18n-0.1.0-beta.141-096d80bf.tgz}
+    version: 0.1.0-beta.141
+    hasBin: true
+    peerDependencies:
+      '@lingui/core': 6.9.0
+      '@lingui/react': 6.9.0
+      react: ^19.2.0
 
   '@mdbase-dev/sdk@file:vendor/sdk-eaa4e697-production-beta141.tgz':
     resolution: {integrity: sha512-8N1ZcxMinDMyWaQdmxmmu+7/vp0+UdEF7EXw/swCqcS9gFcIQrtL9r2dwKhkdHrnrGJ5qTjS8+3LHVD8yA6CDg==, tarball: file:vendor/sdk-eaa4e697-production-beta141.tgz}
@@ -1609,6 +1621,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   ulid@2.4.0:
     resolution: {integrity: sha512-fIRiVTJNcSRmXKPZtGzFQv9WRrZ3M9eoptl/teFJvjOzmpU+/K/JH6HZ8deBfb5vMEpicJcLn7JmvdknlMq7Zg==}
     hasBin: true
@@ -2284,6 +2301,22 @@ snapshots:
   '@mdbase-dev/connect@file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz':
     dependencies:
       '@mdbase-dev/connect-protocol': 0.1.0-beta.125
+
+  '@mdbase-dev/i18n@file:vendor/mdbase-dev-i18n-0.1.0-beta.141-096d80bf.tgz(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)':
+    dependencies:
+      '@lingui/cli': 6.9.0(babel-plugin-macros@3.1.0)(rolldown@1.2.11)(supports-color@7.2.0)
+      '@lingui/conf': 6.9.0
+      '@lingui/core': 6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)
+      '@lingui/format-po': 6.9.0
+      '@lingui/message-utils': 6.9.0
+      '@lingui/react': 6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0)
+      react: 19.3.0
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - babel-plugin-macros
+      - esbuild
+      - rolldown
+      - supports-color
 
   '@mdbase-dev/sdk@file:vendor/sdk-eaa4e697-production-beta141.tgz':
     dependencies:
@@ -3147,6 +3180,8 @@ snapshots:
       punycode: 2.3.1
 
   typescript@5.9.3: {}
+
+  typescript@6.0.3: {}
 
   ulid@2.4.0: {}
 

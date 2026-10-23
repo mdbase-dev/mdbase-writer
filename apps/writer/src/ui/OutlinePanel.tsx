@@ -180,7 +180,7 @@ export function OutlinePanel({
                       onClick={() => onOpen(path)}
                       onDoubleClick={openRename}
                       onKeyDown={(e) => { if (e.key === "F2") { e.preventDefault(); openRename(); } else onKeyDown(e); }}
-                      title={t`${path}${direct ? " · drag, or Alt-↑/↓, to reorder" : ""}${onRename ? " · double-click or F2 to rename" : ""}`}
+                      title={[path, direct ? t`Drag, or Alt-↑/↓, to reorder` : null, onRename ? t`Double-click or F2 to rename` : null].filter(Boolean).join(" · ")}
                     >
                       <span className="record-number" aria-hidden={!direct}>
                         <span className="record-index">{direct ? index + 1 : ""}</span>
@@ -191,7 +191,7 @@ export function OutlinePanel({
                       <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
                     </button>
                     {hasHeadings && (
-                      <button type="button" className="record-fold" aria-expanded={shows(path)} aria-label={t`${shows(path) ? "Hide" : "Show"} the headings of ${recordTitle(view, path)}`} onClick={() => toggleExpanded(path)}>
+                      <button type="button" className="record-fold" aria-expanded={shows(path)} aria-label={shows(path) ? t`Hide the headings of ${recordTitle(view, path)}` : t`Show the headings of ${recordTitle(view, path)}`} onClick={() => toggleExpanded(path)}>
                         <ChevronRight />
                       </button>
                     )}

@@ -8,7 +8,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState, type KeyboardEv
 
 import type { RecordView } from "../workspace/workspace.js";
 import { SearchIcon } from "./icons.js";
-import { formatCount } from "./records.js";
+import { formatCount, plural as countLabel } from "./records.js";
 import { searchManuscript, type SearchHit } from "./search.js";
 
 /** A request to focus the field (Mod-Shift-F); a new nonce repeats it. */
@@ -77,7 +77,9 @@ export function ManuscriptSearch({
     e.preventDefault();
   };
 
-  const listed = hits.length;
+  const listedCount = formatCount(hits.length);
+  const matchCount = countLabel(result.total, "match");
+  const recordCount = countLabel(result.groups.length, "record");
   let index = 0;
   return (
     <>
@@ -102,8 +104,8 @@ export function ManuscriptSearch({
             {result.total === 0
               ? t`Nothing matches “${query.trim()}”.`
               : result.truncated
-                ? icuPlural(result.total, { one: `The first ${formatCount(listed)} of # match`, other: `The first ${formatCount(listed)} of # matches` })
-                : icuPlural(result.total, { one: `# match in ${formatCount(result.groups.length)} records`, other: `# matches in ${formatCount(result.groups.length)} records` })}
+                ? icuPlural(result.total, { one: `The first ${listedCount} of # match`, other: `The first ${listedCount} of # matches` })
+                : `${matchCount} · ${recordCount}`}
           </p>
           {result.groups.map((group) => (
             <section key={group.record} className="search-group" aria-label={recordTitle(group.record)}>

@@ -29,7 +29,6 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: "@writer/i18n", replacement: resolve(dirname(fileURLToPath(import.meta.url)), "src/i18n/app.ts") },
       { find: /^pandoc-wasm\/core$/, replacement: resolve(pandocWasm, "src", "core.js") },
       { find: /^pandoc-wasm\/pandoc\.wasm\?url$/, replacement: `${resolve(pandocWasm, "src", "pandoc.wasm")}?url` },
     ],

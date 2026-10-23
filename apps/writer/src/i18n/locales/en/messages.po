@@ -7,15 +7,6 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
-#. placeholder {0}: diff.suffix
-#: src/ui/CompareDialog.tsx
-msgid ""
-"\n"
-"{0}"
-msgstr ""
-"\n"
-"{0}"
-
 #. placeholder {0}: Math.round((words / goal) * 100)
 #. placeholder {1}: formatNumber(goal)
 #: src/ui/Home.tsx
@@ -57,12 +48,10 @@ msgstr "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open
 msgid "{0, plural, one {# chapter} other {# chapters}}"
 msgstr "{0, plural, one {# chapter} other {# chapters}}"
 
-#. placeholder {0}: result.total
-#. placeholder {1}: formatCount(result.groups.length)
-#. placeholder {2}: formatCount(result.groups.length)
-#: src/ui/ManuscriptSearch.tsx
-msgid "{0, plural, one {# match in {1} records} other {# matches in {2} records}}"
-msgstr "{0, plural, one {# match in {1} records} other {# matches in {2} records}}"
+#. placeholder {0}: this.ids.length
+#: src/editor/comments.ts
+msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
+msgstr "{0, plural, one {# comment on this line} other {# comments on this line}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
@@ -75,11 +64,9 @@ msgid "{0, plural, one {# word in this section} other {# words in this section}}
 msgstr "{0, plural, one {# word in this section} other {# words in this section}}"
 
 #. placeholder {0}: problems.length
-#. placeholder {1}: problems[0]
-#. placeholder {2}: problems[0]
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {Exported {name} with # problem: {1}} other {Exported {name} with # problems: {2}}}"
-msgstr "{0, plural, one {Exported {name} with # problem: {1}} other {Exported {name} with # problems: {2}}}"
+msgid "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
+msgstr "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
@@ -92,23 +79,14 @@ msgid "{0, plural, one {Review # recovered local draft. Editing is paused in tha
 msgstr "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
 
 #. placeholder {0}: result.total
-#. placeholder {1}: formatCount(listed)
-#. placeholder {2}: formatCount(listed)
 #: src/ui/ManuscriptSearch.tsx
-msgid "{0, plural, one {The first {1} of # match} other {The first {2} of # matches}}"
-msgstr "{0, plural, one {The first {1} of # match} other {The first {2} of # matches}}"
+msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
+msgstr "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
 msgid "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
 msgstr "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
-
-#. placeholder {0}: diff.prefix
-#: src/ui/CompareDialog.tsx
-msgid "{0}\n"
-""
-msgstr "{0}\n"
-""
 
 #. placeholder {0}: target.target.record
 #: src/editor/insight.ts
@@ -137,39 +115,10 @@ msgstr "{0} ({MOD_LABEL}-Shift-\\ cycles)"
 msgid "{0} could not be stored: {1}"
 msgstr "{0} could not be stored: {1}"
 
-#. placeholder {0}: shows(path) ? "Hide" : "Show"
-#. placeholder {1}: recordTitle(view, path)
-#: src/ui/OutlinePanel.tsx
-msgid "{0} the headings of {1}"
-msgstr "{0} the headings of {1}"
-
-#. placeholder {0}: open ? "Hide" : "List"
+#. placeholder {0}: THEME_NAME[t]
 #: src/ui/WorkspaceView.tsx
-msgid "{0} the problems under the editor (F8 goes to the next one)"
-msgstr "{0} the problems under the editor (F8 goes to the next one)"
-
-#. placeholder {0}: layout.sidebar ? "Hide" : "Show"
-#: src/ui/WorkspaceView.tsx
-msgid "{0} the sidebar ({MOD_LABEL}-\\)"
-msgstr "{0} the sidebar ({MOD_LABEL}-\\)"
-
-#. placeholder {0}: info.kind === "suggestion" ? "Suggestion" : "Comment"
-#. placeholder {1}: info.isNew ? " · new" : ""
-#: src/editor/comments.ts
-msgid "{0}{1}"
-msgstr "{0}{1}"
-
-#. placeholder {0}: suggestion ? outcome : "Resolved"
-#. placeholder {1}: root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""
-#. placeholder {2}: root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""
-#: src/ui/CommentsPanel.tsx
-msgid "{0}{1}{2}"
-msgstr "{0}{1}{2}"
-
-#. placeholder {0}: Math.round(layout.zoom * 100)
-#: src/ui/WorkspaceView.tsx
-msgid "{0}%"
-msgstr "{0}%"
+msgid "{0} theme"
+msgstr "{0} theme"
 
 #. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
 #. placeholder {1}: relativeTime(d.updated)
@@ -206,8 +155,8 @@ msgid "{at}: this record was deleted; download the local draft before leaving."
 msgstr "{at}: this record was deleted; download the local draft before leaving."
 
 #: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} ,"
-msgstr "{MOD_LABEL} ,"
+msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
+msgstr "{commentsTitle} ({MOD_LABEL}-Shift-M)"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
@@ -220,10 +169,6 @@ msgstr "{MOD_LABEL} {ALT_LABEL} M"
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} S"
 msgstr "{MOD_LABEL} {ALT_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} \\"
-msgstr "{MOD_LABEL} \\"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} B / {MOD_LABEL} I"
@@ -329,25 +274,14 @@ msgstr "{n, plural, one {# word} other {# words}}"
 msgid "{name} loading; you can keep writing."
 msgstr "{name} loading; you can keep writing."
 
-#. placeholder {0}: state.problem
+#. placeholder {0}: state.problem ?? ""
 #: src/ui/WorkspaceView.tsx
 msgid "{name} unavailable: {0}"
 msgstr "{name} unavailable: {0}"
 
-#. placeholder {0}: snap.recordProblems.get(path) ?? "Not loaded; it will be left out."
-#: src/workspace/workspace.ts
-msgid "{path}: {0}"
-msgstr "{path}: {0}"
-
 #: src/workspace/workspace.ts
 msgid "{path}: A recovered draft has not been reviewed; the collection version will be exported."
 msgstr "{path}: A recovered draft has not been reviewed; the collection version will be exported."
-
-#. placeholder {0}: direct ? " · drag, or Alt-↑/↓, to reorder" : ""
-#. placeholder {1}: onRename ? " · double-click or F2 to rename" : ""
-#: src/ui/OutlinePanel.tsx
-msgid "{path}{0}{1}"
-msgstr "{path}{0}{1}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source from mdbase Reader can be cited here.} other {# sources from mdbase Reader can be cited here.}}"
@@ -477,7 +411,7 @@ msgstr "All manuscripts"
 msgid "already present"
 msgstr "already present"
 
-#. placeholder {0}: snap.annotationsLoad.problem
+#. placeholder {0}: snap.annotationsLoad.problem ?? ""
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
 msgstr "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
@@ -493,6 +427,10 @@ msgstr "Annotations unavailable: {problem} <0>Retry annotations</0>"
 #: src/ui/names.ts
 msgid "APA 7th edition"
 msgstr "APA 7th edition"
+
+#: src/ui/WorkspaceView.tsx
+msgid "appearance dark light"
+msgstr "appearance dark light"
 
 #: src/ui/names.ts
 msgid "Article"
@@ -778,6 +716,11 @@ msgstr "Commands, shortcuts and theme"
 msgid "Comment"
 msgstr "Comment"
 
+#: src/editor/comments.ts
+msgctxt "comment tooltip"
+msgid "Comment"
+msgstr "Comment"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Comment on the selection"
 msgstr "Comment on the selection"
@@ -938,6 +881,10 @@ msgstr "Detached: the text has changed"
 msgid "Dismiss"
 msgstr "Dismiss"
 
+#: src/ui/OutlinePanel.tsx
+msgid "Double-click or F2 to rename"
+msgstr "Double-click or F2 to rename"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Down arrow moves to the sources; Enter cites the first match."
 msgstr "Down arrow moves to the sources; Enter cites the first match."
@@ -963,6 +910,10 @@ msgstr "Drag to resize; double-click to restore"
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to split evenly"
 msgstr "Drag to resize; double-click to split evenly"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Drag, or Alt-↑/↓, to reorder"
+msgstr "Drag, or Alt-↑/↓, to reorder"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
@@ -1106,6 +1057,10 @@ msgstr "Find a note by name or folder"
 msgid "Find a source"
 msgstr "Find a source"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Find a source ({MOD_LABEL}-Shift-E)"
+msgstr "Find a source ({MOD_LABEL}-Shift-E)"
+
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
 msgstr "Find a source for this passage and cite it after it"
@@ -1126,10 +1081,9 @@ msgstr "Find in Sources"
 msgid "Find or run a command"
 msgstr "Find or run a command"
 
-#. placeholder {0}: Math.round((previewView?.scale ?? 1) * 100)
 #: src/ui/WorkspaceView.tsx
-msgid "Fit · {0}%"
-msgstr "Fit · {0}%"
+msgid "Fit · {zoomLabel}"
+msgstr "Fit · {zoomLabel}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1192,9 +1146,22 @@ msgstr "Help"
 msgid "Hide problems"
 msgstr "Hide problems"
 
+#. placeholder {0}: recordTitle(view, path)
+#: src/ui/OutlinePanel.tsx
+msgid "Hide the headings of {0}"
+msgstr "Hide the headings of {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Hide the problems under the editor (F8 goes to the next one)"
+msgstr "Hide the problems under the editor (F8 goes to the next one)"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the sidebar"
 msgstr "Hide the sidebar"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Hide the sidebar ({MOD_LABEL}-\\)"
+msgstr "Hide the sidebar ({MOD_LABEL}-\\)"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1310,6 +1277,7 @@ msgid "Install {appName} for quick access in its own window."
 msgstr "Install {appName} for quick access in its own window."
 
 #: src/i18n/provider.tsx
+#: src/ui/Settings.tsx
 msgid "Interface language"
 msgstr "Interface language"
 
@@ -1391,6 +1359,10 @@ msgstr "Link it in mdbase Editor’s settings for this collection."
 #: src/ui/CommentsPanel.tsx
 msgid "Link your account"
 msgstr "Link your account"
+
+#: src/ui/WorkspaceView.tsx
+msgid "List the problems under the editor (F8 goes to the next one)"
+msgstr "List the problems under the editor (F8 goes to the next one)"
 
 #: src/editor/insight.ts
 msgid "Listing"
@@ -1539,6 +1511,11 @@ msgstr "New chapter title"
 msgid "New comment"
 msgstr "New comment"
 
+#: src/editor/comments.ts
+msgctxt "comment tooltip"
+msgid "New comment"
+msgstr "New comment"
+
 #: src/ui/Home.tsx
 msgid "New manuscript"
 msgstr "New manuscript"
@@ -1550,6 +1527,10 @@ msgstr "New since last visit ({newCount})"
 #: src/ui/CommentsPanel.tsx
 msgid "New since your last visit"
 msgstr "New since your last visit"
+
+#: src/editor/comments.ts
+msgid "New suggestion"
+msgstr "New suggestion"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous comment"
@@ -1646,6 +1627,10 @@ msgstr "None yet. {0} to import a PDF, a DOI or a BibTeX file; each source gets 
 #: src/ui/SourcesPanel.tsx
 msgid "Not cited yet"
 msgstr "Not cited yet"
+
+#: src/workspace/workspace.ts
+msgid "Not loaded; it will be left out."
+msgstr "Not loaded; it will be left out."
 
 #: src/pwa-install.ts
 msgid "Not now"
@@ -1831,6 +1816,10 @@ msgstr "or use a note you already have"
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
 msgstr "Outline"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
+msgstr "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
 
 #: src/i18n/collections.ts
 msgid "Owner"
@@ -2330,9 +2319,18 @@ msgstr "Show previous 50 sources"
 msgid "Show problems"
 msgstr "Show problems"
 
+#. placeholder {0}: recordTitle(view, path)
+#: src/ui/OutlinePanel.tsx
+msgid "Show the headings of {0}"
+msgstr "Show the headings of {0}"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar"
 msgstr "Show the sidebar"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show the sidebar ({MOD_LABEL}-\\)"
+msgstr "Show the sidebar ({MOD_LABEL}-\\)"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2503,6 +2501,11 @@ msgstr "Suggested insertion"
 msgid "Suggested text"
 msgstr "Suggested text"
 
+#: src/editor/comments.ts
+msgctxt "comment tooltip"
+msgid "Suggestion"
+msgstr "Suggestion"
+
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
 msgstr "Switch collection"
@@ -2550,7 +2553,7 @@ msgstr "The editor language could not be loaded. You can keep writing."
 msgid "The file could not be downloaded. {0}"
 msgstr "The file could not be downloaded. {0}"
 
-#. placeholder {0}: missingImage[1]
+#. placeholder {0}: missingImage[1] ?? ""
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
 msgstr "The image “{0}” could not be loaded for Word. Its description will be included instead."
@@ -2611,6 +2614,10 @@ msgstr "This action could not be completed. Please try again."
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
 msgstr "This applies in this browser, to every manuscript."
+
+#: src/ui/Settings.tsx
+msgid "This changes the interface in this browser, not the manuscript’s language."
+msgstr "This changes the interface in this browser, not the manuscript’s language."
 
 #: src/i18n/collections.ts
 msgid "this collection"

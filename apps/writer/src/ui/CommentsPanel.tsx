@@ -322,7 +322,7 @@ const Thread = memo(function Thread({
   const mine = (c: CommentRecord) => !c.createdBy || (people.me !== undefined && c.createdBy.toLowerCase() === people.me.link.toLowerCase());
 
   const outcome = suggestion?.outcome === "accepted" ? t`Accepted` : suggestion?.outcome === "rejected" ? t`Rejected` : t`Resolved`;
-  const resolvedNote = !open ? t`${suggestion ? outcome : "Resolved"}${root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""}${root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""}` : null;
+  const resolvedNote = !open ? [suggestion ? outcome : t`Resolved`, root.resolvedBy ? personName(root.resolvedBy, people) : null, root.resolvedAt ? when(root.resolvedAt) : null].filter(Boolean).join(" · ") : null;
 
   return (
     <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}${isNew ? " is-new" : ""}`} data-thread={root.path}>

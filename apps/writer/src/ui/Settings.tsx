@@ -18,6 +18,7 @@ import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js"
 import { ChevronUp, CloseIcon, MinusIcon, PlusIcon } from "./icons.js";
 import { styleName, templateName } from "./names.js";
 import { intlLocale } from "../i18n/presentation.js";
+import { InterfaceLanguage } from "../i18n/provider.js";
 
 type JsonValue = JsonObject[string];
 
@@ -160,6 +161,11 @@ export function Settings({
         />
       </fieldset>
       <p className="muted small dialog-note"><Trans>Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them.</Trans></p>
+      <section className="editor-prefs">
+        <h2><Trans>Interface language</Trans></h2>
+        <InterfaceLanguage />
+        <p className="muted small dialog-note"><Trans>This changes the interface in this browser, not the manuscript’s language.</Trans></p>
+      </section>
       {onLivePreview && (
         <section className="editor-prefs" aria-labelledby={`${titleId}-editor`}>
           <h2 id={`${titleId}-editor`}><Trans>Editor</Trans></h2>

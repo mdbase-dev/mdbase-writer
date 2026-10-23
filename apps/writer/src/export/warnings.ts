@@ -13,6 +13,6 @@ export function pandocWarnings(messages: readonly unknown[]): string[] {
 function exportWarningMessage(message: string): string {
   const missingImage = /^Could not fetch resource (.+): replacing image with description\.?$/.exec(message);
   return missingImage
-    ? t`The image “${missingImage[1]}” could not be loaded for Word. Its description will be included instead.`
+    ? t`The image “${missingImage[1] ?? ""}” could not be loaded for Word. Its description will be included instead.`
     : message;
 }

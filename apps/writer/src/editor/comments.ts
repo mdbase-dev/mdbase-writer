@@ -97,7 +97,7 @@ class CommentMarker extends GutterMarker {
     el.className = `cm-comment-marker${this.active ? " is-active" : ""}`;
     el.dataset["comment"] = this.ids[0] ?? "";
     el.textContent = this.ids.length > 1 ? String(this.ids.length) : "";
-    el.title = this.ids.length > 1 ? tplural(this.ids.length, { one: "# comment on this line", other: "# comments on this line" }) : t`Show this comment`;
+    el.title = this.ids.length > 1 ? plural(this.ids.length, { one: "# comment on this line", other: "# comments on this line" }) : t`Show this comment`;
     el.setAttribute("aria-label", el.title);
     return el;
   }
@@ -168,7 +168,9 @@ export function commentAnchors(onAnchor: (id: string) => void, card?: (id: strin
         dom.className = "cm-ref-tip cm-comment-tip";
         const head = document.createElement("div");
         head.className = "cm-ref-kind";
-        head.textContent = t`${info.kind === "suggestion" ? "Suggestion" : "Comment"}${info.isNew ? " · new" : ""}`;
+        head.textContent = info.kind === "suggestion"
+          ? info.isNew ? t`New suggestion` : t({ message: "Suggestion", context: "comment tooltip" })
+          : info.isNew ? t({ message: "New comment", context: "comment tooltip" }) : t({ message: "Comment", context: "comment tooltip" });
         const who = document.createElement("div");
         who.className = "cm-comment-who";
         who.textContent = `${info.author} · ${info.when}`;
@@ -177,7 +179,7 @@ export function commentAnchors(onAnchor: (id: string) => void, card?: (id: strin
         body.textContent = info.text.length > 240 ? `${info.text.slice(0, 239)}…` : info.text;
         const hint = document.createElement("div");
         hint.className = "cm-ref-hint";
-        hint.textContent = plural(info.replies, { "=0": "Click to open in Comments", one: "# reply · Click to open in Comments", other: "# replies · Click to open in Comments" });
+        hint.textContent = plural(info.replies, { 0: "Click to open in Comments", one: "# reply · Click to open in Comments", other: "# replies · Click to open in Comments" });
         dom.append(head, who, body, hint);
         return { dom };
       },

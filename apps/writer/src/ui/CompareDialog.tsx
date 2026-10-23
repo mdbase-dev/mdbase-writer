@@ -60,7 +60,7 @@ export function CompareDialog({ comparison, canRestore = true, onClose, onResolv
         <div className="compare-columns" ref={columns}>
           {([[t`Your local text`, diff.mine], [t`Collection version`, diff.theirs]] as const).map(([label, change]) => <section key={label}>
             <h3>{label}</h3>
-            <pre className="compare-text">{diff.prefix && t`${diff.prefix}\n`}{comparison.mine !== comparison.theirs && <mark>{change || t`(passage removed)`}</mark>}{diff.suffix && t`\n${diff.suffix}`}</pre>
+            <pre className="compare-text">{diff.prefix && `${diff.prefix}\n`}{comparison.mine !== comparison.theirs && <mark>{change || t`(passage removed)`}</mark>}{diff.suffix && `\n${diff.suffix}`}</pre>
           </section>)}
         </div>
         {metadataChanged && <details><summary><Trans>Settings also differ</Trans></summary><div className="compare-columns">
