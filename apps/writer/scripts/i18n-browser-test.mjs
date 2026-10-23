@@ -23,6 +23,7 @@ try {
   await picker.selectOption("ja");
   await page.waitForFunction(() => document.documentElement.lang === "ja");
   assert.equal(await page.evaluate(() => localStorage.getItem("mdbase-writer:interface-locale")), "ja");
+  await page.screenshot({ path: "out/i18n/japanese-home.png", fullPage: true });
   await page.locator(".manuscript-row").filter({ hasText: "Patient Observation" }).click();
   const editor = page.locator(".cm-content");
   await editor.waitFor();
@@ -43,6 +44,7 @@ try {
   await picker.selectOption("de");
   await page.waitForFunction(() => document.documentElement.lang === "de");
   assert.equal(await manuscriptSource(), before, "language switching must not edit the manuscript");
+  await page.screenshot({ path: "out/i18n/german-settings.png", fullPage: true });
   await page.reload();
   await page.waitForFunction(() => document.documentElement.lang === "de");
   await page.locator(".cm-content").waitFor();
@@ -94,7 +96,7 @@ try {
   await failedPage.waitForFunction(() => document.documentElement.lang === "ja");
   assert.equal(await failedPage.locator(".interface-language-error").count(), 0, "a successful retry clears the prior error");
   await failure.close();
-  console.log("i18n browser: synchronous English, selection/persistence, Japanese CodeMirror, unchanged manuscript, narrow picker, authored Chinese settings and chunk-failure retention passed. Product-catalogue German/Japanese layout review still requires authored translations.");
+  console.log("i18n browser: synchronous English, selection/persistence, Japanese CodeMirror, unchanged manuscript, narrow picker, authored Chinese settings and chunk-failure retention passed. Authored Japanese and German catalogues activated; screenshots captured for wide/narrow layout review.");
 } finally {
   await browser.close();
 }

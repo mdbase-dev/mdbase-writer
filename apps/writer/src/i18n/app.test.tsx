@@ -43,6 +43,12 @@ it("updates display formatting, document language and persisted choice without r
   expect(localStorage.getItem("mdbase-writer:interface-locale")).toBe("de");
 });
 
+it.each(["de", "es", "fr", "ja", "ko", "pt", "ru", "zh"] as const)("activates the real composed %s catalogue", async locale => {
+  await runtime.selectLocale(locale);
+  expect(i18n.locale).toBe(locale);
+  expect(document.documentElement.lang).toBe(locale);
+});
+
 it("keeps record paths and user-derived names untouched by interface selection", async () => {
   const path = "drafts/東京.md";
   const before = noteName(path);

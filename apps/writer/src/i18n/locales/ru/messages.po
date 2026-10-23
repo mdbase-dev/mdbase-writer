@@ -1876,7 +1876,7 @@ msgstr "Перезагрузить"
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Remove"
-msgstr "Убрать"
+msgstr "Удалить"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx

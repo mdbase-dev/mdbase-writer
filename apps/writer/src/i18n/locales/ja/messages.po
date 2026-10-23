@@ -19,7 +19,7 @@ msgstr " · コメント未設定"
 
 #: src/ui/Home.tsx
 msgid " via mdbase Connect"
-msgstr " via mdbase Connect"
+msgstr "（mdbase Connect 経由）"
 
 #: src/ui/CommentsPanel.tsx
 msgid " with "
