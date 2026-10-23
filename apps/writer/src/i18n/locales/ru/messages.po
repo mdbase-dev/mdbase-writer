@@ -60,7 +60,7 @@ msgstr "{0, plural, one {# глава} few {# главы} many {# глав} othe
 #. placeholder {2}: formatCount(result.groups.length)
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {# match in {1} records} other {# matches in {2} records}}"
-msgstr "{0, plural, one {# совпадение в {1} записи} few {# совпадения в {2} записях} many {# совпадений в {2} записях} other {# совпадения в {2} записях}}"
+msgstr "{0, plural, one {# совпадение · записей: {1}} few {# совпадения · записей: {2}} many {# совпадений · записей: {2}} other {# совпадения · записей: {2}}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
@@ -184,15 +184,15 @@ msgstr "{app} пока не имеет доступа ни к одной кол�
 
 #: src/i18n/collections.ts
 msgid "{app} has stopped"
-msgstr "{app} перестало работать"
+msgstr "Работа {app} остановлена"
 
 #: src/i18n/collections.ts
 msgid "{app} needs to add a few things to this collection before it can use it."
-msgstr "Перед использованием {app} нужно добавить в эту коллекцию несколько необходимых элементов."
+msgstr "Прежде чем использовать эту коллекцию, {app} нужно добавить в неё несколько элементов."
 
 #: src/i18n/collections.ts
 msgid "{app} needs your approval in mdbase before it can open it."
-msgstr "{app} требуется ваше разрешение в mdbase, чтобы открыть коллекцию."
+msgstr "{app} требуется ваше подтверждение в mdbase, чтобы открыть коллекцию."
 
 #: src/i18n/collections.ts
 msgid "{app} stops showing it on this device. Nothing in the collection is deleted, and {app} keeps its access. To end access, use Manage access."
@@ -272,7 +272,7 @@ msgstr "{MOD_LABEL}-щелчок"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
-msgstr "{MOD_LABEL}-щелчок, чтобы показать в «Источниках»"
+msgstr "Щёлкните, удерживая {MOD_LABEL}, чтобы показать в «Источниках»"
 
 #: src/ui/CommentsPanel.tsx
 msgid "{MOD_LABEL}-Enter"
@@ -356,7 +356,7 @@ msgstr "{sources, plural, one {# источник для цитирования 
 
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
-msgstr "{uses, plural, one {Цитировали один раз} few {Цитировали # раза} many {Цитировали # раз} other {Цитировали # раза}}"
+msgstr "{uses, plural, one {Цитируется один раз} few {Цитируется # раза} many {Цитируется # раз} other {Цитируется # раза}}"
 
 #: src/ui/OutlinePanel.tsx
 msgid "<0/> Add chapter"
@@ -388,7 +388,7 @@ msgstr "<0>Рукопись.</0> Создайте её или используй
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
-msgstr "<0>Пишите.</0> Добавляйте цитаты в формате <1>[@citekey, p. 12]</1> (или находите источники по автору и названию на панели «Источники»), помечайте рисунки как <2>{#fig-plan}</2> и ссылайтесь на них через <3>@fig-plan</3>, встраивайте главы с помощью <4>![[chapters/one]]</4>. Экспортируйте в PDF или документ Word."
+msgstr "<0>Пишите.</0> Цитируйте в формате <1>[@citekey, p. 12]</1> (или находите источники по автору и названию на панели «Источники»), задавайте метки через <2>{#fig-plan}</2> и ссылайтесь на них через <3>@fig-plan</3>, встраивайте главы через <4>![[chapters/one]]</4>. Экспортируйте в PDF или документ Word."
 
 #: src/workspace/workspace.ts
 msgid "A chapter needs a title."
@@ -523,7 +523,7 @@ msgstr "Авторы"
 
 #: src/ui/WorkspaceView.tsx
 msgid "back home close"
-msgstr "Назад, домой, закрыть"
+msgstr "назад домой закрыть"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Back to manuscripts"
@@ -531,7 +531,7 @@ msgstr "К списку рукописей"
 
 #: src/ui/WorkspaceView.tsx
 msgid "backup unsaved recovery"
-msgstr "Резервная копия, несохранённое, восстановление"
+msgstr "резервная копия несохранённое восстановление"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/WorkspaceView.tsx
@@ -697,7 +697,7 @@ msgstr "цитировать цитата источник ссылка"
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited {uses}×"
-msgstr "Цитировался {uses}×"
+msgstr "цитируется {uses}×"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cited in "
@@ -705,7 +705,7 @@ msgstr "Цитируется в "
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited once"
-msgstr "Цитируется один раз"
+msgstr "цитируется один раз"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Click to fit the width"
@@ -1005,7 +1005,7 @@ msgstr "Уравнение"
 
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
-msgstr "ошибки, предупреждения, список"
+msgstr "ошибки предупреждения список"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Everyone"
@@ -1518,7 +1518,7 @@ msgstr "Переместить вверх"
 #. placeholder {2}: chapters.length
 #: src/ui/OutlinePanel.tsx
 msgid "Moved {0} to chapter {1} of {2}."
-msgstr "«{0}» перемещена: глава {1} из {2}."
+msgstr "Перемещено: «{0}» — глава {1} из {2}."
 
 #: src/ui/Settings.tsx
 msgid "Name"
@@ -1546,7 +1546,7 @@ msgstr "Новые с прошлого посещения ({newCount})"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New since your last visit"
-msgstr "Новые с вашего прошлого посещения"
+msgstr "Новое с вашего прошлого посещения"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous comment"
@@ -1558,7 +1558,7 @@ msgstr "Следующая / предыдущая проблема"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
-msgstr "Следующее цитирование"
+msgstr "Следующая ссылка на источник"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next comment"
@@ -1683,7 +1683,7 @@ msgstr "В вашей коллекции ничего не изменится."
 
 #: src/ui/CompareDialog.tsx
 msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
-msgstr "Ничего не заменяется, пока вы не сделаете выбор. Выделенные фрагменты различаются в этих версиях."
+msgstr "Ничего не заменяется, пока вы не сделаете выбор. Фрагменты, выделенные цветом, различаются в этих версиях."
 
 #. placeholder {0}: query.trim()
 #: src/ui/ManuscriptSearch.tsx
@@ -1738,7 +1738,7 @@ msgstr "Открыть в Reader <0/>"
 
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
-msgstr "Откройте рукопись, к которой он относится, чтобы проверить его."
+msgstr "Откройте рукопись, к которой он относится, чтобы проверить его"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -1900,7 +1900,7 @@ msgstr "Предпросмотр недоступен. Можно продолж
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
-msgstr "Предыдущее цитирование"
+msgstr "Предыдущая ссылка на источник"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Previous comment"
@@ -2866,7 +2866,7 @@ msgstr "mdbase writer не удалось открыть эту коллекци
 
 #: src/ui/CommentsPanel.tsx
 msgid "Writer was not allowed to see your account."
-msgstr "mdbase writer не получил разрешения видеть вашу учётную запись."
+msgstr "У mdbase writer нет разрешения видеть вашу учётную запись."
 
 #: src/main.tsx
 msgid "You can close this window."
