@@ -540,426 +540,426 @@ msgstr "굵게"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Bold / italic (again to remove it)"
-msgstr ""
+msgstr "굵게 / 기울임꼴(다시 누르면 해제)"
 
 #: src/i18n/collections.ts
 msgid "Can edit"
-msgstr ""
+msgstr "편집 가능"
 
 #: src/i18n/collections.ts
 msgid "Can view"
-msgstr ""
+msgstr "보기 가능"
 
 #: src/i18n/collections.ts
 msgid "Can't continue"
-msgstr ""
+msgstr "계속할 수 없습니다."
 
 #: src/i18n/collections.ts
 msgid "Can't open {collection}"
-msgstr ""
+msgstr "{collection}을(를) 열 수 없습니다."
 
 #: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
-msgstr ""
+msgstr "취소"
 
 #: src/ui/ExportReview.tsx
 msgid "Cancel and fix problems"
-msgstr ""
+msgstr "취소하고 문제 수정"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cancel export"
-msgstr ""
+msgstr "내보내기 취소"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the citation style"
-msgstr ""
+msgstr "인용 스타일 변경"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the layout"
-msgstr ""
+msgstr "레이아웃 변경"
 
 #: src/ui/Home.tsx
 msgid "Change the word goal"
-msgstr ""
+msgstr "단어 목표 변경"
 
 #: src/ui/records.ts
 msgid "Changed elsewhere"
-msgstr ""
+msgstr "다른 곳에서 변경됨"
 
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
-msgstr ""
+msgstr "입력하는 대로 변경 사항이 원고의 프런트매터에 저장되고 미리보기에 반영됩니다."
 
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
-msgstr ""
+msgstr "장 제목"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
 msgid "Chapters <0>{0}</0>"
-msgstr ""
+msgstr "장 <0>{0}</0>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Check again"
-msgstr ""
+msgstr "다시 확인"
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making {0}…"
-msgstr ""
+msgstr "장과 이미지를 확인한 다음 {0}을(를) 만듭니다…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
-msgstr ""
+msgstr "장과 이미지를 확인한 다음 Word 파일을 만듭니다… (처음 사용할 때 약 16MB를 불러옵니다)"
 
 #: src/ui/ConnectGate.tsx
 msgid "Checking the collection"
-msgstr ""
+msgstr "컬렉션 확인 중"
 
 #: src/i18n/collections.ts
 msgid "Checking what setup will change…"
-msgstr ""
+msgstr "설정으로 변경될 내용 확인 중…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
-msgstr ""
+msgstr "확인 중…"
 
 #: src/ui/names.ts
 msgid "Chicago (author-date)"
-msgstr ""
+msgstr "Chicago(저자-날짜)"
 
 #: src/ui/names.ts
 msgid "Chicago (notes and bibliography)"
-msgstr ""
+msgstr "Chicago(각주 및 참고문헌)"
 
 #: src/i18n/collections.ts
 msgid "Choose a collection"
-msgstr ""
+msgstr "컬렉션 선택"
 
 #: src/i18n/collections.ts
 msgid "Choose a different collection"
-msgstr ""
+msgstr "다른 컬렉션 선택"
 
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
-msgstr ""
+msgstr "다른 컬렉션 선택"
 
 #: src/i18n/collections.ts
 msgid "Choose or create a collection there."
-msgstr ""
+msgstr "해당 화면에서 컬렉션을 선택하거나 만드세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
-msgstr ""
+msgstr "인용"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Citation style"
-msgstr ""
+msgstr "인용 스타일"
 
 #: src/ui/Home.tsx
 msgid "Citation style<0/>"
-msgstr ""
+msgstr "인용 스타일<0/>"
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
-msgstr ""
+msgstr "인용에 출처가 표시되고 그림과 표가 렌더링됩니다. 커서가 해당 줄에 도달할 때까지 표시는 숨겨집니다. 텍스트는 변경되지 않습니다."
 
 #: src/editor/selection-bar.tsx
 #: src/ui/SourcesPanel.tsx
 msgid "Cite"
-msgstr ""
+msgstr "인용"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
-msgstr ""
+msgstr "{0} 인용"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr ""
+msgstr "출처를 인용하거나 키, 저자, 제목 또는 연도로 레이블 참조"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
 msgid "Cite at {0}"
-msgstr ""
+msgstr "{0}에서 인용"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cite here"
-msgstr ""
+msgstr "여기에 인용"
 
 #: src/ui/WorkspaceView.tsx
 msgid "cite source reference"
-msgstr ""
+msgstr "출처 참조 인용"
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited {uses}×"
-msgstr ""
+msgstr "{uses}회 인용됨"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cited in "
-msgstr ""
+msgstr "인용 위치: "
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited once"
-msgstr ""
+msgstr "한 번 인용됨"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Click to fit the width"
-msgstr ""
+msgstr "너비에 맞추려면 클릭"
 
 #: src/i18n/collections.ts
 msgid "Close"
-msgstr ""
+msgstr "닫기"
 
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
-msgstr ""
+msgstr "닫기(Escape)"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
-msgstr ""
+msgstr "설정 닫기"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower panel"
-msgstr ""
+msgstr "아래쪽 패널 닫기"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower sidebar panel"
-msgstr ""
+msgstr "사이드바 아래쪽 패널 닫기"
 
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
-msgstr ""
+msgstr "코드"
 
 #: src/i18n/collections.ts
 msgid "Collection"
-msgstr ""
+msgstr "컬렉션"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
-msgstr ""
+msgstr "컬렉션 종속 항목을 아직 확인하지 않았습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection index"
-msgstr ""
+msgstr "컬렉션 색인"
 
 #: src/workspace/workspace.ts
 msgid "Collection metadata is still loading."
-msgstr ""
+msgstr "컬렉션 메타데이터를 불러오는 중입니다."
 
 #: src/ui/CompareDialog.tsx
 msgid "Collection version"
-msgstr ""
+msgstr "컬렉션 버전"
 
 #: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Collections"
-msgstr ""
+msgstr "컬렉션"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands"
-msgstr ""
+msgstr "명령"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands, shortcuts and theme"
-msgstr ""
+msgstr "명령, 단축키 및 테마"
 
 #: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Comment"
-msgstr ""
+msgstr "댓글"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Comment on the selection"
-msgstr ""
+msgstr "선택 영역에 댓글 달기"
 
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr ""
+msgstr "선택 영역에 댓글 달기({MOD_LABEL}-{ALT_LABEL}-M)"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
-msgstr ""
+msgstr "댓글"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comments are not set up in this collection."
-msgstr ""
+msgstr "이 컬렉션에는 댓글이 설정되어 있지 않습니다."
 
 #. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
 msgid "Comments unavailable: {problem} {0}"
-msgstr ""
+msgstr "댓글을 사용할 수 없습니다: {problem} {0}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
-msgstr ""
+msgstr "충돌하는 버전 비교"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Compare versions"
-msgstr ""
+msgstr "버전 비교"
 
 #: src/ui/records.ts
 msgid "Conflict"
-msgstr ""
+msgstr "충돌"
 
 #: src/ui/ConnectGate.tsx
 msgid "conflicts with an existing file"
-msgstr ""
+msgstr "기존 파일과 충돌합니다"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connect a collection"
-msgstr ""
+msgstr "컬렉션 연결"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connect another collection…"
-msgstr ""
+msgstr "다른 컬렉션 연결…"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connected collections"
-msgstr ""
+msgstr "연결된 컬렉션"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connecting to mdbase connect"
-msgstr ""
+msgstr "mdbase connect에 연결 중"
 
 #: src/i18n/collections.ts
 msgid "Continue"
-msgstr ""
+msgstr "계속"
 
 #: src/i18n/collections.ts
 msgid "Continue in the mdbase window"
-msgstr ""
+msgstr "mdbase 창에서 계속"
 
 #: src/ui/Home.tsx
 msgid "Continue writing"
-msgstr ""
+msgstr "계속 작성"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copied"
-msgstr ""
+msgstr "복사됨"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copy key"
-msgstr ""
+msgstr "키 복사"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
-msgstr ""
+msgstr "다른 컬렉션에 연결하지 못했습니다."
 
 #: src/ui/Home.tsx
 msgid "Could not create the manuscript. Please try again."
-msgstr ""
+msgstr "원고를 만들지 못했습니다. 다시 시도하세요."
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not switch collections."
-msgstr ""
+msgstr "컬렉션을 전환하지 못했습니다."
 
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
-msgstr ""
+msgstr "메모를 원고로 사용하지 못했습니다. 다시 시도하세요."
 
 #: src/ui/Home.tsx
 msgid "Create manuscript"
-msgstr ""
+msgstr "원고 만들기"
 
 #: src/ui/Home.tsx
 msgid "Creating…"
-msgstr ""
+msgstr "만드는 중…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cross-reference"
-msgstr ""
+msgstr "상호 참조"
 
 #: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
-msgstr ""
+msgstr "어두운 테마"
 
 #: src/ui/Settings.tsx
 msgid "Date"
-msgstr ""
+msgstr "날짜"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Delete"
-msgstr ""
+msgstr "삭제"
 
 #. placeholder {0}: clip(exact)
 #: src/ui/comments.ts
 msgid "Delete {0}"
-msgstr ""
+msgstr "{0} 삭제"
 
 #: src/i18n/collections.ts
 msgid "Delete {collection}?"
-msgstr ""
+msgstr "{collection}을(를) 삭제할까요?"
 
 #: src/i18n/collections.ts
 msgid "Delete collection"
-msgstr ""
+msgstr "컬렉션 삭제"
 
 #: src/i18n/collections.ts
 msgid "Delete collection…"
-msgstr ""
+msgstr "컬렉션 삭제…"
 
 #: src/ui/records.ts
 msgid "Deleted"
-msgstr ""
+msgstr "삭제됨"
 
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
-msgstr ""
+msgstr "다른 곳에서 삭제됨"
 
 #: src/i18n/collections.ts
 msgid "Deleting…"
-msgstr ""
+msgstr "삭제 중…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
-msgstr ""
+msgstr "종속 항목을 확인하지 않음"
 
 #: src/editor/chapter-cards.ts
 msgid "Detach"
-msgstr ""
+msgstr "분리"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Detached: the text has changed"
-msgstr ""
+msgstr "분리됨: 텍스트가 변경되었습니다"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr ""
+msgstr "닫기"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Down arrow moves to the sources; Enter cites the first match."
-msgstr ""
+msgstr "아래쪽 화살표로 출처 목록으로 이동하고 Enter 키로 첫 번째 일치 항목을 인용합니다."
 
 #: src/ui/Manuscripts.tsx
 msgid "Download a local copy before leaving if saving cannot be completed."
-msgstr ""
+msgstr "저장을 완료할 수 없다면 나가기 전에 로컬 사본을 다운로드하세요."
 
 #: src/ui/CompareDialog.tsx
 msgid "Download local draft"
-msgstr ""
+msgstr "로컬 초안 다운로드"
 
 #: src/LegacyApp.tsx
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Download local drafts"
-msgstr ""
+msgstr "로컬 초안 다운로드"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to restore"
-msgstr ""
+msgstr "드래그하여 크기를 조정하고 두 번 클릭하여 원래 크기로 되돌리기"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to split evenly"
-msgstr ""
+msgstr "드래그하여 크기를 조정하고 두 번 클릭하여 같은 크기로 나누기"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
