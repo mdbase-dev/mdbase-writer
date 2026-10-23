@@ -1495,18 +1495,6 @@ msgid "Math: {value} \\left but {other} \\right."
 msgstr ""
 
 #: src/i18n/diagnostics.ts
-#~ msgid "Math: \\begin{{value}} is never closed."
-#~ msgstr ""
-
-#: src/i18n/diagnostics.ts
-#~ msgid "Math: \\end{{value}} closes \\begin{{other}}."
-#~ msgstr ""
-
-#: src/i18n/diagnostics.ts
-#~ msgid "Math: \\end{{value}} has no matching \\begin."
-#~ msgstr ""
-
-#: src/i18n/diagnostics.ts
 msgid "Math: Unclosed brace."
 msgstr ""
 
