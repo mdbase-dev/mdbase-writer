@@ -51,7 +51,7 @@ msgstr "{0, plural, one {# 章} other {# 章}}"
 #. placeholder {0}: this.ids.length
 #: src/editor/comments.ts
 msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr ""
+msgstr "{0, plural, one {此行有 # 条评论} other {此行有 # 条评论}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
@@ -66,7 +66,7 @@ msgstr "{0, plural, one {本节 # 个字} other {本节 # 个字}}"
 #. placeholder {0}: problems.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
-msgstr ""
+msgstr "{0, plural, one {已导出 {name}，有 # 个问题：{firstProblem}} other {已导出 {name}，有 # 个问题：{firstProblem}}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
@@ -81,7 +81,7 @@ msgstr "{0, plural, one {请检查 # 个已恢复的本地草稿。在恢复本�
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
-msgstr ""
+msgstr "{0, plural, one {# 个匹配项中的前 {listedCount} 个} other {# 个匹配项中的前 {listedCount} 个}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
@@ -118,7 +118,7 @@ msgstr "{0}无法存储：{1}"
 #. placeholder {0}: THEME_NAME[t]
 #: src/ui/WorkspaceView.tsx
 msgid "{0} theme"
-msgstr ""
+msgstr "{0}主题"
 
 #. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
 #. placeholder {1}: relativeTime(d.updated)
@@ -156,7 +156,7 @@ msgstr "{at}：此记录已删除；离开前请下载本地草稿。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr ""
+msgstr "{commentsTitle}（{MOD_LABEL}-Shift-M）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
@@ -216,11 +216,11 @@ msgstr "{MOD_LABEL}-B"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL}-click"
-msgstr "{MOD_LABEL}-click"
+msgstr "{MOD_LABEL}-单击"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
-msgstr "按 {MOD_LABEL}-click 在来源中显示"
+msgstr "按 {MOD_LABEL}-单击 在来源中显示"
 
 #: src/ui/CommentsPanel.tsx
 msgid "{MOD_LABEL}-Enter"
@@ -297,7 +297,7 @@ msgstr "{uses, plural, one {引用过一次} other {已引用 # 次}}"
 
 #: src/i18n/diagnostics.ts
 msgid "{value} is not loaded; it was left out."
-msgstr ""
+msgstr "{value} 未加载，已被省略。"
 
 #: src/ui/OutlinePanel.tsx
 msgid "<0/> Add chapter"
@@ -337,7 +337,7 @@ msgstr "章节需要标题。"
 
 #: src/i18n/diagnostics.ts
 msgid "A citation cannot mix cross-references and citekeys."
-msgstr ""
+msgstr "同一处引文不能混用交叉引用和 citekey。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
@@ -438,7 +438,7 @@ msgstr "APA 第 7 版"
 
 #: src/ui/WorkspaceView.tsx
 msgid "appearance dark light"
-msgstr ""
+msgstr "外观 深色 浅色"
 
 #: src/ui/names.ts
 msgid "Article"
@@ -615,7 +615,7 @@ msgstr "引文格式<0/>"
 
 #: src/i18n/diagnostics.ts
 msgid "Citations have no terms for \"{value}\"; they use {other}."
-msgstr ""
+msgstr "引文格式没有“{value}”的术语，将使用 {other}。"
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
@@ -731,7 +731,7 @@ msgstr "评论"
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "Comment"
-msgstr ""
+msgstr "评论"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Comment on the selection"
@@ -895,7 +895,7 @@ msgstr "关闭"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
-msgstr ""
+msgstr "双击或按 F2 重命名"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Down arrow moves to the sources; Enter cites the first match."
@@ -925,7 +925,7 @@ msgstr "拖动以调整大小；双击以均分"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Drag, or Alt-↑/↓, to reorder"
-msgstr ""
+msgstr "拖动，或按 Alt-↑/↓，以重新排序"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
@@ -960,7 +960,7 @@ msgstr "无法加载嵌入的记录：{problem}"
 
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
-msgstr ""
+msgstr "在此嵌入 {value} 会使其包含自身。"
 
 #: src/ui/ManuscriptSearch.tsx
 msgid "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
@@ -1075,7 +1075,7 @@ msgstr "查找来源"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Find a source ({MOD_LABEL}-Shift-E)"
-msgstr ""
+msgstr "查找来源（{MOD_LABEL}-Shift-E）"
 
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
@@ -1099,7 +1099,7 @@ msgstr "查找或运行命令"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
-msgstr ""
+msgstr "适应 · {zoomLabel}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1115,15 +1115,15 @@ msgstr "脚注"
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] has no definition."
-msgstr ""
+msgstr "脚注 [^{value}] 没有定义。"
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] is never referenced."
-msgstr ""
+msgstr "脚注 [^{value}] 从未被引用。"
 
 #: src/i18n/diagnostics.ts
 msgid "Footnote [^{value}] is referenced more than once."
-msgstr ""
+msgstr "脚注 [^{value}] 被引用了多次。"
 
 #: src/ui/Settings.tsx
 msgid "for citation terms and hyphenation"
@@ -1177,11 +1177,11 @@ msgstr "隐藏问题"
 #. placeholder {0}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "Hide the headings of {0}"
-msgstr ""
+msgstr "隐藏 {0} 的标题"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "隐藏编辑器下方的问题（按 F8 跳到下一个）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the sidebar"
@@ -1189,7 +1189,7 @@ msgstr "隐藏侧边栏"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "隐藏侧边栏（{MOD_LABEL}-\\）"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1209,7 +1209,7 @@ msgstr "ID {id}"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
-msgstr ""
+msgstr "找不到图片“{value}”。请将其添加到集合，或更正其路径。"
 
 #: src/workspace/workspace.ts
 msgid "Image could not be loaded: {problem}"
@@ -1225,7 +1225,7 @@ msgstr "图片上传功能即将推出。现有图片链接仍可使用。"
 
 #: src/i18n/diagnostics.ts
 msgid "Images must be files in the collection ({value})."
-msgstr ""
+msgstr "图片必须是集合中的文件（{value}）。"
 
 #. placeholder {0}: d.manuscript.title
 #: src/ui/Home.tsx
@@ -1398,7 +1398,7 @@ msgstr "关联你的账户"
 
 #: src/ui/WorkspaceView.tsx
 msgid "List the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "在编辑器下方列出问题（按 F8 跳到下一个）"
 
 #: src/editor/insight.ts
 msgid "Listing"
@@ -1480,27 +1480,27 @@ msgstr "数学公式 显示"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {begin} is never closed."
-msgstr ""
+msgstr "数学公式：{begin} 未闭合。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {end} closes {begin}."
-msgstr ""
+msgstr "数学公式：{end} 结束了 {begin}。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {end} has no matching \\begin."
-msgstr ""
+msgstr "数学公式：{end} 没有匹配的 \\begin。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: {value} \\left but {other} \\right."
-msgstr ""
+msgstr "数学公式：\\left 为 {value}，\\right 为 {other}，数量不一致。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: Unclosed brace."
-msgstr ""
+msgstr "数学公式：存在未闭合的大括号。"
 
 #: src/i18n/diagnostics.ts
 msgid "Math: Unmatched closing brace."
-msgstr ""
+msgstr "数学公式：存在未匹配的右大括号。"
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase connect is unavailable"
@@ -1574,7 +1574,7 @@ msgstr "新评论"
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "New comment"
-msgstr ""
+msgstr "新评论"
 
 #: src/ui/Home.tsx
 msgid "New manuscript"
@@ -1590,7 +1590,7 @@ msgstr "自上次访问后新增"
 
 #: src/editor/comments.ts
 msgid "New suggestion"
-msgstr ""
+msgstr "新建议"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous comment"
@@ -1635,11 +1635,11 @@ msgstr "尚未下载任何文件。缺失的图片或章节可能导致导出内
 
 #: src/i18n/diagnostics.ts
 msgid "No file in the collection matches the citation style {value}."
-msgstr ""
+msgstr "集合中没有与引文格式 {value} 匹配的文件。"
 
 #: src/i18n/diagnostics.ts
 msgid "No file in the collection matches the template {value}."
-msgstr ""
+msgstr "集合中没有与模板 {value} 匹配的文件。"
 
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
@@ -1668,15 +1668,15 @@ msgstr "没有匹配 ![[{0}]] 的记录"
 
 #: src/i18n/diagnostics.ts
 msgid "No record matches the embed ![[{value}]]."
-msgstr ""
+msgstr "没有匹配嵌入 ![[{value}]] 的记录。"
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
-msgstr ""
+msgstr "资料库中没有 citekey 为 {value} 的来源。"
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library matches {value}, so the quotation from {other} is not cited."
-msgstr ""
+msgstr "资料库中没有与 {value} 匹配的来源，因此 {other} 中的引用文字未被引用。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "No source matches “{query}”; searching highlights…"
@@ -1710,7 +1710,7 @@ msgstr "尚未引用"
 
 #: src/workspace/workspace.ts
 msgid "Not loaded; it will be left out."
-msgstr ""
+msgstr "未加载；将被省略。"
 
 #: src/pwa-install.ts
 msgid "Not now"
@@ -1751,7 +1751,7 @@ msgstr "集合中的内容不会发生变化。"
 
 #: src/i18n/diagnostics.ts
 msgid "Nothing is labelled {value}."
-msgstr ""
+msgstr "没有任何内容的标签为 {value}。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
@@ -1903,7 +1903,7 @@ msgstr "大纲"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr ""
+msgstr "大纲，并搜索手稿（{MOD_LABEL}-Shift-F）"
 
 #: src/i18n/collections.ts
 msgid "Owner"
@@ -1939,7 +1939,7 @@ msgstr "Pandoc 捆绑包（zip）"
 
 #: src/export/pandoc.ts
 msgid "Pandoc produced no document."
-msgstr ""
+msgstr "Pandoc 未生成任何文档。"
 
 #: src/export/pandoc.ts
 msgid "Pandoc returned an unreadable response."
@@ -2012,7 +2012,7 @@ msgstr "字数目标进度"
 
 #: src/i18n/diagnostics.ts
 msgid "Raw HTML is not rendered in PDF output."
-msgstr ""
+msgstr "PDF 输出中不会渲染原始 HTML。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Read as the manuscript"
@@ -2414,7 +2414,7 @@ msgstr "显示问题"
 #. placeholder {0}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "Show the headings of {0}"
-msgstr ""
+msgstr "显示 {0} 的标题"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar"
@@ -2422,7 +2422,7 @@ msgstr "显示侧边栏"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "显示侧边栏（{MOD_LABEL}-\\）"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2596,7 +2596,7 @@ msgstr "建议文本"
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
 msgid "Suggestion"
-msgstr ""
+msgstr "建议"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
@@ -2626,7 +2626,7 @@ msgstr "该记录尚未打开。"
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
-msgstr ""
+msgstr "注释 {value} 没有可嵌入的引用文字。"
 
 #: src/workspace/workspace.ts
 msgid "The chapter is not open."
@@ -2642,7 +2642,7 @@ msgstr "无法加载演示内容"
 
 #: src/compile/client.ts
 msgid "The document has errors; fix them to export."
-msgstr ""
+msgstr "文档存在错误；请先修复后再导出。"
 
 #: src/editor/Editor.tsx
 msgid "The editor language could not be loaded. You can keep writing."
@@ -2650,7 +2650,7 @@ msgstr "无法加载编辑器语言。你可以继续写作。"
 
 #: src/i18n/diagnostics.ts
 msgid "The embed ![[{value}]] in {other} was left out."
-msgstr ""
+msgstr "{other} 中的嵌入 ![[{value}]] 已被省略。"
 
 #. placeholder {0}: errorMessage(error)
 #: src/ui/WorkspaceView.tsx
@@ -2664,7 +2664,7 @@ msgstr "无法为 Word 加载图片“{0}”。将改为包含其描述。"
 
 #: src/i18n/diagnostics.ts
 msgid "The label {value} is used more than once."
-msgstr ""
+msgstr "标签 {value} 被多次使用。"
 
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
@@ -2725,7 +2725,7 @@ msgstr "此设置适用于此浏览器中的所有手稿。"
 
 #: src/ui/Settings.tsx
 msgid "This changes the interface in this browser, not the manuscript’s language."
-msgstr ""
+msgstr "这会更改此浏览器中的界面语言，而不是手稿的语言。"
 
 #: src/i18n/collections.ts
 msgid "this collection"
@@ -2833,7 +2833,7 @@ msgstr "集合中的 Typst 模板"
 
 #: src/i18n/diagnostics.ts
 msgid "Unclosed $$ math block."
-msgstr ""
+msgstr "未闭合的 $$ 数学公式块。"
 
 #: src/editor/insight.ts
 msgid "Unknown"
@@ -2841,11 +2841,11 @@ msgstr "未知"
 
 #: src/i18n/diagnostics.ts
 msgid "Unknown citation style \"{value}\"; using {other}."
-msgstr ""
+msgstr "未知的引文格式“{value}”；将使用 {other}。"
 
 #: src/i18n/diagnostics.ts
 msgid "Unknown template \"{value}\"; using article."
-msgstr ""
+msgstr "未知的模板“{value}”；将使用 article。"
 
 #: src/ui/records.ts
 msgid "Unsaved"
@@ -2866,7 +2866,7 @@ msgstr "未签名"
 
 #: src/i18n/diagnostics.ts
 msgid "Unsupported Markdown block: {value}."
-msgstr ""
+msgstr "不支持的 Markdown 块：{value}。"
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
