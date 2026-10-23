@@ -12,531 +12,531 @@ msgstr ""
 msgid ""
 "\n"
 "{0}"
-msgstr ""
+msgstr "\n{0}"
 
 #. placeholder {0}: Math.round((words / goal) * 100)
 #. placeholder {1}: formatNumber(goal)
 #: src/ui/Home.tsx
 msgid " · {0}% of {1}"
-msgstr ""
+msgstr " · {0} % sur {1}"
 
 #: src/ui/Home.tsx
 msgid " · Comments not set up"
-msgstr ""
+msgstr " · Commentaires non configurés"
 
 #: src/ui/Home.tsx
 msgid " via mdbase Connect"
-msgstr ""
+msgstr " via mdbase Connect"
 
 #: src/ui/CommentsPanel.tsx
 msgid " with "
-msgstr ""
+msgstr " avec "
 
 #. placeholder {0}: highlightIndex.pending
 #: src/ui/SourcesPanel.tsx
 msgid "· searching {0} more"
-msgstr ""
+msgstr "· recherche de {0} autres en cours"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr ""
+msgstr "(un point dans le texte)"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
-msgstr ""
+msgstr "(passage supprimé)"
 
 #. placeholder {0}: info.replies
 #: src/editor/comments.ts
 msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr ""
+msgstr "{0, plural, =0 {Cliquez pour ouvrir dans Commentaires} one {# réponse · Cliquez pour ouvrir dans Commentaires} other {# réponses · Cliquez pour ouvrir dans Commentaires}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
-msgstr ""
+msgstr "{0, plural, one {# chapitre} other {# chapitres}}"
 
 #. placeholder {0}: result.total
 #. placeholder {1}: formatCount(result.groups.length)
 #. placeholder {2}: formatCount(result.groups.length)
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {# match in {1} records} other {# matches in {2} records}}"
-msgstr ""
+msgstr "{0, plural, one {# résultat dans {1} documents} other {# résultats dans {2} documents}}"
 
 #. placeholder {0}: signing.paths.length
 #: src/ui/CommentsPanel.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
-msgstr ""
+msgstr "{0, plural, one {# document de personne revendique votre compte : Writer ne devinera donc pas lequel est le vôtre.} other {# documents de personne revendiquent votre compte : Writer ne devinera donc pas lequel est le vôtre.}}"
 
 #. placeholder {0}: words[ranks.get(h)!] ?? 0
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
-msgstr ""
+msgstr "{0, plural, one {# mot dans cette section} other {# mots dans cette section}}"
 
 #. placeholder {0}: problems.length
 #. placeholder {1}: problems[0]
 #. placeholder {2}: problems[0]
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Exported {name} with # problem: {1}} other {Exported {name} with # problems: {2}}}"
-msgstr ""
+msgstr "{0, plural, one {{name} exporté avec # problème : {1}} other {{name} exporté avec # problèmes : {2}}}"
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr ""
+msgstr "{0, plural, one {Dans # document ; les citations, le code et les formules ne sont pas comptés} other {Dans # documents ; les citations, le code et les formules ne sont pas comptés}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
 msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr ""
+msgstr "{0, plural, one {Examinez # brouillon local récupéré. La modification est suspendue dans ce document tant que vous n’avez pas restauré le brouillon local ou utilisé la version de la collection.} other {Examinez # brouillons locaux récupérés. La modification est suspendue dans ces documents tant que vous n’avez pas restauré les brouillons locaux ou utilisé les versions de la collection.}}"
 
 #. placeholder {0}: result.total
 #. placeholder {1}: formatCount(listed)
 #. placeholder {2}: formatCount(listed)
 #: src/ui/ManuscriptSearch.tsx
 msgid "{0, plural, one {The first {1} of # match} other {The first {2} of # matches}}"
-msgstr ""
+msgstr "{0, plural, one {Les {1} premiers sur # résultat} other {Les {2} premiers sur # résultats}}"
 
 #. placeholder {0}: pages.length
 #: src/preview/Preview.tsx
 msgid "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
-msgstr ""
+msgstr "{0, plural, one {Aperçu mis en page, # page} other {Aperçu mis en page, # pages}}"
 
 #. placeholder {0}: diff.prefix
 #: src/ui/CompareDialog.tsx
 msgid "{0}\n"
 ""
-msgstr ""
+msgstr "{0}\n"
 
 #. placeholder {0}: target.target.record
 #: src/editor/insight.ts
 msgid "{0} · {MOD_LABEL}-click to go there"
-msgstr ""
+msgstr "{0} · {MOD_LABEL}-clic pour y accéder"
 
 #. placeholder {0}: card.cite
 #: src/editor/chapter-cards.ts
 msgid "{0} · from Reader"
-msgstr ""
+msgstr "{0} · depuis Reader"
 
 #. placeholder {0}: title(diagnostic.record)
 #. placeholder {1}: lineOf(diagnostic.record, diagnostic.from)
 #: src/ui/ProblemsStrip.tsx
 msgid "{0} · line {1}"
-msgstr ""
+msgstr "{0} · ligne {1}"
 
 #. placeholder {0}: VIEW_NAME[v]
 #: src/ui/WorkspaceView.tsx
 msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr ""
+msgstr "{0} ({MOD_LABEL}-Maj-\\ pour alterner)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
 #: src/ui/WorkspaceView.tsx
 msgid "{0} could not be stored: {1}"
-msgstr ""
+msgstr "{0} n’a pas pu être stocké : {1}"
 
 #. placeholder {0}: shows(path) ? "Hide" : "Show"
 #. placeholder {1}: recordTitle(view, path)
 #: src/ui/OutlinePanel.tsx
 msgid "{0} the headings of {1}"
-msgstr ""
+msgstr "{0} les titres de {1}"
 
 #. placeholder {0}: open ? "Hide" : "List"
 #: src/ui/WorkspaceView.tsx
 msgid "{0} the problems under the editor (F8 goes to the next one)"
-msgstr ""
+msgstr "{0} les problèmes sous l’éditeur (F8 pour passer au suivant)"
 
 #. placeholder {0}: layout.sidebar ? "Hide" : "Show"
 #: src/ui/WorkspaceView.tsx
 msgid "{0} the sidebar ({MOD_LABEL}-\\)"
-msgstr ""
+msgstr "{0} la barre latérale ({MOD_LABEL}-\\)"
 
 #. placeholder {0}: info.kind === "suggestion" ? "Suggestion" : "Comment"
 #. placeholder {1}: info.isNew ? " · new" : ""
 #: src/editor/comments.ts
 msgid "{0}{1}"
-msgstr ""
+msgstr "{0}{1}"
 
 #. placeholder {0}: suggestion ? outcome : "Resolved"
 #. placeholder {1}: root.resolvedBy ? ` by ${personName(root.resolvedBy, people)}` : ""
 #. placeholder {2}: root.resolvedAt ? ` ${when(root.resolvedAt)}` : ""
 #: src/ui/CommentsPanel.tsx
 msgid "{0}{1}{2}"
-msgstr ""
+msgstr "{0}{1}{2}"
 
 #. placeholder {0}: Math.round(layout.zoom * 100)
 #: src/ui/WorkspaceView.tsx
 msgid "{0}%"
-msgstr ""
+msgstr "{0} %"
 
 #. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
-msgstr ""
+msgstr "{0}sauvegardé {1}"
 
 #: src/i18n/collections.ts
 msgid "{app} can't open collections here"
-msgstr ""
+msgstr "{app} ne peut pas ouvrir de collections ici"
 
 #: src/i18n/collections.ts
 msgid "{app} doesn't have access to any collections yet. Choose one you have, or create a new one."
-msgstr ""
+msgstr "{app} n’a encore accès à aucune collection. Choisissez-en une existante ou créez-en une nouvelle."
 
 #: src/i18n/collections.ts
 msgid "{app} has stopped"
-msgstr ""
+msgstr "{app} s’est arrêté"
 
 #: src/i18n/collections.ts
 msgid "{app} needs to add a few things to this collection before it can use it."
-msgstr ""
+msgstr "{app} doit ajouter quelques éléments à cette collection avant de pouvoir l’utiliser."
 
 #: src/i18n/collections.ts
 msgid "{app} needs your approval in mdbase before it can open it."
-msgstr ""
+msgstr "{app} a besoin de votre approbation dans mdbase avant de pouvoir l’ouvrir."
 
 #: src/i18n/collections.ts
 msgid "{app} stops showing it on this device. Nothing in the collection is deleted, and {app} keeps its access. To end access, use Manage access."
-msgstr ""
+msgstr "{app} cesse de l’afficher sur cet appareil. Rien n’est supprimé dans la collection et {app} conserve son accès. Pour mettre fin à l’accès, utilisez « Gérer l’accès »."
 
 #: src/workspace/workspace.ts
 msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr ""
+msgstr "{at} : ce document a été supprimé ; téléchargez le brouillon local avant de quitter la page."
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} ,"
-msgstr ""
+msgstr "{MOD_LABEL} ,"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} F"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} M"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} M"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} {ALT_LABEL} S"
-msgstr ""
+msgstr "{MOD_LABEL} {ALT_LABEL} S"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} \\"
-msgstr ""
+msgstr "{MOD_LABEL} \\"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} B / {MOD_LABEL} I"
-msgstr ""
+msgstr "{MOD_LABEL} B / {MOD_LABEL} I"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} F"
-msgstr ""
+msgstr "{MOD_LABEL} F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} K"
-msgstr ""
+msgstr "{MOD_LABEL} K"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} S"
-msgstr ""
+msgstr "{MOD_LABEL} S"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift \\"
-msgstr ""
+msgstr "{MOD_LABEL} Maj \\"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift E"
-msgstr ""
+msgstr "{MOD_LABEL} Maj E"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift F"
-msgstr ""
+msgstr "{MOD_LABEL} Maj F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift K"
-msgstr ""
+msgstr "{MOD_LABEL} Maj K"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift M"
-msgstr ""
+msgstr "{MOD_LABEL} Maj M"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift S"
-msgstr ""
+msgstr "{MOD_LABEL} Maj S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
-msgstr ""
+msgstr "{MOD_LABEL}-B"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL}-click"
-msgstr ""
+msgstr "{MOD_LABEL}-clic"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
-msgstr ""
+msgstr "{MOD_LABEL}-clic pour afficher dans Sources"
 
 #: src/ui/CommentsPanel.tsx
 msgid "{MOD_LABEL}-Enter"
-msgstr ""
+msgstr "{MOD_LABEL}-Entrée"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-I"
-msgstr ""
+msgstr "{MOD_LABEL}-I"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-Shift-K"
-msgstr ""
+msgstr "{MOD_LABEL}-Maj-K"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
-msgstr ""
+msgstr "{n, plural, one {# erreur} other {# erreurs}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# match} other {# matches}}"
-msgstr ""
+msgstr "{n, plural, one {# résultat} other {# résultats}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# open comment} other {# open comments}}"
-msgstr ""
+msgstr "{n, plural, one {# commentaire ouvert} other {# commentaires ouverts}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# person record} other {# person records}}"
-msgstr ""
+msgstr "{n, plural, one {# document de personne} other {# documents de personne}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# problem} other {# problems}}"
-msgstr ""
+msgstr "{n, plural, one {# problème} other {# problèmes}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# record} other {# records}}"
-msgstr ""
+msgstr "{n, plural, one {# document} other {# documents}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# recovered local draft} other {# recovered local drafts}}"
-msgstr ""
+msgstr "{n, plural, one {# brouillon local récupéré} other {# brouillons locaux récupérés}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# warning} other {# warnings}}"
-msgstr ""
+msgstr "{n, plural, one {# avertissement} other {# avertissements}}"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# word} other {# words}}"
-msgstr ""
+msgstr "{n, plural, one {# mot} other {# mots}}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{name} loading; you can keep writing."
-msgstr ""
+msgstr "{name} se charge ; vous pouvez continuer à écrire."
 
 #. placeholder {0}: state.problem
 #: src/ui/WorkspaceView.tsx
 msgid "{name} unavailable: {0}"
-msgstr ""
+msgstr "{name} indisponible : {0}"
 
 #. placeholder {0}: snap.recordProblems.get(path) ?? "Not loaded; it will be left out."
 #: src/workspace/workspace.ts
 msgid "{path}: {0}"
-msgstr ""
+msgstr "{path} : {0}"
 
 #: src/workspace/workspace.ts
 msgid "{path}: A recovered draft has not been reviewed; the collection version will be exported."
-msgstr ""
+msgstr "{path} : un brouillon récupéré n’a pas été examiné ; la version de la collection sera exportée."
 
 #. placeholder {0}: direct ? " · drag, or Alt-↑/↓, to reorder" : ""
 #. placeholder {1}: onRename ? " · double-click or F2 to rename" : ""
 #: src/ui/OutlinePanel.tsx
 msgid "{path}{0}{1}"
-msgstr ""
+msgstr "{path}{0}{1}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source from mdbase Reader can be cited here.} other {# sources from mdbase Reader can be cited here.}}"
-msgstr ""
+msgstr "{sources, plural, one {# source de mdbase Reader peut être citée ici.} other {# sources de mdbase Reader peuvent être citées ici.}}"
 
 #: src/ui/Home.tsx
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
-msgstr ""
+msgstr "{sources, plural, one {# source à citer depuis mdbase Reader} other {# sources à citer depuis mdbase Reader}}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
-msgstr ""
+msgstr "{uses, plural, one {Citée une fois} other {Citée # fois}}"
 
 #: src/ui/OutlinePanel.tsx
 msgid "<0/> Add chapter"
-msgstr ""
+msgstr "<0/> Ajouter un chapitre"
 
 #: src/ui/Home.tsx
 msgid "<0/> Include a worked example of citations, figures and chapters"
-msgstr ""
+msgstr "<0/> Inclure un exemple détaillé de citations, de figures et de chapitres"
 
 #: src/ui/CommentsPanel.tsx
 msgid "<0/> On the record"
-msgstr ""
+msgstr "<0/> Sur le document"
 
 #: src/ui/Settings.tsx
 msgid "<0/>Add author"
-msgstr ""
+msgstr "<0/>Ajouter un auteur"
 
 #: src/ui/Home.tsx
 msgid "<0/>Continue<1/>"
-msgstr ""
+msgstr "<0/>Continuer<1/>"
 
 #: src/ui/Home.tsx
 msgid "<0/>New manuscript"
-msgstr ""
+msgstr "<0/>Nouveau manuscrit"
 
 #: src/ui/Home.tsx
 msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr ""
+msgstr "<0>Un manuscrit.</0> Commencez-en un, ou utilisez une note existante. Il reste un document Markdown ordinaire dans cette collection."
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
-msgstr ""
+msgstr "<0>Écrivez.</0> Citez avec <1>[@citekey, p. 12]</1> (ou trouvez des sources par auteur et par titre dans le panneau Sources), étiquetez avec <2>{#fig-plan}</2> et renvoyez avec <3>@fig-plan</3>, intégrez des chapitres avec <4>![[chapters/one]]</4>. Exportez un PDF ou un document Word."
 
 #: src/workspace/workspace.ts
 msgid "A chapter needs a title."
-msgstr ""
+msgstr "Un chapitre doit avoir un titre."
 
 #: src/ui/CommentsPanel.tsx
 msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
-msgstr ""
+msgstr "Un commentaire sur le document entier, et non sur un passage (sélectionnez du texte dans l’éditeur pour le commenter)"
 
 #: src/ui/Home.tsx
 msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
-msgstr ""
+msgstr "Un brouillon correspond à ce qui a été saisi sans être enregistré dans la collection. L’ouverture de son manuscrit vous le propose à nouveau."
 
 #: src/ui/WorkspaceView.tsx
 msgid "A local draft is still available in this browser."
-msgstr ""
+msgstr "Un brouillon local est toujours disponible dans ce navigateur."
 
 #: src/ui/SourcesPanel.tsx
 msgid "A page (12, 12–14) or a locator (ch. 3, sec. 2)"
-msgstr ""
+msgstr "Une page (12, 12–14) ou un repère (chap. 3, sect. 2)"
 
 #: src/ui/Settings.tsx
 msgid "Abstract"
-msgstr ""
+msgstr "Résumé"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accept"
-msgstr ""
+msgstr "Accepter"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
-msgstr ""
+msgstr "Accepté"
 
 #: src/i18n/collections.ts
 msgid "Access wasn't given."
-msgstr ""
+msgstr "L’accès n’a pas été accordé."
 
 #: src/i18n/collections.ts
 msgid "Access wasn't given. You can try again or choose a different collection."
-msgstr ""
+msgstr "L’accès n’a pas été accordé. Vous pouvez réessayer ou choisir une autre collection."
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
-msgstr ""
+msgstr "Ajouter"
 
 #: src/pwa-install.ts
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
-msgstr ""
+msgstr "Ajoutez {appName} à votre écran d’accueil : touchez Partager, puis Sur l’écran d’accueil."
 
 #: src/i18n/collections.ts
 msgid "Add a collection…"
-msgstr ""
+msgstr "Ajouter une collection…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Add a footnote"
-msgstr ""
+msgstr "Ajouter une note de bas de page"
 
 #: src/i18n/collections.ts
 msgid "Add a Private collection"
-msgstr ""
+msgstr "Ajouter une collection privée"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
-msgstr ""
+msgstr "Ajoutez-les dans mdbase Reader ; citez-les ici avec <0>[@citekey]</0>."
 
 #: src/ui/OutlinePanel.tsx
 msgid "Adding…"
-msgstr ""
+msgstr "Ajout…"
 
 #: src/ui/Home.tsx
 msgid "Adds the manuscript type to the note. Its other types, text and location stay as they are."
-msgstr ""
+msgstr "Ajoute le type manuscrit à la note. Ses autres types, son texte et son emplacement restent inchangés."
 
 #: src/ui/Settings.tsx
 msgid "Affiliation"
-msgstr ""
+msgstr "Affiliation"
 
 #: src/ui/WorkspaceView.tsx
 msgid "All manuscripts"
-msgstr ""
+msgstr "Tous les manuscrits"
 
 #: src/ui/ConnectGate.tsx
 msgid "already present"
-msgstr ""
+msgstr "déjà présent"
 
 #. placeholder {0}: snap.annotationsLoad.problem
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
-msgstr ""
+msgstr "Découverte des annotations indisponible : {0}. Les métadonnées de citation peuvent être incomplètes."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Annotation index"
-msgstr ""
+msgstr "Index des annotations"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr ""
+msgstr "Annotations indisponibles : {problem} <0>Réessayer les annotations</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
-msgstr ""
+msgstr "APA, 7e édition"
 
 #: src/ui/names.ts
 msgid "Article"
-msgstr ""
+msgstr "Article"
 
 #: src/ui/CommentsPanel.tsx
 msgid "as {signer} · "
-msgstr ""
+msgstr "en tant que {signer} · "
 
 #: src/ui/Settings.tsx
 msgid "as it should appear"
-msgstr ""
+msgstr "tel qu’il doit apparaître"
 
 #: src/ui/CommentsPanel.tsx
 msgid "At the cursor"
-msgstr ""
+msgstr "Au niveau du curseur"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} affiliation"
-msgstr ""
+msgstr "Affiliation de l’auteur {0}"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} name"
-msgstr ""
+msgstr "Nom de l’auteur {0}"
 
 #: src/ui/Settings.tsx
 msgid "Authors"
-msgstr ""
+msgstr "Auteurs"
 
 #: src/ui/WorkspaceView.tsx
 msgid "back home close"
-msgstr ""
+msgstr "retour accueil fermer"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Back to manuscripts"
-msgstr ""
+msgstr "Retour aux manuscrits"
 
 #: src/ui/WorkspaceView.tsx
 msgid "backup unsaved recovery"
-msgstr ""
+msgstr "sauvegarde non enregistré récupération"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Bold"
-msgstr ""
+msgstr "Gras"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Bold / italic (again to remove it)"
