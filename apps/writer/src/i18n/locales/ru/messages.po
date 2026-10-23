@@ -2111,7 +2111,7 @@ msgstr "Проверить доступ"
 
 #: src/i18n/collections.ts
 msgid "Review access to {collection} there."
-msgstr "Проверьте там доступ к коллекции «{collection}»."
+msgstr "Проверьте там доступ к {collection}."
 
 #: src/ui/records.ts
 msgid "Review drafts"
@@ -2567,365 +2567,365 @@ msgstr "Рукопись продолжала меняться, пока заг�
 #: src/compile/client.ts
 #: src/workspace/workspace.ts
 msgid "The manuscript was closed."
-msgstr ""
+msgstr "Рукопись была закрыта."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The person record that claims your account is not valid."
-msgstr ""
+msgstr "Запись о пользователе, связанная с вашей учётной записью, недействительна."
 
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
-msgstr ""
+msgstr "Предпросмотр загружался слишком долго. Повторите предпросмотр."
 
 #: src/compile/client.ts
 msgid "The preview worker returned an unreadable response."
-msgstr ""
+msgstr "Фоновый процесс предпросмотра вернул ответ, который не удалось прочитать."
 
 #: src/ui/Settings.tsx
 msgid "The style’s own (usually en-US)"
-msgstr ""
+msgstr "Как в самом стиле (обычно en-US)"
 
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr ""
+msgstr "Предложенного текста в записи больше нет; внесите правку вручную, затем закройте предложение."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr ""
+msgstr "Предложенного текста здесь больше нет"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
-msgstr ""
+msgstr "Тема"
 
 #: src/ui/names.ts
 msgid "Thesis or book"
-msgstr ""
+msgstr "Диссертация или книга"
 
 #: src/ui/ConnectGate.tsx
 msgid "This action could not be completed. Please try again."
-msgstr ""
+msgstr "Не удалось выполнить действие. Повторите попытку."
 
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
-msgstr ""
+msgstr "Действует в этом браузере для всех рукописей."
 
 #: src/i18n/collections.ts
 msgid "this collection"
-msgstr ""
+msgstr "этой коллекции"
 
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
-msgstr ""
+msgstr "Эта коллекция не принимает файлы от mdbase writer."
 
 #: src/ui/ConnectGate.tsx
 msgid "This collection is unavailable"
-msgstr ""
+msgstr "Эта коллекция недоступна"
 
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
-msgstr ""
+msgstr "Не удалось открыть представление этой коллекции. Выберите другую коллекцию на панели выше или перезагрузите страницу, чтобы повторить попытку."
 
 #: src/i18n/collections.ts
 msgid "This device is still listed under your account until you remove it there."
-msgstr ""
+msgstr "Это устройство остаётся в списке вашей учётной записи, пока вы не удалите его там."
 
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr ""
+msgstr "Это локальная сборка для разработки. Облачная служба mdbase Connect принимает только приложения, работающие по HTTPS, поэтому используйте локальную среду Connect (<0>pnpm dev:environment:up</0> в mdbase-connect) или откройте <1>демонстрационную коллекцию</1>."
 
 #: src/i18n/collections.ts
 msgid "This is taking longer than usual."
-msgstr ""
+msgstr "Это занимает больше времени, чем обычно."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
-msgstr ""
+msgstr "Этот список"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
-msgstr ""
+msgstr "Не удалось открыть эту рукопись"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr ""
+msgstr "Этого фрагмента в тексте больше нет"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record changed elsewhere while you were editing it."
-msgstr ""
+msgstr "Эта запись изменилась в другом месте, пока вы её редактировали."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr ""
+msgstr "Эта запись была удалена в другом месте. Ваш локальный текст по-прежнему доступен здесь."
 
 #: src/ui/CompareDialog.tsx
 msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr ""
+msgstr "Эта запись удалена. Скачайте локальный черновик, чтобы сохранить его: восстановить его в удалённой записи нельзя."
 
 #: src/ui/Settings.tsx
 msgid "Title"
-msgstr ""
+msgstr "Название"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr ""
+msgstr "Название, авторы, аннотация, стиль цитирования, макет и язык ({MOD_LABEL}-,)"
 
 #. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
 #: src/ui/Home.tsx
 msgid "Title<0/>{0}"
-msgstr ""
+msgstr "Название<0/>{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
-msgstr ""
+msgstr "отслеживание изменений исправления правки"
 
 #: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
-msgstr ""
+msgstr "Повторить попытку"
 
 #: src/i18n/collections.ts
 msgid "Type {collection} to confirm"
-msgstr ""
+msgstr "Для подтверждения введите «{collection}»"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
-msgstr ""
+msgstr "Начните вводить, чтобы найти другие заметки."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset from your latest text, with chapters and images checked before download"
-msgstr ""
+msgstr "Вёрстка из вашего последнего текста; главы и изображения проверяются перед скачиванием"
 
 #. placeholder {0}: Math.round(timings.assembleMs + timings.compileMs)
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset in {0} ms"
-msgstr ""
+msgstr "Вёрстка заняла {0} мс"
 
 #: src/compile/client.ts
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
-msgstr ""
+msgstr "Вёрстка заняла слишком много времени. Редактор по-прежнему доступен; повторите предпросмотр."
 
 #: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
-msgstr ""
+msgstr "Вёрстка…"
 
 #: src/ui/Settings.tsx
 msgid "Typst templates in the collection"
-msgstr ""
+msgstr "Шаблоны Typst в коллекции"
 
 #: src/editor/insight.ts
 msgid "Unknown"
-msgstr ""
+msgstr "Неизвестно"
 
 #: src/ui/records.ts
 msgid "Unsaved"
-msgstr ""
+msgstr "Не сохранено"
 
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
-msgstr ""
+msgstr "Несохранённые черновики"
 
 #: src/ui/Home.tsx
 msgid "Unsaved in this browser"
-msgstr ""
+msgstr "Несохранённое в этом браузере"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr ""
+msgstr "Без подписи"
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
-msgstr ""
+msgstr "Рисунок без названия"
 
 #: src/ui/Home.tsx
 msgid "Updating…"
-msgstr ""
+msgstr "Обновление…"
 
 #: src/i18n/collections.ts
 msgid "Use {app}'s version"
-msgstr ""
+msgstr "Использовать версию {app}"
 
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
-msgstr ""
+msgstr "Использовать уже имеющуюся заметку…"
 
 #: src/ui/Home.tsx
 msgid "Use as manuscript"
-msgstr ""
+msgstr "Использовать как рукопись"
 
 #: src/ui/CompareDialog.tsx
 msgid "Use collection version"
-msgstr ""
+msgstr "Использовать версию из коллекции"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB."
-msgstr ""
+msgstr "Использует стили Word из макета, но разбивка на страницы может отличаться от PDF. При первом использовании загружается около 16 МБ."
 
 #: src/ui/WorkspaceView.tsx
 msgid "View"
-msgstr ""
+msgstr "Вид"
 
 #: src/workspace/workspace.ts
 msgid "Wait for the manuscript to open before exporting."
-msgstr ""
+msgstr "Дождитесь открытия рукописи, прежде чем экспортировать."
 
 #: src/connect/native-signin-ui.ts
 msgid "Waiting for approval in the mdbase tab…"
-msgstr ""
+msgstr "Ожидаем подтверждения на вкладке mdbase…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Waiting for approval…"
-msgstr ""
+msgstr "Ожидание подтверждения…"
 
 #: src/ui/CollectionPicker.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
-msgstr ""
+msgstr "Ожидание mdbase Connect…"
 
 #: src/i18n/collections.ts
 msgid "What changes"
-msgstr ""
+msgstr "Что изменится"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
-msgstr ""
+msgstr "Чьи комментарии"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Why (optional)"
-msgstr ""
+msgstr "Причина (необязательно)"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
-msgstr ""
+msgstr "будет добавлено"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be removed"
-msgstr ""
+msgstr "будет удалено"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
-msgstr ""
+msgstr "будет обновлено"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdraw"
-msgstr ""
+msgstr "Отозвать"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr ""
+msgstr "Отозвано."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
-msgstr ""
+msgstr "Документ Word (DOCX)"
 
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
-msgstr ""
+msgstr "При экспорте в Word возникла проблема."
 
 #: src/export/pandoc.ts
 msgid "Word export timed out. Check your connection and try again."
-msgstr ""
+msgstr "Время ожидания экспорта в Word истекло. Проверьте подключение и повторите попытку."
 
 #: src/ui/Home.tsx
 msgid "Word goal"
-msgstr ""
+msgstr "Цель по количеству слов"
 
 #: src/ui/Home.tsx
 msgid "Words, e.g. 8000"
-msgstr ""
+msgstr "Слов, например 8000"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Write"
-msgstr ""
+msgstr "Текст"
 
 #: src/ui/ConnectGate.tsx
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
-msgstr ""
+msgstr "Пишите на основе своей коллекции"
 
 #: src/editor/Editor.tsx
 msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr ""
+msgstr "Пишите в Markdown. Цитируйте с помощью [@citekey]; введите /, чтобы добавить сноску, рисунок или таблицу."
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"
-msgstr ""
+msgstr "Введите цитату здесь, чтобы изменить её; она больше не связана с аннотацией"
 
 #: src/workspace/workspace.ts
 msgid "Writer cannot ask for access here."
-msgstr ""
+msgstr "mdbase writer не может запрашивать здесь доступ."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
-msgstr ""
+msgstr "Команды mdbase writer"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
-msgstr ""
+msgstr "mdbase writer не удалось открыть эту коллекцию"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Writer was not allowed to see your account."
-msgstr ""
+msgstr "mdbase writer не получил разрешения видеть вашу учётную запись."
 
 #: src/main.tsx
 msgid "You can close this window."
-msgstr ""
+msgstr "Это окно можно закрыть."
 
 #: src/i18n/collections.ts
 msgid "You've signed out of {app} on this device."
-msgstr ""
+msgstr "Вы вышли из {app} на этом устройстве."
 
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
-msgstr ""
+msgstr "Не удалось проверить вашу учётную запись ({0})."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your account is not linked to a person record in this collection."
-msgstr ""
+msgstr "Ваша учётная запись не связана с записью о пользователе в этой коллекции."
 
 #: src/connect/connect-popup.ts
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
-msgstr ""
+msgstr "Браузер заблокировал вкладку входа."
 
 #: src/i18n/collections.ts
 msgid "Your collections"
-msgstr ""
+msgstr "Ваши коллекции"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
-msgstr ""
+msgstr "Ваши комментарии не подписаны."
 
 #: src/workspace/workspace.ts
 msgid "Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ."
-msgstr ""
+msgstr "Ваш собственный макет Typst применяется только к PDF. Word использует стили статьи, поэтому разбивка на страницы и оформление будут отличаться."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB."
-msgstr ""
+msgstr "Ваш собственный макет Typst работает только для PDF. Word использует стили статьи и другую разбивку на страницы. При первом использовании загружается около 16 МБ."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup."
-msgstr ""
+msgstr "Локальные черновики резервируются в этом браузере, если доступно хранилище. Скачайте копию перед выходом, если вам нужна независимая резервная копия."
 
 #: src/ui/CompareDialog.tsx
 msgid "Your local text"
-msgstr ""
+msgstr "Ваш локальный текст"
 
 #: src/LegacyApp.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
-msgstr ""
+msgstr "Сохранённый текст находится в вашей коллекции. Неотправленные локальные черновики резервируются в этом браузере, если доступно хранилище. Скачайте копию перед перезагрузкой."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom"
-msgstr ""
+msgstr "Масштаб"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom in"
-msgstr ""
+msgstr "Увеличить"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom out"
-msgstr ""
+msgstr "Уменьшить"
