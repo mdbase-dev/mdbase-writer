@@ -1469,430 +1469,430 @@ msgstr "수식 표시"
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase connect is unavailable"
-msgstr ""
+msgstr "mdbase connect를 사용할 수 없습니다."
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer can't use this collection"
-msgstr ""
+msgstr "mdbase writer에서 이 컬렉션을 사용할 수 없습니다."
 
 #. placeholder {0}: snapshot.info.displayName
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
-msgstr ""
+msgstr "mdbase writer에서 <0>{0}</0>의 두 레코드 계약이 필요합니다. 원고와 인용용 Reader 출처입니다. 설정 시 누락된 항목만 추가하며 기존 레코드는 변경하지 않습니다."
 
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library. Connect a collection to choose what it can access."
-msgstr ""
+msgstr "mdbase writer는 mdbase 컬렉션의 Markdown 레코드를 조판해 PDF 및 Word 문서로 만들고 mdbase Reader 라이브러리의 출처를 인용합니다. 컬렉션을 연결하여 접근할 항목을 선택하세요."
 
 #: src/ui/CompareDialog.tsx
 msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
-msgstr ""
+msgstr "Markdown 병합 완료<0/><1>병합된 텍스트에는 컬렉션 버전을 바탕으로 로컬 설정 변경 사항이 반영됩니다.</1>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Mine"
-msgstr ""
+msgstr "내 버전"
 
 #: src/ui/names.ts
 msgid "MLA 9th edition"
-msgstr ""
+msgstr "MLA 9판"
 
 #: src/ui/WorkspaceView.tsx
 msgid "More"
-msgstr ""
+msgstr "더 보기"
 
 #: src/i18n/collections.ts
 msgid "More for {collection}"
-msgstr ""
+msgstr "{collection} 추가 정보"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Move author {0} up"
-msgstr ""
+msgstr "저자 {0} 위로 이동"
 
 #: src/ui/Settings.tsx
 msgid "Move up"
-msgstr ""
+msgstr "위로 이동"
 
 #. placeholder {0}: recordTitle(records.get(path), path)
 #. placeholder {1}: to + 1
 #. placeholder {2}: chapters.length
 #: src/ui/OutlinePanel.tsx
 msgid "Moved {0} to chapter {1} of {2}."
-msgstr ""
+msgstr "{0}을(를) {2}의 {1}장으로 이동했습니다."
 
 #: src/ui/Settings.tsx
 msgid "Name"
-msgstr ""
+msgstr "이름"
 
 #: src/i18n/collections.ts
 msgid "Needs a decision"
-msgstr ""
+msgstr "결정 필요"
 
 #: src/ui/OutlinePanel.tsx
 msgid "New chapter title"
-msgstr ""
+msgstr "새 장 제목"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New comment"
-msgstr ""
+msgstr "새 댓글"
 
 #: src/ui/Home.tsx
 msgid "New manuscript"
-msgstr ""
+msgstr "새 원고"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New since last visit ({newCount})"
-msgstr ""
+msgstr "지난 방문 이후 새 항목({newCount})"
 
 #: src/ui/CommentsPanel.tsx
 msgid "New since your last visit"
-msgstr ""
+msgstr "마지막 방문 이후 새 항목"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous comment"
-msgstr ""
+msgstr "다음/이전 댓글"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next / previous problem"
-msgstr ""
+msgstr "다음/이전 문제"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
-msgstr ""
+msgstr "다음 인용"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next comment"
-msgstr ""
+msgstr "다음 댓글"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next problem"
-msgstr ""
+msgstr "다음 문제"
 
 #: src/ui/SourcesPanel.tsx
 msgid "No annotations on this source."
-msgstr ""
+msgstr "이 출처에 주석이 없습니다."
 
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
-msgstr ""
+msgstr "“{0}”과(와) 일치하는 컬렉션이 없습니다."
 
 #: src/i18n/collections.ts
 msgid "No collection was added."
-msgstr ""
+msgstr "컬렉션이 추가되지 않았습니다."
 
 #: src/i18n/collections.ts
 msgid "No collections match “{query}”."
-msgstr ""
+msgstr "“{query}”와(과) 일치하는 컬렉션이 없습니다."
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
-msgstr ""
+msgstr "아직 다운로드된 파일이 없습니다. 누락된 이미지나 장으로 인해 내보내기가 완전하지 않을 수 있습니다. 공유하거나 제출하기 전에 문제를 검토하세요."
 
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
-msgstr ""
+msgstr "“{filter}”와(과) 일치하는 원고가 없습니다."
 
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
-msgstr ""
+msgstr "“{query}”와(과) 일치하는 메모가 없습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "No open comments"
-msgstr ""
+msgstr "미해결 댓글 없음"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
-msgstr ""
+msgstr "이 컬렉션에 다른 메모가 없습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "No problems"
-msgstr ""
+msgstr "문제 없음"
 
 #. placeholder {0}: this.target
 #: src/editor/chapter-cards.ts
 msgid "No record matches ![[{0}]]"
-msgstr ""
+msgstr "![[{0}]]와(과) 일치하는 레코드가 없습니다."
 
 #: src/ui/SourcesPanel.tsx
 msgid "No source matches “{query}”; searching highlights…"
-msgstr ""
+msgstr "“{query}”와(과) 일치하는 출처가 없습니다. 하이라이트 검색 중…"
 
 #. placeholder {0}: ref.key
 #: src/editor/insight.ts
 msgid "No source or label is called “{0}”."
-msgstr ""
+msgstr "“{0}”이라는 출처나 레이블이 없습니다."
 
 #: src/ui/SourcesPanel.tsx
 msgid "No sources in this collection yet."
-msgstr ""
+msgstr "이 컬렉션에 아직 출처가 없습니다."
 
 #: src/ui/Home.tsx
 msgid "No sources yet"
-msgstr ""
+msgstr "아직 출처가 없습니다."
 
 #: src/ui/Home.tsx
 msgid "No type · {path}"
-msgstr ""
+msgstr "유형 없음 · {path}"
 
 #. placeholder {0}: readerSourceHref() ? <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open mdbase Reader</Trans></a> : t`Open mdbase Reader`
 #: src/ui/Home.tsx
 msgid "None yet. {0} to import a PDF, a DOI or a BibTeX file; each source gets a citekey."
-msgstr ""
+msgstr "아직 없습니다. PDF, DOI 또는 BibTeX 파일을 가져오려면 {0}하세요. 각 출처에 citekey가 부여됩니다."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Not cited yet"
-msgstr ""
+msgstr "아직 인용되지 않음"
 
 #: src/pwa-install.ts
 msgid "Not now"
-msgstr ""
+msgstr "나중에"
 
 #: src/ui/records.ts
 msgid "Not saved"
-msgstr ""
+msgstr "저장되지 않음"
 
 #. placeholder {0}: activeView.snapshot.problem.message ?? activeView.snapshot.problem.code
 #: src/ui/WorkspaceView.tsx
 msgid "Not saved: {0}. Your text is kept here."
-msgstr ""
+msgstr "저장되지 않음: {0}. 텍스트는 여기에 보관되어 있습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "note"
-msgstr ""
+msgstr "메모"
 
 #: src/ui/Home.tsx
 msgid "Note<0/>"
-msgstr ""
+msgstr "메모<0/>"
 
 #: src/ui/Home.tsx
 msgid "Notes"
-msgstr ""
+msgstr "메모"
 
 #: src/ui/Home.tsx
 msgid "Notes without a type"
-msgstr ""
+msgstr "유형이 없는 메모"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
-msgstr ""
+msgstr "아직 인용한 항목이 없습니다. 아래 출처를 인용하거나 편집기에서 <0>[@</0>를 입력하세요."
 
 #: src/i18n/collections.ts
 msgid "Nothing in your collection will change."
-msgstr ""
+msgstr "컬렉션의 내용은 변경되지 않습니다."
 
 #: src/ui/CompareDialog.tsx
 msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
-msgstr ""
+msgstr "선택하기 전까지는 아무것도 대체되지 않습니다. 강조된 본문 구간은 두 버전 간에 다릅니다."
 
 #. placeholder {0}: query.trim()
 #: src/ui/ManuscriptSearch.tsx
 msgid "Nothing matches “{0}”."
-msgstr ""
+msgstr "“{0}”와(과) 일치하는 항목이 없습니다."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing matches “{query}”."
-msgstr ""
+msgstr "“{query}”와(과) 일치하는 항목이 없습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr ""
+msgstr "아직 해결된 항목이 없습니다."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
-msgstr ""
+msgstr "오프라인"
 
 #: src/ui/WorkspaceView.tsx
 msgid "On a citation: show the source. On a cross-reference: go to what it labels"
-msgstr ""
+msgstr "인용에서는 출처 표시, 상호 참조에서는 해당 레이블 위치로 이동"
 
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
-msgstr ""
+msgstr "산호초의 형성에 관하여"
 
 #: src/ui/CommentsPanel.tsx
 msgid "On the whole record"
-msgstr ""
+msgstr "레코드 전체에"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
-msgstr ""
+msgstr "내 컴퓨터"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Open"
-msgstr ""
+msgstr "열기"
 
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
 msgid "Open"
-msgstr ""
+msgstr "열기"
 
 #. placeholder {0}: card.title
 #: src/editor/chapter-cards.ts
 msgid "Open {0}"
-msgstr ""
+msgstr "{0} 열기"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Open in Reader <0/>"
-msgstr ""
+msgstr "Reader에서 열기 <0/>"
 
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
-msgstr ""
+msgstr "검토하려면 해당 원고 열기"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
-msgstr ""
+msgstr "mdbase Reader 열기"
 
 #: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Open now"
-msgstr ""
+msgstr "지금 열기"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Open Reader to add a source"
-msgstr ""
+msgstr "출처를 추가하려면 Reader 열기"
 
 #: src/connect/native-signin-ui.ts
 msgid "Open sign-in"
-msgstr ""
+msgstr "로그인 열기"
 
 #: src/connect/native-signin-ui.ts
 msgid "Open the mdbase tab again"
-msgstr ""
+msgstr "mdbase 탭 다시 열기"
 
 #: src/i18n/collections.ts
 msgid "Open the mdbase window again"
-msgstr ""
+msgstr "mdbase 창 다시 열기"
 
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
-msgstr ""
+msgstr "Reader에서 이 본문 구간 열기"
 
 #: src/i18n/collections.ts
 msgid "Open your collections in {app}"
-msgstr ""
+msgstr "{app}에서 컬렉션 열기"
 
 #: src/i18n/collections.ts
 msgid "Opening {collection}"
-msgstr ""
+msgstr "{collection} 여는 중"
 
 #: src/connect/native-signin-ui.ts
 msgid "Opening collections isn't available in this build yet."
-msgstr ""
+msgstr "이 빌드에서는 아직 컬렉션 열기를 사용할 수 없습니다."
 
 #: src/App.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
-msgstr ""
+msgstr "mdbase writer 여는 중"
 
 #: src/i18n/collections.ts
 msgid "Opening mdbase…"
-msgstr ""
+msgstr "mdbase 여는 중…"
 
 #: src/LegacyApp.tsx
 msgid "Opening the demo collection"
-msgstr ""
+msgstr "데모 컬렉션 여는 중"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Opening the manuscript…"
-msgstr ""
+msgstr "원고 여는 중…"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Opening Writer"
-msgstr ""
+msgstr "Writer 여는 중"
 
 #: src/ui/NativeWriterView.tsx
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening Writer…"
-msgstr ""
+msgstr "Writer 여는 중…"
 
 #: src/i18n/collections.ts
 #: src/ui/SdkWriterRoot.tsx
 msgid "Opening your collection"
-msgstr ""
+msgstr "컬렉션 여는 중"
 
 #: src/i18n/collections.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Opening…"
-msgstr ""
+msgstr "여는 중…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Or type <0>/</0> in the text to pick one there."
-msgstr ""
+msgstr "또는 텍스트에서 <0>/</0>를 입력해 항목을 선택하세요."
 
 #: src/ui/Home.tsx
 msgid "or use a note you already have"
-msgstr ""
+msgstr "또는 기존 메모 사용"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
-msgstr ""
+msgstr "개요"
 
 #: src/i18n/collections.ts
 msgid "Owner"
-msgstr ""
+msgstr "소유자"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
-msgstr ""
+msgstr "페이지(선택 사항)"
 
 #. placeholder {0}: i + 1
 #: src/preview/Preview.tsx
 msgid "Page {0}"
-msgstr ""
+msgstr "{0}페이지"
 
 #. placeholder {0}: previewView.page
 #. placeholder {1}: previewView.pages
 #: src/ui/WorkspaceView.tsx
 msgid "Page {0} of {1}"
-msgstr ""
+msgstr "{1}페이지 중 {0}페이지"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Page or locator for {0}"
-msgstr ""
+msgstr "{0}의 페이지 또는 위치 정보"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc bundle"
-msgstr ""
+msgstr "Pandoc 번들"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc bundle (zip)"
-msgstr ""
+msgstr "Pandoc 번들(zip)"
 
 #: src/export/pandoc.ts
 msgid "Pandoc returned an unreadable response."
-msgstr ""
+msgstr "Pandoc에서 읽을 수 없는 응답을 반환했습니다."
 
 #: src/export/pandoc.ts
 msgid "Pandoc stopped."
-msgstr ""
+msgstr "Pandoc이 중지되었습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself"
-msgstr ""
+msgstr "출처, 스타일 및 이미지가 포함된 Pandoc/Quarto Markdown으로 직접 다른 형식 제작"
 
 #: src/compile/client.ts
 msgid "PDF export timed out. Retry the preview and export again."
-msgstr ""
+msgstr "PDF 내보내기 시간이 초과되었습니다. 미리보기를 다시 시도한 다음 내보내세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Preview"
-msgstr ""
+msgstr "미리보기"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
-msgstr ""
+msgstr "미리보기만"
 
 #: src/preview/Preview.tsx
 msgid "Preview rendering failed: {renderProblem}. Your text is still available in the editor."
-msgstr ""
+msgstr "미리보기를 렌더링하지 못했습니다: {renderProblem}. 텍스트는 편집기에서 계속 사용할 수 있습니다."
 
 #. placeholder {0}: snap.previewProblem
 #: src/ui/WorkspaceView.tsx
 msgid "Preview unavailable: {0}. You can keep writing."
-msgstr ""
+msgstr "미리보기를 사용할 수 없습니다: {0}. 계속 작성할 수 있습니다."
 
 #: src/preview/Preview.tsx
 msgid "Preview unavailable. You can keep writing."
