@@ -188,27 +188,27 @@ msgstr "{MOD_LABEL} S"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift \\"
-msgstr "{MOD_LABEL} Shift \\"
+msgstr "按 {MOD_LABEL} + Shift + 反斜杠"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift E"
-msgstr "{MOD_LABEL} Shift E"
+msgstr "按 {MOD_LABEL} + Shift + E"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift F"
-msgstr "{MOD_LABEL} Shift F"
+msgstr "按 {MOD_LABEL} + Shift + F"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift K"
-msgstr "{MOD_LABEL} Shift K"
+msgstr "按 {MOD_LABEL} + Shift + K"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift M"
-msgstr "{MOD_LABEL} Shift M"
+msgstr "按 {MOD_LABEL} + Shift + M"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} Shift S"
-msgstr "{MOD_LABEL} Shift S"
+msgstr "按 {MOD_LABEL} + Shift + S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
@@ -224,7 +224,7 @@ msgstr "按 {MOD_LABEL}-单击 在来源中显示"
 
 #: src/ui/CommentsPanel.tsx
 msgid "{MOD_LABEL}-Enter"
-msgstr "{MOD_LABEL}-Enter"
+msgstr "{MOD_LABEL}-回车"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-I"
@@ -232,7 +232,7 @@ msgstr "{MOD_LABEL}-I"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-Shift-K"
-msgstr "{MOD_LABEL}-Shift-K"
+msgstr "{MOD_LABEL}-Shift-K 快捷键"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
