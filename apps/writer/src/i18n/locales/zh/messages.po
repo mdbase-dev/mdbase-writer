@@ -540,472 +540,472 @@ msgstr "粗体"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Bold / italic (again to remove it)"
-msgstr ""
+msgstr "粗体 / 斜体（再次按下可取消）"
 
 #: src/i18n/collections.ts
 msgid "Can edit"
-msgstr ""
+msgstr "可编辑"
 
 #: src/i18n/collections.ts
 msgid "Can view"
-msgstr ""
+msgstr "可查看"
 
 #: src/i18n/collections.ts
 msgid "Can't continue"
-msgstr ""
+msgstr "无法继续"
 
 #: src/i18n/collections.ts
 msgid "Can't open {collection}"
-msgstr ""
+msgstr "无法打开集合“{collection}”"
 
 #: src/i18n/collections.ts
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: src/ui/ExportReview.tsx
 msgid "Cancel and fix problems"
-msgstr ""
+msgstr "取消并修复问题"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cancel export"
-msgstr ""
+msgstr "取消导出"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the citation style"
-msgstr ""
+msgstr "更改引文格式"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Change the layout"
-msgstr ""
+msgstr "更改排版"
 
 #: src/ui/Home.tsx
 msgid "Change the word goal"
-msgstr ""
+msgstr "更改字数目标"
 
 #: src/ui/records.ts
 msgid "Changed elsewhere"
-msgstr ""
+msgstr "已在其他位置更改"
 
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
-msgstr ""
+msgstr "更改会在输入时保存到手稿的前置元数据中，预览也会随之更新。"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
-msgstr ""
+msgstr "章节标题"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
 msgid "Chapters <0>{0}</0>"
-msgstr ""
+msgstr "章节 <0>{0}</0>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Check again"
-msgstr ""
+msgstr "再次检查"
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making {0}…"
-msgstr ""
+msgstr "正在检查章节和图片，然后生成 {0}…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
-msgstr ""
+msgstr "正在检查章节和图片，然后生成 Word 文档…（首次使用约需加载 16 MB）"
 
 #: src/ui/ConnectGate.tsx
 msgid "Checking the collection"
-msgstr ""
+msgstr "正在检查集合"
 
 #: src/i18n/collections.ts
 msgid "Checking what setup will change…"
-msgstr ""
+msgstr "正在检查设置将进行哪些更改…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
-msgstr ""
+msgstr "正在检查…"
 
 #: src/ui/names.ts
 msgid "Chicago (author-date)"
-msgstr ""
+msgstr "Chicago（作者-日期制）"
 
 #: src/ui/names.ts
 msgid "Chicago (notes and bibliography)"
-msgstr ""
+msgstr "Chicago（注释与参考文献制）"
 
 #: src/i18n/collections.ts
 msgid "Choose a collection"
-msgstr ""
+msgstr "选择集合"
 
 #: src/i18n/collections.ts
 msgid "Choose a different collection"
-msgstr ""
+msgstr "选择其他集合"
 
 #: src/ui/ConnectGate.tsx
 msgid "Choose another collection"
-msgstr ""
+msgstr "选择其他集合"
 
 #: src/i18n/collections.ts
 msgid "Choose or create a collection there."
-msgstr ""
+msgstr "在该处选择或创建集合。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
-msgstr ""
+msgstr "引文"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Citation style"
-msgstr ""
+msgstr "引文格式"
 
 #: src/ui/Home.tsx
 msgid "Citation style<0/>"
-msgstr ""
+msgstr "引文格式<0/>"
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
-msgstr ""
+msgstr "引文会显示引用来源，插图和表格会被渲染；标记会在光标到达相应行时显示。文本本身不会更改。"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/SourcesPanel.tsx
 msgid "Cite"
-msgstr ""
+msgstr "引用"
 
 #. placeholder {0}: entry.title
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
-msgstr ""
+msgstr "引用 {0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr ""
+msgstr "引用来源或引用标签（按键、作者、标题或年份查找）"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
 msgid "Cite at {0}"
-msgstr ""
+msgstr "在 {0} 处引用"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cite here"
-msgstr ""
+msgstr "在此处引用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "cite source reference"
-msgstr ""
+msgstr "引用 来源 交叉引用"
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited {uses}×"
-msgstr ""
+msgstr "已引用 {uses} 次"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Cited in "
-msgstr ""
+msgstr "引用于 "
 
 #: src/ui/SourcesPanel.tsx
 msgid "cited once"
-msgstr ""
+msgstr "引用过一次"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Click to fit the width"
-msgstr ""
+msgstr "单击以适应宽度"
 
 #: src/i18n/collections.ts
 msgid "Close"
-msgstr ""
+msgstr "关闭"
 
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
-msgstr ""
+msgstr "关闭（Esc）"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
-msgstr ""
+msgstr "关闭设置"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower panel"
-msgstr ""
+msgstr "关闭下方面板"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Close the lower sidebar panel"
-msgstr ""
+msgstr "关闭侧边栏下方面板"
 
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
-msgstr ""
+msgstr "代码"
 
 #: src/i18n/collections.ts
 msgid "Collection"
-msgstr ""
+msgstr "集合"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
-msgstr ""
+msgstr "尚未检查集合依赖项"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection index"
-msgstr ""
+msgstr "集合索引"
 
 #: src/workspace/workspace.ts
 msgid "Collection metadata is still loading."
-msgstr ""
+msgstr "仍在加载集合元数据。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Collection version"
-msgstr ""
+msgstr "集合版本"
 
 #: src/i18n/collections.ts
 #: src/ui/CollectionPicker.tsx
 msgid "Collections"
-msgstr ""
+msgstr "集合"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands"
-msgstr ""
+msgstr "命令"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Commands, shortcuts and theme"
-msgstr ""
+msgstr "命令、快捷键和主题"
 
 #: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Comment"
-msgstr ""
+msgstr "评论"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Comment on the selection"
-msgstr ""
+msgstr "评论所选内容"
 
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr ""
+msgstr "评论所选内容（{MOD_LABEL}-{ALT_LABEL}-M）"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
-msgstr ""
+msgstr "评论"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comments are not set up in this collection."
-msgstr ""
+msgstr "此集合尚未设置评论功能。"
 
 #. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
 msgid "Comments unavailable: {problem} {0}"
-msgstr ""
+msgstr "评论不可用：{problem} {0}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
-msgstr ""
+msgstr "比较冲突版本"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Compare versions"
-msgstr ""
+msgstr "比较版本"
 
 #: src/ui/records.ts
 msgid "Conflict"
-msgstr ""
+msgstr "冲突"
 
 #: src/ui/ConnectGate.tsx
 msgid "conflicts with an existing file"
-msgstr ""
+msgstr "与现有文件冲突"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connect a collection"
-msgstr ""
+msgstr "连接集合"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connect another collection…"
-msgstr ""
+msgstr "连接其他集合…"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Connected collections"
-msgstr ""
+msgstr "已连接的集合"
 
 #: src/ui/ConnectGate.tsx
 msgid "Connecting to mdbase connect"
-msgstr ""
+msgstr "正在连接到 mdbase Connect"
 
 #: src/i18n/collections.ts
 msgid "Continue"
-msgstr ""
+msgstr "继续"
 
 #: src/i18n/collections.ts
 msgid "Continue in the mdbase window"
-msgstr ""
+msgstr "在 mdbase 窗口中继续"
 
 #: src/ui/Home.tsx
 msgid "Continue writing"
-msgstr ""
+msgstr "继续写作"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copied"
-msgstr ""
+msgstr "已复制"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copy key"
-msgstr ""
+msgstr "复制密钥"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
-msgstr ""
+msgstr "无法连接其他集合。"
 
 #: src/ui/Home.tsx
 msgid "Could not create the manuscript. Please try again."
-msgstr ""
+msgstr "无法创建手稿，请重试。"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Could not switch collections."
-msgstr ""
+msgstr "无法切换集合。"
 
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
-msgstr ""
+msgstr "无法将此笔记用作手稿，请重试。"
 
 #: src/ui/Home.tsx
 msgid "Create manuscript"
-msgstr ""
+msgstr "创建手稿"
 
 #: src/ui/Home.tsx
 msgid "Creating…"
-msgstr ""
+msgstr "正在创建…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Cross-reference"
-msgstr ""
+msgstr "交叉引用"
 
 #: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
-msgstr ""
+msgstr "深色"
 
 #: src/ui/Settings.tsx
 msgid "Date"
-msgstr ""
+msgstr "日期"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Delete"
-msgstr ""
+msgstr "删除"
 
 #. placeholder {0}: clip(exact)
 #: src/ui/comments.ts
 msgid "Delete {0}"
-msgstr ""
+msgstr "删除 {0}"
 
 #: src/i18n/collections.ts
 msgid "Delete {collection}?"
-msgstr ""
+msgstr "删除集合“{collection}”？"
 
 #: src/i18n/collections.ts
 msgid "Delete collection"
-msgstr ""
+msgstr "删除集合"
 
 #: src/i18n/collections.ts
 msgid "Delete collection…"
-msgstr ""
+msgstr "删除集合…"
 
 #: src/ui/records.ts
 msgid "Deleted"
-msgstr ""
+msgstr "已删除"
 
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
-msgstr ""
+msgstr "已在其他位置删除"
 
 #: src/i18n/collections.ts
 msgid "Deleting…"
-msgstr ""
+msgstr "正在删除…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
-msgstr ""
+msgstr "尚未检查依赖项"
 
 #: src/editor/chapter-cards.ts
 msgid "Detach"
-msgstr ""
+msgstr "分离"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Detached: the text has changed"
-msgstr ""
+msgstr "已分离：文本已更改"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr ""
+msgstr "关闭"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Down arrow moves to the sources; Enter cites the first match."
-msgstr ""
+msgstr "按向下键移至来源列表；按 Enter 引用第一个匹配项。"
 
 #: src/ui/Manuscripts.tsx
 msgid "Download a local copy before leaving if saving cannot be completed."
-msgstr ""
+msgstr "如果无法完成保存，请在离开前下载本地副本。"
 
 #: src/ui/CompareDialog.tsx
 msgid "Download local draft"
-msgstr ""
+msgstr "下载本地草稿"
 
 #: src/LegacyApp.tsx
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Download local drafts"
-msgstr ""
+msgstr "下载本地草稿"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to restore"
-msgstr ""
+msgstr "拖动以调整大小；双击以恢复"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Drag to resize; double-click to split evenly"
-msgstr ""
+msgstr "拖动以调整大小；双击以均分"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
 #: src/ui/Home.tsx
 msgid "edited {0}"
-msgstr ""
+msgstr "编辑时间：{0}"
 
 #: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
-msgstr ""
+msgstr "编辑器"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor and preview"
-msgstr ""
+msgstr "编辑器和预览"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor and preview → editor only → preview only"
-msgstr ""
+msgstr "编辑器和预览 → 仅编辑器 → 仅预览"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Editor only"
-msgstr ""
+msgstr "仅编辑器"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Embed a record"
-msgstr ""
+msgstr "嵌入记录"
 
 #: src/workspace/workspace.ts
 msgid "Embedded record could not be loaded: {problem}"
-msgstr ""
+msgstr "无法加载嵌入的记录：{problem}"
 
 #: src/ui/ManuscriptSearch.tsx
 msgid "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
-msgstr ""
+msgstr "按 Enter 和 Shift-Enter 转到下一个和上一个匹配项；按向下键浏览匹配项。"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/editor/live-preview.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Equation"
-msgstr ""
+msgstr "公式"
 
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
-msgstr ""
+msgstr "错误 警告 列表"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Everyone"
