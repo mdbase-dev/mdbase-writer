@@ -582,7 +582,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       case "equation": insertEquation(); break;
     }
   }, [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
-  const inserts = useMemo<readonly InsertCommand[]>(() => insertionSpecs.map((spec) => ({ ...spec, run: () => runInsertion(spec.id) })), [insertionSpecs, runInsertion]);
+  const inserts = useMemo<readonly InsertCommand[]>(() => insertionSpecs.map((spec) => ({ ...spec, run: () => runInsertion(spec.id) })), [insertionSpecs, runInsertion, interfaceLocale]);
   const paletteInserts: Command[] = insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: translate`Insert`, label: spec.label, detail: spec.syntax, keywords: spec.keywords, run: () => runInsertion(spec.id) }));
   const [insertOpen, setInsertOpen] = useState(false);
   const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);

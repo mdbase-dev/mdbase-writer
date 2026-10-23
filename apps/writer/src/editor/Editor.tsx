@@ -275,9 +275,10 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
       view.current?.dispatch({ effects: [language.current.reconfigure(translatedExtensions()), refreshChapterCards.of(null), refreshLivePreview.of(null)] });
     }).catch(() => { if (current) setPhraseProblem(true); });
     return () => { current = false; };
-    // Only locale changes update language facets, not each editor render.
+    // Also cancel a pending phrase load when the active record changes, so
+    // its old path cannot overwrite the new editor’s accessible name.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale]);
+  }, [locale, path]);
 
   // Adopt text the session changed underneath us (another view, a resolved conflict).
   useEffect(() => {

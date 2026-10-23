@@ -60,6 +60,18 @@ try {
   assert.match(await picker.getAttribute("aria-label"), /[\u3400-\u9fff]/);
   assert.equal(await manuscriptSource(), before);
   await page.screenshot({ path: "out/i18n/chinese-settings-narrow.png", fullPage: true });
+  // Menu descriptors must not cache labels from the previous interface language.
+  await page.keyboard.press("Escape");
+  await editor.click();
+  await page.keyboard.press("Control+End");
+  await page.keyboard.type("\n/");
+  await page.locator(".cm-tooltip-autocomplete").waitFor();
+  const insertLabels = await page.locator(".cm-tooltip-autocomplete li").allTextContents();
+  assert.ok(insertLabels.some(label => label.includes("引文")), "slash commands update after a locale switch");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Backspace");
+  assert.equal(await manuscriptSource(), before, "the test restores its disposable slash-menu probe");
   assert.deepEqual(errors, []);
   await context.close();
 
