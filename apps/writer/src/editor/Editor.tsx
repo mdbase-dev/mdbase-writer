@@ -28,6 +28,10 @@ import { slashCommands, type InsertCommand } from "./slash.js";
 import { nextFootnoteId, type Snippet } from "./snippets.js";
 
 const remote = Annotation.define<boolean>();
+// WorkspaceView keys editors by chapter. Keep resolved phrases outside that
+// lifetime so a remounted chapter starts localized, without a deferred redraw
+// racing CodeMirror's retained-scroll measurement. English stays synchronous.
+const phraseCache = new Map([["en", englishCodeMirrorPhrases]]);
 
 export interface EditorHandle {
   /** Scrolls to `offset` (selecting up to `to`, when given) and focuses the editor unless `focus` is false. */
@@ -91,10 +95,11 @@ export interface EditorProps {
 
 export const Editor = memo(function Editor({ states, path, text, readOnly, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
   const { i18n } = useLingui();
-  const locale = i18n.locale;
+  const locale = isLocale(i18n.locale) ? i18n.locale : "en";
   const language = useRef(new Compartment());
-  const phrases = useRef(englishCodeMirrorPhrases);
-  const phraseLocale = useRef("en");
+  const cachedPhrases = phraseCache.get(locale);
+  const phrases = useRef(cachedPhrases ?? englishCodeMirrorPhrases);
+  const phraseLocale = useRef(cachedPhrases ? locale : "en");
   const [phraseProblem, setPhraseProblem] = useState(false);
   const translatedExtensions = () => [
     EditorState.phrases.of(phrases.current),
@@ -276,13 +281,17 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
       return;
     }
     let current = true;
-    void loadCodeMirrorPhrases(isLocale(locale) ? locale : "en").then((loaded) => {
+    const apply = (loaded: typeof englishCodeMirrorPhrases) => {
+      phraseCache.set(locale, loaded);
       if (!current) return;
       phrases.current = loaded;
       phraseLocale.current = locale;
       setPhraseProblem(false);
       view.current?.dispatch({ effects: [language.current.reconfigure(translatedExtensions()), refreshChapterCards.of(null), refreshLivePreview.of(null)] });
-    }).catch(() => { if (current) setPhraseProblem(true); });
+    };
+    const cached = phraseCache.get(locale);
+    if (cached) apply(cached);
+    else void loadCodeMirrorPhrases(locale).then(apply).catch(() => { if (current) setPhraseProblem(true); });
     return () => { current = false; };
     // Also cancel a pending phrase load when the active record changes, so
     // its old path cannot overwrite the new editor’s accessible name.
