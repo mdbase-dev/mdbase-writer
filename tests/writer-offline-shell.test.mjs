@@ -8,9 +8,10 @@ import test from 'node:test';
 import { assertWriterOfflineShell } from '../scripts/lib/writer-offline-shell.mjs';
 import { loadOriginals } from '../scripts/lib/native-originals.mjs';
 import { inventoryDirectory } from '../scripts/lib/native-publish-bytes.mjs';
+import { frozenStagingRoot } from './frozen-staging-root.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),worker='mdbase-shell-sw.js';
 async function fixture(t){
- const repoRoot=resolve('.'),approved=JSON.parse(await readFile(join(repoRoot,'config/native-publish/staging.json'),'utf8'));
+ const repoRoot=await frozenStagingRoot(t),approved=JSON.parse(await readFile(join(repoRoot,'config/native-publish/staging.json'),'utf8'));
  const sdkTrust=await loadOriginals({repoRoot,target:'staging',hashes:approved.protectedHashes});
  const archive=join(repoRoot,sdkTrust.archives.sdk.path),directory=await mkdtemp(join(tmpdir(),'writer-shell-data-'));t.after(()=>rm(directory,{recursive:true,force:true}));
  const readOriginal=p=>execFileSync('tar',['-xOzf',archive,'package/'+p],{maxBuffer:16*1024*1024});
