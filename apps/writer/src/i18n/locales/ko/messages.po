@@ -2321,611 +2321,611 @@ msgstr "이전 제목 50개 표시"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 sources"
-msgstr ""
+msgstr "이전 출처 50개 표시"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show problems"
-msgstr ""
+msgstr "문제 표시"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar"
-msgstr ""
+msgstr "사이드바 표시"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
-msgstr ""
+msgstr "이 댓글 표시"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
-msgstr ""
+msgstr "마지막으로 성공한 미리보기를 표시합니다. 최신 텍스트와 다를 수 있습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Sidebar"
-msgstr ""
+msgstr "사이드바"
 
 #: src/connect/native-signin-ui.ts
 #: src/i18n/collections.ts
 msgid "Sign in"
-msgstr ""
+msgstr "로그인"
 
 #: src/i18n/collections.ts
 msgid "Sign in and choose a collection there."
-msgstr ""
+msgstr "로그인한 다음 해당 화면에서 컬렉션을 선택하세요."
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign in with your mdbase account to sync {appName} across your devices."
-msgstr ""
+msgstr "mdbase 계정으로 로그인하여 모든 기기에서 {appName}을(를) 동기화하세요."
 
 #: src/i18n/collections.ts
 msgid "Sign in with your mdbase account. You'll choose which collection {app} can use."
-msgstr ""
+msgstr "mdbase 계정으로 로그인하세요. {app}에서 사용할 컬렉션을 선택할 수 있습니다."
 
 #: src/connect/native-signin-ui.ts
 #: src/i18n/collections.ts
 msgid "Sign out"
-msgstr ""
+msgstr "로그아웃"
 
 #: src/i18n/collections.ts
 msgid "Sign out anyway"
-msgstr ""
+msgstr "그래도 로그아웃"
 
 #: src/ui/NativeSignIn.tsx
 msgid "Sign-in status"
-msgstr ""
+msgstr "로그인 상태"
 
 #: src/connect/native-signin-ui.ts
 msgid "Sign-in was interrupted. Please try again."
-msgstr ""
+msgstr "로그인이 중단되었습니다. 다시 시도하세요."
 
 #: src/connect/connect-popup.ts
 msgid "Sign-in window closed."
-msgstr ""
+msgstr "로그인 창이 닫혔습니다."
 
 #: src/i18n/collections.ts
 msgid "Signed in as {account}"
-msgstr ""
+msgstr "{account}(으)로 로그인됨"
 
 #: src/connect/native-signin-ui.ts
 msgid "Signed in as {email}"
-msgstr ""
+msgstr "{email}(으)로 로그인됨"
 
 #. placeholder {0}: selected.displayName
 #: src/connect/native-signin-ui.ts
 msgid "Signed in. Opening {0}…"
-msgstr ""
+msgstr "로그인되었습니다. {0} 여는 중…"
 
 #: src/i18n/collections.ts
 msgid "Signing out…"
-msgstr ""
+msgstr "로그아웃 중…"
 
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Some changes are not saved"
-msgstr ""
+msgstr "저장되지 않은 변경 사항이 있습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Some images or chapters could not be loaded. See Problems for their locations."
-msgstr ""
+msgstr "일부 이미지 또는 장을 불러오지 못했습니다. 위치는 문제 목록에서 확인하세요."
 
 #: src/LegacyApp.tsx
 msgid "Something went wrong"
-msgstr ""
+msgstr "문제가 발생했습니다."
 
 #: src/ui/ConnectGate.tsx
 msgid "Something went wrong."
-msgstr ""
+msgstr "문제가 발생했습니다."
 
 #: src/editor/insight.ts
 msgid "Source"
-msgstr ""
+msgstr "출처"
 
 #: src/ui/WorkspaceView.tsx
 msgid "source markup raw live preview chips"
-msgstr ""
+msgstr "출처 마크업 원문 실시간 미리보기 칩"
 
 #: src/ui/SourcesPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Sources"
-msgstr ""
+msgstr "출처"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources are not set up in this collection."
-msgstr ""
+msgstr "이 컬렉션에는 출처가 설정되어 있지 않습니다."
 
 #. placeholder {0}: r.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
-msgstr ""
+msgstr "출처를 불러오지 못했습니다: {0}"
 
 #: src/ui/Home.tsx
 msgid "Sources not set up"
-msgstr ""
+msgstr "출처가 설정되지 않음"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
-msgstr ""
+msgstr "출처를 사용할 수 없습니다: {libraryProblem}"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr ""
+msgstr "출처를 사용할 수 없습니다: {libraryProblem} <0>출처 다시 시도</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."
-msgstr ""
+msgstr "출처."
 
 #: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
-msgstr ""
+msgstr "분할 스택 개요 댓글 출처"
 
 #: src/i18n/collections.ts
 msgid "Starting {app}…"
-msgstr ""
+msgstr "{app} 시작 중…"
 
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
-msgstr ""
+msgstr "{0}을(를) 저장했습니다. 캡션을 작성하세요."
 
 #. placeholder {0}: file.name
 #: src/ui/WorkspaceView.tsx
 msgid "Storing {0}…"
-msgstr ""
+msgstr "{0} 저장 중…"
 
 #: src/ui/Settings.tsx
 msgid "Subtitle"
-msgstr ""
+msgstr "부제"
 
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest"
-msgstr ""
+msgstr "제안"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggest an edit"
-msgstr ""
+msgstr "수정 제안"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
-msgstr ""
+msgstr "선택 영역의 수정 제안"
 
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr ""
+msgstr "선택 영역의 수정 제안({MOD_LABEL}-{ALT_LABEL}-S)"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
-msgstr ""
+msgstr "삽입 제안"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggested text"
-msgstr ""
+msgstr "제안된 텍스트"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
-msgstr ""
+msgstr "컬렉션 전환"
 
 #: src/i18n/collections.ts
 msgid "Switch collection, current: {collection}"
-msgstr ""
+msgstr "컬렉션 전환, 현재: {collection}"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection: {name}"
-msgstr ""
+msgstr "컬렉션 전환: {name}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "System"
-msgstr ""
+msgstr "시스템"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Table"
-msgstr ""
+msgstr "표"
 
 #: src/workspace/workspace.ts
 msgid "That record is not open."
-msgstr ""
+msgstr "해당 레코드가 열려 있지 않습니다."
 
 #: src/workspace/workspace.ts
 msgid "The chapter is not open."
-msgstr ""
+msgstr "장이 열려 있지 않습니다."
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
-msgstr ""
+msgstr "컴파일 작업자가 중지되었습니다."
 
 #: src/LegacyApp.tsx
 msgid "The demo could not be loaded"
-msgstr ""
+msgstr "데모를 불러오지 못했습니다."
 
 #: src/editor/Editor.tsx
 msgid "The editor language could not be loaded. You can keep writing."
-msgstr ""
+msgstr "편집기 언어를 불러오지 못했습니다. 계속 작성할 수 있습니다."
 
 #. placeholder {0}: errorMessage(error)
 #: src/ui/WorkspaceView.tsx
 msgid "The file could not be downloaded. {0}"
-msgstr ""
+msgstr "파일을 다운로드하지 못했습니다. {0}"
 
 #. placeholder {0}: missingImage[1]
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
-msgstr ""
+msgstr "Word용 “{0}” 이미지를 불러오지 못했습니다. 대신 이미지 설명이 포함됩니다."
 
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
-msgstr ""
+msgstr "언어를 불러오지 못했습니다. 현재 언어는 변경되지 않았습니다. 다시 시도하세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
-msgstr ""
+msgstr "입력을 멈추면 작성 중인 줄을 검사합니다."
 
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
-msgstr ""
+msgstr "내보내기에 필요한 항목을 불러오는 동안 원고가 계속 변경되었습니다. 편집을 멈춘 후 다시 시도하세요."
 
 #: src/compile/client.ts
 #: src/workspace/workspace.ts
 msgid "The manuscript was closed."
-msgstr ""
+msgstr "원고가 닫혔습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The person record that claims your account is not valid."
-msgstr ""
+msgstr "계정 사용자라고 주장하는 사람 레코드가 유효하지 않습니다."
 
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
-msgstr ""
+msgstr "미리보기를 불러오는 데 시간이 너무 오래 걸렸습니다. 미리보기를 다시 시도하세요."
 
 #: src/compile/client.ts
 msgid "The preview worker returned an unreadable response."
-msgstr ""
+msgstr "미리보기 작업자가 읽을 수 없는 응답을 반환했습니다."
 
 #: src/ui/Settings.tsx
 msgid "The style’s own (usually en-US)"
-msgstr ""
+msgstr "스타일 자체의 언어(보통 en-US)"
 
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr ""
+msgstr "제안된 텍스트가 더 이상 레코드에 없습니다. 직접 수정한 다음 제안을 해결하세요."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr ""
+msgstr "제안된 텍스트가 더 이상 없습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
-msgstr ""
+msgstr "테마"
 
 #: src/ui/names.ts
 msgid "Thesis or book"
-msgstr ""
+msgstr "학위 논문 또는 책"
 
 #: src/ui/ConnectGate.tsx
 msgid "This action could not be completed. Please try again."
-msgstr ""
+msgstr "작업을 완료하지 못했습니다. 다시 시도하세요."
 
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
-msgstr ""
+msgstr "이 설정은 이 브라우저의 모든 원고에 적용됩니다."
 
 #: src/i18n/collections.ts
 msgid "this collection"
-msgstr ""
+msgstr "이 컬렉션"
 
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
-msgstr ""
+msgstr "이 컬렉션은 Writer에서 파일을 받지 않습니다."
 
 #: src/ui/ConnectGate.tsx
 msgid "This collection is unavailable"
-msgstr ""
+msgstr "이 컬렉션을 사용할 수 없습니다."
 
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
-msgstr ""
+msgstr "이 컬렉션 뷰를 열지 못했습니다. 위쪽 표시줄에서 다른 컬렉션을 선택하거나 새로고침하여 다시 시도하세요."
 
 #: src/i18n/collections.ts
 msgid "This device is still listed under your account until you remove it there."
-msgstr ""
+msgstr "해당 기기에서 삭제할 때까지 계정에 계속 표시됩니다."
 
 #: src/ui/ConnectGate.tsx
 msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr ""
+msgstr "이 버전은 로컬 개발 빌드입니다. 호스팅된 mdbase connect 서비스는 HTTPS로 제공되는 앱만 허용하므로 Connect의 로컬 환경(mdbase-connect에서 <0>pnpm dev:environment:up</0> 실행)을 사용하거나 <1>데모 컬렉션</1>을 여세요."
 
 #: src/i18n/collections.ts
 msgid "This is taking longer than usual."
-msgstr ""
+msgstr "평소보다 시간이 오래 걸리고 있습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
-msgstr ""
+msgstr "이 목록"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
-msgstr ""
+msgstr "이 원고를 열지 못했습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr ""
+msgstr "이 본문 구간은 더 이상 텍스트에 없습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record changed elsewhere while you were editing it."
-msgstr ""
+msgstr "편집하는 동안 다른 곳에서 이 레코드가 변경되었습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr ""
+msgstr "다른 곳에서 이 레코드가 삭제되었습니다. 로컬 텍스트는 여기에서 계속 사용할 수 있습니다."
 
 #: src/ui/CompareDialog.tsx
 msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr ""
+msgstr "이 레코드가 삭제되었습니다. 보존하려면 로컬 초안을 다운로드하세요. 삭제된 레코드에는 복원할 수 없습니다."
 
 #: src/ui/Settings.tsx
 msgid "Title"
-msgstr ""
+msgstr "제목"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr ""
+msgstr "제목, 저자, 초록, 인용 스타일, 레이아웃 및 언어({MOD_LABEL}-,)"
 
 #. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
 #: src/ui/Home.tsx
 msgid "Title<0/>{0}"
-msgstr ""
+msgstr "제목<0/>{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
-msgstr ""
+msgstr "변경 내용 추적"
 
 #: src/i18n/collections.ts
 #: src/ui/ConnectGate.tsx
 msgid "Try again"
-msgstr ""
+msgstr "다시 시도"
 
 #: src/i18n/collections.ts
 msgid "Type {collection} to confirm"
-msgstr ""
+msgstr "확인하려면 {collection} 입력"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
-msgstr ""
+msgstr "입력하여 다른 항목을 찾으세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset from your latest text, with chapters and images checked before download"
-msgstr ""
+msgstr "최신 텍스트를 조판하고 장과 이미지를 확인한 후 다운로드"
 
 #. placeholder {0}: Math.round(timings.assembleMs + timings.compileMs)
 #: src/ui/WorkspaceView.tsx
 msgid "Typeset in {0} ms"
-msgstr ""
+msgstr "{0}밀리초 만에 조판"
 
 #: src/compile/client.ts
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
-msgstr ""
+msgstr "조판에 시간이 너무 오래 걸렸습니다. 편집기는 계속 사용할 수 있습니다. 미리보기를 다시 시도하세요."
 
 #: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
-msgstr ""
+msgstr "조판 중…"
 
 #: src/ui/Settings.tsx
 msgid "Typst templates in the collection"
-msgstr ""
+msgstr "컬렉션의 Typst 템플릿"
 
 #: src/editor/insight.ts
 msgid "Unknown"
-msgstr ""
+msgstr "알 수 없음"
 
 #: src/ui/records.ts
 msgid "Unsaved"
-msgstr ""
+msgstr "저장되지 않음"
 
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
-msgstr ""
+msgstr "저장되지 않은 초안"
 
 #: src/ui/Home.tsx
 msgid "Unsaved in this browser"
-msgstr ""
+msgstr "이 브라우저에 저장되지 않음"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr ""
+msgstr "서명되지 않음"
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
-msgstr ""
+msgstr "제목 없는 그림"
 
 #: src/ui/Home.tsx
 msgid "Updating…"
-msgstr ""
+msgstr "업데이트 중…"
 
 #: src/i18n/collections.ts
 msgid "Use {app}'s version"
-msgstr ""
+msgstr "{app} 버전 사용"
 
 #: src/ui/Home.tsx
 msgid "Use a note you already have…"
-msgstr ""
+msgstr "기존 메모 사용…"
 
 #: src/ui/Home.tsx
 msgid "Use as manuscript"
-msgstr ""
+msgstr "원고로 사용"
 
 #: src/ui/CompareDialog.tsx
 msgid "Use collection version"
-msgstr ""
+msgstr "컬렉션 버전 사용"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB."
-msgstr ""
+msgstr "레이아웃의 Word 스타일을 사용하지만 페이지 배치는 PDF와 다를 수 있습니다. 처음 사용할 때 약 16MB를 다운로드합니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "View"
-msgstr ""
+msgstr "보기"
 
 #: src/workspace/workspace.ts
 msgid "Wait for the manuscript to open before exporting."
-msgstr ""
+msgstr "내보내기 전에 원고가 열릴 때까지 기다리세요."
 
 #: src/connect/native-signin-ui.ts
 msgid "Waiting for approval in the mdbase tab…"
-msgstr ""
+msgstr "mdbase 탭에서 승인 대기 중…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Waiting for approval…"
-msgstr ""
+msgstr "승인 대기 중…"
 
 #: src/ui/CollectionPicker.tsx
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
-msgstr ""
+msgstr "mdbase connect 대기 중…"
 
 #: src/i18n/collections.ts
 msgid "What changes"
-msgstr ""
+msgstr "변경 사항"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
-msgstr ""
+msgstr "댓글 작성자"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Why (optional)"
-msgstr ""
+msgstr "이유(선택 사항)"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
-msgstr ""
+msgstr "추가 예정"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be removed"
-msgstr ""
+msgstr "삭제 예정"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
-msgstr ""
+msgstr "업데이트 예정"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdraw"
-msgstr ""
+msgstr "철회"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr ""
+msgstr "철회했습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
-msgstr ""
+msgstr "Word(DOCX)"
 
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
-msgstr ""
+msgstr "Word 내보내기에서 문제가 보고되었습니다."
 
 #: src/export/pandoc.ts
 msgid "Word export timed out. Check your connection and try again."
-msgstr ""
+msgstr "Word 내보내기 시간이 초과되었습니다. 연결을 확인하고 다시 시도하세요."
 
 #: src/ui/Home.tsx
 msgid "Word goal"
-msgstr ""
+msgstr "단어 목표"
 
 #: src/ui/Home.tsx
 msgid "Words, e.g. 8000"
-msgstr ""
+msgstr "단어 수(예: 8000)"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Write"
-msgstr ""
+msgstr "작성"
 
 #: src/ui/ConnectGate.tsx
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
-msgstr ""
+msgstr "컬렉션에서 작성"
 
 #: src/editor/Editor.tsx
 msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr ""
+msgstr "Markdown으로 작성하세요. [@citekey]로 인용하고 /를 입력해 각주, 그림 또는 표를 추가하세요."
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"
-msgstr ""
+msgstr "인용문을 수정하려면 여기에 작성하세요. 주석 내용은 더 이상 반영되지 않습니다."
 
 #: src/workspace/workspace.ts
 msgid "Writer cannot ask for access here."
-msgstr ""
+msgstr "Writer는 여기에서 접근을 요청할 수 없습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
-msgstr ""
+msgstr "Writer 명령"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
-msgstr ""
+msgstr "Writer에서 이 컬렉션을 열지 못했습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Writer was not allowed to see your account."
-msgstr ""
+msgstr "Writer에서 계정 정보를 볼 수 있는 권한이 없습니다."
 
 #: src/main.tsx
 msgid "You can close this window."
-msgstr ""
+msgstr "이 창을 닫아도 됩니다."
 
 #: src/i18n/collections.ts
 msgid "You've signed out of {app} on this device."
-msgstr ""
+msgstr "이 기기에서 {app}에서 로그아웃했습니다."
 
 #. placeholder {0}: signing.reason
 #: src/ui/CommentsPanel.tsx
 msgid "Your account could not be checked ({0})."
-msgstr ""
+msgstr "계정을 확인하지 못했습니다({0})."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your account is not linked to a person record in this collection."
-msgstr ""
+msgstr "계정이 이 컬렉션의 사람 레코드에 연결되어 있지 않습니다."
 
 #: src/connect/connect-popup.ts
 #: src/connect/native-signin-ui.ts
 msgid "Your browser blocked the sign-in tab."
-msgstr ""
+msgstr "브라우저에서 로그인 탭을 차단했습니다."
 
 #: src/i18n/collections.ts
 msgid "Your collections"
-msgstr ""
+msgstr "내 컬렉션"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
-msgstr ""
+msgstr "댓글에 서명되지 않았습니다."
 
 #: src/workspace/workspace.ts
 msgid "Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ."
-msgstr ""
+msgstr "사용자 지정 Typst 레이아웃은 PDF에만 적용됩니다. Word는 논문 스타일을 사용하므로 페이지 배치와 레이아웃이 달라집니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB."
-msgstr ""
+msgstr "사용자 지정 Typst 레이아웃은 PDF 전용입니다. Word는 논문 스타일을 사용하며 페이지 배치가 다릅니다. 처음 사용할 때 약 16MB를 다운로드합니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup."
-msgstr ""
+msgstr "저장 공간을 사용할 수 있으면 로컬 초안이 이 브라우저에 백업됩니다. 별도 백업이 필요하면 나가기 전에 사본을 다운로드하세요."
 
 #: src/ui/CompareDialog.tsx
 msgid "Your local text"
-msgstr ""
+msgstr "내 로컬 텍스트"
 
 #: src/LegacyApp.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
-msgstr ""
+msgstr "저장된 텍스트는 컬렉션에 있습니다. 저장 공간을 사용할 수 있으면 전송되지 않은 로컬 초안은 이 브라우저에 백업됩니다. 새로고침하기 전에 사본을 다운로드하세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom"
-msgstr ""
+msgstr "확대/축소"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom in"
-msgstr ""
+msgstr "확대"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom out"
-msgstr ""
+msgstr "축소"
