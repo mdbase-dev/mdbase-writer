@@ -1,6 +1,7 @@
 // Reader annotations — a quotation and/or a note on a source — and embedding
 // one as a quotation. `![[annotation]]` renders only the quotation, cited from
 // the annotation's source and locator; the note stays private.
+import type { DiagnosticCopy } from "./diagnostics.js";
 import { parseCiteItem } from "./cite-items.js";
 import { PathIndex, resolveLinkTarget, type Frontmatter, type WriterRecord } from "./records.js";
 
@@ -99,15 +100,15 @@ export interface EmbeddedQuotation {
   readonly markdown: string;
   /** The citekey it is cited with. */
   readonly key?: string;
-  readonly problem?: { readonly severity: "error" | "warning"; readonly message: string; readonly metadata?: "library" | "annotations" };
+  readonly problem?: { readonly severity: "error" | "warning"; readonly message: string; readonly copy?: DiagnosticCopy; readonly metadata?: "library" | "annotations" };
 }
 
 /** What an embedded annotation renders as: its quotation as a block quote, cited. */
 export function embeddedQuotation(record: WriterRecord, sourceKeys: ReadonlyMap<string, string>): EmbeddedQuotation {
   const annotation = sourceAnnotation(record.path, record.frontmatter, record.body);
-  if (!annotation?.quote) return { markdown: "", problem: { severity: "error", metadata: "annotations", message: `The annotation ${record.path} has no quotation to embed.` } };
+  if (!annotation?.quote) return { markdown: "", problem: { severity: "error", metadata: "annotations", message: `The annotation ${record.path} has no quotation to embed.`, copy: { code: "annotation-empty", values: [record.path] } } };
   const key = annotationKey(annotation, sourceKeys);
   const markdown = blockQuotation(key, annotation);
   if (key) return { markdown, key };
-  return { markdown, problem: { severity: "warning", metadata: "library", message: `No source in the library matches ${annotation.source}, so the quotation from ${record.path} is not cited.` } };
+  return { markdown, problem: { severity: "warning", metadata: "library", message: `No source in the library matches ${annotation.source}, so the quotation from ${record.path} is not cited.`, copy: { code: "annotation-uncited", values: [annotation.source, record.path] } } };
 }

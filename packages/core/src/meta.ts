@@ -1,4 +1,5 @@
 // Manuscript settings from the main record's frontmatter.
+import type { DiagnosticCopy } from "./diagnostics.js";
 import { resolveLinkTarget, type Frontmatter } from "./records.js";
 
 export const TEMPLATES = ["article", "thesis"] as const;
@@ -31,6 +32,7 @@ export interface ManuscriptMeta {
 export interface MetaProblem {
   readonly field: MetaField;
   readonly message: string;
+  readonly copy?: DiagnosticCopy;
 }
 
 export interface MetaContext {
@@ -72,7 +74,7 @@ export function manuscriptMeta(frontmatter: Frontmatter, context: MetaContext): 
   const collectionFile = (field: MetaField, value: string, kind: string): string | null => {
     const resolved = context.filePaths ? resolveLinkTarget(value, context.main ?? "", context.filePaths, "") : null;
     if (!resolved) {
-      problems.push({ field, message: `No file in the collection matches the ${kind} ${value}.` });
+      problems.push({ field, message: `No file in the collection matches the ${kind} ${value}.`, copy: { code: field === "csl" ? "style-file-missing" : "template-file-missing", values: [value] } });
       return null;
     }
     if (context.texts?.has(resolved)) return resolved;
@@ -84,7 +86,7 @@ export function manuscriptMeta(frontmatter: Frontmatter, context: MetaContext): 
   let style: string = DEFAULT_STYLE;
   if (context.styles.has(requestedStyle)) style = requestedStyle;
   else if (/\.csl$/i.test(requestedStyle)) style = collectionFile("csl", requestedStyle, "citation style") ?? DEFAULT_STYLE;
-  else problems.push({ field: "csl", message: `Unknown citation style "${requestedStyle}"; using ${DEFAULT_STYLE}.` });
+  else problems.push({ field: "csl", message: `Unknown citation style "${requestedStyle}"; using ${DEFAULT_STYLE}.`, copy: { code: "style-unknown", values: [requestedStyle, DEFAULT_STYLE] } });
 
   const requestedTemplate = str(frontmatter["template"]) ?? "article";
   let template: string = "article";
@@ -96,14 +98,14 @@ export function manuscriptMeta(frontmatter: Frontmatter, context: MetaContext): 
       template = file;
       customTemplate = true;
     }
-  } else problems.push({ field: "template", message: `Unknown template "${requestedTemplate}"; using article.` });
+  } else problems.push({ field: "template", message: `Unknown template "${requestedTemplate}"; using article.`, copy: { code: "template-unknown", values: [requestedTemplate] } });
 
   // Pandoc's order: the lang field, then the style's default-locale, then en-US.
   const explicitLang = str(frontmatter["lang"]);
   const styleXml = context.styles.get(style) ?? context.texts?.get(style) ?? "";
   const lang = explicitLang ?? /<style\b[^>]*\bdefault-locale="([^"]+)"/.exec(styleXml)?.[1] ?? DEFAULT_LOCALE;
   const locale = matchLocale(lang, context.locales);
-  if (explicitLang && !locale) problems.push({ field: "lang", message: `Citations have no terms for "${explicitLang}"; they use ${DEFAULT_LOCALE}.` });
+  if (explicitLang && !locale) problems.push({ field: "lang", message: `Citations have no terms for "${explicitLang}"; they use ${DEFAULT_LOCALE}.`, copy: { code: "citation-locale-missing", values: [explicitLang, DEFAULT_LOCALE] } });
 
   const title = str(frontmatter["title"]);
   const subtitle = str(frontmatter["subtitle"]);

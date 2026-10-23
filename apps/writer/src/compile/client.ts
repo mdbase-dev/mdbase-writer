@@ -30,7 +30,7 @@ export class CompileClient {
         this.compileTimer = undefined;
         for (const l of this.resultListeners) l(m);
       }
-      else if (m.type === "pdf") this.pdfWaiters.get(m.id)?.(m);
+      else if (m.type === "pdf") this.pdfWaiters.get(m.id)?.(m.reason === "document-errors" ? { error: t`The document has errors; fix them to export.` } : m);
       else if (m.type === "failure") this.fail(m.message);
     };
     this.worker.onerror = (event) => { event.preventDefault(); this.fail(event.message || t`The compile worker stopped.`); };

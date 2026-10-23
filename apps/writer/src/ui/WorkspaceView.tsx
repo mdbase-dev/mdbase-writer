@@ -21,6 +21,7 @@ import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorI
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import { formatNumber } from "../i18n/presentation.js";
+import { diagnosticMessage } from "../i18n/diagnostics.js";
 import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import {
@@ -161,7 +162,8 @@ function useSustained(flag: boolean, delay: number): boolean {
 }
 
 export function WorkspaceView({ workspace, since, onClose }: { workspace: ManuscriptWorkspace; /** When this manuscript was last opened here, so what others wrote since can be marked. */ since?: string | undefined; onClose(force?: boolean): void }) {
-  useLingui();
+  const { i18n } = useLingui();
+  const interfaceLocale = i18n.locale;
   const snap = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot);
   const { reportError } = useFeedback();
   const failedSaves = useRef(new Set<string>());
@@ -241,7 +243,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   useLayoutEffect(() => { citationNavRef.current = { order, snap, cursor, active }; }, [order, snap, cursor, active]);
   const activeView = snap.records.get(active);
   const dependencyDiagnostics = workspace.dependencyDiagnostics();
-  const allDiagnostics = useMemo(() => [...discoveredDiagnostics(snap.result?.diagnostics ?? NO_DIAGNOSTICS, snap), ...dependencyDiagnostics], [snap, dependencyDiagnostics]);
+  const allDiagnostics = useMemo(() => [...discoveredDiagnostics(snap.result?.diagnostics ?? NO_DIAGNOSTICS, snap), ...dependencyDiagnostics]
+    .map(d => ({ ...d, message: diagnosticMessage(d.message, d.copy) })), [snap, dependencyDiagnostics, interfaceLocale]);
   // A citation or label half typed is not a problem yet: problems on the line
   // being typed wait until typing pauses or the cursor leaves the line.
   const diagnostics = useMemo(() => {

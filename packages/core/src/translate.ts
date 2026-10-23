@@ -49,11 +49,14 @@ export interface RawBlock {
   readonly to: number;
 }
 
+import type { DiagnosticCopy } from "./diagnostics.js";
+
 export interface Diagnostic {
   readonly from: number;
   readonly to: number;
   readonly severity: "error" | "warning";
   readonly message: string;
+  readonly copy?: DiagnosticCopy;
 }
 
 export interface TranslatedRecord {
@@ -181,8 +184,8 @@ class BodyTranslator {
   slice(from: number, to: number): string {
     return this.text.slice(from, to);
   }
-  diag(from: number, to: number, message: string, severity: Diagnostic["severity"] = "warning"): void {
-    this.shared.diagnostics.push({ from: this.src(from), to: this.src(to), severity, message });
+  diag(from: number, to: number, message: string, severity: Diagnostic["severity"] = "warning", copy?: DiagnosticCopy): void {
+    this.shared.diagnostics.push({ from: this.src(from), to: this.src(to), severity, message, ...(copy ? { copy } : {}) });
   }
 
   document(): void {
@@ -196,7 +199,7 @@ class BodyTranslator {
     this.shared.footnoteText = this.text;
     this.blocks(top);
     for (const [id, node] of this.shared.footnotes) {
-      if (!this.shared.usedFootnotes.has(id)) this.diag(node.from, node.to, `Footnote [^${id}] is never referenced.`);
+      if (!this.shared.usedFootnotes.has(id)) this.diag(node.from, node.to, `Footnote [^${id}] is never referenced.`, "warning", { code: "footnote-unused", values: [id] });
     }
   }
 
@@ -250,10 +253,10 @@ class BodyTranslator {
         return;
       case "HTMLBlock":
       case "ProcessingInstructionBlock":
-        this.diag(node.from, node.to, "Raw HTML is not rendered in PDF output.");
+        this.diag(node.from, node.to, "Raw HTML is not rendered in PDF output.", "warning", { code: "html-unsupported" });
         return;
       default:
-        this.diag(node.from, node.to, `Unsupported Markdown block: ${name}.`);
+        this.diag(node.from, node.to, `Unsupported Markdown block: ${name}.`, "warning", { code: "block-unsupported", values: [name] });
     }
   }
 
@@ -332,7 +335,7 @@ class BodyTranslator {
   }
 
   math(latex: string, at: number): string {
-    for (const p of lintMath(latex)) this.diag(at + p.offset, at + p.offset + 1, `Math: ${p.message}`);
+    for (const p of lintMath(latex)) this.diag(at + p.offset, at + p.offset + 1, `Math: ${p.message}`, "warning", p.copy);
     return typstString(normalizeBars(latex));
   }
 
@@ -340,7 +343,7 @@ class BodyTranslator {
     const raw = this.slice(node.from, node.to);
     const m = /^\$\$([\s\S]*?)\$\$\s*(?:\{([^}]*)\})?\s*$/.exec(raw);
     if (!m) {
-      this.diag(node.from, node.to, "Unclosed $$ math block.", "error");
+      this.diag(node.from, node.to, "Unclosed $$ math block.", "error", { code: "math-unclosed" });
       return;
     }
     const inner = m[1] ?? "";
@@ -630,10 +633,10 @@ class BodyTranslator {
     const id = this.slice(node.from + 2, node.to - 1);
     const def = this.shared.footnotes.get(id);
     if (!def) {
-      this.diag(node.from, node.to, `Footnote [^${id}] has no definition.`, "error");
+      this.diag(node.from, node.to, `Footnote [^${id}] has no definition.`, "error", { code: "footnote-missing", values: [id] });
       return;
     }
-    if (this.shared.usedFootnotes.has(id)) this.diag(node.from, node.to, `Footnote [^${id}] is referenced more than once.`);
+    if (this.shared.usedFootnotes.has(id)) this.diag(node.from, node.to, `Footnote [^${id}] is referenced more than once.`, "warning", { code: "footnote-duplicate", values: [id] });
     this.shared.usedFootnotes.add(id);
     // De-indent the definition and translate it in place. Definitions always
     // live at the top level of the record body, whose text is footnoteText.

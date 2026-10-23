@@ -295,6 +295,10 @@ msgstr "{sources, plural, one {# source to cite from mdbase Reader} other {# sou
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
 msgstr "{uses, plural, one {Cited once} other {Cited # times}}"
 
+#: src/i18n/diagnostics.ts
+msgid "{value} is not loaded; it was left out."
+msgstr "{value} is not loaded; it was left out."
+
 #: src/ui/OutlinePanel.tsx
 msgid "<0/> Add chapter"
 msgstr "<0/> Add chapter"
@@ -330,6 +334,10 @@ msgstr "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by aut
 #: src/workspace/workspace.ts
 msgid "A chapter needs a title."
 msgstr "A chapter needs a title."
+
+#: src/i18n/diagnostics.ts
+msgid "A citation cannot mix cross-references and citekeys."
+msgstr "A citation cannot mix cross-references and citekeys."
 
 #: src/ui/CommentsPanel.tsx
 msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
@@ -604,6 +612,10 @@ msgstr "Citation style"
 #: src/ui/Home.tsx
 msgid "Citation style<0/>"
 msgstr "Citation style<0/>"
+
+#: src/i18n/diagnostics.ts
+msgid "Citations have no terms for \"{value}\"; they use {other}."
+msgstr "Citations have no terms for \"{value}\"; they use {other}."
 
 #: src/ui/Settings.tsx
 msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
@@ -946,6 +958,10 @@ msgstr "Embed a record"
 msgid "Embedded record could not be loaded: {problem}"
 msgstr "Embedded record could not be loaded: {problem}"
 
+#: src/i18n/diagnostics.ts
+msgid "Embedding {value} here would include it inside itself."
+msgstr "Embedding {value} here would include it inside itself."
+
 #: src/ui/ManuscriptSearch.tsx
 msgid "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
 msgstr "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
@@ -1097,6 +1113,18 @@ msgstr "Fix it in mdbase Editor"
 msgid "Footnote"
 msgstr "Footnote"
 
+#: src/i18n/diagnostics.ts
+msgid "Footnote [^{value}] has no definition."
+msgstr "Footnote [^{value}] has no definition."
+
+#: src/i18n/diagnostics.ts
+msgid "Footnote [^{value}] is never referenced."
+msgstr "Footnote [^{value}] is never referenced."
+
+#: src/i18n/diagnostics.ts
+msgid "Footnote [^{value}] is referenced more than once."
+msgstr "Footnote [^{value}] is referenced more than once."
+
 #: src/ui/Settings.tsx
 msgid "for citation terms and hyphenation"
 msgstr "for citation terms and hyphenation"
@@ -1179,6 +1207,10 @@ msgstr "Hosted by mdbase"
 msgid "ID {id}"
 msgstr "ID {id}"
 
+#: src/i18n/diagnostics.ts
+msgid "Image “{value}” is missing. Add it to the collection or correct its path."
+msgstr "Image “{value}” is missing. Add it to the collection or correct its path."
+
 #: src/workspace/workspace.ts
 msgid "Image could not be loaded: {problem}"
 msgstr "Image could not be loaded: {problem}"
@@ -1190,6 +1222,10 @@ msgstr "image picture photo upload"
 #: src/ui/WorkspaceView.tsx
 msgid "Image upload is coming soon. Existing image links still work."
 msgstr "Image upload is coming soon. Existing image links still work."
+
+#: src/i18n/diagnostics.ts
+msgid "Images must be files in the collection ({value})."
+msgstr "Images must be files in the collection ({value})."
 
 #. placeholder {0}: d.manuscript.title
 #: src/ui/Home.tsx
@@ -1442,6 +1478,42 @@ msgstr "Matching sources"
 msgid "math formula display"
 msgstr "math formula display"
 
+#: src/i18n/diagnostics.ts
+msgid "Math: {begin} is never closed."
+msgstr "Math: {begin} is never closed."
+
+#: src/i18n/diagnostics.ts
+msgid "Math: {end} closes {begin}."
+msgstr "Math: {end} closes {begin}."
+
+#: src/i18n/diagnostics.ts
+msgid "Math: {end} has no matching \\begin."
+msgstr "Math: {end} has no matching \\begin."
+
+#: src/i18n/diagnostics.ts
+msgid "Math: {value} \\left but {other} \\right."
+msgstr "Math: {value} \\left but {other} \\right."
+
+#: src/i18n/diagnostics.ts
+#~ msgid "Math: \\begin{{value}} is never closed."
+#~ msgstr "Math: \\begin{{value}} is never closed."
+
+#: src/i18n/diagnostics.ts
+#~ msgid "Math: \\end{{value}} closes \\begin{{other}}."
+#~ msgstr "Math: \\end{{value}} closes \\begin{{other}}."
+
+#: src/i18n/diagnostics.ts
+#~ msgid "Math: \\end{{value}} has no matching \\begin."
+#~ msgstr "Math: \\end{{value}} has no matching \\begin."
+
+#: src/i18n/diagnostics.ts
+msgid "Math: Unclosed brace."
+msgstr "Math: Unclosed brace."
+
+#: src/i18n/diagnostics.ts
+msgid "Math: Unmatched closing brace."
+msgstr "Math: Unmatched closing brace."
+
 #: src/ui/ConnectGate.tsx
 msgid "mdbase connect is unavailable"
 msgstr "mdbase connect is unavailable"
@@ -1573,6 +1645,14 @@ msgstr "No collections match “{query}”."
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
 msgstr "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
 
+#: src/i18n/diagnostics.ts
+msgid "No file in the collection matches the citation style {value}."
+msgstr "No file in the collection matches the citation style {value}."
+
+#: src/i18n/diagnostics.ts
+msgid "No file in the collection matches the template {value}."
+msgstr "No file in the collection matches the template {value}."
+
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
 msgstr "No manuscript matches “{filter}”."
@@ -1597,6 +1677,18 @@ msgstr "No problems"
 #: src/editor/chapter-cards.ts
 msgid "No record matches ![[{0}]]"
 msgstr "No record matches ![[{0}]]"
+
+#: src/i18n/diagnostics.ts
+msgid "No record matches the embed ![[{value}]]."
+msgstr "No record matches the embed ![[{value}]]."
+
+#: src/i18n/diagnostics.ts
+msgid "No source in the library has the citekey {value}."
+msgstr "No source in the library has the citekey {value}."
+
+#: src/i18n/diagnostics.ts
+msgid "No source in the library matches {value}, so the quotation from {other} is not cited."
+msgstr "No source in the library matches {value}, so the quotation from {other} is not cited."
 
 #: src/ui/SourcesPanel.tsx
 msgid "No source matches “{query}”; searching highlights…"
@@ -1668,6 +1760,10 @@ msgstr "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor.
 #: src/i18n/collections.ts
 msgid "Nothing in your collection will change."
 msgstr "Nothing in your collection will change."
+
+#: src/i18n/diagnostics.ts
+msgid "Nothing is labelled {value}."
+msgstr "Nothing is labelled {value}."
 
 #: src/ui/CompareDialog.tsx
 msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
@@ -1854,6 +1950,10 @@ msgid "Pandoc bundle (zip)"
 msgstr "Pandoc bundle (zip)"
 
 #: src/export/pandoc.ts
+msgid "Pandoc produced no document."
+msgstr "Pandoc produced no document."
+
+#: src/export/pandoc.ts
 msgid "Pandoc returned an unreadable response."
 msgstr "Pandoc returned an unreadable response."
 
@@ -1921,6 +2021,10 @@ msgstr "Problems"
 #: src/ui/Home.tsx
 msgid "Progress to the word goal"
 msgstr "Progress to the word goal"
+
+#: src/i18n/diagnostics.ts
+msgid "Raw HTML is not rendered in PDF output."
+msgstr "Raw HTML is not rendered in PDF output."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Read as the manuscript"
@@ -2532,6 +2636,10 @@ msgstr "Table"
 msgid "That record is not open."
 msgstr "That record is not open."
 
+#: src/i18n/diagnostics.ts
+msgid "The annotation {value} has no quotation to embed."
+msgstr "The annotation {value} has no quotation to embed."
+
 #: src/workspace/workspace.ts
 msgid "The chapter is not open."
 msgstr "The chapter is not open."
@@ -2544,9 +2652,17 @@ msgstr "The compile worker stopped."
 msgid "The demo could not be loaded"
 msgstr "The demo could not be loaded"
 
+#: src/compile/client.ts
+msgid "The document has errors; fix them to export."
+msgstr "The document has errors; fix them to export."
+
 #: src/editor/Editor.tsx
 msgid "The editor language could not be loaded. You can keep writing."
 msgstr "The editor language could not be loaded. You can keep writing."
+
+#: src/i18n/diagnostics.ts
+msgid "The embed ![[{value}]] in {other} was left out."
+msgstr "The embed ![[{value}]] in {other} was left out."
 
 #. placeholder {0}: errorMessage(error)
 #: src/ui/WorkspaceView.tsx
@@ -2557,6 +2673,10 @@ msgstr "The file could not be downloaded. {0}"
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
 msgstr "The image “{0}” could not be loaded for Word. Its description will be included instead."
+
+#: src/i18n/diagnostics.ts
+msgid "The label {value} is used more than once."
+msgstr "The label {value} is used more than once."
 
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
@@ -2723,9 +2843,21 @@ msgstr "Typesetting…"
 msgid "Typst templates in the collection"
 msgstr "Typst templates in the collection"
 
+#: src/i18n/diagnostics.ts
+msgid "Unclosed $$ math block."
+msgstr "Unclosed $$ math block."
+
 #: src/editor/insight.ts
 msgid "Unknown"
 msgstr "Unknown"
+
+#: src/i18n/diagnostics.ts
+msgid "Unknown citation style \"{value}\"; using {other}."
+msgstr "Unknown citation style \"{value}\"; using {other}."
+
+#: src/i18n/diagnostics.ts
+msgid "Unknown template \"{value}\"; using article."
+msgstr "Unknown template \"{value}\"; using article."
 
 #: src/ui/records.ts
 msgid "Unsaved"
@@ -2743,6 +2875,10 @@ msgstr "Unsaved in this browser"
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
 msgstr "Unsigned"
+
+#: src/i18n/diagnostics.ts
+msgid "Unsupported Markdown block: {value}."
+msgstr "Unsupported Markdown block: {value}."
 
 #: src/editor/live-preview.ts
 msgid "Untitled figure"

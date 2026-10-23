@@ -3,6 +3,7 @@
 // sources become a CSL-JSON bibliography. With Quarto cross-references kept
 // it builds with `quarto render manuscript.md --to docx`; with them resolved
 // (the in-browser Word export) plain `pandoc --citeproc` builds it.
+import type { DiagnosticCopy } from "./diagnostics.js";
 import type { SyntaxNode } from "@lezer/common";
 import { stringify as yamlStringify } from "yaml";
 
@@ -14,6 +15,8 @@ import { CITEKEY, markdownParser } from "./markdown.js";
 import { IMAGE_EXTENSION, missingImageMessage, resolveLinkTarget, type WriterRecord } from "./records.js";
 
 export interface MaterializeInput {
+  /** Presentation-only warnings; never applied to materialized manuscript text. */
+  readonly formatProblem?: (message: string, copy?: DiagnosticCopy) => string;
   readonly main: string;
   readonly records: ReadonlyMap<string, WriterRecord>;
   readonly recordPaths: ReadonlySet<string>;
@@ -55,6 +58,7 @@ const CITED_KEY = new RegExp(`(?:^|[^\\p{L}\\p{N}_])-?@(${CITEKEY.source})`, "gu
 
 export function materialize(input: MaterializeInput): MaterializedManuscript {
   const problems: string[] = [];
+  const problem = input.formatProblem ?? ((message: string) => message);
   const media = new Map<string, string>();
   const cited = new Set<string>();
   const mediaPath = (collectionPath: string) => {
@@ -66,7 +70,7 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
   const expand = (path: string, stack: readonly string[]): string => {
     const record = input.records.get(path);
     if (!record) {
-      problems.push(`${path} is not loaded; it was left out.`);
+      problems.push(problem(`${path} is not loaded; it was left out.`, { code: "record-unloaded", values: [path] }));
       return "";
     }
     const body = record.body;
@@ -80,17 +84,17 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
           if (IMAGE_EXTENSION.test(target)) {
             const file = resolveLinkTarget(target, path, input.filePaths, "");
             edits.push({ from: node.from, to: node.to, text: file ? `![](${mediaPath(file)})${m?.[3] ?? ""}` : raw });
-            if (!file) problems.push(`${path}: ${missingImageMessage(target)}`);
+            if (!file) problems.push(`${path}: ${problem(missingImageMessage(target), { code: "image-missing", values: [target] })}`);
           } else {
             const resolved = resolveLinkTarget(target, path, input.recordPaths);
             if (!resolved || resolved === path || stack.includes(resolved)) {
-              problems.push(`The embed ![[${target}]] in ${path} was left out.`);
+              problems.push(problem(`The embed ![[${target}]] in ${path} was left out.`, { code: "embed-omitted", values: [target, path] }));
               edits.push({ from: node.from, to: node.to, text: "" });
             } else {
               const embedded = input.records.get(resolved);
               if (embedded && isAnnotation(embedded, input.annotationPaths)) {
                 const quotation = embeddedQuotation(embedded, input.sourceKeys ?? new Map());
-                if (quotation.problem) problems.push(`${path}: ${quotation.problem.message}`);
+                if (quotation.problem) problems.push(`${path}: ${problem(quotation.problem.message, quotation.problem.copy)}`);
                 if (quotation.key && input.library.has(quotation.key)) cited.add(quotation.key);
                 edits.push({ from: node.from, to: node.to, text: quotation.markdown });
               } else edits.push({ from: node.from, to: node.to, text: expand(resolved, [...stack, path]).trim() });
@@ -105,7 +109,7 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
           if (/^[a-z]+:\/\//i.test(target)) return;
           const file = resolveLinkTarget(target, path, input.filePaths, "");
           if (file) edits.push({ from: url.from, to: url.to, text: mediaPath(file) });
-          else problems.push(`${path}: ${missingImageMessage(target)}`);
+          else problems.push(`${path}: ${problem(missingImageMessage(target), { code: "image-missing", values: [target] })}`);
           return;
         }
         case "Wikilink": {

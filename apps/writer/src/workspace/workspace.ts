@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { diagnosticMessage } from "../i18n/diagnostics.js";
 // One open manuscript: its record sessions, the compile worker, and a single
 // snapshot the UI renders from.
 //
@@ -1001,7 +1002,7 @@ export class ManuscriptWorkspace {
       if (!records.length && !assets.length) {
         const problems = [...new Set([
           ...(snap.annotationsLoad.phase === "failed" ? [t`Annotation discovery unavailable: ${snap.annotationsLoad.problem ?? ""}. Quotation metadata may be incomplete.`] : []),
-          ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnostic.message}`),
+          ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnosticMessage(diagnostic.message, diagnostic.copy)}`),
           ...assembly.unloaded.map((path) => `${path}: ${snap.recordProblems.get(path) ?? t`Not loaded; it will be left out.`}`),
           ...assembly.assets.flatMap((path) => snap.assetProblems.has(path) ? [`${path}: ${snap.assetProblems.get(path)}`] : []),
           ...assembly.order.flatMap((path) => snap.recoveredDrafts.has(path) ? [t`${path}: A recovered draft has not been reviewed; the collection version will be exported.`] : []),
@@ -1029,7 +1030,7 @@ export class ManuscriptWorkspace {
 
   private async materialize(crossReferences: "quarto" | "resolved", signal?: AbortSignal) {
     const prepared = await this.preflight(signal);
-    const out = materialize({ ...prepared.input, crossReferences });
+    const out = materialize({ ...prepared.input, crossReferences, formatProblem: diagnosticMessage });
     const problems = [...new Set([...prepared.problems, ...out.problems])];
     const media: [string, Uint8Array][] = [];
     for (const [collectionPath, bundled] of out.media) {

@@ -7,7 +7,6 @@
 import { createPandocInstance, type PandocInstance } from "pandoc-wasm/core";
 
 import type { FromPandoc, ToPandoc } from "./pandoc-protocol.js";
-import { pandocWarnings } from "./warnings.js";
 import { fetchChecked } from "../async.js";
 
 declare const self: DedicatedWorkerGlobalScope;
@@ -51,12 +50,13 @@ self.onmessage = async (event: MessageEvent<ToPandoc>) => {
     );
     const docx = result.files["manuscript.docx"];
     if (!docx) {
-      post({ id, error: result.stderr.trim() || "Pandoc produced no document." });
+      post({ id, error: result.stderr.trim() || "Pandoc produced no document.", ...(result.stderr.trim() ? {} : { reason: "no-document" as const }) });
       return;
     }
     const bytes = new Uint8Array(await docx.arrayBuffer());
-    const warnings = pandocWarnings(result.warnings);
-    post({ id, bytes, warnings }, [bytes.buffer]);
+    // The main thread formats UI warnings with its active locale. No translator
+    // or interface locale is loaded into a manuscript-processing worker.
+    post({ id, bytes, warnings: result.warnings }, [bytes.buffer]);
   } catch (e) {
     post({ id, error: e instanceof Error ? e.message : String(e) });
   }

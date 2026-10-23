@@ -1,5 +1,5 @@
 // Messages between the app and the compile worker.
-import type { CslItem, ManuscriptMeta, MetaField, WriterRecord } from "@mdbase-writer/core";
+import type { DiagnosticCopy, CslItem, ManuscriptMeta, MetaField, WriterRecord } from "@mdbase-writer/core";
 
 export interface WriterDiagnostic {
   readonly record: string;
@@ -7,6 +7,7 @@ export interface WriterDiagnostic {
   readonly to: number;
   readonly severity: "error" | "warning";
   readonly message: string;
+  readonly copy?: DiagnosticCopy;
   /** Where the problem was found: the writer's own checks, or Typst. */
   readonly origin: "writer" | "typst";
   /** Set when the problem is in a manuscript setting (frontmatter) rather than the body. */
@@ -77,5 +78,5 @@ export interface CompileResult {
 export type FromWorker =
   | { readonly type: "ready"; readonly initMs: number }
   | CompileResult
-  | { readonly type: "pdf"; readonly id: number; readonly bytes?: Uint8Array; readonly error?: string }
+  | { readonly type: "pdf"; readonly id: number; readonly bytes?: Uint8Array; readonly error?: string; readonly reason?: "document-errors" }
   | { readonly type: "failure"; readonly message: string };

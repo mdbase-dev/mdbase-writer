@@ -1,3 +1,4 @@
+export type { DiagnosticCopy } from "./diagnostics.js";
 export * from "./annotations.js";
 export * from "./assemble.js";
 export * from "./cite-items.js";

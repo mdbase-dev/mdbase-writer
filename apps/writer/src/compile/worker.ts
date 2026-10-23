@@ -292,7 +292,7 @@ async function exportPdf(c: TypstCompiler, id: number) {
       return (await world.pdf({ diagnostics: "full" })).result;
     });
     if (out) post({ type: "pdf", id, bytes: out }, [out.buffer]);
-    else post({ type: "pdf", id, error: "The document has errors; fix them to export." });
+    else post({ type: "pdf", id, error: "The document has errors; fix them to export.", reason: "document-errors" });
   } catch (e) {
     post({ type: "pdf", id, error: e instanceof Error ? e.message : String(e) });
   }

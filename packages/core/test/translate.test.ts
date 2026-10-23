@@ -26,7 +26,7 @@ describe("math", () => {
   });
 
   it("finds structural problems mitex would render silently", () => {
-    expect(lintMath("\\frac{a}{")).toEqual([{ offset: 8, message: "Unclosed brace." }]);
+    expect(lintMath("\\frac{a}{")).toEqual([{ offset: 8, message: "Unclosed brace.", copy: { code: "math-brace-unclosed" } }]);
     expect(lintMath("a}")[0]?.message).toBe("Unmatched closing brace.");
     expect(lintMath("\\begin{pmatrix} a \\end{bmatrix}")[0]?.message).toContain("closes \\begin{pmatrix}");
     expect(lintMath("\\left( x")[0]?.message).toBe("1 \\left but 0 \\right.");

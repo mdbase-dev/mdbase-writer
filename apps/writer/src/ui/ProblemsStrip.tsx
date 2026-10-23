@@ -58,8 +58,8 @@ export const ProblemsStrip = memo(function ProblemsStrip({ diagnostics, order, b
   onPick(d: WriterDiagnostic): void;
   onClose(): void;
 }) {
-  useLingui();
-  const rows = useMemo(() => problemRows(diagnostics, order, body, title), [diagnostics, order, body, title]);
+  const { i18n } = useLingui();
+  const rows = useMemo(() => problemRows(diagnostics, order, body, title), [diagnostics, order, body, title, i18n.locale]);
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   return (
     <section className="problems-strip" aria-label={t`Problems`}>

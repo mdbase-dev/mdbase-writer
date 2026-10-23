@@ -137,7 +137,7 @@ export class ManuscriptAssembler {
       filePaths: input.filePaths,
       ...(input.texts ? { texts: input.texts } : {}),
     });
-    for (const p of problems) diagnostics.push({ record: input.main, from: 0, to: 0, severity: "warning", message: p.message, field: p.field });
+    for (const p of problems) diagnostics.push({ record: input.main, from: 0, to: 0, severity: "warning", message: p.message, ...(p.copy ? { copy: p.copy } : {}), field: p.field });
 
     // Include order, depth-first as Typst evaluates it. An embedded
     // annotation is included as its quotation, which maps to the embed in the
@@ -170,11 +170,11 @@ export class ManuscriptAssembler {
       const targets = tr.includes.map((inc) => {
         const resolved = resolveLinkTarget(inc.target, path, input.recordPaths);
         if (!resolved) {
-          diagnostics.push({ record: path, from: inc.from, to: inc.to, severity: "error", metadata: "index", message: `No record matches the embed ![[${inc.target}]].` });
+          diagnostics.push({ record: path, from: inc.from, to: inc.to, severity: "error", metadata: "index", message: `No record matches the embed ![[${inc.target}]].`, copy: { code: "embed-missing", values: [inc.target] } });
           return null;
         }
         if (resolved === path || stack.includes(resolved)) {
-          diagnostics.push({ record: path, from: inc.from, to: inc.to, severity: "error", message: `Embedding ${resolved} here would include it inside itself.` });
+          diagnostics.push({ record: path, from: inc.from, to: inc.to, severity: "error", message: `Embedding ${resolved} here would include it inside itself.`, copy: { code: "embed-cycle", values: [resolved] } });
           return null;
         }
         return resolved;
@@ -191,7 +191,7 @@ export class ManuscriptAssembler {
     const labels = new Set<string>();
     for (const [path, tr] of translated) {
       for (const label of tr.labels) {
-        if (labels.has(label)) diagnostics.push({ record: recordOf(path), from: 0, to: 0, severity: "warning", message: `The label ${label} is used more than once.` });
+        if (labels.has(label)) diagnostics.push({ record: recordOf(path), from: 0, to: 0, severity: "warning", message: `The label ${label} is used more than once.`, copy: { code: "label-duplicate", values: [label] } });
         labels.add(label);
       }
     }
@@ -237,6 +237,7 @@ export class ManuscriptAssembler {
             to: cl.to,
             severity: "error",
             message: looksLikeXref ? `Nothing is labelled ${m.key}.` : `No source in the library has the citekey ${m.key}.`,
+            copy: { code: looksLikeXref ? "label-missing" : "citekey-missing", values: [m.key] },
             unknown: { kind: looksLikeXref ? "label" : "citekey", key: m.key },
             ...(looksLikeXref ? {} : { metadata: "library" as const }),
           });
@@ -244,7 +245,7 @@ export class ManuscriptAssembler {
         const items = cl.items.filter((i) => cp.has(i.key));
         if (!items.length || refs.length) {
           if (refs.length && items.length) {
-            diagnostics.push({ record: recordOf(path), from: cl.from, to: cl.to, severity: "error", message: "A citation cannot mix cross-references and citekeys." });
+            diagnostics.push({ record: recordOf(path), from: cl.from, to: cl.to, severity: "error", message: "A citation cannot mix cross-references and citekeys.", copy: { code: "citation-mixed" } });
           }
           plan[ev.index] = { kind: "text", text: cl.items.map((i) => `#missing(${typstString(i.key)});`).join(", ") };
           continue;
@@ -311,6 +312,7 @@ export class ManuscriptAssembler {
           severity: "error",
           ...(remote ? {} : { metadata: "index" as const }),
           message: remote ? `Images must be files in the collection (${ref.target}).` : missingImageMessage(ref.target),
+          copy: { code: remote ? "image-remote" : "image-missing", values: [ref.target] },
         });
         return `missing-image(${typstString(ref.target)})`;
       }
