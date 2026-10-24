@@ -208,7 +208,7 @@ from Writer's own deployment. The browser language is the default; an explicit c
 remembered in this browser. This never changes manuscript text, frontmatter, citation
 language or exported prose.
 
-All eight target-language catalogues are merged and all nine locale controls are enabled
+All nine target-language catalogues (including Italian) are merged and all ten locale controls are enabled
 on this branch. Strict completeness and app/library composition checks run in normal checks
 and builds. See [translation status and authoring](docs/translations.md).
 The kit and shared UI are temporarily vendored for coordinated development; replace both

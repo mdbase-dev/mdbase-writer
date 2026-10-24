@@ -39,7 +39,7 @@ it("advertises paused editing and becomes editable after recovery is reviewed", 
   expect(editor().state.doc.toString()).toBe("Collection text");
 });
 
-it.each(["en", "ja", "de"] as const)("reuses %s phrases synchronously across keyed chapter remounts before scroll measurement", async (locale) => {
+it.each(["en", "ja", "de", "it"] as const)("reuses %s phrases synchronously across keyed chapter remounts before scroll measurement", async (locale) => {
   await runtime.selectLocale(locale);
   const phrases = await loadCodeMirrorPhrases(locale);
   const props: EditorProps = {
