@@ -120,7 +120,7 @@ msgstr "{0}을(를) 저장하지 못했습니다: {1}"
 msgid "{0} theme"
 msgstr "{0} 테마"
 
-#. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
+#. placeholder {0}: draftContext(d)
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
@@ -388,9 +388,10 @@ msgstr "주석 검색을 사용할 수 없습니다: {0}. 인용문 메타데이
 msgid "Annotation index"
 msgstr "주석 색인"
 
+#. placeholder {0}: literal(problem)
 #: src/ui/SourcesPanel.tsx
-msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr "주석을 사용할 수 없습니다: {problem} <0>주석 다시 시도</0>"
+msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
+msgstr "주석을 사용할 수 없습니다: {0} <0>주석 다시 시도</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
@@ -668,10 +669,11 @@ msgstr "댓글"
 msgid "Comments are not set up in this collection."
 msgstr "이 컬렉션에는 댓글이 설정되어 있지 않습니다."
 
-#. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
+#. placeholder {0}: literal(problem)
+#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {problem} {0}"
-msgstr "댓글을 사용할 수 없습니다: {problem} {0}"
+msgid "Comments unavailable: {0} {1}"
+msgstr "댓글을 사용할 수 없습니다: {0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -1372,7 +1374,7 @@ msgstr "mdbase connect를 사용할 수 없습니다."
 msgid "mdbase writer can't use this collection"
 msgstr "mdbase writer에서 이 컬렉션을 사용할 수 없습니다."
 
-#. placeholder {0}: snapshot.info.displayName
+#. placeholder {0}: literal(snapshot.info.displayName)
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
 msgstr "mdbase writer에서 <0>{0}</0>의 두 레코드 계약이 필요합니다. 원고와 인용용 Reader 출처입니다. 설정 시 누락된 항목만 추가하며 기존 레코드는 변경하지 않습니다."
@@ -2299,13 +2301,14 @@ msgstr "출처를 불러오지 못했습니다: {0}"
 msgid "Sources not set up"
 msgstr "출처가 설정되지 않음"
 
+#. placeholder {0}: literal(libraryProblem)
+#: src/ui/SourcesPanel.tsx
+msgid "Sources unavailable: {0} <0>Retry sources</0>"
+msgstr "출처를 사용할 수 없습니다: {0} <0>출처 다시 시도</0>"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
 msgstr "출처를 사용할 수 없습니다: {libraryProblem}"
-
-#: src/ui/SourcesPanel.tsx
-msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr "출처를 사용할 수 없습니다: {libraryProblem} <0>출처 다시 시도</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."

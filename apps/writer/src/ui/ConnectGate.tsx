@@ -1,4 +1,5 @@
 import { Trans } from "@lingui/react/macro";
+import { literal } from "../i18n/literal.js";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 // Everything before a collection is ready: starting, choosing and
@@ -125,7 +126,7 @@ function LegacyConnectGate({ session, snapshot }: { session: WriterSession; snap
       return (
         <Centered title={t`Set up this collection for writing`}>
           <p><Trans>
-            mdbase writer needs two record contracts in <strong>{snapshot.info.displayName}</strong>: manuscripts, and Reader sources for
+            mdbase writer needs two record contracts in <strong>{literal(snapshot.info.displayName)}</strong>: manuscripts, and Reader sources for
             citations. Setting up adds only what is missing; existing records are not changed.
           </Trans></p>
           <ul className="setup-list">

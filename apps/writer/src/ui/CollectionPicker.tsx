@@ -145,7 +145,7 @@ function CollectionMenu({ id, trigger, current, others, busy, problem, onChoose,
             </button>
           );
         })}
-        {!shown.length && <p className="collection-menu-note muted"><Trans>No collection matches “{query.trim()}”.</Trans></p>}
+        {!shown.length && <p className="collection-menu-note muted">{t`No collection matches “${query.trim()}”.`}</p>}
       </div>
       {problem && <p className="collection-menu-note problem" role="alert">{problem}</p>}
       <div className="menu-group">

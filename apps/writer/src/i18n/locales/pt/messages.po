@@ -120,7 +120,7 @@ msgstr "{0} não pôde ser armazenado: {1}"
 msgid "{0} theme"
 msgstr "Tema {0}"
 
-#. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
+#. placeholder {0}: draftContext(d)
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
@@ -388,9 +388,10 @@ msgstr "Não foi possível descobrir anotações: {0}. Os metadados da citação
 msgid "Annotation index"
 msgstr "Índice de anotações"
 
+#. placeholder {0}: literal(problem)
 #: src/ui/SourcesPanel.tsx
-msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr "Anotações indisponíveis: {problem} <0>Tentar anotações novamente</0>"
+msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
+msgstr "Anotações indisponíveis: {0} <0>Tentar anotações novamente</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
@@ -668,10 +669,11 @@ msgstr "Comentários"
 msgid "Comments are not set up in this collection."
 msgstr "Os comentários não estão configurados nesta coleção."
 
-#. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
+#. placeholder {0}: literal(problem)
+#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {problem} {0}"
-msgstr "Comentários indisponíveis: {problem} {0}"
+msgid "Comments unavailable: {0} {1}"
+msgstr "Comentários indisponíveis: {0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -1372,7 +1374,7 @@ msgstr "mdbase Connect indisponível"
 msgid "mdbase writer can't use this collection"
 msgstr "O mdbase writer não pode usar esta coleção"
 
-#. placeholder {0}: snapshot.info.displayName
+#. placeholder {0}: literal(snapshot.info.displayName)
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
 msgstr "O mdbase writer precisa de dois contratos de registro em <0>{0}</0>: manuscritos e fontes do Reader para citações. A configuração adiciona apenas o que estiver faltando; os registros existentes não são alterados."
@@ -2299,13 +2301,14 @@ msgstr "Não foi possível carregar as fontes: {0}"
 msgid "Sources not set up"
 msgstr "Fontes não configuradas"
 
+#. placeholder {0}: literal(libraryProblem)
+#: src/ui/SourcesPanel.tsx
+msgid "Sources unavailable: {0} <0>Retry sources</0>"
+msgstr "Fontes indisponíveis: {0} <0>Tentar carregar as fontes novamente</0>"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
 msgstr "Fontes indisponíveis: {libraryProblem}"
-
-#: src/ui/SourcesPanel.tsx
-msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr "Fontes indisponíveis: {libraryProblem} <0>Tentar carregar as fontes novamente</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."

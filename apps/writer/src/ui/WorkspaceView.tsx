@@ -998,7 +998,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
         {snap.recoveredDrafts.size > 0 && <div className="banner" role="alert">
           <span><Plural value={snap.recoveredDrafts.size} one="Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version." other="Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions." /></span>
-          {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}><Trans>Review {recordTitle(snap.records.get(path), path)}</Trans></button>)}
+          {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}>{translate`Review ${recordTitle(snap.records.get(path), path)}`}</button>)}
         </div>}
         {activeView?.snapshot.state === "conflict" && (
           <div className="banner" role="alert">
@@ -1010,7 +1010,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span><Trans>This record was deleted elsewhere. Your local text is still available here.</Trans></span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
         {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
           <div className="banner" role="alert">
-            <span><Trans>Not saved: {activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.</Trans></span>
+            <span>{translate`Not saved: ${activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.`}</span>
             <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active).then(signalResult)}><Trans>Retry save</Trans></button>
             <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           </div>
@@ -1115,7 +1115,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             </button>
           </div>
         </header>
-        {snap.previewProblem && <div className="banner" role="alert"><span><Trans>Preview unavailable: {snap.previewProblem}. You can keep writing.</Trans></span><button type="button" className="mdbase-button" onClick={() => void workspace.retryPreview()}><Trans>Retry preview</Trans></button></div>}
+        {snap.previewProblem && <div className="banner" role="alert"><span>{translate`Preview unavailable: ${snap.previewProblem}. You can keep writing.`}</span><button type="button" className="mdbase-button" onClick={() => void workspace.retryPreview()}><Trans>Retry preview</Trans></button></div>}
         {(snap.assetProblems.size > 0 || snap.recordProblems.size > 0) && <div className="banner" role="alert">
           <span><Trans>Some images or chapters could not be loaded. See Problems for their locations.</Trans></span>
           <button type="button" className="mdbase-button" onClick={() => { void workspace.retryAssets(); void workspace.retryRecords(); }}><Trans>Retry dependencies</Trans></button>

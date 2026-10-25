@@ -120,7 +120,7 @@ msgstr "{0} не удалось сохранить: {1}"
 msgid "{0} theme"
 msgstr "Тема «{0}»"
 
-#. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
+#. placeholder {0}: draftContext(d)
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
@@ -388,9 +388,10 @@ msgstr "Не удалось обнаружить аннотации: {0}. Мет
 msgid "Annotation index"
 msgstr "Индекс аннотаций"
 
+#. placeholder {0}: literal(problem)
 #: src/ui/SourcesPanel.tsx
-msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr "Аннотации недоступны: {problem} <0>Повторить загрузку аннотаций</0>"
+msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
+msgstr "Аннотации недоступны: {0} <0>Повторить загрузку аннотаций</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
@@ -668,10 +669,11 @@ msgstr "Комментарии"
 msgid "Comments are not set up in this collection."
 msgstr "Комментарии не настроены в этой коллекции."
 
-#. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
+#. placeholder {0}: literal(problem)
+#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {problem} {0}"
-msgstr "Комментарии недоступны: {problem} {0}"
+msgid "Comments unavailable: {0} {1}"
+msgstr "Комментарии недоступны: {0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -1372,7 +1374,7 @@ msgstr "mdbase Connect недоступен"
 msgid "mdbase writer can't use this collection"
 msgstr "mdbase writer не может использовать эту коллекцию"
 
-#. placeholder {0}: snapshot.info.displayName
+#. placeholder {0}: literal(snapshot.info.displayName)
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
 msgstr "mdbase writer нужны два контракта записей в <0>{0}</0>: для рукописей и для источников Reader, на которые можно ссылаться. При настройке добавляется только недостающее; существующие записи не изменяются."
@@ -2299,13 +2301,14 @@ msgstr "Не удалось загрузить источники: {0}"
 msgid "Sources not set up"
 msgstr "Источники не настроены"
 
+#. placeholder {0}: literal(libraryProblem)
+#: src/ui/SourcesPanel.tsx
+msgid "Sources unavailable: {0} <0>Retry sources</0>"
+msgstr "Источники недоступны: {0} <0>Повторить загрузку источников</0>"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
 msgstr "Источники недоступны: {libraryProblem}"
-
-#: src/ui/SourcesPanel.tsx
-msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr "Источники недоступны: {libraryProblem} <0>Повторить загрузку источников</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."

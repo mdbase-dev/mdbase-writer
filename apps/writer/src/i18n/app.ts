@@ -1,3 +1,4 @@
+import { I18n, type MessageDescriptor, type MessageOptions } from "@lingui/core";
 import { createI18nRuntime } from "@mdbase-dev/i18n";
 import { i18n, uiCatalogues } from "@mdbase-dev/ui/i18n";
 import english from "./locales/en/messages.json";
@@ -14,6 +15,22 @@ const chunks = {
   zh: () => import("./locales/zh/messages.json"),
 };
 const storageKey = "mdbase-writer:interface-locale";
+
+// Lingui 6.9 decodes JS escapes after interpolation, including user text such as
+// paths, titles and LaTeX. Encode backslashes for that single decoding pass;
+// input values are never changed.
+const renderMessage = I18n.prototype._.bind(i18n);
+i18n._ = (id: string | MessageDescriptor, values?: Record<string, unknown>, options?: MessageOptions) => {
+  if (typeof id === "string") return renderMessage(id, literalValues(values), options);
+  const literal = literalValues(id.values || values);
+  return renderMessage(literal ? { ...id, values: literal } : id);
+};
+i18n.t = i18n._.bind(i18n);
+
+function literalValues(values?: Record<string, unknown>) {
+  return values && Object.fromEntries(Object.entries(values).map(([key, value]) =>
+    [key, typeof value === "string" ? value.replace(/\\/g, "\\u005c") : value]));
+}
 export const runtime = createI18nRuntime({
   i18n,
   english,
