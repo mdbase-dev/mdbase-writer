@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, screen } from "@testing-library/react";
-import { msg } from "@lingui/core/macro";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { render } from "../test/render.js";
-import { i18n, runtime } from "./app.js";
+import { runtime } from "./app.js";
 import { diagnosticMessage } from "./diagnostics.js";
 import { ok, type CollectionIndex, type ManuscriptSummary, type WriterBackend } from "../backend/types.js";
 import { Home } from "../ui/Home.js";
@@ -25,19 +24,14 @@ afterEach(async () => { cleanup(); vi.restoreAllMocks(); await runtime.selectLoc
 const backslashes = String.raw`C:\x41dir\u0042\u005c`;
 const markup = "Draft <0/> <b>notes</b>";
 
-it("passes literal backslash sequences through both Lingui call forms without changing inputs", () => {
-  const descriptor = msg({ message: "Review {0}" });
-  const values = { 0: backslashes };
-  expect(i18n._({ ...descriptor, values })).toBe(`Review ${backslashes}`);
-  expect(i18n._(descriptor.id, values)).toBe(`Review ${backslashes}`);
-  expect(i18n.t(descriptor.id, values)).toBe(`Review ${backslashes}`);
-  expect(values).toEqual({ 0: backslashes });
-});
-
 it.each(["en", "it"] as const)("shows literal backslash sequences in record names in %s", async (locale) => {
   await runtime.selectLocale(locale);
   const message = diagnosticMessage("", { code: "embed-missing", values: [backslashes] });
   expect(message).toContain(`![[${backslashes}]]`);
+  // The kit runtime encodes once; a second encoding would show a lone `\` as `\u005c`.
+  const lone = diagnosticMessage("", { code: "embed-missing", values: [String.raw`notes\draft`] });
+  expect(lone).toContain(String.raw`![[notes\draft]]`);
+  expect(lone).not.toContain("u005c");
 });
 
 function backend(index: CollectionIndex, manuscripts: ManuscriptSummary[]): WriterBackend {
