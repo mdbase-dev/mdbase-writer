@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from "../test/render.js";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { wire } from "@mdbase-dev/sdk";

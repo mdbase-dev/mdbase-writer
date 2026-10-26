@@ -9,5 +9,5 @@ export interface ToPandoc {
 }
 
 export type FromPandoc =
-  | { readonly id: number; readonly bytes: Uint8Array; readonly warnings: readonly string[]; readonly error?: undefined }
-  | { readonly id: number; readonly error: string; readonly bytes?: undefined };
+  | { readonly id: number; readonly bytes: Uint8Array; readonly warnings: readonly unknown[]; readonly error?: undefined }
+  | { readonly id: number; readonly error: string; readonly reason?: "no-document"; readonly bytes?: undefined };

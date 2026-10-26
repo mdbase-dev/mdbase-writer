@@ -30,6 +30,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Validate authored catalogues and generated JSON
+        run: |
+          pnpm i18n:check
+          git diff --exit-code -- apps/writer/src/i18n/locales
       - run: pnpm check
       # Demo is development/LAB-only, so verify the production build separately.
       - run: pnpm build
@@ -70,6 +74,7 @@ jobs:
           result=0
           pnpm --filter @mdbase-writer/app exec node scripts/browser-test.mjs || result=1
           pnpm --filter @mdbase-writer/app test:browser:reliability || result=1
+          pnpm --filter @mdbase-writer/app test:browser:i18n || result=1
           exit "$result"
       - name: Verify private feedback with demo data and intercepted delivery
         run: |

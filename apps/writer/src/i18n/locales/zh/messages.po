@@ -1,0 +1,2789 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-23 23:06+1100\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh\n"
+
+#. placeholder {0}: Math.round((words / goal) * 100)
+#. placeholder {1}: formatNumber(goal)
+#: src/ui/Home.tsx
+msgid " · {0}% of {1}"
+msgstr " · {0}%（目标 {1}）"
+
+#: src/ui/Home.tsx
+msgid " · Comments not set up"
+msgstr " · 尚未设置评论功能"
+
+#: src/ui/Home.tsx
+msgid " via mdbase Connect"
+msgstr "，通过 mdbase Connect"
+
+#: src/ui/CommentsPanel.tsx
+msgid " with "
+msgstr " 替换为 "
+
+#. placeholder {0}: highlightIndex.pending
+#: src/ui/SourcesPanel.tsx
+msgid "· searching {0} more"
+msgstr "· 另有 {0} 条正在搜索"
+
+#: src/ui/CommentsPanel.tsx
+msgid "(a point in the text)"
+msgstr "（文本中的一个位置）"
+
+#: src/ui/CompareDialog.tsx
+msgid "(passage removed)"
+msgstr "（文本片段已删除）"
+
+#. placeholder {0}: info.replies
+#: src/editor/comments.ts
+msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
+msgstr "{0, plural, =0 {点击在评论中打开} other {# 条回复 · 点击在评论中打开}}"
+
+#. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
+#: src/ui/Home.tsx
+msgid "{0, plural, one {# chapter} other {# chapters}}"
+msgstr "{0, plural, other {# 章}}"
+
+#. placeholder {0}: this.ids.length
+#: src/editor/comments.ts
+msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
+msgstr "{0, plural, other {此行有 # 条评论}}"
+
+#. placeholder {0}: signing.paths.length
+#: src/ui/CommentsPanel.tsx
+msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
+msgstr "{0, plural, other {有 # 条人员记录关联到你的账户，因此 Writer 不会擅自猜测哪条记录是你本人。}}"
+
+#. placeholder {0}: words[ranks.get(h)!] ?? 0
+#: src/ui/OutlinePanel.tsx
+msgid "{0, plural, one {# word in this section} other {# words in this section}}"
+msgstr "{0, plural, other {本节 # 个字}}"
+
+#. placeholder {0}: problems.length
+#: src/ui/WorkspaceView.tsx
+msgid "{0, plural, one {Exported {name} with # problem: {firstProblem}} other {Exported {name} with # problems: {firstProblem}}}"
+msgstr "{0, plural, other {已导出 {name}，有 # 个问题：{firstProblem}}}"
+
+#. placeholder {0}: order.length
+#: src/ui/WorkspaceView.tsx
+msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
+msgstr "{0, plural, other {位于 # 条记录中；引文、代码和数学公式不计入}}"
+
+#. placeholder {0}: snap.recoveredDrafts.size
+#: src/ui/WorkspaceView.tsx
+msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
+msgstr "{0, plural, other {请检查 # 个已恢复的本地草稿。在恢复本地草稿或使用集合版本前，这些记录将暂停编辑。}}"
+
+#. placeholder {0}: result.total
+#: src/ui/ManuscriptSearch.tsx
+msgid "{0, plural, one {The first {listedCount} of # match} other {The first {listedCount} of # matches}}"
+msgstr "{0, plural, other {# 个匹配项中的前 {listedCount} 个}}"
+
+#. placeholder {0}: pages.length
+#: src/preview/Preview.tsx
+msgid "{0, plural, one {Typeset preview, # page} other {Typeset preview, # pages}}"
+msgstr "{0, plural, other {排版预览，共 # 页}}"
+
+#. placeholder {0}: target.target.record
+#: src/editor/insight.ts
+msgid "{0} · {MOD_LABEL}-click to go there"
+msgstr "{0} · 按 {MOD_LABEL} 并单击以跳转"
+
+#. placeholder {0}: card.cite
+#: src/editor/chapter-cards.ts
+msgid "{0} · from Reader"
+msgstr "{0} · 来自 Reader"
+
+#. placeholder {0}: title(diagnostic.record)
+#. placeholder {1}: lineOf(diagnostic.record, diagnostic.from)
+#: src/ui/ProblemsStrip.tsx
+msgid "{0} · line {1}"
+msgstr "{0} · 第 {1} 行"
+
+#. placeholder {0}: VIEW_NAME[v]
+#: src/ui/WorkspaceView.tsx
+msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
+msgstr "{0}（按 {MOD_LABEL}-Shift-\\ 切换）"
+
+#. placeholder {0}: file.name
+#. placeholder {1}: stored.message
+#: src/ui/WorkspaceView.tsx
+msgid "{0} could not be stored: {1}"
+msgstr "{0}无法存储：{1}"
+
+#. placeholder {0}: THEME_NAME[t]
+#: src/ui/WorkspaceView.tsx
+msgid "{0} theme"
+msgstr "{0}主题"
+
+#. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
+#. placeholder {1}: relativeTime(d.updated)
+#: src/ui/Home.tsx
+msgid "{0}backed up {1}"
+msgstr "{0}已备份于{1}"
+
+#: src/workspace/workspace.ts
+msgid "{at}: this record was deleted; download the local draft before leaving."
+msgstr "{at}：此记录已删除；离开前请下载本地草稿。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
+msgstr "{commentsTitle}（{MOD_LABEL}-Shift-M）"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} {ALT_LABEL} F"
+msgstr "{MOD_LABEL} {ALT_LABEL} F"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} {ALT_LABEL} M"
+msgstr "{MOD_LABEL} {ALT_LABEL} M"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} {ALT_LABEL} S"
+msgstr "{MOD_LABEL} {ALT_LABEL} S"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} B / {MOD_LABEL} I"
+msgstr "{MOD_LABEL} B / {MOD_LABEL} I"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} F"
+msgstr "{MOD_LABEL} F"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} K"
+msgstr "{MOD_LABEL} K"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} S"
+msgstr "{MOD_LABEL} S"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} Shift \\"
+msgstr "按 {MOD_LABEL} + Shift + 反斜杠"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} Shift E"
+msgstr "按 {MOD_LABEL} + Shift + E"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} Shift F"
+msgstr "按 {MOD_LABEL} + Shift + F"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} Shift K"
+msgstr "按 {MOD_LABEL} + Shift + K"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} Shift M"
+msgstr "按 {MOD_LABEL} + Shift + M"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL} Shift S"
+msgstr "按 {MOD_LABEL} + Shift + S"
+
+#: src/editor/selection-bar.tsx
+msgid "{MOD_LABEL}-B"
+msgstr "{MOD_LABEL}-B"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{MOD_LABEL}-click"
+msgstr "{MOD_LABEL}-单击"
+
+#: src/editor/insight.ts
+msgid "{MOD_LABEL}-click to show in Sources"
+msgstr "按 {MOD_LABEL}-单击 在来源中显示"
+
+#: src/ui/CommentsPanel.tsx
+msgid "{MOD_LABEL}-Enter"
+msgstr "{MOD_LABEL}-回车"
+
+#: src/editor/selection-bar.tsx
+msgid "{MOD_LABEL}-I"
+msgstr "{MOD_LABEL}-I"
+
+#: src/editor/selection-bar.tsx
+msgid "{MOD_LABEL}-Shift-K"
+msgstr "{MOD_LABEL}-Shift-K 快捷键"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# error} other {# errors}}"
+msgstr "{n, plural, other {# 个错误}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# match} other {# matches}}"
+msgstr "{n, plural, other {# 个匹配项}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# open comment} other {# open comments}}"
+msgstr "{n, plural, other {# 条未解决的评论}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# person record} other {# person records}}"
+msgstr "{n, plural, other {# 条人员记录}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# problem} other {# problems}}"
+msgstr "{n, plural, other {# 个问题}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# record} other {# records}}"
+msgstr "{n, plural, other {# 条记录}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# recovered local draft} other {# recovered local drafts}}"
+msgstr "{n, plural, other {# 个已恢复的本地草稿}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# warning} other {# warnings}}"
+msgstr "{n, plural, other {# 条警告}}"
+
+#: src/ui/records.ts
+msgid "{n, plural, one {# word} other {# words}}"
+msgstr "{n, plural, other {# 个字}}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "{name} loading; you can keep writing."
+msgstr "正在加载 {name}；你可以继续写作。"
+
+#. placeholder {0}: state.problem ?? ""
+#: src/ui/WorkspaceView.tsx
+msgid "{name} unavailable: {0}"
+msgstr "{name} 不可用：{0}"
+
+#: src/workspace/workspace.ts
+msgid "{path}: A recovered draft has not been reviewed; the collection version will be exported."
+msgstr "{path}：已恢复的草稿尚未检查，导出时将使用集合版本。"
+
+#: src/ui/Home.tsx
+msgid "{sources, plural, one {# source from mdbase Reader can be cited here.} other {# sources from mdbase Reader can be cited here.}}"
+msgstr "{sources, plural, other {此处可以引用来自 mdbase Reader 的 # 个来源。}}"
+
+#: src/ui/Home.tsx
+msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
+msgstr "{sources, plural, other {# 个可从 mdbase Reader 引用的来源}}"
+
+#: src/ui/SourcesPanel.tsx
+msgid "{uses, plural, one {Cited once} other {Cited # times}}"
+msgstr "{uses, plural, other {已引用 # 次}}"
+
+#: src/i18n/diagnostics.ts
+msgid "{value} is not loaded; it was left out."
+msgstr "{value} 未加载，已被省略。"
+
+#: src/ui/OutlinePanel.tsx
+msgid "<0/> Add chapter"
+msgstr "<0/> 添加章节"
+
+#: src/ui/Home.tsx
+msgid "<0/> Include a worked example of citations, figures and chapters"
+msgstr "<0/> 包含引文、插图和章节的完整示例"
+
+#: src/ui/CommentsPanel.tsx
+msgid "<0/> On the record"
+msgstr "<0/> 对整条记录评论"
+
+#: src/ui/Settings.tsx
+msgid "<0/>Add author"
+msgstr "<0/>添加作者"
+
+#: src/ui/Home.tsx
+msgid "<0/>Continue<1/>"
+msgstr "<0/>继续<1/>"
+
+#: src/ui/Home.tsx
+msgid "<0/>New manuscript"
+msgstr "<0/>新建手稿"
+
+#: src/ui/Home.tsx
+msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
+msgstr "<0>手稿。</0>新建一份，或使用已有笔记。它仍是此集合中的普通 Markdown 记录。"
+
+#: src/ui/Home.tsx
+msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
+msgstr "<0>开始写作。</0>使用 <1>[@citekey, p. 12]</1> 插入引文（或在“来源”面板按作者和标题查找来源），用 <2>{#fig-plan}</2> 添加标签并通过 <3>@fig-plan</3> 引用标签，用 <4>![[chapters/one]]</4> 嵌入章节。可导出为 PDF 或 Word 文档。"
+
+#: src/workspace/workspace.ts
+msgid "A chapter needs a title."
+msgstr "章节需要标题。"
+
+#: src/i18n/diagnostics.ts
+msgid "A citation cannot mix cross-references and citekeys."
+msgstr "同一处引文不能混用交叉引用和 citekey。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
+msgstr "对整条记录发表评论，而非针对某段文字（在编辑器中选择文本即可评论该段）"
+
+#: src/ui/Home.tsx
+msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
+msgstr "草稿是已输入但尚未保存到集合的内容。打开对应手稿即可恢复草稿。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "A local draft is still available in this browser."
+msgstr "此浏览器中仍有本地草稿。"
+
+#: src/ui/SourcesPanel.tsx
+msgid "A page (12, 12–14) or a locator (ch. 3, sec. 2)"
+msgstr "页码（12、12–14）或定位信息（第 3 章，第 2 节）"
+
+#: src/ui/Settings.tsx
+msgid "Abstract"
+msgstr "摘要"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Accept"
+msgstr "接受"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Accepted"
+msgstr "已接受"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Add"
+msgstr "添加"
+
+#: src/pwa-install.ts
+msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
+msgstr "将 {appName} 添加到主屏幕：轻点“分享”，然后选择“添加到主屏幕”。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Add a footnote"
+msgstr "添加脚注"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
+msgstr "在 mdbase Reader 中添加来源；在此处使用 <0>[@citekey]</0> 引用。"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Adding…"
+msgstr "正在添加…"
+
+#: src/ui/Home.tsx
+msgid "Adds the manuscript type to the note. Its other types, text and location stay as they are."
+msgstr "向笔记添加手稿类型。其他类型、文本和位置均保持不变。"
+
+#: src/ui/Settings.tsx
+msgid "Affiliation"
+msgstr "所属机构"
+
+#: src/ui/WorkspaceView.tsx
+msgid "All manuscripts"
+msgstr "所有手稿"
+
+#: src/ui/ConnectGate.tsx
+msgid "already present"
+msgstr "已存在"
+
+#. placeholder {0}: snap.annotationsLoad.problem ?? ""
+#: src/workspace/workspace.ts
+msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
+msgstr "无法查找注释：{0}。引文元数据可能不完整。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Annotation index"
+msgstr "注释索引"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
+msgstr "注释不可用：{problem} <0>重试加载注释</0>"
+
+#: src/ui/names.ts
+msgid "APA 7th edition"
+msgstr "APA 第 7 版"
+
+#: src/ui/WorkspaceView.tsx
+msgid "appearance dark light"
+msgstr "外观 深色 浅色"
+
+#: src/ui/names.ts
+msgid "Article"
+msgstr "文章"
+
+#: src/ui/CommentsPanel.tsx
+msgid "as {signer} · "
+msgstr "署名：{signer} · "
+
+#: src/ui/Settings.tsx
+msgid "as it should appear"
+msgstr "按预期显示"
+
+#: src/ui/CommentsPanel.tsx
+msgid "At the cursor"
+msgstr "在光标处"
+
+#. placeholder {0}: i + 1
+#: src/ui/Settings.tsx
+msgid "Author {0} affiliation"
+msgstr "作者 {0} 的所属机构"
+
+#. placeholder {0}: i + 1
+#: src/ui/Settings.tsx
+msgid "Author {0} name"
+msgstr "作者 {0} 的姓名"
+
+#: src/ui/Settings.tsx
+msgid "Authors"
+msgstr "作者"
+
+#: src/ui/WorkspaceView.tsx
+msgid "back home close"
+msgstr "返回主页 关闭"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Back to manuscripts"
+msgstr "返回手稿列表"
+
+#: src/ui/WorkspaceView.tsx
+msgid "backup unsaved recovery"
+msgstr "备份 未保存 恢复"
+
+#: src/editor/selection-bar.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Bold"
+msgstr "粗体"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Bold / italic (again to remove it)"
+msgstr "粗体 / 斜体（再次按下可取消）"
+
+#: src/ui/CommentsPanel.tsx
+#: src/ui/Home.tsx
+#: src/ui/OutlinePanel.tsx
+msgid "Cancel"
+msgstr "取消"
+
+#: src/ui/ExportReview.tsx
+msgid "Cancel and fix problems"
+msgstr "取消并修复问题"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Cancel export"
+msgstr "取消导出"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Change the citation style"
+msgstr "更改引文格式"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Change the layout"
+msgstr "更改排版"
+
+#: src/ui/Home.tsx
+msgid "Change the word goal"
+msgstr "更改字数目标"
+
+#: src/ui/records.ts
+msgid "Changed elsewhere"
+msgstr "已在其他位置更改"
+
+#: src/ui/Settings.tsx
+msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
+msgstr "更改会在输入时保存到手稿的前置元数据中，预览也会随之更新。"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Chapter title"
+msgstr "章节标题"
+
+#. placeholder {0}: chapters.filter(Boolean).length
+#: src/ui/OutlinePanel.tsx
+msgid "Chapters <0>{0}</0>"
+msgstr "章节 <0>{0}</0>"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Check again"
+msgstr "再次检查"
+
+#. placeholder {0}: EXPORT_NAME[format]
+#: src/ui/WorkspaceView.tsx
+msgid "Checking chapters and images, then making {0}…"
+msgstr "正在检查章节和图片，然后生成 {0}…"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
+msgstr "正在检查章节和图片，然后生成 Word 文档…（首次使用约需加载 16 MB）"
+
+#: src/ui/ConnectGate.tsx
+msgid "Checking the collection"
+msgstr "正在检查集合"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Checking…"
+msgstr "正在检查…"
+
+#: src/ui/names.ts
+msgid "Chicago (author-date)"
+msgstr "Chicago（作者-日期制）"
+
+#: src/ui/names.ts
+msgid "Chicago (notes and bibliography)"
+msgstr "Chicago（注释与参考文献制）"
+
+#: src/ui/ConnectGate.tsx
+msgid "Choose another collection"
+msgstr "选择其他集合"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Citation"
+msgstr "引文"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+msgid "Citation style"
+msgstr "引文格式"
+
+#: src/ui/Home.tsx
+msgid "Citation style<0/>"
+msgstr "引文格式<0/>"
+
+#: src/i18n/diagnostics.ts
+msgid "Citations have no terms for \"{value}\"; they use {other}."
+msgstr "引文格式没有“{value}”的术语，将使用 {other}。"
+
+#: src/ui/Settings.tsx
+msgid "Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed."
+msgstr "引文会显示引用来源，插图和表格会被渲染；标记会在光标到达相应行时显示。文本本身不会更改。"
+
+#: src/editor/selection-bar.tsx
+#: src/ui/SourcesPanel.tsx
+msgid "Cite"
+msgstr "引用"
+
+#. placeholder {0}: entry.title
+#: src/ui/SourcesPanel.tsx
+msgid "Cite {0}"
+msgstr "引用 {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Cite a source or refer to a label (by key, author, title or year)"
+msgstr "引用来源或引用标签（按键、作者、标题或年份查找）"
+
+#. placeholder {0}: locator.trim()
+#: src/ui/SourcesPanel.tsx
+msgid "Cite at {0}"
+msgstr "在 {0} 处引用"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Cite here"
+msgstr "在此处引用"
+
+#: src/ui/WorkspaceView.tsx
+msgid "cite source reference"
+msgstr "引用 来源 交叉引用"
+
+#: src/ui/SourcesPanel.tsx
+msgid "cited {uses}×"
+msgstr "已引用 {uses} 次"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Cited in "
+msgstr "引用于 "
+
+#: src/ui/SourcesPanel.tsx
+msgid "cited once"
+msgstr "引用过一次"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Click to fit the width"
+msgstr "单击以适应宽度"
+
+#: src/ui/Settings.tsx
+msgid "Close (Escape)"
+msgstr "关闭（Esc）"
+
+#: src/ui/Settings.tsx
+msgid "Close settings"
+msgstr "关闭设置"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Close the lower panel"
+msgstr "关闭下方面板"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Close the lower sidebar panel"
+msgstr "关闭侧边栏下方面板"
+
+#: src/editor/selection-bar.tsx
+msgctxt "inline code formatting action"
+msgid "Code"
+msgstr "代码"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Collection dependencies have not been checked yet"
+msgstr "尚未检查集合依赖项"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Collection index"
+msgstr "集合索引"
+
+#: src/workspace/workspace.ts
+msgid "Collection metadata is still loading."
+msgstr "仍在加载集合元数据。"
+
+#: src/ui/CompareDialog.tsx
+msgid "Collection version"
+msgstr "集合版本"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Collections"
+msgstr "集合"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Commands"
+msgstr "命令"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Commands, shortcuts and theme"
+msgstr "命令、快捷键和主题"
+
+#: src/editor/comments.ts
+#: src/editor/selection-bar.tsx
+#: src/ui/CommentsPanel.tsx
+msgid "Comment"
+msgstr "评论"
+
+#: src/editor/comments.ts
+msgctxt "comment tooltip"
+msgid "Comment"
+msgstr "评论"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Comment on the selection"
+msgstr "评论所选内容"
+
+#: src/editor/selection-bar.tsx
+msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
+msgstr "评论所选内容（{MOD_LABEL}-{ALT_LABEL}-M）"
+
+#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Comments"
+msgstr "评论"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Comments are not set up in this collection."
+msgstr "此集合尚未设置评论功能。"
+
+#. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
+#: src/ui/CommentsPanel.tsx
+msgid "Comments unavailable: {problem} {0}"
+msgstr "评论不可用：{problem} {0}"
+
+#: src/ui/CompareDialog.tsx
+msgid "Compare conflicting versions"
+msgstr "比较冲突版本"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Compare versions"
+msgstr "比较版本"
+
+#: src/ui/records.ts
+msgid "Conflict"
+msgstr "冲突"
+
+#: src/ui/ConnectGate.tsx
+msgid "conflicts with an existing file"
+msgstr "与现有文件冲突"
+
+#: src/ui/ConnectGate.tsx
+msgid "Connect a collection"
+msgstr "连接集合"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Connect another collection…"
+msgstr "连接其他集合…"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Connected collections"
+msgstr "已连接的集合"
+
+#: src/ui/ConnectGate.tsx
+msgid "Connecting to mdbase connect"
+msgstr "正在连接到 mdbase Connect"
+
+#: src/ui/Home.tsx
+msgid "Continue writing"
+msgstr "继续写作"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Copied"
+msgstr "已复制"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Copy key"
+msgstr "复制密钥"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Could not connect another collection."
+msgstr "无法连接其他集合。"
+
+#: src/ui/Home.tsx
+msgid "Could not create the manuscript. Please try again."
+msgstr "无法创建手稿，请重试。"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Could not switch collections."
+msgstr "无法切换集合。"
+
+#: src/ui/Home.tsx
+msgid "Could not use the note as a manuscript. Please try again."
+msgstr "无法将此笔记用作手稿，请重试。"
+
+#: src/ui/Home.tsx
+msgid "Create manuscript"
+msgstr "创建手稿"
+
+#: src/ui/Home.tsx
+msgid "Creating…"
+msgstr "正在创建…"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Cross-reference"
+msgstr "交叉引用"
+
+#: src/ui/WorkspaceView.tsx
+msgctxt "color theme"
+msgid "Dark"
+msgstr "深色"
+
+#: src/ui/Settings.tsx
+msgid "Date"
+msgstr "日期"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Delete"
+msgstr "删除"
+
+#. placeholder {0}: clip(exact)
+#: src/ui/comments.ts
+msgid "Delete {0}"
+msgstr "删除 {0}"
+
+#: src/ui/records.ts
+msgid "Deleted"
+msgstr "已删除"
+
+#: src/ui/records.ts
+msgid "Deleted elsewhere"
+msgstr "已在其他位置删除"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Dependencies not checked"
+msgstr "尚未检查依赖项"
+
+#: src/editor/chapter-cards.ts
+msgid "Detach"
+msgstr "分离"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Detached: the text has changed"
+msgstr "已分离：文本已更改"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Dismiss"
+msgstr "关闭"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Double-click or F2 to rename"
+msgstr "双击或按 F2 重命名"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Down arrow moves to the sources; Enter cites the first match."
+msgstr "按向下键移至来源列表；按 Enter 引用第一个匹配项。"
+
+#: src/ui/Manuscripts.tsx
+msgid "Download a local copy before leaving if saving cannot be completed."
+msgstr "如果无法完成保存，请在离开前下载本地副本。"
+
+#: src/ui/CompareDialog.tsx
+msgid "Download local draft"
+msgstr "下载本地草稿"
+
+#: src/LegacyApp.tsx
+#: src/ui/Manuscripts.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Download local drafts"
+msgstr "下载本地草稿"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Drag to resize; double-click to restore"
+msgstr "拖动以调整大小；双击以恢复"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Drag to resize; double-click to split evenly"
+msgstr "拖动以调整大小；双击以均分"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Drag, or Alt-↑/↓, to reorder"
+msgstr "拖动，或按 Alt-↑/↓，以重新排序"
+
+#. placeholder {0}: relativeTime(m.modified)
+#. placeholder {0}: relativeTime(manuscript.modified)
+#: src/ui/Home.tsx
+msgid "edited {0}"
+msgstr "编辑时间：{0}"
+
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Editor"
+msgstr "编辑器"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Editor and preview"
+msgstr "编辑器和预览"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Editor and preview → editor only → preview only"
+msgstr "编辑器和预览 → 仅编辑器 → 仅预览"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Editor only"
+msgstr "仅编辑器"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Embed a record"
+msgstr "嵌入记录"
+
+#: src/workspace/workspace.ts
+msgid "Embedded record could not be loaded: {problem}"
+msgstr "无法加载嵌入的记录：{problem}"
+
+#: src/i18n/diagnostics.ts
+msgid "Embedding {value} here would include it inside itself."
+msgstr "在此嵌入 {value} 会使其包含自身。"
+
+#: src/ui/ManuscriptSearch.tsx
+msgid "Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches."
+msgstr "按 Enter 和 Shift-Enter 转到下一个和上一个匹配项；按向下键浏览匹配项。"
+
+#: src/editor/completions.ts
+#: src/editor/insight.ts
+#: src/editor/live-preview.ts
+#: src/ui/WorkspaceView.tsx
+msgid "Equation"
+msgstr "公式"
+
+#: src/ui/WorkspaceView.tsx
+msgid "errors warnings list"
+msgstr "错误 警告 列表"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Everyone"
+msgstr "所有人"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export"
+msgstr "导出"
+
+#. placeholder {0}: EXPORT_NAME[format]
+#: src/ui/WorkspaceView.tsx
+msgid "Export {0}"
+msgstr "导出 {0}"
+
+#: src/ui/ExportReview.tsx
+msgid "Export anyway"
+msgstr "仍要导出"
+
+#: src/compile/client.ts
+#: src/export/pandoc.ts
+msgid "Export cancelled."
+msgstr "导出已取消。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export failed."
+msgstr "导出失败。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export formats"
+msgstr "导出格式"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export formats ({MOD_LABEL}-Shift-S)"
+msgstr "导出格式（{MOD_LABEL}-Shift-S）"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export Pandoc bundle (zip)"
+msgstr "导出 Pandoc 套件（zip）"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export PDF"
+msgstr "导出 PDF"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export Word (DOCX)"
+msgstr "导出 Word（DOCX）"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Export Word using article styles; your custom Typst layout applies only to PDF"
+msgstr "使用文章样式导出 Word；自定义 Typst 排版仅适用于 PDF"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Exported {name}."
+msgstr "已导出 {name}。"
+
+#: src/ui/ProblemsStrip.tsx
+msgid "F8 goes to the next"
+msgstr "F8 转到下一项"
+
+#: src/editor/completions.ts
+#: src/editor/insight.ts
+msgid "Figure"
+msgstr "插图"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Figure from an image…"
+msgstr "从图片创建插图…"
+
+#: src/workspace/workspace.ts
+msgid "Figures must be PNG, JPEG, GIF, SVG or WebP images."
+msgstr "插图必须使用 PNG、JPEG、GIF、SVG 或 WebP 图片。"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Filter collections"
+msgstr "筛选集合"
+
+#: src/ui/Home.tsx
+msgid "Find a manuscript"
+msgstr "查找手稿"
+
+#: src/ui/Home.tsx
+msgid "Find a note by name or folder"
+msgstr "按名称或文件夹查找笔记"
+
+#: src/ui/SourcesPanel.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Find a source"
+msgstr "查找来源"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Find a source ({MOD_LABEL}-Shift-E)"
+msgstr "查找来源（{MOD_LABEL}-Shift-E）"
+
+#: src/editor/selection-bar.tsx
+msgid "Find a source for this passage and cite it after it"
+msgstr "查找此段文字的来源并在其后插入引文"
+
+#: src/ui/WorkspaceView.tsx
+msgid "find all chapters"
+msgstr "查找 全部 章节"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Find and replace in this record"
+msgstr "在此记录中查找并替换"
+
+#: src/editor/fixes.ts
+msgid "Find in Sources"
+msgstr "在来源中查找"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Find or run a command"
+msgstr "查找或运行命令"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Fit · {zoomLabel}"
+msgstr "适应 · {zoomLabel}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Fitting the width; click for actual size"
+msgstr "正在适应宽度；单击以查看实际大小"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Fix it in mdbase Editor"
+msgstr "在 mdbase Editor 中修复"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Footnote"
+msgstr "脚注"
+
+#: src/i18n/diagnostics.ts
+msgid "Footnote [^{value}] has no definition."
+msgstr "脚注 [^{value}] 没有定义。"
+
+#: src/i18n/diagnostics.ts
+msgid "Footnote [^{value}] is never referenced."
+msgstr "脚注 [^{value}] 从未被引用。"
+
+#: src/i18n/diagnostics.ts
+msgid "Footnote [^{value}] is referenced more than once."
+msgstr "脚注 [^{value}] 被引用了多次。"
+
+#: src/ui/Settings.tsx
+msgid "for citation terms and hyphenation"
+msgstr "用于引文术语和连字符规则"
+
+#: src/ui/NativeSignIn.tsx
+msgid "Forget collection"
+msgstr "忘记集合"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Format"
+msgstr "格式"
+
+#: src/editor/chapter-cards.ts
+msgid "From Reader · its source is not in the library"
+msgstr "来自 Reader · 其来源不在资料库中"
+
+#: src/ui/Settings.tsx
+msgid "From the collection"
+msgstr "来自集合"
+
+#: src/ui/Home.tsx
+msgid "Give the manuscript a title; it can be changed later."
+msgstr "为手稿命名；之后仍可更改。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "grid columns rows"
+msgstr "网格 列 行"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Help"
+msgstr "帮助"
+
+#: src/ui/ProblemsStrip.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Hide problems"
+msgstr "隐藏问题"
+
+#. placeholder {0}: recordTitle(view, path)
+#: src/ui/OutlinePanel.tsx
+msgid "Hide the headings of {0}"
+msgstr "隐藏 {0} 的标题"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Hide the problems under the editor (F8 goes to the next one)"
+msgstr "隐藏编辑器下方的问题（按 F8 跳到下一个）"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Hide the sidebar"
+msgstr "隐藏侧边栏"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Hide the sidebar ({MOD_LABEL}-\\)"
+msgstr "隐藏侧边栏（{MOD_LABEL}-\\）"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Highlights are not set up in this collection."
+msgstr "此集合尚未设置高亮功能。"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Highlights from Reader"
+msgstr "来自 Reader 的高亮"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Hosted by mdbase"
+msgstr "由 mdbase 托管"
+
+#: src/i18n/diagnostics.ts
+msgid "Image “{value}” is missing. Add it to the collection or correct its path."
+msgstr "找不到图片“{value}”。请将其添加到集合，或更正其路径。"
+
+#: src/workspace/workspace.ts
+msgid "Image could not be loaded: {problem}"
+msgstr "无法加载图片：{problem}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "image picture photo upload"
+msgstr "图像 图片 照片 上传"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Image upload is coming soon. Existing image links still work."
+msgstr "图片上传功能即将推出。现有图片链接仍可使用。"
+
+#: src/i18n/diagnostics.ts
+msgid "Images must be files in the collection ({value})."
+msgstr "图片必须是集合中的文件（{value}）。"
+
+#. placeholder {0}: d.manuscript.title
+#: src/ui/Home.tsx
+msgid "in {0} · "
+msgstr "位于 {0} · "
+
+#. placeholder {0}: collectionPicker ?? <strong>{backend.collectionName}</strong>
+#. placeholder {1}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
+#. placeholder {2}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
+#. placeholder {3}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
+#. placeholder {4}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
+#: src/ui/Home.tsx
+msgid "In {0}{1}{2}{3}{4}"
+msgstr "位于 {0}{1}{2}{3}{4}"
+
+#. placeholder {0}: inHighlights.length
+#. placeholder {1}: highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>
+#: src/ui/SourcesPanel.tsx
+msgid "In highlights <0>{0}</0>{1}"
+msgstr "在高亮内容 <0>{0}</0>{1}"
+
+#: src/ui/OutlinePanel.tsx
+msgid "In the whole manuscript; citations, code and math are not counted"
+msgstr "整篇手稿中的字数；引文、代码和数学公式不计入"
+
+#: src/ui/SourcesPanel.tsx
+msgid "In this manuscript"
+msgstr "在此手稿中"
+
+#. placeholder {0}: inManuscript.length
+#: src/ui/SourcesPanel.tsx
+msgid "In this manuscript <0>{0}</0>"
+msgstr "在此手稿 <0>{0}</0> 中"
+
+#. placeholder {0}: r.message
+#: src/ui/Home.tsx
+msgid "Index could not be loaded: {0}"
+msgstr "无法加载索引：{0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Inline code"
+msgstr "行内代码"
+
+#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Insert"
+msgstr "插入"
+
+#. placeholder {0}: entry.key
+#: src/ui/SourcesPanel.tsx
+msgid "Insert [@{0}] at the cursor (Enter)"
+msgstr "在光标处插入 [@{0}]（Enter）"
+
+#. placeholder {0}: clip(replacement)
+#: src/ui/comments.ts
+msgid "Insert {0}"
+msgstr "插入 {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
+msgstr "插入引文、脚注、交叉引用、插图、表格或公式（也可在文本中输入 /）"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Insert a footnote, figure, table, equation, cross-reference or citation"
+msgstr "插入脚注、插图、表格、公式、交叉引用或引文"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Insert at the cursor"
+msgstr "在光标处插入"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Insert quotation"
+msgstr "插入引文"
+
+#: src/pwa-install.ts
+msgid "Install"
+msgstr "安装"
+
+#: src/pwa-install.ts
+msgid "Install {appName}"
+msgstr "安装 {appName}"
+
+#: src/pwa-install.ts
+msgid "Install {appName} for quick access in its own window."
+msgstr "安装 {appName}，以便在独立窗口中快速访问。"
+
+#: src/i18n/provider.tsx
+#: src/ui/Settings.tsx
+msgid "Interface language"
+msgstr "界面语言"
+
+#: src/editor/selection-bar.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Italic"
+msgstr "斜体"
+
+#: src/ui/CompareDialog.tsx
+msgid "Keep mine"
+msgstr "保留我的版本"
+
+#: src/ui/Manuscripts.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Keep writing"
+msgstr "继续写作"
+
+#: src/ui/ConnectGate.tsx
+msgid "kept as it is"
+msgstr "保持原样"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
+#: src/editor/completions.ts
+#: src/editor/insight.ts
+#: src/editor/live-preview.ts
+msgid "Label"
+msgstr "标签"
+
+#: src/ui/Settings.tsx
+msgid "Language"
+msgstr "语言"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Layout"
+msgstr "排版"
+
+#: src/ui/Home.tsx
+msgid "Layout<0/>"
+msgstr "排版<0/>"
+
+#: src/ui/Manuscripts.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Leave without saving"
+msgstr "不保存并离开"
+
+#. placeholder {0}: rest.length
+#: src/ui/SourcesPanel.tsx
+msgid "Library <0>{0}</0>"
+msgstr "资料库 <0>{0}</0>"
+
+#: src/ui/WorkspaceView.tsx
+msgctxt "color theme"
+msgid "Light"
+msgstr "浅色"
+
+#. placeholder {0}: lineOf(diagnostic.record, diagnostic.from)
+#: src/ui/ProblemsStrip.tsx
+msgid "Line {0}"
+msgstr "第 {0} 行"
+
+#: src/editor/selection-bar.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Link"
+msgstr "链接"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Link it in mdbase Editor’s settings for this collection."
+msgstr "在 mdbase Editor 中此集合的设置里关联它。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Link your account"
+msgstr "关联你的账户"
+
+#: src/ui/WorkspaceView.tsx
+msgid "List the problems under the editor (F8 goes to the next one)"
+msgstr "在编辑器下方列出问题（按 F8 跳到下一个）"
+
+#: src/editor/insight.ts
+msgid "Listing"
+msgstr "代码清单"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Loading annotations…"
+msgstr "正在加载注释…"
+
+#: src/ui/Home.tsx
+msgid "Loading collection data…"
+msgstr "正在加载集合数据…"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Loading comments…"
+msgstr "正在加载评论…"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Loading sources…"
+msgstr "正在加载来源…"
+
+#: src/ui/Home.tsx
+msgid "Loading…"
+msgstr "正在加载…"
+
+#: src/workspace/workspace.ts
+msgid "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails."
+msgstr "本地草稿备份不可用（浏览器存储空间可能已满或被屏蔽）。如果保存失败，请在离开前下载草稿。"
+
+#: src/ui/Home.tsx
+msgid "Looking for sources…"
+msgstr "正在查找来源…"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Lower panel"
+msgstr "下方面板"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Make the selection a link"
+msgstr "将所选内容设为链接"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Make this edit"
+msgstr "应用此编辑"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Manuscript"
+msgstr "手稿"
+
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Manuscript settings"
+msgstr "手稿设置"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Manuscript sidebar"
+msgstr "手稿侧边栏"
+
+#: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Manuscripts"
+msgstr "手稿"
+
+#: src/editor/Editor.tsx
+msgid "Markdown for {path}"
+msgstr "{path} 的 Markdown"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Matching sources"
+msgstr "匹配的来源"
+
+#: src/ui/WorkspaceView.tsx
+msgid "math formula display"
+msgstr "数学公式 显示"
+
+#: src/i18n/diagnostics.ts
+msgid "Math: {begin} is never closed."
+msgstr "数学公式：{begin} 未闭合。"
+
+#: src/i18n/diagnostics.ts
+msgid "Math: {end} closes {begin}."
+msgstr "数学公式：{end} 结束了 {begin}。"
+
+#: src/i18n/diagnostics.ts
+msgid "Math: {end} has no matching \\begin."
+msgstr "数学公式：{end} 没有匹配的 \\begin。"
+
+#: src/i18n/diagnostics.ts
+msgid "Math: {value} \\left but {other} \\right."
+msgstr "数学公式：\\left 为 {value}，\\right 为 {other}，数量不一致。"
+
+#: src/i18n/diagnostics.ts
+msgid "Math: Unclosed brace."
+msgstr "数学公式：存在未闭合的大括号。"
+
+#: src/i18n/diagnostics.ts
+msgid "Math: Unmatched closing brace."
+msgstr "数学公式：存在未匹配的右大括号。"
+
+#: src/ui/ConnectGate.tsx
+msgid "mdbase connect is unavailable"
+msgstr "mdbase Connect 不可用"
+
+#: src/ui/ConnectGate.tsx
+msgid "mdbase writer can't use this collection"
+msgstr "mdbase writer 无法使用此集合"
+
+#. placeholder {0}: snapshot.info.displayName
+#: src/ui/ConnectGate.tsx
+msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
+msgstr "mdbase writer 需要在 <0>{0}</0> 中满足两类记录约定：手稿和用于引文的 Reader 来源。设置过程只会添加缺少的内容，不会更改现有记录。"
+
+#: src/ui/ConnectGate.tsx
+msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library. Connect a collection to choose what it can access."
+msgstr "mdbase writer 将 mdbase 集合中的 Markdown 记录排版为 PDF 和 Word 文档，并使用 mdbase Reader 资料库中的引文。连接集合以选择它可以访问的内容。"
+
+#: src/ui/CompareDialog.tsx
+msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
+msgstr "合并后的 Markdown<0/><1>合并文本会在集合版本的基础上保留你本地更改的设置。</1>"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Mine"
+msgstr "我的"
+
+#: src/ui/names.ts
+msgid "MLA 9th edition"
+msgstr "MLA 第 9 版"
+
+#: src/ui/WorkspaceView.tsx
+msgid "More"
+msgstr "更多"
+
+#. placeholder {0}: i + 1
+#: src/ui/Settings.tsx
+msgid "Move author {0} up"
+msgstr "上移作者 {0}"
+
+#: src/ui/Settings.tsx
+msgid "Move up"
+msgstr "上移"
+
+#. placeholder {0}: recordTitle(records.get(path), path)
+#. placeholder {1}: to + 1
+#. placeholder {2}: chapters.length
+#: src/ui/OutlinePanel.tsx
+msgid "Moved {0} to chapter {1} of {2}."
+msgstr "已将 {0} 移至第 {2} 章中的第 {1} 章位置。"
+
+#: src/ui/Settings.tsx
+msgid "Name"
+msgstr "名称"
+
+#: src/ui/OutlinePanel.tsx
+msgid "New chapter title"
+msgstr "新章节标题"
+
+#: src/ui/CommentsPanel.tsx
+msgid "New comment"
+msgstr "新评论"
+
+#: src/editor/comments.ts
+msgctxt "comment tooltip"
+msgid "New comment"
+msgstr "新评论"
+
+#: src/ui/Home.tsx
+msgid "New manuscript"
+msgstr "新手稿"
+
+#: src/ui/CommentsPanel.tsx
+msgid "New since last visit ({newCount})"
+msgstr "上次访问后新增（{newCount}）"
+
+#: src/ui/CommentsPanel.tsx
+msgid "New since your last visit"
+msgstr "自上次访问后新增"
+
+#: src/editor/comments.ts
+msgid "New suggestion"
+msgstr "新建议"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Next / previous comment"
+msgstr "下一条 / 上一条评论"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Next / previous problem"
+msgstr "下一个 / 上一个问题"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Next citation"
+msgstr "下一个引文"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Next comment"
+msgstr "下一条评论"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Next problem"
+msgstr "下一个问题"
+
+#: src/ui/SourcesPanel.tsx
+msgid "No annotations on this source."
+msgstr "此来源没有注释。"
+
+#. placeholder {0}: query.trim()
+#: src/ui/CollectionPicker.tsx
+msgid "No collection matches “{0}”."
+msgstr "没有匹配“{0}”的集合。"
+
+#: src/ui/ExportReview.tsx
+msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
+msgstr "尚未下载任何文件。缺失的图片或章节可能导致导出内容不完整。分享或提交前，请检查这些问题。"
+
+#: src/i18n/diagnostics.ts
+msgid "No file in the collection matches the citation style {value}."
+msgstr "集合中没有与引文格式 {value} 匹配的文件。"
+
+#: src/i18n/diagnostics.ts
+msgid "No file in the collection matches the template {value}."
+msgstr "集合中没有与模板 {value} 匹配的文件。"
+
+#: src/ui/Home.tsx
+msgid "No manuscript matches “{filter}”."
+msgstr "没有匹配“{filter}”的手稿。"
+
+#: src/ui/Home.tsx
+msgid "No note matches “{query}”."
+msgstr "没有匹配“{query}”的笔记。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "No open comments"
+msgstr "没有未解决的评论"
+
+#: src/ui/Home.tsx
+msgid "No other notes in this collection."
+msgstr "此集合中没有其他笔记。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "No problems"
+msgstr "没有问题"
+
+#. placeholder {0}: this.target
+#: src/editor/chapter-cards.ts
+msgid "No record matches ![[{0}]]"
+msgstr "没有匹配 ![[{0}]] 的记录"
+
+#: src/i18n/diagnostics.ts
+msgid "No record matches the embed ![[{value}]]."
+msgstr "没有匹配嵌入 ![[{value}]] 的记录。"
+
+#: src/i18n/diagnostics.ts
+msgid "No source in the library has the citekey {value}."
+msgstr "资料库中没有 citekey 为 {value} 的来源。"
+
+#: src/i18n/diagnostics.ts
+msgid "No source in the library matches {value}, so the quotation from {other} is not cited."
+msgstr "资料库中没有与 {value} 匹配的来源，因此 {other} 中的引用文字未被引用。"
+
+#: src/ui/SourcesPanel.tsx
+msgid "No source matches “{query}”; searching highlights…"
+msgstr "没有匹配“{query}”的来源；正在搜索高亮内容…"
+
+#. placeholder {0}: ref.key
+#: src/editor/insight.ts
+msgid "No source or label is called “{0}”."
+msgstr "没有名为“{0}”的来源或标签。"
+
+#: src/ui/SourcesPanel.tsx
+msgid "No sources in this collection yet."
+msgstr "此集合中还没有来源。"
+
+#: src/ui/Home.tsx
+msgid "No sources yet"
+msgstr "还没有来源"
+
+#: src/ui/Home.tsx
+msgid "No type · {path}"
+msgstr "无类型 · {path}"
+
+#. placeholder {0}: readerSourceHref() ? <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open mdbase Reader</Trans></a> : t`Open mdbase Reader`
+#: src/ui/Home.tsx
+msgid "None yet. {0} to import a PDF, a DOI or a BibTeX file; each source gets a citekey."
+msgstr "目前没有来源。{0}可导入 PDF、DOI 或 BibTeX 文件；每个来源都会获得一个 citekey。"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Not cited yet"
+msgstr "尚未引用"
+
+#: src/workspace/workspace.ts
+msgid "Not loaded; it will be left out."
+msgstr "未加载；将被省略。"
+
+#: src/pwa-install.ts
+msgid "Not now"
+msgstr "暂不"
+
+#: src/ui/records.ts
+msgid "Not saved"
+msgstr "未保存"
+
+#. placeholder {0}: activeView.snapshot.problem.message ?? activeView.snapshot.problem.code
+#: src/ui/WorkspaceView.tsx
+msgid "Not saved: {0}. Your text is kept here."
+msgstr "未保存：{0}。你的文本仍保留在此处。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "note"
+msgstr "笔记"
+
+#: src/ui/Home.tsx
+msgid "Note<0/>"
+msgstr "笔记<0/>"
+
+#: src/ui/Home.tsx
+msgid "Notes"
+msgstr "笔记"
+
+#: src/ui/Home.tsx
+msgid "Notes without a type"
+msgstr "无类型的笔记"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
+msgstr "尚未引用任何内容。请在下方引用来源，或在编辑器中输入 <0>[@</0>。"
+
+#: src/i18n/diagnostics.ts
+msgid "Nothing is labelled {value}."
+msgstr "没有任何内容的标签为 {value}。"
+
+#: src/ui/CompareDialog.tsx
+msgid "Nothing is replaced until you choose. Highlighted passages differ between the versions."
+msgstr "在你作出选择前，内容不会被替换。高亮段落表示两个版本之间的差异。"
+
+#. placeholder {0}: query.trim()
+#: src/ui/ManuscriptSearch.tsx
+msgid "Nothing matches “{0}”."
+msgstr "没有匹配“{0}”的内容。"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Nothing matches “{query}”."
+msgstr "没有匹配“{query}”的内容。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Nothing resolved yet."
+msgstr "尚无已解决的评论。"
+
+#: src/ui/connection-notice.ts
+msgid "Offline"
+msgstr "离线"
+
+#: src/ui/WorkspaceView.tsx
+msgid "On a citation: show the source. On a cross-reference: go to what it labels"
+msgstr "对于引文：显示来源。对于交叉引用：跳转到它所指向的内容。"
+
+#: src/ui/Home.tsx
+msgid "On the formation of coral reefs"
+msgstr "关于珊瑚礁的形成"
+
+#: src/ui/CommentsPanel.tsx
+msgid "On the whole record"
+msgstr "针对整条记录"
+
+#: src/ui/CollectionPicker.tsx
+msgid "On your computer"
+msgstr "在你的电脑上"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Open"
+msgstr "打开"
+
+#: src/editor/chapter-cards.ts
+msgctxt "open embedded chapter action"
+msgid "Open"
+msgstr "打开"
+
+#. placeholder {0}: card.title
+#: src/editor/chapter-cards.ts
+msgid "Open {0}"
+msgstr "打开 {0}"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Open in Reader <0/>"
+msgstr "在 Reader 中打开 <0/>"
+
+#: src/ui/Home.tsx
+msgid "Open its manuscript to review it"
+msgstr "打开对应手稿以进行审阅"
+
+#: src/ui/Home.tsx
+msgid "Open mdbase Reader"
+msgstr "打开 mdbase Reader"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Open now"
+msgstr "立即打开"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Open Reader to add a source"
+msgstr "打开 Reader 以添加来源"
+
+#: src/connect/native-signin-ui.ts
+msgid "Open sign-in"
+msgstr "打开登录页面"
+
+#: src/connect/native-signin-ui.ts
+msgid "Open the mdbase tab again"
+msgstr "重新打开 mdbase 标签页"
+
+#: src/editor/chapter-cards.ts
+msgid "Open this passage in Reader"
+msgstr "在 Reader 中打开此段落"
+
+#: src/connect/native-signin-ui.ts
+msgid "Opening collections isn't available in this build yet."
+msgstr "此版本暂不支持打开集合。"
+
+#: src/App.tsx
+#: src/ui/ConnectGate.tsx
+msgid "Opening mdbase writer"
+msgstr "正在打开 mdbase writer"
+
+#: src/LegacyApp.tsx
+msgid "Opening the demo collection"
+msgstr "正在打开演示集合"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Opening the manuscript…"
+msgstr "正在打开手稿…"
+
+#: src/ui/NativeWriterView.tsx
+msgid "Opening Writer"
+msgstr "正在打开 Writer"
+
+#: src/ui/NativeWriterView.tsx
+#: src/ui/SdkWriterRoot.tsx
+msgid "Opening Writer…"
+msgstr "正在打开 Writer…"
+
+#: src/ui/SdkWriterRoot.tsx
+msgid "Opening your collection"
+msgstr "正在打开你的集合"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Opening…"
+msgstr "正在打开…"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Or type <0>/</0> in the text to pick one there."
+msgstr "也可以在文本中输入 <0>/</0>，然后在此处选择。"
+
+#: src/ui/Home.tsx
+msgid "or use a note you already have"
+msgstr "或使用已有笔记"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Outline"
+msgstr "大纲"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
+msgstr "大纲，并搜索手稿（{MOD_LABEL}-Shift-F）"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Page (optional)"
+msgstr "页码（可选）"
+
+#. placeholder {0}: i + 1
+#: src/preview/Preview.tsx
+msgid "Page {0}"
+msgstr "第 {0} 页"
+
+#. placeholder {0}: previewView.page
+#. placeholder {1}: previewView.pages
+#: src/ui/WorkspaceView.tsx
+msgid "Page {0} of {1}"
+msgstr "第 {0} 页，共 {1} 页"
+
+#. placeholder {0}: entry.title
+#: src/ui/SourcesPanel.tsx
+msgid "Page or locator for {0}"
+msgstr "{0} 的页码或定位信息"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Pandoc bundle"
+msgstr "Pandoc 捆绑包"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Pandoc bundle (zip)"
+msgstr "Pandoc 捆绑包（zip）"
+
+#: src/export/pandoc.ts
+msgid "Pandoc produced no document."
+msgstr "Pandoc 未生成任何文档。"
+
+#: src/export/pandoc.ts
+msgid "Pandoc returned an unreadable response."
+msgstr "Pandoc 返回了无法读取的响应。"
+
+#: src/export/pandoc.ts
+msgid "Pandoc stopped."
+msgstr "Pandoc 已停止。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself"
+msgstr "包含来源、样式和图片的 Pandoc/Quarto Markdown，可供你自行构建其他格式"
+
+#: src/compile/client.ts
+msgid "PDF export timed out. Retry the preview and export again."
+msgstr "PDF 导出超时。请重试预览，然后重新导出。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Preview"
+msgstr "预览"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Preview only"
+msgstr "仅预览"
+
+#: src/preview/Preview.tsx
+msgid "Preview rendering failed: {renderProblem}. Your text is still available in the editor."
+msgstr "预览渲染失败：{renderProblem}。你的文本仍可在编辑器中使用。"
+
+#. placeholder {0}: snap.previewProblem
+#: src/ui/WorkspaceView.tsx
+msgid "Preview unavailable: {0}. You can keep writing."
+msgstr "预览不可用：{0}。你可以继续写作。"
+
+#: src/preview/Preview.tsx
+msgid "Preview unavailable. You can keep writing."
+msgstr "预览不可用。你可以继续写作。"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Previous citation"
+msgstr "上一个引文"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Previous comment"
+msgstr "上一条评论"
+
+#: src/ui/ConnectGate.tsx
+msgid "Previously connected"
+msgstr "之前已连接"
+
+#: src/ui/WorkspaceView.tsx
+msgid "problem"
+msgstr "问题"
+
+#: src/ui/WorkspaceView.tsx
+msgid "problems"
+msgstr "问题"
+
+#: src/ui/ProblemsStrip.tsx
+msgid "Problems"
+msgstr "问题"
+
+#: src/ui/Home.tsx
+msgid "Progress to the word goal"
+msgstr "字数目标进度"
+
+#: src/i18n/diagnostics.ts
+msgid "Raw HTML is not rendered in PDF output."
+msgstr "PDF 输出中不会渲染原始 HTML。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Read as the manuscript"
+msgstr "按手稿方式阅读"
+
+#: src/ui/Settings.tsx
+msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
+msgstr "按手稿方式阅读<0>关闭后将显示原始 Markdown</0>"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Reason for the suggestion"
+msgstr "建议理由"
+
+#: src/ui/ConnectGate.tsx
+msgid "Reconnect"
+msgstr "重新连接"
+
+#: src/ui/connection-notice.ts
+msgid "Reconnecting"
+msgstr "正在重新连接"
+
+#: src/ui/records.ts
+msgid "Recovering save…"
+msgstr "正在恢复保存内容…"
+
+#: src/ui/WorkspaceView.tsx
+msgid "refer section figure table label"
+msgstr "引用章节、插图、表格标签"
+
+#: src/editor/live-preview.ts
+msgid "Refer to this with @{id}"
+msgstr "使用 @{id} 引用此项"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Reject"
+msgstr "拒绝"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Rejected"
+msgstr "已拒绝"
+
+#: src/LegacyApp.tsx
+msgid "Reload"
+msgstr "重新加载"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+msgid "Remove"
+msgstr "移除"
+
+#. placeholder {0}: i + 1
+#: src/ui/Settings.tsx
+msgid "Remove author {0}"
+msgstr "移除作者 {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Rename the chapter chosen in the outline"
+msgstr "重命名在大纲中选定的章节"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Reopen"
+msgstr "重新打开"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Replace"
+msgstr "替换"
+
+#. placeholder {0}: clip(exact)
+#. placeholder {1}: clip(replacement)
+#: src/ui/comments.ts
+msgid "Replace {0} with {1}"
+msgstr "将 {0} 替换为 {1}"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Replace with"
+msgstr "替换为"
+
+#. placeholder {0}: root.suggestion.replacement
+#: src/ui/WorkspaceView.tsx
+msgid "Replace with “{0}”"
+msgstr "替换为“{0}”"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Reply"
+msgstr "回复"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Resize the editor and preview"
+msgstr "调整编辑器和预览区域的大小"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Resize the sidebar"
+msgstr "调整侧边栏大小"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Resolve"
+msgstr "解决"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Resolved"
+msgstr "已解决"
+
+#: src/ui/CompareDialog.tsx
+msgid "Restore local draft"
+msgstr "恢复本地草稿"
+
+#: src/ui/Home.tsx
+msgid "Retry background data"
+msgstr "重试加载后台数据"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Retry comments"
+msgstr "重试加载评论"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Retry dependencies"
+msgstr "重试加载依赖项"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Retry export"
+msgstr "重试导出"
+
+#: src/LegacyApp.tsx
+#: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Retry loading"
+msgstr "重试加载"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Retry opening"
+msgstr "重试打开"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Retry preview"
+msgstr "重试预览"
+
+#: src/preview/Preview.tsx
+msgid "Retry rendering"
+msgstr "重试渲染"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Retry save"
+msgstr "重试保存"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Retry saving"
+msgstr "重试保存"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Retry sources"
+msgstr "重试加载来源"
+
+#: src/ui/Home.tsx
+msgid "Review"
+msgstr "审阅"
+
+#. placeholder {0}: recordTitle(snap.records.get(path), path)
+#: src/ui/WorkspaceView.tsx
+msgid "Review {0}"
+msgstr "审阅 {0}"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Review access"
+msgstr "查看访问权限"
+
+#: src/ui/records.ts
+msgid "Review drafts"
+msgstr "审阅草稿"
+
+#: src/ui/ExportReview.tsx
+msgid "Review export problems"
+msgstr "检查导出问题"
+
+#: src/ui/records.ts
+msgid "Review local drafts"
+msgstr "审阅本地草稿"
+
+#: src/ui/CompareDialog.tsx
+msgid "Review recovered local draft"
+msgstr "审阅恢复的本地草稿"
+
+#: src/workspace/workspace.ts
+msgid "Review the recovered local drafts before leaving."
+msgstr "离开前请审阅恢复的本地草稿。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Save all records now"
+msgstr "立即保存所有记录"
+
+#: src/ui/CompareDialog.tsx
+msgid "Save merged version"
+msgstr "保存合并后的版本"
+
+#: src/ui/records.ts
+msgid "Saved"
+msgstr "已保存"
+
+#: src/ui/connection-notice.ts
+#: src/ui/records.ts
+msgid "Saved on this device; waiting for sync"
+msgstr "已保存到此设备；等待同步"
+
+#: src/ui/records.ts
+msgid "Saving…"
+msgstr "正在保存…"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Search by author, title, year or key"
+msgstr "按作者、标题、年份或键搜索"
+
+#: src/ui/ManuscriptSearch.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Search the manuscript"
+msgstr "搜索手稿"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Search the whole manuscript"
+msgstr "搜索整篇手稿"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Second panel"
+msgstr "第二面板"
+
+#: src/editor/completions.ts
+#: src/editor/insight.ts
+msgid "Section"
+msgstr "章节"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
+msgstr "选择一段文字并按 <0>{MOD_LABEL}-{ALT_LABEL}-M</0> 添加评论，或按 <1>{MOD_LABEL}-{ALT_LABEL}-S</1> 提出编辑建议。"
+
+#: src/editor/selection-bar.tsx
+msgid "Selection"
+msgstr "所选内容"
+
+#: src/ui/Home.tsx
+msgid "Set a word goal"
+msgstr "设置字数目标"
+
+#: src/ui/Home.tsx
+msgid "Set goal"
+msgstr "设置目标"
+
+#: src/ui/ConnectGate.tsx
+msgid "Set up collection"
+msgstr "设置集合"
+
+#: src/ui/ConnectGate.tsx
+msgid "Set up this collection for writing"
+msgstr "设置此集合以进行写作"
+
+#: src/ui/ConnectGate.tsx
+msgid "Setting up…"
+msgstr "正在设置…"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Settings"
+msgstr "设置"
+
+#. placeholder {0}: diagnostic.field
+#: src/ui/ProblemsStrip.tsx
+msgid "Settings · {0}"
+msgstr "设置 · {0}"
+
+#: src/ui/CompareDialog.tsx
+msgid "Settings also differ"
+msgstr "设置也存在差异"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Show"
+msgstr "显示"
+
+#. placeholder {0}: rest.length
+#: src/ui/OutlinePanel.tsx
+msgid "Show 50 more chapters · {0}"
+msgstr "再显示 50 个章节 · {0}"
+
+#. placeholder {0}: inManuscript.length
+#: src/ui/SourcesPanel.tsx
+msgid "Show 50 more cited sources · {0}"
+msgstr "再显示 50 个已引用来源 · {0}"
+
+#. placeholder {0}: logical.length
+#: src/ui/CommentsPanel.tsx
+msgid "Show 50 more comments · {0}"
+msgstr "再显示 50 条评论 · {0}"
+
+#. placeholder {0}: list.length
+#: src/ui/OutlinePanel.tsx
+msgid "Show 50 more headings · {0}"
+msgstr "再显示 50 个标题 · {0}"
+
+#. placeholder {0}: notes.length
+#: src/ui/SourcesPanel.tsx
+msgid "Show 50 more highlights · {0}"
+msgstr "再显示 50 个高亮 · {0}"
+
+#. placeholder {0}: shown.length
+#: src/ui/Home.tsx
+msgid "Show 50 more manuscripts · {0}"
+msgstr "再显示 50 篇手稿 · {0}"
+
+#. placeholder {0}: thread.replies.length
+#: src/ui/CommentsPanel.tsx
+msgid "Show 50 more replies · {0}"
+msgstr "再显示 50 条回复 · {0}"
+
+#. placeholder {0}: rest.length
+#: src/ui/SourcesPanel.tsx
+msgid "Show 50 more sources · {0}"
+msgstr "再显示 50 个来源 · {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show a second panel beneath (outline and comments together)"
+msgstr "在下方显示第二个面板（同时显示大纲和评论）"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show a second sidebar panel"
+msgstr "显示第二个侧边栏面板"
+
+#. placeholder {0}: untypedShown.length
+#: src/ui/Home.tsx
+msgid "Show all {0} notes without a type"
+msgstr "显示全部 {0} 条无类型笔记"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show comments"
+msgstr "显示评论"
+
+#: src/preview/Preview.tsx
+msgid "Show in Sources"
+msgstr "在“来源”中显示"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Show in the editor"
+msgstr "在编辑器中显示"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show Markdown as written"
+msgstr "显示原始 Markdown"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show or hide the sidebar"
+msgstr "显示或隐藏侧边栏"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Show previous 50 chapters"
+msgstr "显示之前的 50 个章节"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Show previous 50 cited sources"
+msgstr "显示之前的 50 个已引用来源"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Show previous 50 comments"
+msgstr "显示之前的 50 条评论"
+
+#: src/ui/OutlinePanel.tsx
+msgid "Show previous 50 headings"
+msgstr "显示之前的 50 个标题"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Show previous 50 sources"
+msgstr "显示之前的 50 个来源"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show problems"
+msgstr "显示问题"
+
+#. placeholder {0}: recordTitle(view, path)
+#: src/ui/OutlinePanel.tsx
+msgid "Show the headings of {0}"
+msgstr "显示 {0} 的标题"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show the sidebar"
+msgstr "显示侧边栏"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Show the sidebar ({MOD_LABEL}-\\)"
+msgstr "显示侧边栏（{MOD_LABEL}-\\）"
+
+#: src/editor/comments.ts
+msgid "Show this comment"
+msgstr "显示此评论"
+
+#: src/preview/Preview.tsx
+msgid "Showing the last successful preview; it may not match your latest text."
+msgstr "当前显示最近一次成功的预览；内容可能与最新文本不一致。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Sidebar"
+msgstr "侧边栏"
+
+#: src/connect/native-signin-ui.ts
+msgid "Sign in"
+msgstr "登录"
+
+#: src/connect/native-signin-ui.ts
+msgid "Sign in with your mdbase account to sync {appName} across your devices."
+msgstr "使用 mdbase 账户登录，以便在各设备间同步 {appName}。"
+
+#: src/connect/native-signin-ui.ts
+msgid "Sign out"
+msgstr "退出登录"
+
+#: src/ui/NativeSignIn.tsx
+msgid "Sign-in status"
+msgstr "登录状态"
+
+#: src/connect/native-signin-ui.ts
+msgid "Sign-in was interrupted. Please try again."
+msgstr "登录过程已中断。请重试。"
+
+#: src/connect/connect-popup.ts
+msgid "Sign-in window closed."
+msgstr "登录窗口已关闭。"
+
+#: src/connect/native-signin-ui.ts
+msgid "Signed in as {email}"
+msgstr "已以 {email} 身份登录"
+
+#. placeholder {0}: selected.displayName
+#: src/connect/native-signin-ui.ts
+msgid "Signed in. Opening {0}…"
+msgstr "已登录。正在打开 {0}…"
+
+#: src/ui/Manuscripts.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Some changes are not saved"
+msgstr "部分更改尚未保存"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Some images or chapters could not be loaded. See Problems for their locations."
+msgstr "部分图片或章节无法加载。请在“问题”中查看其位置。"
+
+#: src/LegacyApp.tsx
+msgid "Something went wrong"
+msgstr "出了点问题"
+
+#: src/ui/ConnectGate.tsx
+msgid "Something went wrong."
+msgstr "出了点问题。"
+
+#: src/editor/insight.ts
+msgid "Source"
+msgstr "来源"
+
+#: src/ui/WorkspaceView.tsx
+msgid "source markup raw live preview chips"
+msgstr "来源标记、原始文本、实时预览、标记"
+
+#: src/ui/SourcesPanel.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Sources"
+msgstr "来源"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Sources are not set up in this collection."
+msgstr "此集合尚未设置来源。"
+
+#. placeholder {0}: r.message
+#: src/ui/Home.tsx
+msgid "Sources could not be loaded: {0}"
+msgstr "无法加载来源：{0}"
+
+#: src/ui/Home.tsx
+msgid "Sources not set up"
+msgstr "尚未设置来源"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Sources unavailable: {libraryProblem}"
+msgstr "来源不可用：{libraryProblem}"
+
+#: src/ui/SourcesPanel.tsx
+msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
+msgstr "来源不可用：{libraryProblem} <0>重试加载来源</0>"
+
+#: src/ui/Home.tsx
+msgid "Sources."
+msgstr "来源。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "split stack outline comments sources"
+msgstr "分栏、堆叠、大纲、评论、来源"
+
+#. placeholder {0}: stored.value
+#: src/ui/WorkspaceView.tsx
+msgid "Stored {0}. Write the caption."
+msgstr "已保存 {0}。请撰写说明文字。"
+
+#. placeholder {0}: file.name
+#: src/ui/WorkspaceView.tsx
+msgid "Storing {0}…"
+msgstr "正在保存 {0}…"
+
+#: src/ui/Settings.tsx
+msgid "Subtitle"
+msgstr "副标题"
+
+#: src/editor/selection-bar.tsx
+#: src/ui/CommentsPanel.tsx
+msgid "Suggest"
+msgstr "建议"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Suggest an edit"
+msgstr "提出编辑建议"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Suggest an edit to the selection"
+msgstr "为所选内容提出编辑建议"
+
+#: src/editor/selection-bar.tsx
+msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
+msgstr "为所选内容提出编辑建议（{MOD_LABEL}-{ALT_LABEL}-S）"
+
+#: src/editor/comments.ts
+msgid "Suggested insertion"
+msgstr "建议插入的内容"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Suggested text"
+msgstr "建议文本"
+
+#: src/editor/comments.ts
+msgctxt "comment tooltip"
+msgid "Suggestion"
+msgstr "建议"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Switch collection"
+msgstr "切换集合"
+
+#: src/ui/CollectionPicker.tsx
+msgid "Switch collection: {name}"
+msgstr "切换集合：{name}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "System"
+msgstr "系统"
+
+#: src/editor/completions.ts
+#: src/editor/insight.ts
+#: src/ui/WorkspaceView.tsx
+msgid "Table"
+msgstr "表格"
+
+#: src/workspace/workspace.ts
+msgid "That record is not open."
+msgstr "该记录尚未打开。"
+
+#: src/i18n/diagnostics.ts
+msgid "The annotation {value} has no quotation to embed."
+msgstr "注释 {value} 没有可嵌入的引用文字。"
+
+#: src/workspace/workspace.ts
+msgid "The chapter is not open."
+msgstr "该章节尚未打开。"
+
+#: src/compile/client.ts
+msgid "The compile worker stopped."
+msgstr "编译工作进程已停止。"
+
+#: src/LegacyApp.tsx
+msgid "The demo could not be loaded"
+msgstr "无法加载演示内容"
+
+#: src/compile/client.ts
+msgid "The document has errors; fix them to export."
+msgstr "文档存在错误；请先修复后再导出。"
+
+#: src/editor/Editor.tsx
+msgid "The editor language could not be loaded. You can keep writing."
+msgstr "无法加载编辑器语言。你可以继续写作。"
+
+#: src/i18n/diagnostics.ts
+msgid "The embed ![[{value}]] in {other} was left out."
+msgstr "{other} 中的嵌入 ![[{value}]] 已被省略。"
+
+#. placeholder {0}: errorMessage(error)
+#: src/ui/WorkspaceView.tsx
+msgid "The file could not be downloaded. {0}"
+msgstr "无法下载文件。{0}"
+
+#. placeholder {0}: missingImage[1] ?? ""
+#: src/export/warnings.ts
+msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
+msgstr "无法为 Word 加载图片“{0}”。将改为包含其描述。"
+
+#: src/i18n/diagnostics.ts
+msgid "The label {value} is used more than once."
+msgstr "标签 {value} 被多次使用。"
+
+#: src/i18n/provider.tsx
+msgid "The language could not be loaded. Your current language is unchanged. Try again."
+msgstr "无法加载语言。当前语言保持不变。请重试。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "The line being typed is checked once typing pauses"
+msgstr "暂停输入后，将检查正在编辑的行"
+
+#: src/workspace/workspace.ts
+msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
+msgstr "加载导出依赖项期间手稿仍在变化。请暂停编辑后重试。"
+
+#: src/compile/client.ts
+#: src/workspace/workspace.ts
+msgid "The manuscript was closed."
+msgstr "手稿已关闭。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "The person record that claims your account is not valid."
+msgstr "关联到你账户的人员记录无效。"
+
+#: src/compile/client.ts
+msgid "The preview took too long to load. Retry the preview."
+msgstr "预览加载超时。请重试预览。"
+
+#: src/compile/client.ts
+msgid "The preview worker returned an unreadable response."
+msgstr "预览工作进程返回了无法读取的响应。"
+
+#: src/ui/Settings.tsx
+msgid "The style’s own (usually en-US)"
+msgstr "样式自身的语言（通常为 en-US）"
+
+#: src/workspace/workspace.ts
+msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
+msgstr "建议文本已不在记录中；请手动编辑，然后解决此建议。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "The suggested text is no longer there"
+msgstr "建议文本已不存在"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Theme"
+msgstr "主题"
+
+#: src/ui/names.ts
+msgid "Thesis or book"
+msgstr "论文或书籍"
+
+#: src/ui/ConnectGate.tsx
+msgid "This action could not be completed. Please try again."
+msgstr "无法完成此操作。请重试。"
+
+#: src/ui/Settings.tsx
+msgid "This applies in this browser, to every manuscript."
+msgstr "此设置适用于此浏览器中的所有手稿。"
+
+#: src/ui/Settings.tsx
+msgid "This changes the interface in this browser, not the manuscript’s language."
+msgstr "这会更改此浏览器中的界面语言，而不是手稿的语言。"
+
+#: src/workspace/workspace.ts
+msgid "This collection does not accept files from Writer."
+msgstr "此集合不接受来自 Writer 的文件。"
+
+#: src/ui/ConnectGate.tsx
+msgid "This collection is unavailable"
+msgstr "此集合不可用"
+
+#: src/ui/NativeWriterView.tsx
+msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
+msgstr "无法打开此集合视图。请从上方栏中选择其他集合，或重新加载后重试。"
+
+#: src/ui/ConnectGate.tsx
+msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
+msgstr "这是本地开发版本。托管的 mdbase connect 服务仅接受通过 HTTPS 提供的应用，因此请使用 Connect 本地环境（在 mdbase-connect 中运行 <0>pnpm dev:environment:up</0>），或打开<1>演示集合</1>。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "This list"
+msgstr "此列表"
+
+#: src/ui/WorkspaceView.tsx
+msgid "This manuscript could not be opened"
+msgstr "无法打开此手稿"
+
+#: src/ui/CommentsPanel.tsx
+msgid "This passage is no longer in the text"
+msgstr "此段内容已不在文本中"
+
+#: src/ui/WorkspaceView.tsx
+msgid "This record changed elsewhere while you were editing it."
+msgstr "你编辑期间，此记录已在其他位置更改。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "This record was deleted elsewhere. Your local text is still available here."
+msgstr "此记录已在其他位置删除。你的本地文本仍保留在此处。"
+
+#: src/ui/CompareDialog.tsx
+msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
+msgstr "此记录已删除。请下载本地草稿以保留内容；无法将草稿恢复到已删除的记录中。"
+
+#: src/ui/Settings.tsx
+msgid "Title"
+msgstr "标题"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
+msgstr "标题、作者、摘要、引文格式、版式和语言（{MOD_LABEL}-,）"
+
+#. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
+#: src/ui/Home.tsx
+msgid "Title<0/>{0}"
+msgstr "标题<0/>{0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "track changes"
+msgstr "修订"
+
+#: src/ui/ConnectGate.tsx
+msgid "Try again"
+msgstr "重试"
+
+#: src/ui/Home.tsx
+msgid "Type to find others."
+msgstr "输入内容以查找其他项。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Typeset from your latest text, with chapters and images checked before download"
+msgstr "根据最新文本排版，下载前检查章节和图片"
+
+#. placeholder {0}: Math.round(timings.assembleMs + timings.compileMs)
+#: src/ui/WorkspaceView.tsx
+msgid "Typeset in {0} ms"
+msgstr "排版用时 {0} 毫秒"
+
+#: src/compile/client.ts
+msgid "Typesetting took too long. Your editor is still available; retry the preview."
+msgstr "排版超时。编辑器仍可使用；请重试预览。"
+
+#: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Typesetting…"
+msgstr "正在排版…"
+
+#: src/ui/Settings.tsx
+msgid "Typst templates in the collection"
+msgstr "集合中的 Typst 模板"
+
+#: src/i18n/diagnostics.ts
+msgid "Unclosed $$ math block."
+msgstr "未闭合的 $$ 数学公式块。"
+
+#: src/editor/insight.ts
+msgid "Unknown"
+msgstr "未知"
+
+#: src/i18n/diagnostics.ts
+msgid "Unknown citation style \"{value}\"; using {other}."
+msgstr "未知的引文格式“{value}”；将使用 {other}。"
+
+#: src/i18n/diagnostics.ts
+msgid "Unknown template \"{value}\"; using article."
+msgstr "未知的模板“{value}”；将使用 article。"
+
+#: src/ui/records.ts
+msgid "Unsaved"
+msgstr "未保存"
+
+#: src/ui/Home.tsx
+msgid "Unsaved drafts"
+msgstr "未保存的草稿"
+
+#: src/ui/Home.tsx
+msgid "Unsaved in this browser"
+msgstr "在此浏览器中未保存"
+
+#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Unsigned"
+msgstr "未签名"
+
+#: src/i18n/diagnostics.ts
+msgid "Unsupported Markdown block: {value}."
+msgstr "不支持的 Markdown 块：{value}。"
+
+#: src/editor/live-preview.ts
+msgid "Untitled figure"
+msgstr "无标题插图"
+
+#: src/ui/Home.tsx
+msgid "Updating…"
+msgstr "正在更新…"
+
+#: src/ui/Home.tsx
+msgid "Use a note you already have…"
+msgstr "使用已有笔记…"
+
+#: src/ui/Home.tsx
+msgid "Use as manuscript"
+msgstr "用作手稿"
+
+#: src/ui/CompareDialog.tsx
+msgid "Use collection version"
+msgstr "使用集合版本"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB."
+msgstr "使用版式中的 Word 样式，但分页可能与 PDF 不同。首次使用时会下载约 16 MB。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "View"
+msgstr "视图"
+
+#: src/workspace/workspace.ts
+msgid "Wait for the manuscript to open before exporting."
+msgstr "请等待手稿打开后再导出。"
+
+#: src/connect/native-signin-ui.ts
+msgid "Waiting for approval in the mdbase tab…"
+msgstr "正在等待 mdbase 标签页中的批准…"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Waiting for approval…"
+msgstr "正在等待批准…"
+
+#: src/ui/CollectionPicker.tsx
+#: src/ui/ConnectGate.tsx
+msgid "Waiting for mdbase connect…"
+msgstr "正在等待 mdbase connect…"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Whose comments"
+msgstr "谁的评论"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Why (optional)"
+msgstr "原因（可选）"
+
+#: src/ui/ConnectGate.tsx
+msgid "will be added"
+msgstr "将添加"
+
+#: src/ui/ConnectGate.tsx
+msgid "will be removed"
+msgstr "将移除"
+
+#: src/ui/ConnectGate.tsx
+msgid "will be updated"
+msgstr "将更新"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Withdraw"
+msgstr "撤回"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Withdrawn."
+msgstr "已撤回。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Word (DOCX)"
+msgstr "Word（DOCX）"
+
+#: src/export/warnings.ts
+msgid "Word export reported a problem."
+msgstr "Word 导出报告了一个问题。"
+
+#: src/export/pandoc.ts
+msgid "Word export timed out. Check your connection and try again."
+msgstr "Word 导出超时。请检查网络连接并重试。"
+
+#: src/ui/Home.tsx
+msgid "Word goal"
+msgstr "字数目标"
+
+#: src/ui/Home.tsx
+msgid "Words, e.g. 8000"
+msgstr "字数，例如 8000"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Write"
+msgstr "写作"
+
+#: src/ui/ConnectGate.tsx
+#: src/ui/NativeSignIn.tsx
+msgid "Write from your collection"
+msgstr "从你的集合开始写作"
+
+#: src/editor/Editor.tsx
+msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
+msgstr "使用 Markdown 写作。使用 [@citekey] 添加引文；输入 / 可添加脚注、插图或表格。"
+
+#: src/editor/chapter-cards.ts
+msgid "Write the quotation here, to edit it; it no longer follows the annotation"
+msgstr "在此处编辑引文；它不再随注释内容同步"
+
+#: src/workspace/workspace.ts
+msgid "Writer cannot ask for access here."
+msgstr "Writer 无法在此处请求访问权限。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Writer commands"
+msgstr "Writer 命令"
+
+#: src/ui/NativeWriterView.tsx
+msgid "Writer could not open this collection"
+msgstr "Writer 无法打开此集合"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Writer was not allowed to see your account."
+msgstr "Writer 无权查看你的账户。"
+
+#: src/main.tsx
+msgid "You can close this window."
+msgstr "你可以关闭此窗口。"
+
+#. placeholder {0}: signing.reason
+#: src/ui/CommentsPanel.tsx
+msgid "Your account could not be checked ({0})."
+msgstr "无法验证你的账户（{0}）。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Your account is not linked to a person record in this collection."
+msgstr "你的账户未关联到此集合中的人员记录。"
+
+#: src/connect/connect-popup.ts
+#: src/connect/native-signin-ui.ts
+msgid "Your browser blocked the sign-in tab."
+msgstr "浏览器已拦截登录标签页。"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Your comments are not signed."
+msgstr "你的评论未签名。"
+
+#: src/workspace/workspace.ts
+msgid "Your custom Typst layout applies to PDF only. Word uses the article styles; pagination and layout will differ."
+msgstr "你的自定义 Typst 版式仅适用于 PDF。Word 使用文章样式；分页和版式会有所不同。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB."
+msgstr "你的自定义 Typst 版式仅适用于 PDF。Word 使用文章样式，分页也不同。首次使用时会下载约 16 MB。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup."
+msgstr "如果存储空间可用，本地草稿会备份在此浏览器中。如需单独备份，请在离开前下载副本。"
+
+#: src/ui/CompareDialog.tsx
+msgid "Your local text"
+msgstr "你的本地文本"
+
+#: src/LegacyApp.tsx
+msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
+msgstr "已保存的文本位于你的集合中。如果存储空间可用，尚未发送的本地草稿会备份在此浏览器中。重新加载前请下载副本。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Zoom"
+msgstr "缩放"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Zoom in"
+msgstr "放大"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Zoom out"
+msgstr "缩小"

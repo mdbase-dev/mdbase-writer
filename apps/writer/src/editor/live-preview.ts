@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // The editor reads like the manuscript rather than its source: citations
 // show as the author and year they cite, cross-references as what they point
 // to, footnote markers as their numbers, labels as small tags, and headings,
@@ -130,7 +131,7 @@ class FigureWidget extends WidgetType {
     }
     const caption = document.createElement("div");
     caption.className = "cm-lp-caption";
-    caption.textContent = this.caption || "Untitled figure";
+    caption.textContent = this.caption || t`Untitled figure`;
     if (this.label) {
       const tag = document.createElement("span");
       tag.className = "cm-lp-chip is-label";
@@ -247,7 +248,7 @@ function linesChanged(before: EditorState, after: EditorState): boolean {
 }
 
 const labelOf = (attrs: string | undefined) => /\{#([^\s}]+)/.exec(attrs ?? "")?.[1] ?? "";
-const kindOf = (key: string) => LABEL_KINDS[key.split("-")[0] ?? ""] ?? "Label";
+const kindOf = (key: string) => LABEL_KINDS[key.split("-")[0] ?? ""] ?? t`Label`;
 const shorten = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 
 function inlineDecorations(view: EditorView, insight: () => EditorInsight): DecorationSet {
@@ -364,7 +365,7 @@ function inlineDecorations(view: EditorView, insight: () => EditorInsight): Deco
               const start = node.from + (m.index ?? 0);
               // The space before the tag goes too, so a heading does not end in a gap.
               const leading = start > node.from && state.sliceDoc(start - 1, start) === " " ? 1 : 0;
-              ranges.push(Decoration.replace({ widget: new ChipWidget(id || m[0].slice(1, -1), "label", id ? `Refer to this with @${id}` : m[0]) }).range(start - leading, start + m[0].length));
+              ranges.push(Decoration.replace({ widget: new ChipWidget(id || m[0].slice(1, -1), "label", id ? t`Refer to this with @${id}` : m[0]) }).range(start - leading, start + m[0].length));
             }
             return;
           }
@@ -436,7 +437,7 @@ function blockDecorations(state: EditorState, insight: () => EditorInsight): Dec
           const text = state.sliceDoc(node.from, node.to);
           const m = /^\$\$([\s\S]*?)\$\$\s*(\{[^}]*\})?\s*$/.exec(text);
           if (!m) return false;
-          replace(node.from, node.to, new CodeWidget("Equation", (m[1] ?? "").trim(), true, labelOf(m[2])));
+          replace(node.from, node.to, new CodeWidget(t`Equation`, (m[1] ?? "").trim(), true, labelOf(m[2])));
           return false;
         }
         default:

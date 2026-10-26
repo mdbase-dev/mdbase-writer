@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { formatDate, formatRelative } from "../i18n/presentation.js";
 // Which of the collection's comment threads belong to this manuscript, and
 // where each is in its record's current text.
 import { commentThreads, linkPath, locate, type CommentRecord, type CommentThread, type Located } from "@mdbase-writer/core/comments";
@@ -119,12 +121,10 @@ export function describeSuggestion(root: CommentRecord): string {
   const clip = (s: string) => `“${clipPassage(s)}”`;
   const exact = root.target?.quote.exact ?? "";
   const replacement = root.suggestion?.replacement ?? "";
-  if (exact && replacement) return `Replace ${clip(exact)} with ${clip(replacement)}`;
-  if (exact) return `Delete ${clip(exact)}`;
-  return `Insert ${clip(replacement)}`;
+  if (exact && replacement) return t`Replace ${clip(exact)} with ${clip(replacement)}`;
+  if (exact) return t`Delete ${clip(exact)}`;
+  return t`Insert ${clip(replacement)}`;
 }
-
-const relative = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 
 /** "5 minutes ago", "yesterday", or a date for anything older than a week. */
 export function when(iso: string, now = Date.now()): string {
@@ -132,11 +132,11 @@ export function when(iso: string, now = Date.now()): string {
   if (Number.isNaN(then)) return iso;
   const seconds = Math.round((then - now) / 1000);
   const abs = Math.abs(seconds);
-  if (abs < 60) return relative.format(0, "second");
-  if (abs < 3600) return relative.format(Math.round(seconds / 60), "minute");
-  if (abs < 86_400) return relative.format(Math.round(seconds / 3600), "hour");
-  if (abs < 7 * 86_400) return relative.format(Math.round(seconds / 86_400), "day");
-  return new Date(then).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  if (abs < 60) return formatRelative(0, "second");
+  if (abs < 3600) return formatRelative(Math.round(seconds / 60), "minute");
+  if (abs < 86_400) return formatRelative(Math.round(seconds / 3600), "hour");
+  if (abs < 7 * 86_400) return formatRelative(Math.round(seconds / 86_400), "day");
+  return formatDate(then, { day: "numeric", month: "short", year: "numeric" });
 }
 
 /** A run of comment text as it reads: plain, emphasised, code, or a link. */

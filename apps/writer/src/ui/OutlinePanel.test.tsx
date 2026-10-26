@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup } from "@testing-library/react";
+import { render } from "../test/render.js";
 import { useCallback } from "react";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";

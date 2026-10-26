@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { render } from "../test/render.js";
 import { afterEach, expect, it, vi } from "vitest";
 import { changedPassage, CompareDialog, type Comparison } from "./CompareDialog.js";
 

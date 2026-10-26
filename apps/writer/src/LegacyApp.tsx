@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // Top level: pick the backend (Connect, or the development demo), then show
 // the manuscript list or an open manuscript. The open manuscript lives in the
 // URL (`?manuscript=path`) so reloads and links land in the same place.
@@ -18,6 +21,7 @@ import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { ThemeChoice, TopbarSlot } from "./ui/topbar.js";
 import { ThemeSelect } from "@mdbase-dev/ui/theme-select";
+import { InterfaceLanguage } from "./i18n/provider.js";
 import { ConnectLayout, OpeningScreen } from "@mdbase-dev/ui/screens";
 
 import { ManuscriptWorkspace } from "./workspace/workspace.js";
@@ -28,6 +32,7 @@ const params = new URL(location.href).searchParams;
 const demoRequested = writerDemoRequested();
 
 export function LegacyApp() {
+  useLingui();
   const { reportError } = useFeedback();
   const [theme, setTheme] = useState<ThemePreference>(() => loadThemePreference());
   const [slot, setSlot] = useState<HTMLElement | null>(null);
@@ -40,6 +45,7 @@ export function LegacyApp() {
           <header className="topbar">
             <AppSwitcher current="writer" urls={appUrls} />
             <div className="topbar-slot" ref={setSlot} />
+            <InterfaceLanguage />
             <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />
             <FeedbackButton />
           </header>
@@ -60,15 +66,15 @@ class ErrorBoundary extends Component<{ children: ReactNode; onError(): void }, 
     if (!this.state.error) return this.props.children;
     return (
       <main className="gate">
-        <h1>Something went wrong</h1>
+        <h1><Trans>Something went wrong</Trans></h1>
         <FeedbackButton topic="problem" />
         <p>{this.state.error.message}</p>
-        <p className="muted">Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading.</p>
+        <p className="muted"><Trans>Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading.</Trans></p>
         <button className="mdbase-button" type="button" onClick={() => {
           const workspace = (window as unknown as { writer?: { workspace?: ManuscriptWorkspace } }).writer?.workspace;
           if (workspace) downloadLocalDrafts(workspace);
-        }}>Download local drafts</button>
-        <button className="mdbase-button" type="button" onClick={() => location.reload()}>Reload</button>
+        }}><Trans>Download local drafts</Trans></button>
+        <button className="mdbase-button" type="button" onClick={() => location.reload()}><Trans>Reload</Trans></button>
       </main>
     );
   }
@@ -89,6 +95,7 @@ function useOwned<T>(create: () => T | null, dispose: (value: T) => void, deps: 
 }
 
 function ConnectRoot() {
+  useLingui();
   const session = useOwned<WriterSession>(() => {
     const s = createWriterSession();
     void s.start({ timeoutMs: 30_000 });
@@ -99,6 +106,7 @@ function ConnectRoot() {
 }
 
 function ConnectedRoot({ session }: { session: WriterSession }) {
+  useLingui();
   const store = useMemo(() => externalStore(session), [session]);
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const connection = snapshot.status === "ready" ? session.connection() : null;
@@ -117,6 +125,7 @@ function ConnectedRoot({ session }: { session: WriterSession }) {
 }
 
 function DemoRoot() {
+  useLingui();
   const [backend, setBackend] = useState<WriterBackend | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   useEffect(() => {
@@ -136,7 +145,7 @@ function DemoRoot() {
       owned?.dispose();
     };
   }, []);
-  if (problem) return <ConnectLayout app="writer" title="The demo could not be loaded" error={problem}><button type="button" className="mdbase-button" onClick={() => location.reload()}>Retry loading</button></ConnectLayout>;
-  if (!backend) return <OpeningScreen app="writer" title="Opening the demo collection" />;
+  if (problem) return <ConnectLayout app="writer" title={t`The demo could not be loaded`} error={problem}><button type="button" className="mdbase-button" onClick={() => location.reload()}><Trans>Retry loading</Trans></button></ConnectLayout>;
+  if (!backend) return <OpeningScreen app="writer" title={t`Opening the demo collection`} />;
   return <Manuscripts backend={backend} />;
 }

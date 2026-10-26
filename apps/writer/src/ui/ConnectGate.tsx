@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // Everything before a collection is ready: starting, choosing and
 // authorizing a collection, and reviewing the setup the writer needs.
 import type { MdbaseApplicationSessionSnapshot } from "@mdbase-dev/connect";
@@ -12,16 +15,17 @@ import type { NativeSignInBinding } from "../connect/native-signin-ui.js";
 const isLocalBuild = location.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
 
 const RESOURCE_ACTION: Record<string, string> = {
-  create: "will be added",
-  update: "will be updated",
-  delete: "will be removed",
-  adopt: "already present",
-  unchanged: "already present",
-  preserve: "kept as it is",
-  conflict: "conflicts with an existing file",
+  get create() { return t`will be added`; },
+  get update() { return t`will be updated`; },
+  get delete() { return t`will be removed`; },
+  get adopt() { return t`already present`; },
+  get unchanged() { return t`already present`; },
+  get preserve() { return t`kept as it is`; },
+  get conflict() { return t`conflicts with an existing file`; },
 };
 
 function Centered({ title, children }: { title: string; children: ReactNode }) {
+  useLingui();
   return <ConnectLayout app="writer" title={title}>{children}<FeedbackButton /></ConnectLayout>;
 }
 
@@ -29,10 +33,12 @@ export function ConnectGate(props:
   | { nativeSignIn: { binding: NativeSignInBinding; onSignedOut(): void } }
   | { session: WriterSession; snapshot: MdbaseApplicationSessionSnapshot }
 ) {
+  useLingui();
   return "nativeSignIn" in props ? <NativeSignIn {...props.nativeSignIn} /> : <LegacyConnectGate session={props.session} snapshot={props.snapshot} />;
 }
 
 function LegacyConnectGate({ session, snapshot }: { session: WriterSession; snapshot: MdbaseApplicationSessionSnapshot }) {
+  useLingui();
   const { reportError } = useFeedback();
   const reportedInitialFailure = useRef(false);
   useEffect(() => {
@@ -49,12 +55,12 @@ function LegacyConnectGate({ session, snapshot }: { session: WriterSession; snap
     try {
       const outcome = await action();
       if (!outcome.ok && !/cancel|abort|supersed/u.test(outcome.problem?.code ?? "")) {
-        setProblem(outcome.problem?.message ?? outcome.problem?.code ?? "Something went wrong.");
+        setProblem(outcome.problem?.message ?? outcome.problem?.code ?? t`Something went wrong.`);
         reportError({ code: "unknown_error" });
       }
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === "AbortError")) {
-        setProblem("This action could not be completed. Please try again.");
+        setProblem(t`This action could not be completed. Please try again.`);
         reportError({ code: "unknown_error" });
       }
     } finally {
@@ -70,37 +76,37 @@ function LegacyConnectGate({ session, snapshot }: { session: WriterSession; snap
     case "starting":
     case "checking_setup":
       return (
-        <OpeningScreen app="writer" title="Opening mdbase writer" detail={snapshot.status === "checking_setup" ? "Checking the collection" : "Connecting to mdbase connect"} />
+        <OpeningScreen app="writer" title={t`Opening mdbase writer`} detail={snapshot.status === "checking_setup" ? t`Checking the collection` : t`Connecting to mdbase connect`} />
       );
     case "start_failed":
       return (
-        <Centered title="mdbase connect is unavailable">
+        <Centered title={t`mdbase connect is unavailable`}>
           <p>{snapshot.problem.message}</p>
           {isLocalBuild && (
-            <p className="muted">
+            <p className="muted"><Trans>
               This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use
               Connect's local environment (<code>pnpm dev:environment:up</code> in mdbase-connect) or open the <a href="?demo">demo collection</a>.
-            </p>
+            </Trans></p>
           )}
-          <button className="mdbase-button" type="button" onClick={() => void run(() => session.start() as Promise<{ ok: boolean }>)} disabled={busy}>
+          <button className="mdbase-button" type="button" onClick={() => void run(() => session.start() as Promise<{ ok: boolean }>)} disabled={busy}><Trans>
             Try again
-          </button>
+          </Trans></button>
         </Centered>
       );
     case "unselected":
     case "authorization_required":
       return (
-        <Centered title="Write from your collection">
-          <p>
+        <Centered title={t`Write from your collection`}>
+          <p><Trans>
             mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library.
             Connect a collection to choose what it can access.
-          </p>
+          </Trans></p>
           <button className="mdbase-connect-action" type="button" onClick={() => void authorize(snapshot.status === "authorization_required" ? "selected" : "choose")} disabled={busy}>
-            {busy ? "Waiting for mdbase connect…" : "Connect a collection"}
+            {busy ? t`Waiting for mdbase connect…` : t`Connect a collection`}
           </button>
           {snapshot.connections.length > 0 && snapshot.status === "unselected" && (
             <section className="gate-list">
-              <h2>Previously connected</h2>
+              <h2><Trans>Previously connected</Trans></h2>
               <ul>
                 {snapshot.connections.map((c) => (
                   <li key={c.collectionId}>
@@ -117,11 +123,11 @@ function LegacyConnectGate({ session, snapshot }: { session: WriterSession; snap
       );
     case "setup_review_required":
       return (
-        <Centered title="Set up this collection for writing">
-          <p>
+        <Centered title={t`Set up this collection for writing`}>
+          <p><Trans>
             mdbase writer needs two record contracts in <strong>{snapshot.info.displayName}</strong>: manuscripts, and Reader sources for
             citations. Setting up adds only what is missing; existing records are not changed.
-          </p>
+          </Trans></p>
           <ul className="setup-list">
             {snapshot.update.typePacks.flatMap((pack) =>
               pack.resources.map((r) => (
@@ -133,34 +139,34 @@ function LegacyConnectGate({ session, snapshot }: { session: WriterSession; snap
           </ul>
           {!snapshot.update.canApply && <p className="problem">{snapshot.update.reason}</p>}
           <button className="mdbase-button is-primary" type="button" disabled={busy || !snapshot.update.canApply} onClick={() => void run(() => session.applyCollectionSetup({ timeoutMs: 60_000 }) as Promise<{ ok: boolean }>)}>
-            {busy ? "Setting up…" : "Set up collection"}
+            {busy ? t`Setting up…` : t`Set up collection`}
           </button>
           {error}
         </Centered>
       );
     case "unavailable":
       return (
-        <Centered title="This collection is unavailable">
+        <Centered title={t`This collection is unavailable`}>
           <p className="muted">{String(snapshot.reason)}</p>
           <div className="actions">
-            <button className="mdbase-button" type="button" onClick={() => void authorize("selected")} disabled={busy}>
+            <button className="mdbase-button" type="button" onClick={() => void authorize("selected")} disabled={busy}><Trans>
               Reconnect
-            </button>
-            <button className="mdbase-button" type="button" onClick={() => session.clearSelection()}>
+            </Trans></button>
+            <button className="mdbase-button" type="button" onClick={() => session.clearSelection()}><Trans>
               Choose another collection
-            </button>
+            </Trans></button>
           </div>
           {error}
         </Centered>
       );
     case "blocked":
       return (
-        <Centered title="mdbase writer can't use this collection">
+        <Centered title={t`mdbase writer can't use this collection`}>
           <p>{snapshot.problem.message}</p>
           {snapshot.problem.recovery && <p className="muted">{snapshot.problem.recovery}</p>}
-          <button className="mdbase-button" type="button" onClick={() => session.clearSelection()}>
+          <button className="mdbase-button" type="button" onClick={() => session.clearSelection()}><Trans>
             Choose another collection
-          </button>
+          </Trans></button>
         </Centered>
       );
     case "destroyed":

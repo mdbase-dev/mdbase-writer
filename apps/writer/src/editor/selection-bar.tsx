@@ -1,3 +1,6 @@
+import { t } from "@lingui/core/macro";
+import { I18nProvider, useLingui } from "@lingui/react";
+import { i18n } from "../i18n/app.js";
 // A toolbar over a selection: inline formatting, then Writer's own actions on
 // the passage (cite, comment, suggest an edit). It shows once a selection
 // settles — on releasing the mouse, or after a pause in keyboard selection —
@@ -45,7 +48,7 @@ export function selectionBar(onAction: (action: SelectionAction, view: EditorVie
           command(view);
           if (command !== makeLink && !view.state.selection.main.empty) view.dispatch({ effects: setOpen.of(true) });
         };
-        root.render(<Bar readOnly={state.readOnly} run={format} act={(action) => onAction(action, view)} />);
+        root.render(<I18nProvider i18n={i18n}><Bar readOnly={state.readOnly} run={format} act={(action) => onAction(action, view)} /></I18nProvider>);
         return { dom, destroy: () => queueMicrotask(() => root.unmount()) };
       },
     };
@@ -114,6 +117,7 @@ export function collapseToEnd(view: EditorView): void {
 }
 
 function Bar({ readOnly, run, act }: { readOnly: boolean; run(command: Command): void; act(action: SelectionAction): void }) {
+  useLingui();
   const format = (label: string, keys: string | null, Icon: typeof BoldIcon, command: Command) => (
     <button type="button" className="cm-selection-button is-icon" aria-label={label} title={keys ? `${label} (${keys})` : label} onClick={() => run(command)}>
       <Icon />
@@ -125,19 +129,19 @@ function Bar({ readOnly, run, act }: { readOnly: boolean; run(command: Command):
     </button>
   );
   return (
-    <div role="toolbar" aria-label="Selection" className="cm-selection-bar-row">
+    <div role="toolbar" aria-label={t`Selection`} className="cm-selection-bar-row">
       {!readOnly && (
         <>
-          {format("Bold", `${MOD_LABEL}-B`, BoldIcon, toggleBold)}
-          {format("Italic", `${MOD_LABEL}-I`, ItalicIcon, toggleItalic)}
-          {format("Code", null, CodeIcon, toggleCode)}
-          {format("Link", `${MOD_LABEL}-Shift-K`, LinkIcon, makeLink)}
+          {format(t`Bold`, t`${MOD_LABEL}-B`, BoldIcon, toggleBold)}
+          {format(t`Italic`, t`${MOD_LABEL}-I`, ItalicIcon, toggleItalic)}
+          {format(t({ message: "Code", context: "inline code formatting action" }), null, CodeIcon, toggleCode)}
+          {format(t`Link`, t`${MOD_LABEL}-Shift-K`, LinkIcon, makeLink)}
           <span className="cm-selection-divider" aria-hidden="true" />
-          {action("Cite", "Find a source for this passage and cite it after it", "cite")}
+          {action(t`Cite`, t`Find a source for this passage and cite it after it`, "cite")}
         </>
       )}
-      {action("Comment", `Comment on the selection (${MOD_LABEL}-${ALT_LABEL}-M)`, "comment")}
-      {!readOnly && action("Suggest", `Suggest an edit to the selection (${MOD_LABEL}-${ALT_LABEL}-S)`, "suggest")}
+      {action(t`Comment`, t`Comment on the selection (${MOD_LABEL}-${ALT_LABEL}-M)`, "comment")}
+      {!readOnly && action(t`Suggest`, t`Suggest an edit to the selection (${MOD_LABEL}-${ALT_LABEL}-S)`, "suggest")}
     </div>
   );
 }

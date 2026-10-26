@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { i18n } from "../i18n/app.js";
 // A record embedded on a line of its own (a chapter) is drawn as a card: its
 // title, words and problems, and a button that opens it. An embedded Reader
 // annotation is drawn as the quotation it renders, with a button that detaches
@@ -38,9 +40,10 @@ export interface ChapterCards {
 /** Asks the cards to redraw (their records' titles, words or problems changed). */
 export const refreshChapterCards = StateEffect.define<null>();
 
-const plural = (n: number, one: string) => `${n.toLocaleString()} ${n === 1 ? one : `${one}s`}`;
+import { plural as countLabel, formatCount } from "../ui/records.js";
 
 class CardWidget extends WidgetType {
+  readonly locale = i18n.locale;
   constructor(
     readonly number: number,
     readonly target: string,
@@ -51,7 +54,7 @@ class CardWidget extends WidgetType {
   }
 
   override eq(other: CardWidget) {
-    return other.number === this.number && other.target === this.target && JSON.stringify(other.card) === JSON.stringify(this.card);
+    return other.locale === this.locale && other.number === this.number && other.target === this.target && JSON.stringify(other.card) === JSON.stringify(this.card);
   }
 
   toDOM() {
@@ -60,7 +63,7 @@ class CardWidget extends WidgetType {
     dom.className = `cm-chapter-card${card.path ? "" : " is-missing"}`;
     const number = document.createElement("span");
     number.className = "cm-chapter-number";
-    number.textContent = String(this.number);
+    number.textContent = formatCount(this.number);
     const text = document.createElement("span");
     text.className = "cm-chapter-text";
     const title = document.createElement("span");
@@ -69,8 +72,8 @@ class CardWidget extends WidgetType {
     const meta = document.createElement("span");
     meta.className = "cm-chapter-meta";
     meta.textContent = card.path
-      ? [card.words !== undefined ? plural(card.words, "word") : null, card.problems ? plural(card.problems, "problem") : null, card.path].filter(Boolean).join(" · ")
-      : `No record matches ![[${this.target}]]`;
+      ? [card.words !== undefined ? countLabel(card.words, "word") : null, card.problems ? countLabel(card.problems, "problem") : null, card.path].filter(Boolean).join(" · ")
+      : t`No record matches ![[${this.target}]]`;
     text.append(title, meta);
     dom.append(number, text);
     if (card.path) {
@@ -78,8 +81,8 @@ class CardWidget extends WidgetType {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "mdbase-button cm-chapter-open";
-      button.textContent = "Open";
-      button.setAttribute("aria-label", `Open ${card.title}`);
+      button.textContent = t({ message: "Open", context: "open embedded chapter action" });
+      button.setAttribute("aria-label", t`Open ${card.title}`);
       button.addEventListener("click", (e) => {
         e.preventDefault();
         this.open(path);
@@ -96,12 +99,13 @@ class CardWidget extends WidgetType {
 }
 
 class QuotationWidget extends WidgetType {
+  readonly locale = i18n.locale;
   constructor(readonly card: QuotationCard) {
     super();
   }
 
   override eq(other: QuotationWidget) {
-    return JSON.stringify(other.card) === JSON.stringify(this.card);
+    return other.locale === this.locale && JSON.stringify(other.card) === JSON.stringify(this.card);
   }
 
   toDOM(view: EditorView) {
@@ -114,8 +118,8 @@ class QuotationWidget extends WidgetType {
     const meta = document.createElement("div");
     meta.className = "cm-quote-meta";
     const cite = document.createElement(card.href ? "a" : "span");
-    cite.textContent = card.cite ? `${card.cite} · from Reader` : "From Reader · its source is not in the library";
-    cite.title = card.href ? "Open this passage in Reader" : card.path;
+    cite.textContent = card.cite ? t`${card.cite} · from Reader` : t`From Reader · its source is not in the library`;
+    cite.title = card.href ? t`Open this passage in Reader` : card.path;
     if (cite instanceof HTMLAnchorElement && card.href) {
       cite.href = card.href;
       cite.target = "_blank";
@@ -125,8 +129,8 @@ class QuotationWidget extends WidgetType {
     const detach = document.createElement("button");
     detach.type = "button";
     detach.className = "text-button";
-    detach.textContent = "Detach";
-    detach.title = "Write the quotation here, to edit it; it no longer follows the annotation";
+    detach.textContent = t`Detach`;
+    detach.title = t`Write the quotation here, to edit it; it no longer follows the annotation`;
     detach.addEventListener("click", (e) => {
       e.preventDefault();
       const line = view.state.doc.lineAt(view.posAtDOM(dom));

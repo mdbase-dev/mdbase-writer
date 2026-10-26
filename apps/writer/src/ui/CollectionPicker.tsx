@@ -1,3 +1,6 @@
+import { Trans } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 // The collection a manuscript list comes from, and switching it: a menu
 // dropped from the collection's name, as in mdbase Reader. The current
 // collection comes first, then the others alphabetically; a filter appears
@@ -16,7 +19,7 @@ type Choice = Pick<MdbaseConnectionInfo, "collectionId" | "displayName"> & { rea
 
 /** Where a collection lives, in Reader's words. */
 function place(choice: Choice): string | null {
-  return choice.authority?.kind === "hosted" ? "Hosted by mdbase" : choice.authority?.kind === "connector" ? "On your computer" : null;
+  return choice.authority?.kind === "hosted" ? t`Hosted by mdbase` : choice.authority?.kind === "connector" ? t`On your computer` : null;
 }
 
 /** Only shown on Home, where there is no open manuscript to save before switching. */
@@ -26,6 +29,7 @@ export function CollectionPicker({ name, collectionId, connections, session }: {
   connections: readonly MdbaseConnectionInfo[];
   session: Pick<WriterSession, "select" | "authorize">;
 }) {
+  useLingui();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -47,7 +51,7 @@ export function CollectionPicker({ name, collectionId, connections, session }: {
       if (result.ok) close(false);
       else setProblem(result.problem.message);
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "Could not switch collections.");
+      setProblem(error instanceof Error ? error.message : t`Could not switch collections.`);
     }
   };
   const connect = async () => {
@@ -58,7 +62,7 @@ export function CollectionPicker({ name, collectionId, connections, session }: {
       if (result.ok) close(false);
       else setProblem(result.problem.message);
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "Could not connect another collection.");
+      setProblem(error instanceof Error ? error.message : t`Could not connect another collection.`);
     } finally {
       setBusy(false);
     }
@@ -69,11 +73,11 @@ export function CollectionPicker({ name, collectionId, connections, session }: {
         ref={trigger}
         type="button"
         className="collection-picker-trigger"
-        aria-label={`Switch collection: ${name}`}
+        aria-label={t`Switch collection: ${name}`}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        title="Switch collection"
+        title={t`Switch collection`}
         onClick={() => (open ? close(false) : setOpen(true))}
         onKeyDown={(e) => {
           if (!open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
@@ -114,6 +118,7 @@ function CollectionMenu({ id, trigger, current, others, busy, problem, onChoose,
   onConnect(): void;
   onClose(refocus: boolean): void;
 }) {
+  useLingui();
   const menu = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   useMenuPopover(menu, trigger, onClose, { width: 300, busy, focus: '[role="menuitemradio"][aria-checked="true"]' });
@@ -121,15 +126,15 @@ function CollectionMenu({ id, trigger, current, others, busy, problem, onChoose,
   const words = query.trim().toLocaleLowerCase();
   const shown = words ? all.filter((c) => c.displayName.toLocaleLowerCase().includes(words)) : all;
   return (
-    <div ref={menu} id={id} className="mdbase-menu collection-menu" popover="manual" role="menu" aria-label="Switch collection" tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, menu.current)}>
-      <span className="menu-label" aria-hidden="true">Collections</span>
+    <div ref={menu} id={id} className="mdbase-menu collection-menu" popover="manual" role="menu" aria-label={t`Switch collection`} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, menu.current)}>
+      <span className="menu-label" aria-hidden="true"><Trans>Collections</Trans></span>
       {all.length >= FILTER_FROM && (
-        <input className="mdbase-field collection-menu-filter" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter collections" aria-label="Filter collections" />
+        <input className="mdbase-field collection-menu-filter" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t`Filter collections`} aria-label={t`Filter collections`} />
       )}
-      <div role="group" aria-label="Connected collections">
+      <div role="group" aria-label={t`Connected collections`}>
         {shown.map((c) => {
           const here = c.collectionId === current.collectionId;
-          const detail = [here ? "Open now" : null, place(c)].filter(Boolean).join(" · ");
+          const detail = [here ? t`Open now` : null, place(c)].filter(Boolean).join(" · ");
           return (
             <button key={c.collectionId} type="button" role="menuitemradio" aria-checked={here} className="menu-item collection-menu-item" disabled={busy} onClick={() => onChoose(c.collectionId)}>
               <span className="collection-menu-copy">
@@ -140,13 +145,13 @@ function CollectionMenu({ id, trigger, current, others, busy, problem, onChoose,
             </button>
           );
         })}
-        {!shown.length && <p className="collection-menu-note muted">No collection matches “{query.trim()}”.</p>}
+        {!shown.length && <p className="collection-menu-note muted"><Trans>No collection matches “{query.trim()}”.</Trans></p>}
       </div>
       {problem && <p className="collection-menu-note problem" role="alert">{problem}</p>}
       <div className="menu-group">
         <button type="button" role="menuitem" className="menu-item collection-menu-connect" disabled={busy} onClick={onConnect}>
           <PlusIcon />
-          <span>{busy ? "Waiting for mdbase connect…" : "Connect another collection…"}</span>
+          <span>{busy ? t`Waiting for mdbase connect…` : t`Connect another collection…`}</span>
         </button>
       </div>
     </div>
