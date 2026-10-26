@@ -120,7 +120,7 @@ msgstr "{0}を保存できませんでした：{1}"
 msgid "{0} theme"
 msgstr "{0}テーマ"
 
-#. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
+#. placeholder {0}: draftContext(d)
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
@@ -388,9 +388,10 @@ msgstr "注釈の検出を利用できません：{0}。引用のメタデータ
 msgid "Annotation index"
 msgstr "注釈インデックス"
 
+#. placeholder {0}: literal(problem)
 #: src/ui/SourcesPanel.tsx
-msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr "注釈を利用できません：{problem} <0>注釈を再試行</0>"
+msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
+msgstr "注釈を利用できません：{0} <0>注釈を再試行</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
@@ -668,10 +669,11 @@ msgstr "コメント"
 msgid "Comments are not set up in this collection."
 msgstr "このコレクションではコメントが設定されていません。"
 
-#. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
+#. placeholder {0}: literal(problem)
+#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {problem} {0}"
-msgstr "コメントを利用できません：{problem} {0}"
+msgid "Comments unavailable: {0} {1}"
+msgstr "コメントを利用できません：{0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -1372,7 +1374,7 @@ msgstr "mdbase Connectを利用できません"
 msgid "mdbase writer can't use this collection"
 msgstr "mdbase writerはこのコレクションを使用できません"
 
-#. placeholder {0}: snapshot.info.displayName
+#. placeholder {0}: literal(snapshot.info.displayName)
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
 msgstr "mdbase writerには<0>{0}</0>に2種類のレコード契約が必要です。原稿用と、引用に使うReaderの出典用です。設定では不足分だけを追加し、既存のレコードは変更しません。"
@@ -2299,13 +2301,14 @@ msgstr "出典を読み込めませんでした：{0}"
 msgid "Sources not set up"
 msgstr "出典未設定"
 
+#. placeholder {0}: literal(libraryProblem)
+#: src/ui/SourcesPanel.tsx
+msgid "Sources unavailable: {0} <0>Retry sources</0>"
+msgstr "出典を利用できません：{0} <0>出典を再試行</0>"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
 msgstr "出典を利用できません：{libraryProblem}"
-
-#: src/ui/SourcesPanel.tsx
-msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr "出典を利用できません：{libraryProblem} <0>出典を再試行</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."

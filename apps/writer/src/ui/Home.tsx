@@ -215,9 +215,9 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
                 <li key={d.path}>
                   <span className="home-draft-text">
                     <strong>{d.title}</strong>
-                    <span className="muted small"><Trans>
-                      {d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""}backed up {relativeTime(d.updated)}
-                    </Trans></span>
+                    <span className="muted small">
+                      {t`${draftContext(d)}backed up ${relativeTime(d.updated)}`}
+                    </span>
                   </span>
                   {d.manuscript
                     ? <button type="button" className="mdbase-button is-small" onClick={() => onOpen(d.manuscript!.path)}><Trans>Review</Trans></button>
@@ -266,7 +266,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
           </ul>
         )}
         {shown.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}><Trans>Show 50 more manuscripts · {shown.length}</Trans></button>}
-        {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted"><Trans>No manuscript matches “{filter}”.</Trans></p>}
+        {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted">{t`No manuscript matches “${filter}”.`}</p>}
         {unavailable.length > 0 && <div className="home-unavailable" role="status">
           {unavailable.map((t) => <p key={t.name} className="muted">{t.message}</p>)}
         </div>}
@@ -276,7 +276,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
             {(allUntyped ? untypedShown : untypedShown.slice(0, UNTYPED_SHOWN)).map((path) => <li key={path}>
               <button type="button" className="manuscript-row" onClick={() => onOpen(path)} title={path}>
                 <span className="manuscript-title">{noteName(path)}</span>
-                <span className="manuscript-meta"><Trans>No type · {path}</Trans></span>
+                <span className="manuscript-meta">{t`No type · ${path}`}</span>
               </button>
             </li>)}
           </ul>
@@ -434,6 +434,8 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
   );
 }
 
+const draftContext = (d: { path: string; manuscript?: { path: string; title: string } | null | undefined }) =>
+  d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : "";
 const wordsLabel = (words: number | undefined) => words === undefined ? null : countLabel(words, "word");
 
 /**
@@ -486,7 +488,7 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
               </li>
             );
           })}
-          {!matches.length && <li className="muted small"><Trans>No note matches “{query}”.</Trans></li>}
+          {!matches.length && <li className="muted small">{t`No note matches “${query}”.`}</li>}
           {more && <li className="muted small"><Trans>Type to find others.</Trans></li>}
         </ul>
       )}

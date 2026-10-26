@@ -1,4 +1,5 @@
 import { Trans } from "@lingui/react/macro";
+import { literal } from "../i18n/literal.js";
 import { t, plural as icuPlural } from "@lingui/core/macro";
 import { formatDate } from "../i18n/presentation.js";
 import { useLingui } from "@lingui/react";
@@ -162,7 +163,7 @@ export function CommentsPanel({
       <Signing people={people} onCheck={onCheckAccount} {...(onReviewAccess ? { onReviewAccess } : {})} />
       {pending && <Composer key={`${pending.record}:${pending.draft?.from ?? "whole"}:${pending.kind}`} pending={pending} signer={signer} recordTitle={recordTitle} onSubmit={onSubmit} onCancel={onCancel} />}
       {loading && <p className="muted small" role="status"><Trans>Loading comments…</Trans></p>}
-      {problem && <p className="muted small"><Trans>Comments unavailable: {problem} {onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>}</Trans></p>}
+      {problem && <p className="muted small"><Trans>Comments unavailable: {literal(problem)} {onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>}</Trans></p>}
       {notSetUp && <p className="muted small"><Trans>Comments are not set up in this collection.</Trans></p>}
       {!loading && !problem && !notSetUp && !shown.length && !pending && (
         <div className="sidebar-empty">
@@ -255,7 +256,7 @@ export function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: {
       <p className="composer-title">
         <strong>{suggest ? t`Suggest an edit` : t`New comment`}</strong>
         <span className="small muted" title={recordTitle(pending.record)}>
-          {signer ? <><Trans>as {signer} · </Trans></> : null}
+          {signer ? t`as ${signer} · ` : null}
           {recordTitle(pending.record)}
         </span>
       </p>

@@ -363,7 +363,7 @@ export const Preview = memo(function Preview({ artifact, problem, revision, posi
 
   return (
     <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} aria-label={plural(pages.length, { one: "Typeset preview, # page", other: "Typeset preview, # pages" })} onScroll={reportView}>
-      {renderProblem && <div className="banner" role="alert"><span><Trans>Preview rendering failed: {renderProblem}. Your text is still available in the editor.</Trans></span><button type="button" className="mdbase-button" onClick={() => setRetry((value) => value + 1)}><Trans>Retry rendering</Trans></button></div>}
+      {renderProblem && <div className="banner" role="alert"><span>{t`Preview rendering failed: ${renderProblem}. Your text is still available in the editor.`}</span><button type="button" className="mdbase-button" onClick={() => setRetry((value) => value + 1)}><Trans>Retry rendering</Trans></button></div>}
       {!artifact && <p className="preview-empty">{problem ? t`Preview unavailable. You can keep writing.` : t`Typesetting…`}</p>}
       {stale && artifact && <p className="muted small" role="status"><Trans>Showing the last successful preview; it may not match your latest text.</Trans></p>}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer shortcut; Problems and the outline offer the same navigation */}

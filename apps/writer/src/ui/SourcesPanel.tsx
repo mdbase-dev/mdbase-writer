@@ -1,4 +1,5 @@
 import { Trans, Plural } from "@lingui/react/macro";
+import { literal } from "../i18n/literal.js";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 // Citing from what you have read: the sources this manuscript cites, then the
@@ -267,7 +268,7 @@ export function SourcesPanel({
           aria-describedby="sources-keys"
         />
       </div>
-      {libraryProblem && <p className="muted small" role="alert"><Trans>Sources unavailable: {libraryProblem} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></Trans></p>}
+      {libraryProblem && <p className="muted small" role="alert"><Trans>Sources unavailable: {literal(libraryProblem)} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></Trans></p>}
       <span id="sources-keys" className="visually-hidden"><Trans>Down arrow moves to the sources; Enter cites the first match.</Trans></span>
       {query.trim() ? (
         <>
@@ -451,7 +452,7 @@ const SourceRow = memo(function SourceRow({
             </span>
           </div>
           {annotations === null && !problem && <p className="muted small" role="status"><Trans>Loading annotations…</Trans></p>}
-          {problem && <p className="muted small" role="alert"><Trans>Annotations unavailable: {problem} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></Trans></p>}
+          {problem && <p className="muted small" role="alert"><Trans>Annotations unavailable: {literal(problem)} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></Trans></p>}
           {annotations?.length === 0 && <p className="muted small">{annotationsNotSetUp ? t`Highlights are not set up in this collection.` : t`No annotations on this source.`}</p>}
           {notes.length > 0 && (
             <ul className="annotations" aria-label={t`Highlights from Reader`}>

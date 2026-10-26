@@ -120,7 +120,7 @@ msgstr "{0}无法存储：{1}"
 msgid "{0} theme"
 msgstr "{0}主题"
 
-#. placeholder {0}: d.manuscript && d.manuscript.path !== d.path ? t`in ${d.manuscript.title} · ` : ""
+#. placeholder {0}: draftContext(d)
 #. placeholder {1}: relativeTime(d.updated)
 #: src/ui/Home.tsx
 msgid "{0}backed up {1}"
@@ -388,9 +388,10 @@ msgstr "无法查找注释：{0}。引文元数据可能不完整。"
 msgid "Annotation index"
 msgstr "注释索引"
 
+#. placeholder {0}: literal(problem)
 #: src/ui/SourcesPanel.tsx
-msgid "Annotations unavailable: {problem} <0>Retry annotations</0>"
-msgstr "注释不可用：{problem} <0>重试加载注释</0>"
+msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
+msgstr "注释不可用：{0} <0>重试加载注释</0>"
 
 #: src/ui/names.ts
 msgid "APA 7th edition"
@@ -668,10 +669,11 @@ msgstr "评论"
 msgid "Comments are not set up in this collection."
 msgstr "此集合尚未设置评论功能。"
 
-#. placeholder {0}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
+#. placeholder {0}: literal(problem)
+#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
 #: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {problem} {0}"
-msgstr "评论不可用：{problem} {0}"
+msgid "Comments unavailable: {0} {1}"
+msgstr "评论不可用：{0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -1372,7 +1374,7 @@ msgstr "mdbase Connect 不可用"
 msgid "mdbase writer can't use this collection"
 msgstr "mdbase writer 无法使用此集合"
 
-#. placeholder {0}: snapshot.info.displayName
+#. placeholder {0}: literal(snapshot.info.displayName)
 #: src/ui/ConnectGate.tsx
 msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
 msgstr "mdbase writer 需要在 <0>{0}</0> 中满足两类记录约定：手稿和用于引文的 Reader 来源。设置过程只会添加缺少的内容，不会更改现有记录。"
@@ -2299,13 +2301,14 @@ msgstr "无法加载来源：{0}"
 msgid "Sources not set up"
 msgstr "尚未设置来源"
 
+#. placeholder {0}: literal(libraryProblem)
+#: src/ui/SourcesPanel.tsx
+msgid "Sources unavailable: {0} <0>Retry sources</0>"
+msgstr "来源不可用：{0} <0>重试加载来源</0>"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Sources unavailable: {libraryProblem}"
 msgstr "来源不可用：{libraryProblem}"
-
-#: src/ui/SourcesPanel.tsx
-msgid "Sources unavailable: {libraryProblem} <0>Retry sources</0>"
-msgstr "来源不可用：{libraryProblem} <0>重试加载来源</0>"
 
 #: src/ui/Home.tsx
 msgid "Sources."

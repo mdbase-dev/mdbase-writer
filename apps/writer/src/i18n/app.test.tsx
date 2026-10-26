@@ -43,10 +43,20 @@ it("updates display formatting, document language and persisted choice without r
   expect(localStorage.getItem("mdbase-writer:interface-locale")).toBe("de");
 });
 
-it.each(["de", "es", "fr", "ja", "ko", "pt", "ru", "zh"] as const)("activates the real composed %s catalogue", async locale => {
+it.each(["de", "es", "fr", "it", "ja", "ko", "pt", "ru", "zh"] as const)("activates the real composed %s catalogue", async locale => {
   await runtime.selectLocale(locale);
   expect(i18n.locale).toBe(locale);
   expect(document.documentElement.lang).toBe(locale);
+});
+
+it("uses Italian plurals, display dates and numbers with a persisted choice", async () => {
+  await runtime.selectLocale("it");
+  expect([0, 1, 2].map(n => plural(n, "word"))).toEqual(["0 parole", "1 parola", "2 parole"]);
+  expect([0, 1, 2].map(n => plural(n, "open comment"))).toEqual(["0 commenti aperti", "1 commento aperto", "2 commenti aperti"]);
+  expect(formatNumber(12345.5)).toBe("12.345,5");
+  expect(formatDate(new Date(2026, 9, 23), { dateStyle: "long" })).toBe("23 ottobre 2026");
+  expect(document.documentElement.lang).toBe("it");
+  expect(localStorage.getItem("mdbase-writer:interface-locale")).toBe("it");
 });
 
 it("keeps record paths and user-derived names untouched by interface selection", async () => {

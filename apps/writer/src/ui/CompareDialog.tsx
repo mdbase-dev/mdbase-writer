@@ -58,7 +58,7 @@ export function CompareDialog({ comparison, canRestore = true, onClose, onResolv
         <p><code>{comparison.path}</code></p>
         <p className="muted"><Trans>Nothing is replaced until you choose. Highlighted passages differ between the versions.</Trans></p>
         <div className="compare-columns" ref={columns}>
-          {([[t`Your local text`, diff.mine], [t`Collection version`, diff.theirs]] as const).map(([label, change]) => <section key={label}>
+          {([["mine", t`Your local text`, diff.mine], ["theirs", t`Collection version`, diff.theirs]] as const).map(([side, label, change]) => <section key={side}>
             <h3>{label}</h3>
             <pre className="compare-text">{diff.prefix && `${diff.prefix}\n`}{comparison.mine !== comparison.theirs && <mark>{change || t`(passage removed)`}</mark>}{diff.suffix && `\n${diff.suffix}`}</pre>
           </section>)}
