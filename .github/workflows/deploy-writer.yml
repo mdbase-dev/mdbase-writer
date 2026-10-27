@@ -68,8 +68,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          VITE_MDBASE_FEEDBACK_URL: ${{ vars.MDBASE_FEEDBACK_URL }}
-          VITE_MDBASE_FEEDBACK_TURNSTILE_SITE_KEY: ${{ vars.MDBASE_FEEDBACK_TURNSTILE_SITE_KEY }}
+          VITE_MDBASE_FEEDBACK_URL: ${{ inputs.target == 'production' && 'https://feedback-api.mdbase.dev/v1/feedback' || 'https://feedback-api-staging.mdbase.dev/v1/feedback' }}
+          VITE_MDBASE_FEEDBACK_TURNSTILE_SITE_KEY: ${{ inputs.target == 'production' && '0x4AAAAAAEboz_mLT-taI3H-' || '0x4AAAAAAEbkvA4d9vQJq2D1' }}
       - name: Verify deployed manifest
         env:
           ORIGIN: ${{ inputs.target == 'production' && 'https://writer.mdbase.dev' || 'https://staging.mdbase-writer.pages.dev' }}
@@ -139,6 +139,9 @@ jobs:
     env:
       TARGET: ${{ inputs.target }}
       SOURCE_SHA: ${{ inputs.source_sha }}
+      # Public build inputs: Pages runtime variables do not configure Vite assets.
+      VITE_MDBASE_FEEDBACK_URL: ${{ inputs.target == 'production' && 'https://feedback-api.mdbase.dev/v1/feedback' || 'https://feedback-api-staging.mdbase.dev/v1/feedback' }}
+      VITE_MDBASE_FEEDBACK_TURNSTILE_SITE_KEY: ${{ inputs.target == 'production' && '0x4AAAAAAEboz_mLT-taI3H-' || '0x4AAAAAAEbkvA4d9vQJq2D1' }}
       NATIVE_SDK_SHA256: ${{ needs.native-inputs.outputs.sdk }}
       NATIVE_UI_SHA256: ${{ needs.native-inputs.outputs.ui }}
       NATIVE_PROTOCOL_SHA256: ${{ needs.native-inputs.outputs.protocol }}
