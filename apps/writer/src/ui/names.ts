@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 // Names people read for the settings' stored values.
 import { STYLES } from "@mdbase-writer/core/styles";
-import { formatDate, formatRelative, intlLocale } from "../i18n/presentation.js";
+import { formatDate, formatRelative } from "../i18n/presentation.js";
 
 /** A bundled layout's name, or a collection template's file name. */
 export function templateName(template: string): string {
@@ -41,13 +41,14 @@ export function noteName(path: string): string {
   return base ? base.charAt(0).toUpperCase() + base.slice(1) : path;
 }
 
-/** Manuscripts by when they were last edited, newest first; those without a time after, by title. */
-export function byRecentlyEdited<T extends { readonly title: string; readonly modified?: string }>(list: readonly T[]): T[] {
+/** Record modification time, newest first; unknown times last. Paths break ties
+ * independently of titles, locale and discovery/sync arrival order. */
+export function byRecentlyEdited<T extends { readonly path: string; readonly modified?: string }>(list: readonly T[]): T[] {
   const time = (m: T) => (m.modified ? Date.parse(m.modified) : Number.NaN);
   return [...list].sort((a, b) => {
     const ta = time(a);
     const tb = time(b);
     if (Number.isNaN(ta) !== Number.isNaN(tb)) return Number.isNaN(ta) ? 1 : -1;
-    return (Number.isNaN(ta) ? 0 : tb - ta) || a.title.localeCompare(b.title, intlLocale());
+    return (Number.isNaN(ta) ? 0 : tb - ta) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   });
 }
