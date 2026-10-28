@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { render } from "../test/render.js";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { fail, ok, type CollectionIndex, type ManuscriptSummary, type Result, type WriterBackend } from "../backend/types.js";
@@ -40,6 +40,30 @@ it("lists untyped records with a calm No type label and opens them", async () =>
   expect(screen.queryByRole("button", {name: /typed/})).toBeNull();
   fireEvent.click(row);
   expect(onOpen).toHaveBeenCalledWith("notes/loose.md");
+});
+
+it("orders by record modification time and reorders on collection notifications", async () => {
+  let manuscripts: ManuscriptSummary[] = [
+    {path: "z.md", title: "A title", modified: "2026-02-01T00:00:00Z"},
+    {path: "a.md", title: "Z title", modified: "2026-02-01T00:00:00Z"},
+    {path: "old.md", title: "Older", modified: "2026-01-01T00:00:00Z"},
+  ];
+  let notify: Parameters<NonNullable<WriterBackend["onCollectionChange"]>>[0] = () => {};
+  const fixture: WriterBackend = {
+    ...backend({recordPaths: manuscripts.map(record => record.path), notePaths: [], filePaths: []}),
+    listManuscripts: async () => ok(manuscripts),
+    onCollectionChange: listener => {notify = listener; return () => {};},
+  };
+  const view = render(<Home backend={fixture} onOpen={vi.fn()} />);
+  const paths = () => [...view.container.querySelectorAll(".manuscript-row")].map(row => row.getAttribute("data-path"));
+  await waitFor(() => expect(paths()).toEqual(["a.md", "z.md", "old.md"]));
+  // A local edit and then a sync/reset both take the new per-record metadata.
+  manuscripts = manuscripts.map(record => record.path === "old.md" ? {...record, modified: "2026-03-01T00:00:00Z"} : record);
+  act(() => notify({paths: ["old.md"]}));
+  await waitFor(() => expect(paths()).toEqual(["old.md", "a.md", "z.md"]));
+  manuscripts = manuscripts.map(record => record.path === "z.md" ? {...record, modified: "2026-04-01T00:00:00Z"} : record).reverse();
+  act(() => notify({paths: ["z.md"], reset: true}));
+  await waitFor(() => expect(paths()).toEqual(["z.md", "old.md", "a.md"]));
 });
 
 it("names an unavailable type plainly, once, without blocking the rest", async () => {

@@ -4,6 +4,7 @@ import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { NativeWriterBackend } from "./native.js";
 import { nativeObject, nativeWriterSchema } from "./native-schema.js";
+import { byRecentlyEdited } from "../ui/names.js";
 
 // Native catalog/type metadata are explicit stand-ins. All record/file/session
 // operations use actual public SDK over MemoryReplica, not native acceptance.
@@ -71,6 +72,45 @@ describe("native Writer domain backend", () => {
     expect(query.mock.calls.every(call => !call[1]?.body && !call[1]?.document)).toBe(true);
     expect(get).not.toHaveBeenCalled(); expect(h.metadata).not.toHaveBeenCalled();
     expect("writeFile" in h.backend).toBe(false);
+  });
+  it("keeps per-record SDK modification times through projection and refreshes after local and synced edits", async () => {
+    const h = await fixture();
+    const second = h.replica.seed({path: "manuscripts/second.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "A second paper"]])}, body: "Second\n"});
+    // MemoryReplica does not supply mtime. Stand in only for that public query
+    // metadata; edits, sessions, projections and watch delivery use the SDK.
+    const times = new Map([[h.manuscript.id, Date.parse("2026-01-01T00:00:00Z")], [second.id, Date.parse("2026-02-01T00:00:00Z")]]);
+    const query = h.client.query.bind(h.client);
+    vi.spyOn(h.client, "query").mockImplementation(async (...args) => {
+      const page = await query(...args);
+      return {...page, records: page.records.map(record => ({...record, ...(times.has(record.id) ? {mtime: times.get(record.id)!} : {})}))};
+    });
+    const listed = async () => {
+      const result = await h.backend.listManuscripts();
+      if (!result.ok) throw new Error(result.message);
+      return byRecentlyEdited(result.value);
+    };
+    expect((await listed()).map(record => [record.path, record.modified])).toEqual([
+      [second.path, "2026-02-01T00:00:00.000Z"], [h.manuscript.path, "2026-01-01T00:00:00.000Z"],
+    ]);
+    const changed = vi.fn(); h.backend.onCollectionChange(changed);
+    const opened = await h.backend.records.open(h.manuscript.path, {autosave: false});
+    if (!opened.ok) throw new Error("Missing native lease");
+    times.set(h.manuscript.id, Date.parse("2026-03-01T00:00:00Z"));
+    opened.value.session.setBody("Locally edited\n");
+    expect((await opened.value.session.flush()).ok).toBe(true);
+    await vi.waitFor(() => expect(changed).toHaveBeenCalled());
+    await vi.waitFor(async () => expect((await listed())[0]).toMatchObject({path: h.manuscript.path, modified: "2026-03-01T00:00:00.000Z"}));
+    changed.mockClear();
+    times.set(second.id, Date.parse("2026-04-01T00:00:00Z"));
+    h.replica.editElsewhere(second.id, {body: "Synced edit\n"});
+    await vi.waitFor(() => expect(changed).toHaveBeenCalled());
+    await vi.waitFor(async () => expect((await listed())[0]).toMatchObject({path: second.path, modified: "2026-04-01T00:00:00.000Z"}));
+    // A newer collection snapshot from an unrelated edit must not retime papers.
+    changed.mockClear();
+    h.replica.editElsewhere("notes/chapter.md", {body: "Unrelated sync\n"});
+    await vi.waitFor(() => expect(changed).toHaveBeenCalled());
+    await vi.waitFor(async () => expect((await listed()).map(record => record.modified)).toEqual(["2026-04-01T00:00:00.000Z", "2026-03-01T00:00:00.000Z"]));
+    opened.value.release();
   });
   it("unrelated invalid definitions do not hide Writer records or untyped notes", async () => {
     const h = await fixture();
