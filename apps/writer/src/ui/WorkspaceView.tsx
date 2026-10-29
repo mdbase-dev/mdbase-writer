@@ -863,7 +863,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     >
       <InTopbar>
         <div className="bar mdbase-settle-host">
-          <button type="button" className="bar-back" onClick={() => void requestClose()} disabled={savingBeforeLeave} aria-label={translate`Manuscripts`} title={translate`All manuscripts`}>
+          <button type="button" className="bar-back" onClick={() => void requestClose()} aria-disabled={savingBeforeLeave || undefined} aria-label={translate`Manuscripts`} title={translate`All manuscripts`}>
             <ChevronLeft />
             <span><Trans>Manuscripts</Trans></span>
           </button>
@@ -951,10 +951,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
         {layout.lowerTab && (
           <div className="sidebar-lower">
-            <div className="sidebar-lower-tabs" role="tablist" aria-label={translate`Lower panel`}>
-              {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
-                <button key={t} type="button" role="tab" aria-selected={layout.lowerTab === t} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
-              ))}
+            <div className="sidebar-lower-tabs">
+              <div className="sidebar-tab-list" role="tablist" aria-label={translate`Lower panel`}>
+                {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
+                  <button key={t} type="button" role="tab" aria-selected={layout.lowerTab === t} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
+                ))}
+              </div>
               <button type="button" className="mdbase-icon-button is-small" aria-label={translate`Close the lower panel`} title={translate`Close the lower panel`} onClick={() => setLowerTab(null)}><CloseIcon /></button>
             </div>
             <div className="sidebar-panel is-lower" role="tabpanel">{panelFor(layout.lowerTab)}</div>
@@ -1220,7 +1222,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         <div className="compare-actions">
           <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           <button type="button" className="mdbase-button is-primary" onClick={() => setLeaveProblem(null)}><Trans>Keep writing</Trans></button>
-          <button type="button" className="mdbase-button" onClick={() => void requestClose()} disabled={savingBeforeLeave}><Trans>Retry saving</Trans></button>
+          <button type="button" className="mdbase-button" onClick={() => void requestClose()} aria-disabled={savingBeforeLeave || undefined}><Trans>Retry saving</Trans></button>
           <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}><Trans>Leave without saving</Trans></button>
         </div>
       </Dialog>
@@ -1264,24 +1266,26 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
     requestAnimationFrame(() => document.getElementById(`sidebar-tab-${next}`)?.focus());
   };
   return (
-    <div className="sidebar-tabs" role="tablist" aria-label={translate`Sidebar`} onKeyDown={onKeyDown}>
-      {tabs.map((t) => (
-        <button
-          key={t}
-          id={`sidebar-tab-${t}`}
-          type="button"
-          role="tab"
-          aria-selected={tab === t}
-          aria-controls={`sidebar-${t}`}
-          tabIndex={tab === t ? 0 : -1}
-          onClick={() => onTab(t)}
-          title={t === "sources" ? translate`Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? translate`${commentsTitle} (${MOD_LABEL}-Shift-M)` : translate`Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
-        >
-          {TAB_NAME[t]}
-          {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
-          {t === "comments" && comments > 0 && <span className="tab-count">{comments}</span>}
-        </button>
-      ))}
+    <div className="sidebar-tabs">
+      <div className="sidebar-tab-list" role="tablist" aria-label={translate`Sidebar`} onKeyDown={onKeyDown}>
+        {tabs.map((t) => (
+          <button
+            key={t}
+            id={`sidebar-tab-${t}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            aria-controls={`sidebar-${t}`}
+            tabIndex={tab === t ? 0 : -1}
+            onClick={() => onTab(t)}
+            title={t === "sources" ? translate`Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? translate`${commentsTitle} (${MOD_LABEL}-Shift-M)` : translate`Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
+          >
+            {TAB_NAME[t]}
+            {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
+            {t === "comments" && comments > 0 && <span className="tab-count">{comments}</span>}
+          </button>
+        ))}
+      </div>
       <button type="button" className="mdbase-icon-button is-small sidebar-split" aria-pressed={split} onClick={onSplit} title={split ? translate`Close the lower panel` : translate`Show a second panel beneath (outline and comments together)`} aria-label={translate`Second panel`}>
         <SplitVerticalIcon />
       </button>
@@ -1430,8 +1434,9 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
         <button
           type="button"
           className="mdbase-button is-primary"
-          disabled={!can[format] || busy}
-          onClick={() => onExport(format)}
+          disabled={!can[format]}
+          aria-disabled={busy || undefined}
+          onClick={() => { if (!busy) onExport(format); }}
           aria-label={translate`Export ${EXPORT_NAME[format]}`}
           title={can[format] ? format === "docx" && customTemplate ? translate`Export Word using article styles; your custom Typst layout applies only to PDF` : translate`Export ${EXPORT_NAME[format]}` : translate`Opening the manuscript…`}
         >
@@ -1473,6 +1478,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
   const id = useId();
   const run = (action: () => void) => () => {
     setOpen(false);
+    trigger.current?.focus();
     action();
   };
   return (

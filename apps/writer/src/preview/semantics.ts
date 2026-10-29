@@ -9,7 +9,16 @@ export function semanticLayer(html: string): DocumentFragment {
       if (/^on/i.test(attribute.name) || ["src", "srcdoc"].includes(attribute.name)) element.removeAttribute(attribute.name);
       if (attribute.name === "href" && !/^(https?:|mailto:|#)/i.test(attribute.value)) element.removeAttribute("href");
     }
-    if (element instanceof HTMLAnchorElement) { element.rel = "noopener noreferrer"; element.target = "_blank"; }
+    if (element instanceof HTMLAnchorElement) {
+      element.rel = "noopener noreferrer";
+      element.target = "_blank";
+      if (!element.textContent?.trim() && !element.getAttribute("aria-label")) {
+        const href = element.getAttribute("href");
+        // Typst emits empty placeholder links for internal PDF destinations.
+        if (!href || href === "#") element.remove();
+        else element.setAttribute("aria-label", href);
+      }
+    }
   }
   return template.content;
 }

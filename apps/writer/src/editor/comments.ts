@@ -94,6 +94,8 @@ class CommentMarker extends GutterMarker {
   override toDOM() {
     const el = document.createElement("button");
     el.type = "button";
+    // CodeMirror hides gutters from assistive technology; threads are in Comments.
+    el.tabIndex = -1;
     el.className = `cm-comment-marker${this.active ? " is-active" : ""}`;
     el.dataset["comment"] = this.ids[0] ?? "";
     el.textContent = this.ids.length > 1 ? String(this.ids.length) : "";

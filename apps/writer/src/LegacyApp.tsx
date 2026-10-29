@@ -10,8 +10,7 @@ import { Component, useEffect, useMemo, useState, useSyncExternalStore, type Rea
 import { ConnectBackend } from "./backend/connect.js";
 import type { WriterBackend } from "./backend/types.js";
 import { createWriterSession, type WriterSession } from "./connect/session.js";
-import { appUrls } from "./apps.js";
-import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
+import { AppSwitcher } from "./ui/AppSwitcher.js";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { Manuscripts } from "./ui/Manuscripts.js";
 import { downloadLocalDrafts } from "./ui/download-local-drafts.js";
@@ -43,7 +42,7 @@ export function LegacyApp() {
       <TopbarSlot.Provider value={slot}>
         <div className="app">
           <header className="topbar">
-            <AppSwitcher current="writer" urls={appUrls} />
+            <AppSwitcher />
             <div className="topbar-slot" ref={setSlot} />
             <InterfaceLanguage />
             <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />

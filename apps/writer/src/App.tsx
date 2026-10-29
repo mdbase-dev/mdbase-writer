@@ -1,13 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { AppSwitcher } from "@mdbase-dev/ui/app-switcher";
+import { AppSwitcher } from "./ui/AppSwitcher.js";
 import { FeedbackButton } from "@mdbase-dev/ui/feedback";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { ThemeSelect } from "@mdbase-dev/ui/theme-select";
 import { InterfaceLanguage } from "./i18n/provider.js";
 import { OpeningScreen } from "@mdbase-dev/ui/screens";
-import { appUrls } from "./apps.js";
 import { ThemeChoice, TopbarSlot } from "./ui/topbar.js";
 import { SdkWriterRoot, type SdkWriterRootProps } from "./ui/SdkWriterRoot.js";
 
@@ -27,7 +26,7 @@ function NativeApp(props: SdkWriterRootProps) {
   const themeChoice = useMemo(() => ({ theme, setTheme }), [theme]);
   return <ThemeChoice.Provider value={themeChoice}><TopbarSlot.Provider value={slot}>
     <div className="app"><header className="topbar">
-      <AppSwitcher current="writer" urls={appUrls} /><div className="topbar-slot" ref={setSlot} />
+      <AppSwitcher /><div className="topbar-slot" ref={setSlot} />
       <InterfaceLanguage />
             <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} /><FeedbackButton />
     </header><SdkWriterRoot {...props} /></div>

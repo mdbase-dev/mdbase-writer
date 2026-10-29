@@ -75,6 +75,7 @@ jobs:
           pnpm --filter @mdbase-writer/app exec node scripts/browser-test.mjs || result=1
           pnpm --filter @mdbase-writer/app test:browser:reliability || result=1
           pnpm --filter @mdbase-writer/app test:browser:i18n || result=1
+          pnpm --filter @mdbase-writer/app test:browser:a11y || result=1
           exit "$result"
       - name: Verify private feedback with demo data and intercepted delivery
         run: |

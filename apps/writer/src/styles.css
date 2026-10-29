@@ -70,6 +70,7 @@ button, select, input, textarea {
   color: var(--ink);
 }
 button.link { background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+:is(.mdbase-button, .bar-back)[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 label { display: grid; gap: 0.2rem; font-size: 13px; color: var(--ink-soft); }
 /* A focused field is outlined once, by its own border in the accent, rather
    than by a ring set off from its grey border. */
@@ -132,7 +133,7 @@ label > .mdbase-select { width: 100%; }
 button.bar-problems { cursor: pointer; }
 .bar-problems.tone-danger { color: var(--danger); border-color: color-mix(in oklch, var(--danger) 35%, transparent); background: color-mix(in oklch, var(--danger) 8%, transparent); }
 .bar-problems.tone-warning { color: color-mix(in oklch, var(--warning) 70%, var(--ink)); border-color: color-mix(in oklch, var(--warning) 45%, transparent); background: color-mix(in oklch, var(--warning) 10%, transparent); }
-.bar-problems.is-clear { color: var(--faint); }
+.bar-problems.is-clear { color: var(--muted); }
 .bar-problems.is-clear .icon { color: var(--connected); }
 
 .mdbase-connect-screen .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -224,6 +225,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .first-run { display: grid; gap: 1.25rem; justify-items: start; margin-top: 1rem; }
 .first-run ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.6rem; max-width: 38rem; color: var(--ink-soft); }
 .first-run strong { color: var(--ink); }
+.mdbase-dialog .mdbase-button.is-primary:not(:disabled) { background: var(--action); border-color: var(--action); }
 .new-manuscript { display: grid; gap: 0.8rem; grid-template-columns: 1fr 1.3fr; align-items: end; }
 .new-manuscript button { grid-column: 1 / -1; justify-self: start; }
 .adopt-note { display: grid; gap: 0.8rem; justify-items: start; }
@@ -262,6 +264,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .outline { grid-area: outline; position: relative; min-height: 0; border-right: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr); }
 /* Underlined tabs, as tall as the pane headers beside them so their rules meet. */
 .sidebar-tabs { display: flex; gap: 1.1rem; min-height: 38px; padding: 0 1rem; border-bottom: 1px solid var(--line); background: var(--canvas); }
+.sidebar-tab-list { display: flex; gap: 1.1rem; }
 .sidebar-tabs button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font-size: 13px; cursor: pointer; transition: color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
 .sidebar-tabs button:hover { color: var(--ink); }
 .sidebar-tabs button[aria-selected="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--app-writer); }
@@ -272,9 +275,10 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .outline.has-lower { grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); }
 .sidebar-lower { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; border-top: 1px solid var(--line); }
 .sidebar-lower-tabs { display: flex; align-items: center; gap: 0.9rem; min-height: 32px; padding: 0 0.5rem 0 1rem; border-bottom: 1px solid var(--line); }
-.sidebar-lower-tabs > [role="tab"] { padding: 0; border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
-.sidebar-lower-tabs > [role="tab"]:hover { color: var(--ink); }
-.sidebar-lower-tabs > [role="tab"][aria-selected="true"] { color: var(--ink); font-weight: 700; }
+.sidebar-lower-tabs .sidebar-tab-list { gap: 0.9rem; }
+.sidebar-lower-tabs [role="tab"] { padding: 0; border: 0; background: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+.sidebar-lower-tabs [role="tab"]:hover { color: var(--ink); }
+.sidebar-lower-tabs [role="tab"][aria-selected="true"] { color: var(--ink); font-weight: 700; }
 .sidebar-lower-tabs > .mdbase-icon-button { margin-left: auto; }
 .sidebar-split { margin-left: auto; align-self: center; color: var(--muted); }
 .sidebar-split[aria-pressed="true"] { color: var(--ink); }
@@ -301,7 +305,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .sidebar-empty kbd { font-size: 10.5px; }
 
 /* A quiet action in the sidebar: accent text that fills in when pointed at. */
-.text-button { display: inline-flex; align-items: center; gap: 0.3rem; height: 24px; padding: 0 0.4rem; border: 0; border-radius: 4px; background: none; color: var(--accent); font: inherit; font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background var(--motion-quick) ease, color var(--motion-quick) ease; }
+.text-button { display: inline-flex; align-items: center; gap: 0.3rem; height: 24px; padding: 0 0.4rem; border: 0; border-radius: 4px; background: none; color: var(--action); font: inherit; font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background var(--motion-quick) ease, color var(--motion-quick) ease; }
 .text-button:first-child { margin-left: -0.4rem; }
 .text-button:hover:not(:disabled) { background: var(--color-accent-soft); color: var(--action); }
 .text-button:disabled { color: var(--muted); opacity: 0.6; cursor: default; }
@@ -347,7 +351,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .heading-row:hover { background: var(--subtle); color: var(--ink); }
 .heading-row[aria-current="location"] { color: var(--ink); font-weight: 700; }
 .heading-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.heading-words { flex: none; font-size: 11px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
+.heading-words { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* What a section holds, as quietly as its word count: a comment count, a problem dot. */
 .outline-comments { display: inline-flex; align-items: center; gap: 2px; flex: none; font-size: 11px; font-weight: 400; color: var(--faint); font-variant-numeric: tabular-nums; }
 .outline-comments .icon { width: 11px; height: 11px; }
@@ -417,7 +421,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .source-row:focus-visible { outline-offset: -2px; }
 .source-title { font-size: 13px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .source-meta { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.source-uses { color: var(--faint); font-variant-numeric: tabular-nums; }
+.source-uses { color: var(--muted); font-variant-numeric: tabular-nums; }
 .source-uses::before { content: "·"; margin: 0 0.35rem; }
 .cite-button { flex: none; height: 24px; padding: 0 0.5rem; margin-right: 0.3rem; border: 1px solid transparent; border-radius: 4px; background: none; color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; opacity: 0; transition: opacity var(--motion-quick) var(--ease-out), background var(--motion-quick) ease; }
 .cite-button:hover:not(:disabled) { background: var(--color-accent-soft); }
