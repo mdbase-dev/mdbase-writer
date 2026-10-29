@@ -1222,7 +1222,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         <div className="compare-actions">
           <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           <button type="button" className="mdbase-button is-primary" onClick={() => setLeaveProblem(null)}><Trans>Keep writing</Trans></button>
-          <button type="button" className="mdbase-button" onClick={() => void requestClose()} disabled={savingBeforeLeave}><Trans>Retry saving</Trans></button>
+          <button type="button" className="mdbase-button" onClick={() => void requestClose()} aria-disabled={savingBeforeLeave || undefined}><Trans>Retry saving</Trans></button>
           <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}><Trans>Leave without saving</Trans></button>
         </div>
       </Dialog>

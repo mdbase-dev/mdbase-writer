@@ -122,6 +122,18 @@ try {
       const home = page.getByRole("button", { name: "Manuscripts", exact: true });
       await home.click();
       await audit(page, `unsaved-changes-${width}`);
+      await page.evaluate(() => {
+        const { workspace } = window.writer;
+        const retry = workspace.retrySave.bind(workspace);
+        workspace.retrySave = () => new Promise(resolve => { window.finishRetry = () => retry().then(resolve); });
+      });
+      const retry = page.getByRole("button", { name: "Retry saving", exact: true });
+      await retry.click();
+      assert.equal(await retry.getAttribute("aria-disabled"), "true");
+      assert.ok(await retry.evaluate(el => el === document.activeElement), "Retry keeps focus while saving");
+      await page.evaluate(() => window.finishRetry());
+      await page.waitForFunction(() => !document.querySelector('.compare-actions [aria-disabled="true"]'));
+      assert.ok(await retry.evaluate(el => el === document.activeElement), "A failed retry keeps focus");
       await escapeTo(page, page.getByRole("dialog", { name: "Some changes are not saved", exact: true }), home);
       console.log(`PASS ${width}px: dialogs close with Escape and restore focus`);
     } catch (error) {
