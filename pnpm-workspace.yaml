@@ -10,7 +10,8 @@ minimumReleaseAgeExclude:
   - '@mdbase-dev/connect-testing@0.1.0-beta.125'
   - '@mdbase-dev/connect@0.1.0-beta.125'
   - '@mdbase-dev/connect-dev@0.1.0-beta.125'
-  - '@mdbase-dev/ui@0.1.0-beta.125'
+  - '@mdbase-dev/ui@0.1.0-beta.125 || 0.1.0-beta.147'
+  - '@mdbase-dev/i18n@0.1.0-beta.147'
 
 onlyBuiltDependencies:
   - esbuild
