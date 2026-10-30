@@ -7,7 +7,7 @@ import { diagnosticMessage } from "../i18n/diagnostics.js";
 // (autosave, conflict detection, exact recovery — all from the SDK). Every
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "../backend/types.js";
 import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
 import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
@@ -657,7 +657,11 @@ export class ManuscriptWorkspace {
 
   private onCollectionChange(delta: CollectionDelta): void {
     if (delta.problem) { this.update({ indexLoad: { phase: "failed", problem: delta.problem } }); return; }
-    if (delta.reset) { void this.refreshCollection(); return; }
+    if (delta.reset) {
+      this.update({annotationVersion: this.current.annotationVersion + 1});
+      void this.refreshCollection();
+      return;
+    }
     const indexChanged = delta.index && (delta.index.recordPaths !== this.current.recordPaths || delta.index.filePaths !== this.current.filePaths);
     this.update({ ...(delta.index ? { ...(indexChanged ? { recordPaths: delta.index.recordPaths, filePaths: delta.index.filePaths } : {}), indexLoad: READY } : {}), ...(delta.library ? { library: delta.library, libraryLoad: READY } : {}) });
     if (indexChanged) {

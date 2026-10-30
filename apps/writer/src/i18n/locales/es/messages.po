@@ -1,11 +1,5 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2026-10-23 23:06+1100\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"X-Generator: @lingui/cli\n"
-"Language: es\n"
 
 #. placeholder {0}: Math.round((words / goal) * 100)
 #. placeholder {1}: formatNumber(goal)
@@ -375,10 +369,6 @@ msgstr "Afiliación"
 msgid "All manuscripts"
 msgstr "Todos los manuscritos"
 
-#: src/ui/ConnectGate.tsx
-msgid "already present"
-msgstr "ya está presente"
-
 #. placeholder {0}: snap.annotationsLoad.problem ?? ""
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
@@ -508,10 +498,6 @@ msgstr "Comprobando los capítulos y las imágenes antes de generar {0}…"
 msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
 msgstr "Comprobando los capítulos y las imágenes antes de generar el documento de Word… (la primera vez se descargan unos 16 MB)"
 
-#: src/ui/ConnectGate.tsx
-msgid "Checking the collection"
-msgstr "Comprobando la colección"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
 msgstr "Comprobando…"
@@ -523,10 +509,6 @@ msgstr "Chicago (autor-fecha)"
 #: src/ui/names.ts
 msgid "Chicago (notes and bibliography)"
 msgstr "Chicago (notas y bibliografía)"
-
-#: src/ui/ConnectGate.tsx
-msgid "Choose another collection"
-msgstr "Elige otra colección"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
@@ -629,10 +611,6 @@ msgstr "Los metadatos de la colección siguen cargándose."
 msgid "Collection version"
 msgstr "Versión de la colección"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Collections"
-msgstr "Colecciones"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Commands"
 msgstr "Comandos"
@@ -687,26 +665,6 @@ msgstr "Comparar versiones"
 msgid "Conflict"
 msgstr "Conflicto"
 
-#: src/ui/ConnectGate.tsx
-msgid "conflicts with an existing file"
-msgstr "entra en conflicto con un archivo existente"
-
-#: src/ui/ConnectGate.tsx
-msgid "Connect a collection"
-msgstr "Conectar una colección"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Connect another collection…"
-msgstr "Conectar otra colección…"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Connected collections"
-msgstr "Colecciones conectadas"
-
-#: src/ui/ConnectGate.tsx
-msgid "Connecting to mdbase connect"
-msgstr "Conectando con mdbase Connect"
-
 #: src/ui/Home.tsx
 msgid "Continue writing"
 msgstr "Seguir escribiendo"
@@ -719,17 +677,9 @@ msgstr "Copiada"
 msgid "Copy key"
 msgstr "Copiar clave"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Could not connect another collection."
-msgstr "No se pudo conectar a otra colección."
-
 #: src/ui/Home.tsx
 msgid "Could not create the manuscript. Please try again."
 msgstr "No se pudo crear el manuscrito. Inténtalo de nuevo."
-
-#: src/ui/CollectionPicker.tsx
-msgid "Could not switch collections."
-msgstr "No se pudo cambiar de colección."
 
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
@@ -805,9 +755,9 @@ msgstr "Descarga una copia local antes de salir si no se puede completar el guar
 msgid "Download local draft"
 msgstr "Descargar borrador local"
 
-#: src/LegacyApp.tsx
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Download local drafts"
 msgstr "Descargar borradores locales"
 
@@ -944,10 +894,6 @@ msgstr "Figura a partir de una imagen…"
 msgid "Figures must be PNG, JPEG, GIF, SVG or WebP images."
 msgstr "Las figuras deben ser imágenes PNG, JPEG, GIF, SVG o WebP."
 
-#: src/ui/CollectionPicker.tsx
-msgid "Filter collections"
-msgstr "Filtrar colecciones"
-
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
 msgstr "Buscar un manuscrito"
@@ -1017,10 +963,6 @@ msgstr "Se hace referencia a la nota al pie [^{value}] más de una vez."
 msgid "for citation terms and hyphenation"
 msgstr "para términos de citas y división de palabras"
 
-#: src/ui/NativeSignIn.tsx
-msgid "Forget collection"
-msgstr "Olvidar colección"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Format"
 msgstr "Formato"
@@ -1074,10 +1016,6 @@ msgstr "Los resaltados no están configurados en esta colección."
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights from Reader"
 msgstr "Resaltados de Reader"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Hosted by mdbase"
-msgstr "Alojado por mdbase"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
@@ -1202,10 +1140,6 @@ msgstr "Conservar el mío"
 #: src/ui/WorkspaceView.tsx
 msgid "Keep writing"
 msgstr "Seguir escribiendo"
-
-#: src/ui/ConnectGate.tsx
-msgid "kept as it is"
-msgstr "se conserva tal cual"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
@@ -1366,23 +1300,6 @@ msgstr "Matemáticas: llave sin cerrar."
 msgid "Math: Unmatched closing brace."
 msgstr "Matemáticas: llave de cierre sin pareja."
 
-#: src/ui/ConnectGate.tsx
-msgid "mdbase connect is unavailable"
-msgstr "mdbase connect no está disponible"
-
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer can't use this collection"
-msgstr "mdbase writer no puede usar esta colección"
-
-#. placeholder {0}: literal(snapshot.info.displayName)
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
-msgstr "mdbase writer necesita dos tipos de registros en <0>{0}</0>: manuscritos y fuentes de Reader para las citas. La configuración añade solo lo que falta; no modifica los registros existentes."
-
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library. Connect a collection to choose what it can access."
-msgstr "mdbase writer compone registros Markdown de una colección mdbase en documentos PDF y Word, con citas de tu biblioteca de mdbase Reader. Conecta una colección para elegir a qué puede acceder."
-
 #: src/ui/CompareDialog.tsx
 msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
 msgstr "Markdown combinado<0/><1>El texto combinado conserva tus cambios de configuración locales sobre la versión de la colección.</1>"
@@ -1471,11 +1388,6 @@ msgstr "Problema siguiente"
 #: src/ui/SourcesPanel.tsx
 msgid "No annotations on this source."
 msgstr "Esta fuente no tiene anotaciones."
-
-#. placeholder {0}: query.trim()
-#: src/ui/CollectionPicker.tsx
-msgid "No collection matches “{0}”."
-msgstr "Ninguna colección coincide con “{0}”."
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
@@ -1630,10 +1542,6 @@ msgstr "Sobre la formación de los arrecifes de coral"
 msgid "On the whole record"
 msgstr "En todo el registro"
 
-#: src/ui/CollectionPicker.tsx
-msgid "On your computer"
-msgstr "En tu ordenador"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Open"
 msgstr "Abrir"
@@ -1660,36 +1568,19 @@ msgstr "Abrir el manuscrito para revisarlo"
 msgid "Open mdbase Reader"
 msgstr "Abrir mdbase Reader"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Open now"
-msgstr "Abrir ahora"
-
 #: src/ui/SourcesPanel.tsx
 msgid "Open Reader to add a source"
 msgstr "Abre Reader para añadir una fuente"
-
-#: src/connect/native-signin-ui.ts
-msgid "Open sign-in"
-msgstr "Abrir inicio de sesión"
-
-#: src/connect/native-signin-ui.ts
-msgid "Open the mdbase tab again"
-msgstr "Volver a abrir la pestaña de mdbase"
 
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
 msgstr "Abrir este pasaje en Reader"
 
-#: src/connect/native-signin-ui.ts
-msgid "Opening collections isn't available in this build yet."
-msgstr "La apertura de colecciones aún no está disponible en esta versión."
-
 #: src/App.tsx
-#: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
 msgstr "Abriendo mdbase writer"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "Opening the demo collection"
 msgstr "Abriendo la colección de demostración"
 
@@ -1807,10 +1698,6 @@ msgstr "Cita anterior"
 msgid "Previous comment"
 msgstr "Comentario anterior"
 
-#: src/ui/ConnectGate.tsx
-msgid "Previously connected"
-msgstr "Conectado anteriormente"
-
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
 msgstr "problema"
@@ -1843,10 +1730,6 @@ msgstr "Leer como el manuscrito<0>Desactivado muestra el Markdown tal como está
 msgid "Reason for the suggestion"
 msgstr "Motivo de la sugerencia"
 
-#: src/ui/ConnectGate.tsx
-msgid "Reconnect"
-msgstr "Volver a conectar"
-
 #: src/ui/connection-notice.ts
 msgid "Reconnecting"
 msgstr "Volviendo a conectar"
@@ -1871,7 +1754,7 @@ msgstr "Rechazar"
 msgid "Rejected"
 msgstr "Rechazado"
 
-#: src/LegacyApp.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Reload"
 msgstr "Volver a cargar"
 
@@ -1952,7 +1835,7 @@ msgstr "Reintentar dependencias"
 msgid "Retry export"
 msgstr "Reintentar exportación"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Retry loading"
@@ -2073,18 +1956,6 @@ msgstr "Establecer un objetivo de palabras"
 #: src/ui/Home.tsx
 msgid "Set goal"
 msgstr "Establecer objetivo"
-
-#: src/ui/ConnectGate.tsx
-msgid "Set up collection"
-msgstr "Configurar colección"
-
-#: src/ui/ConnectGate.tsx
-msgid "Set up this collection for writing"
-msgstr "Configurar esta colección para escribir"
-
-#: src/ui/ConnectGate.tsx
-msgid "Setting up…"
-msgstr "Configurando…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Settings"
@@ -2225,39 +2096,6 @@ msgstr "Se muestra la última vista previa correcta; puede que no coincida con e
 msgid "Sidebar"
 msgstr "Barra lateral"
 
-#: src/connect/native-signin-ui.ts
-msgid "Sign in"
-msgstr "Iniciar sesión"
-
-#: src/connect/native-signin-ui.ts
-msgid "Sign in with your mdbase account to sync {appName} across your devices."
-msgstr "Inicia sesión con tu cuenta de mdbase para sincronizar {appName} en tus dispositivos."
-
-#: src/connect/native-signin-ui.ts
-msgid "Sign out"
-msgstr "Cerrar sesión"
-
-#: src/ui/NativeSignIn.tsx
-msgid "Sign-in status"
-msgstr "Estado de inicio de sesión"
-
-#: src/connect/native-signin-ui.ts
-msgid "Sign-in was interrupted. Please try again."
-msgstr "Se interrumpió el inicio de sesión. Inténtalo de nuevo."
-
-#: src/connect/connect-popup.ts
-msgid "Sign-in window closed."
-msgstr "Se cerró la ventana de inicio de sesión."
-
-#: src/connect/native-signin-ui.ts
-msgid "Signed in as {email}"
-msgstr "Sesión iniciada como {email}"
-
-#. placeholder {0}: selected.displayName
-#: src/connect/native-signin-ui.ts
-msgid "Signed in. Opening {0}…"
-msgstr "Sesión iniciada. Abriendo {0}…"
-
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Some changes are not saved"
@@ -2267,13 +2105,9 @@ msgstr "Hay cambios sin guardar"
 msgid "Some images or chapters could not be loaded. See Problems for their locations."
 msgstr "No se pudieron cargar algunas imágenes o capítulos. Consulta Problemas para ver dónde están."
 
-#: src/LegacyApp.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Something went wrong"
 msgstr "Se produjo un error"
-
-#: src/ui/ConnectGate.tsx
-msgid "Something went wrong."
-msgstr "Se produjo un error."
 
 #: src/editor/insight.ts
 msgid "Source"
@@ -2362,14 +2196,6 @@ msgctxt "comment tooltip"
 msgid "Suggestion"
 msgstr "Sugerencia"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Switch collection"
-msgstr "Cambiar de colección"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Switch collection: {name}"
-msgstr "Cambiar de colección: {name}"
-
 #: src/ui/WorkspaceView.tsx
 msgid "System"
 msgstr "Sistema"
@@ -2396,7 +2222,7 @@ msgstr "El capítulo no está abierto."
 msgid "The compile worker stopped."
 msgstr "El proceso de compilación se detuvo."
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "The demo could not be loaded"
 msgstr "No se pudo cargar la demostración"
 
@@ -2475,10 +2301,6 @@ msgstr "Tema"
 msgid "Thesis or book"
 msgstr "Tesis o libro"
 
-#: src/ui/ConnectGate.tsx
-msgid "This action could not be completed. Please try again."
-msgstr "No se pudo completar esta acción. Inténtalo de nuevo."
-
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
 msgstr "Esto se aplica en este navegador a todos los manuscritos."
@@ -2491,17 +2313,9 @@ msgstr "Esto cambia el idioma de la interfaz en este navegador, no el del manusc
 msgid "This collection does not accept files from Writer."
 msgstr "Esta colección no acepta archivos de Writer."
 
-#: src/ui/ConnectGate.tsx
-msgid "This collection is unavailable"
-msgstr "Esta colección no está disponible"
-
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "No se pudo abrir esta vista de colección. Elige otra colección en la barra superior o vuelve a cargar para reintentarlo."
-
-#: src/ui/ConnectGate.tsx
-msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr "Esta es una compilación de desarrollo local. El servicio alojado de mdbase connect solo acepta aplicaciones servidas mediante HTTPS; usa el entorno local de Connect (<0>pnpm dev:environment:up</0> en mdbase-connect) o abre la <1>colección de demostración</1>."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
@@ -2543,10 +2357,6 @@ msgstr "Título<0/>{0}"
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "control de cambios"
-
-#: src/ui/ConnectGate.tsx
-msgid "Try again"
-msgstr "Volver a intentarlo"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2643,18 +2453,9 @@ msgstr "Vista"
 msgid "Wait for the manuscript to open before exporting."
 msgstr "Espera a que se abra el manuscrito antes de exportar."
 
-#: src/connect/native-signin-ui.ts
-msgid "Waiting for approval in the mdbase tab…"
-msgstr "Esperando aprobación en la pestaña de mdbase…"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Waiting for approval…"
 msgstr "Esperando aprobación…"
-
-#: src/ui/CollectionPicker.tsx
-#: src/ui/ConnectGate.tsx
-msgid "Waiting for mdbase connect…"
-msgstr "Esperando a mdbase connect…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -2663,18 +2464,6 @@ msgstr "De quién son los comentarios"
 #: src/ui/CommentsPanel.tsx
 msgid "Why (optional)"
 msgstr "Motivo (opcional)"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be added"
-msgstr "se añadirán"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be removed"
-msgstr "se quitarán"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be updated"
-msgstr "se actualizarán"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdraw"
@@ -2707,11 +2496,6 @@ msgstr "Palabras, p. ej., 8000"
 #: src/ui/WorkspaceView.tsx
 msgid "Write"
 msgstr "Escribir"
-
-#: src/ui/ConnectGate.tsx
-#: src/ui/NativeSignIn.tsx
-msgid "Write from your collection"
-msgstr "Escribe desde tu colección"
 
 #: src/editor/Editor.tsx
 msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
@@ -2750,11 +2534,6 @@ msgstr "No se pudo comprobar tu cuenta ({0})."
 msgid "Your account is not linked to a person record in this collection."
 msgstr "Tu cuenta no está vinculada a un registro de persona en esta colección."
 
-#: src/connect/connect-popup.ts
-#: src/connect/native-signin-ui.ts
-msgid "Your browser blocked the sign-in tab."
-msgstr "El navegador bloqueó la pestaña de inicio de sesión."
-
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
 msgstr "Tus comentarios no están firmados."
@@ -2775,7 +2554,7 @@ msgstr "Los borradores locales se guardan en este navegador cuando hay almacenam
 msgid "Your local text"
 msgstr "Tu texto local"
 
-#: src/LegacyApp.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
 msgstr "El texto guardado está en tu colección. Los borradores locales no enviados se guardan en este navegador cuando hay almacenamiento disponible. Descarga una copia antes de volver a cargar."
 

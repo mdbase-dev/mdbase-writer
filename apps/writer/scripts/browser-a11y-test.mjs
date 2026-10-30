@@ -113,7 +113,7 @@ try {
         const { workspace, backend } = window.writer;
         const snapshot = workspace.getSnapshot().records.get(workspace.main).snapshot;
         workspace.setBody(workspace.main, `${snapshot.body}\nLocal edit.\n`);
-        backend.authority.editElsewhere(workspace.main, { body: `${snapshot.body}\nRemote edit.\n` });
+        backend.replica.editElsewhere(workspace.main, { body: `${snapshot.body}\nRemote edit.\n` });
       });
       const compare = page.getByRole("button", { name: "Compare versions", exact: true });
       await compare.click();

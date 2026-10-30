@@ -47,6 +47,25 @@ export async function installedMembers(root) {
   await walk(root);
   return out.sort((a,b) => a.path < b.path ? -1 : 1);
 }
+// Reviewed config may declare UI as an exact registry package instead of a
+// file original. The protected UI hash then names that npm tarball, and the
+// frozen install enforces its SRI; there is no archived member inventory.
+async function npmUi({ approved, pin, lock, app, repoRoot, hashes, installed }) {
+  const { version, integrity, sha256 } = approved, name = packages.ui;
+  requireValue(/^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$/.test(version ?? '') && /^sha512-[A-Za-z0-9+/]{86}==$/.test(integrity ?? '') && /^[a-f0-9]{64}$/.test(sha256 ?? ''), 'approved npm UI input');
+  equal(sha256, hashes.NATIVE_UI_SHA256, 'ui protected npm archive hash mismatch');
+  requireValue(pin === version, `${name} must be the approved exact npm version`);
+  const importer = lock.split('\n  apps/writer:\n')[1]?.split(/\n  [^ ]/)[0];
+  requireValue(importer?.includes(`'${name}':\n        specifier: ${version}\n        version: ${version}(`), `${name} frozen importer pin mismatch`);
+  requireValue(lock.includes(`\n  '${name}@${version}':\n    resolution: {integrity: ${integrity}}\n`), `${name} frozen npm integrity mismatch`);
+  if (installed) {
+    const installedRoot = await realpath(join(app, 'node_modules', name));
+    requireValue(!relative(repoRoot, installedRoot).startsWith('..'), 'installed package outside checkout');
+    const identity = await json(join(installedRoot, 'package.json'));
+    requireValue(identity.name === name && identity.version === version, `${name} installed package identity differs`);
+  }
+  return { package: name, version, sha256, sri: integrity };
+}
 export async function loadOriginals({ target, repoRoot, hashes, installed = false }) {
   requireValue(['staging','production'].includes(target), 'unknown target; no LAB retarget');
   // Library callers must supply explicit expectations. Only the CLI's separate
@@ -64,6 +83,10 @@ export async function loadOriginals({ target, repoRoot, hashes, installed = fals
   const archives = {}, originals = {};
   for (const [key, name] of Object.entries(packages)) {
     const pin = pkg.dependencies?.[name];
+    if (key === 'ui' && approved.ui) {
+      archives.ui = await npmUi({ approved: approved.ui, pin, lock, app, repoRoot, hashes, installed });
+      continue;
+    }
     requireValue(typeof pin === 'string' && pin.startsWith('file:'), `${name} must remain a file pin`);
     const path = relative(repoRoot, resolve(app, pin.slice(5)));
     const bytes = await regular(repoRoot, path);

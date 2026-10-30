@@ -1,4 +1,4 @@
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "../backend/types.js";
 
 export interface LocalDraft {
   readonly version: 1;

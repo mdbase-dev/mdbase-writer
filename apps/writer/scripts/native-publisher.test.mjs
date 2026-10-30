@@ -169,6 +169,23 @@ for (const key of ["sdk","ui","connect-protocol"]) test("ALL installed "+key+" m
   await writeFile(file,"tampered");
   await assert.rejects(loadSdkTrust({target:"staging",repoRoot:f.repo,hashes:f.hashes,installed:true}),/installed original members/);
 });
+test("production npm UI binds exact approved version, lock SRI, protected hash and installed identity",async t=>{
+  const f=await trustFixture("production");t.after(()=>rm(f.repo,{recursive:true,force:true}));
+  const trust=await loadSdkTrust({target:"production",repoRoot:f.repo,hashes:f.hashes,installed:true});
+  assert.deepEqual(trust.archives.ui,{package:"@mdbase-dev/ui",version:"1.0.0",sha256:f.hashes.NATIVE_UI_SHA256,sri:trust.archives.ui.sri});
+  const load=()=>loadSdkTrust({target:"production",repoRoot:f.repo,hashes:f.hashes,installed:true});
+  const replace=async (path,from,to)=>{const original=await readFile(path,"utf8");assert.ok(original.includes(from));await writeFile(path,original.replace(from,to));return ()=>writeFile(path,original);};
+  const lock=join(f.repo,"pnpm-lock.yaml"),pkg=join(f.app,"package.json"),config=join(f.repo,"config/native-publish/production.json");
+  for (const [path,from,to,reason] of [
+    [pkg,'"@mdbase-dev/ui":"1.0.0"','"@mdbase-dev/ui":"file:../../fixtures/ui.tgz"',/approved exact npm version/],
+    [lock,"specifier: 1.0.0","specifier: ^1.0.0",/frozen importer pin/],
+    [lock,trust.archives.ui.sri,"sha512-"+"A".repeat(86)+"==",/frozen npm integrity/],
+    [config,'"version":"1.0.0"','"version":"1.0.1"',/approved exact npm version/],
+    [join(f.app,"node_modules/@mdbase-dev/ui/package.json"),'"version":"1.0.0"','"version":"1.0.1"',/installed package identity/],
+  ]) {const restore=await replace(path,from,to);await assert.rejects(load(),reason);await restore();}
+  await assert.rejects(loadSdkTrust({target:"production",repoRoot:f.repo,hashes:{...f.hashes,NATIVE_UI_SHA256:"0".repeat(64)}}),/ui protected npm archive hash mismatch/);
+  await load();
+});
 test("LAB target, missing originals and lock substitution refuse",async t=>{
   const f=await trustFixture("staging");t.after(()=>rm(f.repo,{recursive:true,force:true}));
   await assert.rejects(loadSdkTrust({target:"lab",repoRoot:f.repo,hashes:f.hashes}),/no LAB/);

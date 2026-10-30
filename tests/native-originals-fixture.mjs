@@ -39,21 +39,29 @@ export async function trustFixture(target) {
  await put(join(sdk,'dist/application/packaged-trust.js'),`const metadata = ${JSON.stringify(metadata)};\n`);
  for(const key of ['protocol','ui','sdk']) {
   if(key==='sdk') {await mkdir(join(sdk,'vendor'),{recursive:true});await cp(join(repo,'vendor/protocol.tgz'),join(sdk,'vendor/protocol.tgz'));}
-  const path=`vendor/${key}.tgz`;await mkdir(join(repo,'vendor'),{recursive:true});
+  // Production mirrors the reviewed config: UI is an exact npm package, not a file original.
+  const path=key==='ui'&&target==='production'?'fixtures/ui.tgz':`vendor/${key}.tgz`;await mkdir(join(repo,'vendor'),{recursive:true});
   execFileSync('tar',['-czf',join(repo,path),'-C',join(sources,key),'package']);
   const bytes=await readFile(join(repo,path));archives[key]={path,bytes:bytes.length,sha256:digest(bytes),sri:`sha512-${digest(bytes,'sha512')}`,members:originalMembers(join(repo,path)).length};
   hashes[`NATIVE_${key.toUpperCase()}_SHA256`]=digest(bytes);
  }
  hashes.NATIVE_TRUST_ASSET_SHA256=assetHash;
- const dependencies=Object.fromEntries(Object.entries({sdk:'sdk',ui:'ui',protocol:'connect-protocol'}).map(([key,name])=>[`@mdbase-dev/${name}`,`file:../../${archives[key].path}`]));
+ const files=Object.entries(target==='production'?{sdk:'sdk',protocol:'connect-protocol'}:{sdk:'sdk',ui:'ui',protocol:'connect-protocol'});
+ const dependencies=Object.fromEntries(files.map(([key,name])=>[`@mdbase-dev/${name}`,`file:../../${archives[key].path}`]));
+ let importer=Object.entries(dependencies).map(([name,pin])=>`      '${name}':\n        specifier: ${pin}\n        version: ${pin}\n`).join('');
+ let resolutions=files.map(([key,name])=>`  '@mdbase-dev/${name}@file:${archives[key].path}':\n    resolution: {integrity: ${archives[key].sri}, tarball: file:${archives[key].path}}\n`).join('');
+ const ui=target==='production'?{version:'1.0.0',integrity:archives.ui.sri,sha256:archives.ui.sha256}:undefined;
+ if(ui){
+  dependencies['@mdbase-dev/ui']=ui.version;
+  importer+=`      '@mdbase-dev/ui':\n        specifier: ${ui.version}\n        version: ${ui.version}(react@19.3.0)\n`;
+  resolutions+=`  '@mdbase-dev/ui@${ui.version}':\n    resolution: {integrity: ${ui.integrity}}\n`;
+ }
  await obj(join(app,'package.json'),{dependencies});
- const importer=Object.entries(dependencies).map(([name,pin])=>`      '${name}':\n        specifier: ${pin}\n        version: ${pin}\n`).join('');
- const resolutions=Object.entries({sdk:'sdk',ui:'ui',protocol:'connect-protocol'}).map(([key,name])=>`  '@mdbase-dev/${name}@file:${archives[key].path}':\n    resolution: {integrity: ${archives[key].sri}, tarball: file:${archives[key].path}}\n`).join('');
  await put(join(repo,'pnpm-lock.yaml'),`lockfileVersion: '9.0'\nimporters:\n  apps/writer:\n    dependencies:\n${importer}\npackages:\n${resolutions}`);
  await obj(join(packet,'members.json'),originalMembers(join(repo,archives.sdk.path)));
  const protocol=archives.protocol;
  await obj(join(packet,'artifact-facts.json'),{source:sha,sourceTree:sha,archive:'sdk.tgz',...Object.fromEntries(['bytes','sha256','sri','members'].map(k=>[k,archives.sdk[k]])),nativeSource:sha,nativeSha256:provenance.runtime.sha256,nativeBytes:provenance.runtime.bytes,trust:provenance.trust,handoff:provenance.handoff,verifier:provenance.verifier,packagedTrustModuleSha256:digest(await readFile(join(sdk,'dist/application/packaged-trust.js'))),dependencies:[{name:'@mdbase-dev/connect-protocol',file:'vendor/protocol.tgz',bytes:protocol.bytes,sha256:protocol.sha256,sri:protocol.sri}]});
  for(const [key,name] of [['sdk','sdk'],['ui','ui'],['protocol','connect-protocol']]) await cp(join(sources,key,'package'),join(app,'node_modules/@mdbase-dev',name),{recursive:true});
- await obj(join(repo,`config/native-publish/${target}.json`),{target,sdkSource:sha,sdkTree:sha,factsSha256:digest(await readFile(join(packet,'artifact-facts.json'))),protectedHashes:hashes});
+ await obj(join(repo,`config/native-publish/${target}.json`),{target,sdkSource:sha,sdkTree:sha,factsSha256:digest(await readFile(join(packet,'artifact-facts.json'))),ui,protectedHashes:hashes});
  return {repo,app,packet,hashes,sources};
 }

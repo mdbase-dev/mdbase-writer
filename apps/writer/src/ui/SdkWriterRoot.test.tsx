@@ -9,7 +9,7 @@ import manifest from "../generated/mdbase-app.json";
 import { App } from "../App.js";
 import { SdkWriterRoot, type WriterNativeScope } from "./SdkWriterRoot.js";
 
-vi.mock("@mdbase-dev/ui/feedback", () => ({ FeedbackButton: () => null }));
+vi.mock("@mdbase-dev/ui/feedback", () => ({ FeedbackButton: () => null, useFeedback: () => ({reportError: vi.fn()}) }));
 
 const apps: TestApp[] = [];
 async function fixture(options: TestAppOptions) {

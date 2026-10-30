@@ -10,16 +10,18 @@ import { loadOriginals,protectedHashes } from './lib/native-originals.mjs';
 const scripts={publisher:'test:publisher',check:'check'},mode=process.argv[2];
 assert.ok(Object.hasOwn(scripts,mode),'Explicit publisher/check UNIT mode required; no build mode');
 for(const name of ['CLOUDFLARE_API_TOKEN','CLOUDFLARE_TOKEN','CLOUDFLARE_ACCOUNT_ID','GITHUB_TOKEN','GH_TOKEN'])assert.ok(!process.env[name],'No private credentials allowed in synthetic unit runner');
-const config=JSON.parse(await readFile('config/native-publish/staging.json','utf8'));
+const config=JSON.parse(await readFile('config/native-publish/production.json','utf8'));
 const pins=protectedHashes(config.protectedHashes);
 // Same original/install guards as ordinary source qualification, BEFORE tests
 // that can import candidate SDK. The pins are already approved public INPUTS,
 // never derived from a candidate, authenticated here or changed by this runner.
-const options={repoRoot:resolve('.'),target:'staging',hashes:pins};
+const options={repoRoot:resolve('.'),target:'production',hashes:pins};
 await normalizeWriterInstaller(options);
 const originals=await loadOriginals({...options,installed:true});
-assert.deepEqual(Object.fromEntries(Object.entries(originals.archives).map(([k,v])=>[k,v.members])),{sdk:896,ui:78,protocol:67});
-console.log(JSON.stringify({kind:'SYNTHETIC-UNIT-DATA-NOT-actual-CI-or-publication',GITHUB_ACTIONS:'true',publicHashInputs:'four unchanged approved staging inputs',installedOriginalMembers:{sdk:896,ui:78,protocol:67},mode,publication:false,admission:false}));
+const installedOriginals={sdk:originals.archives.sdk.members,ui:originals.archives.ui.version,protocol:originals.archives.protocol.members};
+// loadOriginals already binds complete inventories to approved producer facts;
+// do not hard-code member counts that change during a mechanical SDK repin.
+console.log(JSON.stringify({kind:'SYNTHETIC-UNIT-DATA-NOT-actual-CI-or-publication',GITHUB_ACTIONS:'true',publicHashInputs:'four approved production inputs',installedOriginals,mode,publication:false,admission:false}));
 // No fabricated GitHub source/ref/run/repository identity. Existing unit fixture
 // subprocesses retain their explicitly synthetic isolated source/event inputs.
-execFileSync('pnpm',['run',scripts[mode]],{stdio:'inherit',env:{...process.env,...pins,GITHUB_ACTIONS:'true',TARGET:'staging'}});
+execFileSync('pnpm',['run',scripts[mode]],{stdio:'inherit',env:{...process.env,...pins,GITHUB_ACTIONS:'true',TARGET:'production'}});

@@ -211,7 +211,7 @@ language or exported prose.
 All nine target-language catalogues (including Italian) are merged and all ten locale controls are enabled
 on this branch. Strict completeness and app/library composition checks run in normal checks
 and builds. See [translation status and authoring](docs/translations.md).
-The kit and shared UI are pinned to the published npm version `0.1.0-beta.147`.
+The kit and shared UI are pinned to the published npm version `0.1.0-beta.148`.
 CI only validates local-agent-authored translations and never calls a translation service.
 
 ## License

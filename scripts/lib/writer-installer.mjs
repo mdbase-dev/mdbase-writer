@@ -33,6 +33,7 @@ export async function normalizeWriterInstaller({repoRoot,target,hashes,getVersio
  const original=await loadOriginals({repoRoot,target,hashes}),roots={},inventories={},snapshots=new Map(),plans=[];
  const capture=async root=>{requireValue(relative(repoRoot,root)!==''&&!relative(repoRoot,root).startsWith('..')&&await realpath(root)===root,'canonical installed root within checkout');const s=await snapshot(root);snapshots.set(root,s);return s.rows;};
  for(const [key,name] of Object.entries({sdk:'sdk',ui:'ui',protocol:'connect-protocol'})){
+  if(!original.archives[key].path)continue; // npm UI: no archived inventory; the strict guard binds its identity.
   roots[key]=await realpath(join(repoRoot,'apps/writer/node_modules/@mdbase-dev',name));inventories[key]=originalMembers(join(repoRoot,original.archives[key].path));
   const actual=await capture(roots[key]),allowed=key==='sdk'||key==='protocol';
   requireValue(!inventories[key].some(m=>m.path===generated),'never delete an original member');
@@ -69,7 +70,7 @@ export async function normalizeWriterInstaller({repoRoot,target,hashes,getVersio
  for(const p of plans)requireValue(isDeepStrictEqual(metadata(generated,await lstat(p.shim)),p.stat)&&(await readFile(p.shim)).equals(p.bytes),'shim identity/bytes changed before unlink');
  for(const p of plans){await unlink(p.shim);await rmdir(dirname(p.shim));}
  await loadOriginals({repoRoot,target,hashes,installed:true}); // UNCHANGED strict complete check, immediately after commit.
- return {normalized:plans.length>0,removed:plans.map(p=>({package:p.key,path:generated})),pnpmVersion:'11.15.1',sdkMembers:inventories.sdk.length,uiMembers:inventories.ui.length,protocolMembers:inventories.protocol.length,yamlMembers:yamlMembers.length,frozenLockSha256:original.lockSha256,originalSdkSha256:original.archives.sdk.sha256};
+ return {normalized:plans.length>0,removed:plans.map(p=>({package:p.key,path:generated})),pnpmVersion:'11.15.1',sdkMembers:inventories.sdk.length,uiMembers:inventories.ui?.length??null,protocolMembers:inventories.protocol.length,yamlMembers:yamlMembers.length,frozenLockSha256:original.lockSha256,originalSdkSha256:original.archives.sdk.sha256};
 }
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  try{console.log(JSON.stringify(await normalizeWriterInstaller({repoRoot:resolve('.'),target:process.env.TARGET,hashes:protectedHashes()}),null,2));}

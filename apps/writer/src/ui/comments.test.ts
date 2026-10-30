@@ -1,7 +1,7 @@
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 import { describe, expect, it } from "vitest";
 
-import { changeFields, newCommentFields, peopleFromDirectory, personName, signingFromProblem, toContract, toLocal } from "../backend/comments.js";
+import { changeFields, newCommentFields, peopleFromDirectory, personName, toContract, toLocal } from "../backend/comments.js";
 import { PathIndex } from "@mdbase-writer/core/records";
 import { anchorsFor, describeSuggestion, placeThreads, plainPassage, ThreadPlacement } from "./comments.js";
 
@@ -111,7 +111,7 @@ describe("author names", () => {
 
 describe("signing comments", () => {
   const account = { issuer: "https://mdbase.dev", subject: "acct_1", name: "Callum", personSettingsUrl: "https://editor.example/?surface=settings#your-person" };
-  const person = { path: "people/Callum Alpass.md", name: "Callum Alpass", identities: [], typeNames: ["person"] };
+  const person = { id: "fixture-person", path: "people/Callum Alpass.md", name: "Callum Alpass", identities: [], typeNames: ["person"] };
 
   it("signs with the one person record linked to the account", () => {
     const people = peopleFromDirectory({ account, me: { status: "linked", person }, people: [person] });
@@ -132,10 +132,6 @@ describe("signing comments", () => {
     expect(peopleFromDirectory({ account, me: { status: "invalid", paths: ["a.md"] }, people: [] }).me).toBeUndefined();
   });
 
-  it("tells a declined identity permission from an unavailable account", () => {
-    expect(signingFromProblem({ code: "access_denied", message: "not approved" })).toEqual({ kind: "not-approved" });
-    expect(signingFromProblem({ code: "temporarily_unavailable", message: "Account identity information is unavailable." })).toEqual({ kind: "unavailable", reason: "Account identity information is unavailable." });
-  });
 });
 
 describe("passages as they read", () => {

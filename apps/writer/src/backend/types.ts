@@ -1,6 +1,6 @@
-// What the writer needs from a collection. Two implementations: Connect (real
-// collections) and a demo on the SDK's in-memory record authority.
-import type { JsonObject } from "@mdbase-dev/connect";
+// Writer's JSON display/draft values; native witnesses remain owned by the SDK.
+export type JsonValue = null | boolean | number | string | JsonValue[] | JsonObject;
+export interface JsonObject { [key: string]: JsonValue | undefined }
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
 import type { SourceAnnotation } from "@mdbase-writer/core/annotations";
 import type { CommentRecord } from "@mdbase-writer/core/comments";
@@ -94,7 +94,7 @@ export interface NewManuscript {
 }
 
 // This is the workspace's application port, not a concrete SDK class. The
-// current Connect sessions satisfy it unchanged; the new SDK adapter must keep
+// SDK adapter keeps
 // receipt confirmation, drafts, conflict and exact-recovery behavior intact.
 export type RecordSessionState = "saved" | "saved_on_device" | "unsaved" | "saving" | "conflict" | "recovery" | "error" | "deleted";
 
@@ -238,10 +238,18 @@ export function manuscriptSlug(title: string): string {
  * The explicit type value after adding `typeName`: a note that already has a
  * type keeps it (mdbase allows a list of types).
  */
-export function withType(existing: unknown, typeName: string): string | string[] {
-  const list = Array.isArray(existing) ? existing.filter((t): t is string => typeof t === "string") : typeof existing === "string" && existing ? [existing] : [];
-  if (list.some((t) => t.toLowerCase() === typeName.toLowerCase())) return list.length === 1 ? (list[0] as string) : list;
-  return list.length ? [...list, typeName] : typeName;
+export function withType(existing: unknown, typeName: string, knownTypes: readonly string[] = []): string | string[] {
+  const values = existing === undefined ? [] : Array.isArray(existing) ? [...existing] : [existing];
+  if (!values.every((value): value is string => typeof value === "string" && value.length > 0)) {
+    throw new Error("Writer cannot add a manuscript type over an invalid explicit type value.");
+  }
+  const list: string[] = values;
+  // Match-rule types also belong to the note. Making membership explicit must
+  // not erase them when the collection gives explicit keys precedence.
+  for (const type of [...knownTypes, typeName]) {
+    if (!list.some(value => value.toLowerCase() === type.toLowerCase())) list.push(type);
+  }
+  return list.length === 1 && !Array.isArray(existing) ? list[0]! : list;
 }
 
 /** A title for a note that has none: its first heading, else its file name. */

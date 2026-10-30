@@ -1,5 +1,5 @@
 import { toPlain, type wire } from "@mdbase-dev/sdk";
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "./types.js";
 import manifest from "../generated/mdbase-app.json";
 import { annotationContract, CollectionSchema, domainContract, unavailableTypeMessage, type Domain, type WriterSchemaDescription } from "./collection.js";
 import type { UnavailableType } from "./types.js";
@@ -81,7 +81,7 @@ export function nativeWriterSchema(catalog: wire.DescribeResult): CollectionSche
     })}));
   const schema = new CollectionSchema({types: catalog.types.map(type => ({name: type.name})), contracts,
     // A collection without settings reports null: that is no settings, not an error.
-    configuration: {settings: catalog.settings === null ? {} : nativeObject(catalog.settings)}, unavailableTypes}, false);
+    configuration: {settings: catalog.settings === null ? {} : nativeObject(catalog.settings)}, unavailableTypes});
   const manuscripts = schema.bindings("manuscript", true);
   if (!manuscripts.ok && !schema.unavailableMessage("manuscript")) throw new Error(manuscripts.message);
   return schema;

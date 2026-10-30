@@ -1,5 +1,5 @@
 // Collection semantics, independent of queries, watches and record sessions.
-import type { CollectionDescription, JsonObject, QuerySelectionExpression } from "@mdbase-dev/connect";
+import type { JsonObject } from "./types.js";
 import { annotationSourceLink } from "@mdbase-writer/core/annotations";
 import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
 import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
@@ -23,10 +23,9 @@ export function domainContract(domain: Domain) { return domains[domain].contract
 /** The demo's starter definitions, derived from the same domain table. */
 export function starterSchema(): CollectionSchema {
   return new CollectionSchema({
-    types: Object.values(domains).map((d) => ({ name: d.starter, schema: {}, extensions: {} })),
+    types: Object.values(domains).map((d) => ({ name: d.starter })),
     contracts: Object.values(domains).map((d) => ({
-      ...d.contract, contractType: "record", digest: "demo", schema: {},
-      implementations: [{ typeName: d.starter, typeVersion: 1, digest: "demo", fields: {} }],
+      id: d.contract.id, implementations: [{ typeName: d.starter, fields: {} }],
     })),
   });
 }
@@ -55,8 +54,6 @@ export interface CollectionRow {
   readonly effectiveFrontmatter?: JsonObject;
   /** Logical fields projected by the public SDK/Core, not a local field map. */
   readonly contractFields?: Partial<Record<Domain, JsonObject>>;
-  /** Narrow query values are partial metadata, never a full record/frontmatter. */
-  readonly values?: JsonObject;
   readonly file?: { readonly mtime?: string };
 }
 export interface AnnotationMetadata { readonly path: string; readonly type: string; readonly source: string; readonly fields: Readonly<Record<string, string>> }
@@ -82,13 +79,11 @@ const fieldsOf = (fm: JsonObject, binding: Binding, projected?: JsonObject) => p
 export class CollectionSchema {
   private readonly byType = new Map<string, Map<Domain, RoleBinding>>();
   private readonly roleCache = new Map<string, ReadonlyMap<Domain, RoleBinding>>();
-  constructor(readonly description: WriterSchemaDescription | Pick<CollectionDescription, "types" | "contracts" | "configuration">, private readonly starterFallback = true) {
+  constructor(readonly description: WriterSchemaDescription) {
     for (const domain of Object.keys(domains) as Domain[]) {
       const rule = domains[domain];
       const implementations = description.contracts.find((c) => c.id === rule.contract.id)?.implementations ?? [];
       const bindings = implementations.map((i) => ({ name: i.typeName, fields: i.fields, typeKey: this.typeKey }));
-      // Recognise starter records even when their type isn't installed/described yet.
-      if (this.starterFallback && !bindings.some((b) => b.name === rule.starter)) bindings.push({ name: rule.starter, fields: {}, typeKey: this.typeKey });
       const loaded = this.bindings(domain, domain === "manuscript");
       const active = new Set(loaded.ok ? loaded.value.map((b) => b.name) : []);
       for (const binding of bindings) {
@@ -112,10 +107,7 @@ export class CollectionSchema {
     const unavailable = this.unavailableMessage(domain);
     if (unavailable) return fail<Binding[]>(unavailable);
     if (required || (contract && domain === "annotation")) return fail<Binding[]>(`This collection has no type for ${domain}s. Set it up again from mdbase connect.`);
-    if (contract || !this.starterFallback) return ok<Binding[]>([]);
-    if (domain === "comment" || domain === "person") return ok<Binding[]>([]);
-    const starter = this.description.types.some((t) => t.name === rule.starter);
-    return ok(starter ? [{ name: rule.starter, fields: {}, typeKey: this.typeKey }] : []);
+    return ok<Binding[]>([]);
   }
   get unavailableTypes(): readonly UnavailableType[] {
     return ("unavailableTypes" in this.description ? this.description.unavailableTypes ?? [] : []).map(({ name, message }) => ({ name, message }));
@@ -140,31 +132,12 @@ export class CollectionSchema {
     this.roleCache.set(key, roles);
     return roles;
   }
-  /** Classification fields across bindings: query types do not exclude co-typed roles. */
-  discoverySelect(): QuerySelectionExpression[] {
-    const needed: Record<Domain, readonly string[]> = {
-      source: ["csl", "title"], manuscript: ["title", "template", "csl"],
-      annotation: ["source"], comment: ["document", "created_at", "in_reply_to"], person: ["name"],
-    };
-    const fields = new Set<string>();
-    let modified = false;
-    for (const role of this.byType.values()) for (const [domain, binding] of role) {
-      if (!binding.active) continue;
-      modified ||= domain === "manuscript" || domain === "source";
-      for (const field of needed[domain]) fields.add(binding.fields[field] ?? field);
-    }
-    return [
-      ...[...fields].map((field) => ({ name: field, expression: `record[${JSON.stringify(field)}]` })),
-      // Output aliases are field names: dots are valid in expressions, not names.
-      ...(modified ? [{ name: "file_mtime", expression: "file.mtime" }] : fields.size ? [] : [{ name: "file_path", expression: "file.path" }]),
-    ];
-  }
   annotationFields(types: readonly string[]): Readonly<Record<string, string>> {
     const binding = this.roles(types).get("annotation");
     return binding?.fields ?? {};
   }
   get setupStatus() {
-    const configured = (domain: Domain) => this.description.contracts.some((c) => c.id === domains[domain].contract.id) || (this.starterFallback && this.description.types.some((t) => t.name === domains[domain].starter));
+    const configured = (domain: Domain) => this.description.contracts.some((c) => c.id === domains[domain].contract.id);
     const comments = this.bindings("comment");
     return { sources: configured("source"), annotations: configured("annotation"), comments: comments.ok && comments.value.length > 0 };
   }
@@ -197,7 +170,7 @@ export class CollectionStore {
   get recordIndex(): PathIndex { return this.recordIndexValue ??= pathIndex(this.index.recordPaths); }
 
   private classify(row: CollectionRow, previous: Classified | undefined, discovery: boolean): Classified {
-    const fm = row.values ?? row.frontmatter ?? row.effectiveFrontmatter ?? {};
+    const fm = row.frontmatter ?? row.effectiveFrontmatter ?? {};
     const effective = row.effectiveFrontmatter ?? fm;
     // Independent discovery queries can finish in any order. Persisted index rows
     // must not overwrite defaults already learned from effective domain queries.
@@ -209,14 +182,14 @@ export class CollectionStore {
       if (!binding.active) continue;
       switch (domain) {
         case "source": {
-          const written = row.values?.["file_mtime"] ?? row.file?.mtime;
+          const written = row.file?.mtime;
           const source = retainEffective && previous.source ? previous.source : libraryEntry(row.path, fieldsOf(effective, binding, row.contractFields?.source), typeof written === "string" ? written : undefined);
           if (source) next.source = equal(previous?.source, source) ? previous!.source! : source;
           break;
         }
         case "manuscript": {
           const fields = fieldsOf(effective, binding, row.contractFields?.manuscript);
-          const modified = row.values?.["file_mtime"] ?? row.file?.mtime;
+          const modified = row.file?.mtime;
           const manuscript = retainEffective && previous.manuscript ? previous.manuscript : {
             path: row.path, title: typeof fields["title"] === "string" ? fields["title"] : row.path,
             ...(typeof fields["template"] === "string" ? { template: fields["template"] } : {}),

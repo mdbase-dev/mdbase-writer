@@ -1010,7 +1010,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           </div>
         )}
         {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span><Trans>This record was deleted elsewhere. Your local text is still available here.</Trans></span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
-        {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
+        {(activeView?.snapshot.state === "error" || activeView?.snapshot.state === "recovery") && activeView.snapshot.problem && (
           <div className="banner" role="alert">
             <span>{translate`Not saved: ${activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.`}</span>
             <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active).then(signalResult)}><Trans>Retry save</Trans></button>

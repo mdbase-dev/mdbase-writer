@@ -39,12 +39,11 @@ it("refuses an environment whose manifest origin or declaration does not match i
     .toThrow(/refuses/);
 });
 
-it("refuses unknown build environments and leaves an absent one unselected for local/dev entry", () => {
+it("refuses unknown environments and defaults ordinary builds to production", async () => {
   expect(() => selectWriterBuildEnvironment("qa", manifestFor(ORIGINS.production))).toThrow(/Unsupported/);
   expect(() => writerMdbaseForBuild("qa")).toThrow(/Unsupported/);
-  expect(selectWriterBuildEnvironment(undefined, manifestFor(ORIGINS.production))).toBeUndefined();
-  expect(writerMdbaseForBuild(undefined)).toBeUndefined();
-  expect(writerMdbaseForBuild("")).toBeUndefined();
+  expect(selectWriterBuildEnvironment(undefined, manifestFor(ORIGINS.production))).toEqual({environment: "production", origin: ORIGINS.production});
+  expect(selectWriterBuildEnvironment("", manifestFor(ORIGINS.production))).toEqual({environment: "production", origin: ORIGINS.production});
 });
 
 it("constructs the exact explicit build target and refuses BOTH other environment retargets", async () => {
@@ -95,8 +94,7 @@ it("recognises the Private collection consent return at the redirect URI, in the
   expect(isWriterGrantReturn("production", `${home}?state=s1&error=access_denied`)).toBe(true);
   expect(isWriterGrantReturn("lab", `${home}?collection=x`)).toBe(false);
   expect(isWriterGrantReturn("lab", `${new URL("manuscripts", home).href}?state=s1&code=c1`)).toBe(false);
-  // The legacy entry's own OAuth callback shares the root: never intercepted there.
-  expect(isWriterGrantReturn(undefined, `${home}?state=s1&code=c1`)).toBe(false);
+  expect(isWriterGrantReturn(undefined, `${home}?state=s1&code=c1`)).toBe(true);
   expect(isWriterGrantReturn("qa", `${home}?state=s1&code=c1`)).toBe(false);
 
   const posted: unknown[] = [];
