@@ -15,7 +15,8 @@ authentication flag, helper image or authentication gate is introduced.
 The protected per-environment variables are exactly:
 
 - `NATIVE_SDK_SHA256`: unchanged original SDK tgz.
-- `NATIVE_UI_SHA256`: unchanged original UI tgz.
+- `NATIVE_UI_SHA256`: unchanged original UI tgz. For an npm UI (below) it is
+  the SHA256 of that exact registry tarball.
 - `NATIVE_PROTOCOL_SHA256`: unchanged original protocol tgz.
 - `NATIVE_TRUST_ASSET_SHA256`: **RAW signed `next-trust/<target>.json`**; equal to
   authenticated release inventory `trustAssets[0].sha256`, context `context.sha256`,
@@ -78,6 +79,17 @@ CI still requires exactly the four protected original hashes above. Local finite
 qualification explicitly reads this approved data because rpnpm forwards neither
 `.git` nor env; it does not forge dispatch, ref, clean tree or publication SHA.
 
+Production UI is the exact npm package `@mdbase-dev/ui@0.1.0-beta.148`, not a
+file original. `config/native-publish/production.json` records its `version`,
+npm `integrity` (SHA512 SRI) and tarball `sha256`. Before candidate code, the
+guard requires the app pin to equal that version, the frozen lock importer and
+package resolution to carry exactly that version and SRI, and the protected
+`NATIVE_UI_SHA256` to equal the recorded `sha256`. The frozen install enforces
+the SRI. There is no archived UI member inventory, so the installed check binds
+only the UI package name and version, and installer normalization skips it.
+Staging keeps its historical file-pinned UI9553 below; a config without `ui`
+still requires a file pin.
+
 UI9553's original companion stays byte-identical. Its old dev/release/peer flags
 are historical custody/old qualification, NOT staging publication gates or fresh
 peer proof. No companion guard was removed here: live checks already bind the
@@ -90,7 +102,8 @@ Contract: TNAPP public target-SDK verification-input handoff (inbox878), includi
 fields and original context/receipt/proof/run bindings. Archives remain at their
 existing app `file:` pins; no archive filenames are synthesized or repacked.
 
-Before candidate package code executes: hash ALL three originals, check frozen
+Before candidate package code executes: hash ALL file originals (SDK and
+protocol, plus UI where it is file-pinned), check frozen
 importer/file pins and SHA512 integrity; safely inventory every regular original
 member without extraction/execution; compare producer SDK complete inventory and
 byte-identical provenance; canonical native producer repository is
@@ -102,7 +115,7 @@ target/CP/log/source, release/image
 inventory and publication/qualification IDs, frozen receipt/verifier identity,
 compiled trust literal, native/SQLite hashes/budgets and bundled protocol original.
 The install is frozen with scripts and pnpmfile hooks disabled. Then compare ALL
-installed SDK/UI/protocol members, including bundled originals, to original
+installed SDK/protocol (and file-pinned UI) members, including bundled originals, to original
 inventories before rebuild/tests/build. Missing/extra/tampered/symlinked original
 members refuse. Proof copying is byte binding, not full-chain authentication.
 

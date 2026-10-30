@@ -25,11 +25,10 @@
   no-op. `apps/writer/scripts/manifest.test.mjs` checks the copies still match
   Reader's.
 - **Annotations** are Reader's `dev.mdbase.reader.annotation` records. Metadata
-  discovery queries implementing types and maps their fields; only an absent
-  contract falls back to Reader's starter type, if that type exists; collections
-  without Reader have an empty, ready set. Bodies for expanded sources use paged
-  implementing-type queries restricted to bounded path lists; embedded annotation
-  sessions open normally. The first blockquote is
+  discovery uses the SDK's described contract implementations and projected
+  fields; collections without Reader have an empty, ready set. Bodies are read
+  only for the selected source's annotations, with exact SDK identity and
+  revision checks; embedded annotation sessions open normally. The first blockquote is
   the quotation; `locator.label` ("p. 12") becomes the citation's locator.
 - **Comments** are records implementing `mdbase.comment` (from mdbase
   contracts, whose published pack the writer's manifest embeds unchanged).
@@ -119,35 +118,30 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   real annotation failures are non-blocking problems/warnings, not preview/export
   gates. Missing-dependency diagnostics remain gated by their discovery domain.
 - **Collection ownership** lives in `backend/collection.ts`. `CollectionSchema`
-  centralizes mapped fields, structural starter roles and active contract bindings.
+  centralizes mapped fields and described contract bindings; starter names
+  alone never substitute for a missing contract.
   `CollectionStore` applies the same classifier for full discovery and incremental
   `upsert/remove/reset`, producing `CollectionDelta` snapshots. It retains compact
   domain metadata, not query rows or bodies. Partial discovery preserves already
-  learned effective defaults; authoritative watch rows replace them. Connect owns
-  query pagination, schema/watch lifetimes, bounded path reads and binary descriptors;
-  `backend/bodies.ts` owns lazy selected-source/scoped-comment hydration. The small
-  demo uses the same store; the large demo already uses ConnectBackend. Native CEL
-  link queries remain deferred: installed canonical CEL lacks `asFile()`, and native
-  basename resolution is not Writer's unique-basename rule.
+  learned effective defaults. The SDK owns queries, pagination, contract
+  projections, sessions and binary descriptors; `backend/native.ts` borrows these
+  APIs and `backend/bodies.ts` owns scoped hydration. Both demos use the same
+  backend on SDK MemoryReplica, with an explicit fixture catalog.
 - **Path resolution** uses shared immutable collection-generation indexes: exact paths,
   then relative paths, then a unique case-insensitive basename. Comment membership
   is cached by comments/index identity; only changed manuscript bodies are
   re-anchored. Comment metadata resolves manuscript targets against the complete
-  collection index; only relevant bodies/replies are fetched in bounded typed
-  path-list queries. Scope expands as nested chapters open. Source annotations
-  remain cached per source. Watch paths (including both rename endpoints) coalesce
-  for 50 ms into bounded no-body queries, update cached index/library/manuscript/
-  annotation/comment entries and publish changed domains. One incremental job runs
-  at a time, draining queued follow-ups. Annotation changes invalidate their old/new
-  source buckets; non-annotation changes preserve those caches. Only explicit retry,
-  schema/type changes and reset/gap events reconcile the full collection. Binary
-  events enumerate affected folders because the SDK has no exact file-stat API.
+  collection index; only relevant bodies/replies are fetched. Scope expands as
+  nested chapters open. Native watch events invalidate the shared discovery
+  snapshot and fence in-flight reads. Reconciliation uses complete SDK record,
+  contract and file pages; repeated cursors, incomplete pages and changed
+  generations refuse rather than returning a partial collection.
 - **Home** lists manuscript metadata before reading bodies. Visible manuscripts
   get bounded background counts. The backend's lazy collection-scoped cache shares
   discovery and body reads across Home/workspace/navigation/focus, evicts failures
   and invalidates changed entries. Background index/source errors do not replace
   manuscript-list errors; a separate retry reconciles background data. Watch updates
-  invalidate only affected cached bodies and recompute visible counts.
+  invalidate discovery and recompute visible counts.
 - **Settings problems.** A diagnostic about the frontmatter carries its
   `field`; Typst errors in the generated main file are mapped to the setting
   written on that line, and errors in a template to `template`.

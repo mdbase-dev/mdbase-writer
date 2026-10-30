@@ -321,14 +321,49 @@ describe("native Writer domain backend", () => {
   it("adopts a note with original UUID/body/custom metadata preserved by native CAS", async () => {
     const h = await fixture();
     const original = await h.client.get({path: "notes/chapter.md"}, {body: true, document: true});
-    const update = vi.spyOn(h.client, "update");
+    const submit = vi.spyOn(h.client, "submit");
     expect(await h.backend.adoptManuscript(original.path)).toEqual({ok: true, value: original.path});
     const changed = await h.client.get(original.id, {body: true});
     expect(changed.id).toBe(original.id); expect(changed.body).toBe(original.body);
     expect(changed.frontmatter.get("custom")).toBe("keep"); expect(changed.types).toContain("native-manuscript");
     expect(nativeObject(changed.frontmatter)["meta"]).toMatchObject({heading: "A chapter"});
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(update.mock.calls[0]?.[1]).toMatchObject({contract: {id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2", type: "native-manuscript"}, promote: true, patch: {title: "A chapter"}, ifRevision: original.revision});
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit.mock.calls[0]?.[0]).toEqual([{kind: "update", id: original.id, patch: new Map<string, wire.Value>([["meta", new Map([["heading", "A chapter"]])], ["type", "native-manuscript"]]), base: [{key: "meta"}, {key: "type"}], ifRevision: original.revision}]);
+  });
+  it("adopts an existing titled, typed note without replacing its metadata or text", async () => {
+    const h = await fixture();
+    const note = h.replica.seed({path: "notes/titled.md", types: ["note"], frontmatter: {type: "note", title: "Existing title", custom: "keep"}, body: "# Different heading\n"});
+    // MemoryReplica derives only scalar type changes. Stand in for Core's
+    // array membership evaluation; the write/receipt/CAS stay genuine SDK.
+    const submit = h.client.submit.bind(h.client);
+    vi.spyOn(h.client, "submit").mockImplementation(async (...args) => {
+      const writes = await submit(...args);
+      for (const record of h.replica.allRecords) {
+        const types = record.frontmatter.get("type");
+        if (Array.isArray(types)) record.types = types.filter((value): value is string => typeof value === "string");
+      }
+      return writes;
+    });
+    expect(await h.backend.adoptManuscript(note.path)).toEqual({ok: true, value: note.path});
+    const changed = await h.client.get(note.id, {body: true});
+    expect(changed.body).toBe("# Different heading\n");
+    expect(changed.types).toEqual(expect.arrayContaining(["note", "native-manuscript"]));
+    expect(nativeObject(changed.frontmatter)).toMatchObject({title: "Existing title", custom: "keep", meta: {heading: "Existing title"}});
+  });
+  it("keeps an existing mapped title and native sibling values when adopting", async () => {
+    const h = await fixture();
+    const value = new Map<string, wire.Value>([["heading", "Real mapped title"], ["wide-integer", 9007199254740993n]]);
+    const note = h.replica.seed({path: "notes/mapped.md", frontmatter: {meta: value}, body: "# Different heading\n"});
+    expect(await h.backend.adoptManuscript(note.path)).toEqual({ok: true, value: note.path});
+    const changed = await h.client.get(note.id, {body: true});
+    expect(changed.frontmatter.get("meta")).toEqual(value);
+  });
+  it("refuses malformed explicit type data without submitting an adoption", async () => {
+    const h = await fixture();
+    const note = h.replica.seed({path: "notes/invalid-type.md", frontmatter: {type: ["note", 42]}, body: "Keep me"});
+    const submit = vi.spyOn(h.client, "submit");
+    expect(await h.backend.adoptManuscript(note.path)).toMatchObject({ok: false, message: expect.stringContaining("invalid explicit type")});
+    expect(submit).not.toHaveBeenCalled();
   });
   it("reads native files by original file UUID/digest and keeps upload unavailable", async () => {
     const h = await fixture(); const bytes = new Uint8Array([1, 2, 3]);

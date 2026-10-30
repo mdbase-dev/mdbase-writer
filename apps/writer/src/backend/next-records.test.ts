@@ -135,6 +135,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     const f = await fixture();
     const lease = await open(f);
     for (const invalid of [NaN, Infinity, new Date(), 1n]) {
+      // @ts-expect-error Deliberately exercise runtime rejection of non-JSON input.
       expect(() => lease.session.patchFrontmatter({ title: "Must not change", bad: invalid })).toThrow("plain JSON values");
       expect(lease.session.getSnapshot()).toMatchObject({ state: "saved", dirty: false, frontmatter: { title: "Draft" } });
     }

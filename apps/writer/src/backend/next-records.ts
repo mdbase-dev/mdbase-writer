@@ -1,5 +1,5 @@
 import { isMdbaseError, toPlain, type MdbaseClient, type PlainValue, type RecordOpenOptions as NativeOpenOptions, type RecordSessionSnapshot as NativeSnapshot, type wire } from "@mdbase-dev/sdk";
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "./types.js";
 
 import type { RecordLease, RecordOpenOptions, RecordSession, RecordSessionSnapshot, SessionProblem, SessionRecord, WriterRecords } from "./types.js";
 

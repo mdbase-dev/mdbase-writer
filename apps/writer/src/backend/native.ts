@@ -1,14 +1,14 @@
 // Writer's domain repository over one borrowed public SDK connection. No
 // legacy backend facade, SDK runtime/setup engine, copied client or app journal.
 import { isMdbaseError, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type Write, type wire } from "@mdbase-dev/sdk";
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "./types.js";
 import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
 import { changeFields, commentPath, newCommentFields, NO_PEOPLE, peopleFromDirectory, type CommentChange, type NewComment, type People } from "./comments.js";
 import { manifestContractDigest, nativeObject, sameDigest, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
 import { NextWriterRecords } from "./next-records.js";
-import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";
+import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, withType, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";
 
 export interface NativeWriterOptions {
   readonly collectionName: string;
@@ -30,7 +30,7 @@ function unprotected(record: wire.RecordView): boolean {
 }
 
 export class NativeWriterBackend implements WriterBackend {
-  readonly kind = "connect";
+  readonly kind: WriterBackend["kind"] = "connect";
   readonly collectionName: string;
   readonly draftNamespace: string;
   readonly records: NextWriterRecords;
@@ -474,10 +474,38 @@ export class NativeWriterBackend implements WriterBackend {
       const original = await this.client.get({path}, {body: true, document: true}, this.signal); this.check();
       if (!unprotected(original) || original.document === undefined) throw new Error("Writer's note is protected or lacks its full source.");
       const contract = {...manuscriptContract, type: binding.name};
-      const patch = {title: titleFromNote(path, original.body ?? "")};
-      const write = await this.nativeWrite(ids => this.client.update(original, {contract, promote: true, patch, ifRevision: original.revision}, {...ids, signal: this.signal, include: {body: true, document: true}}));
-      const current = await this.confirmed(write, original.id, {...manuscriptContract, type: binding.name});
-      if (current.body !== original.body || !current.types.includes(binding.name)) throw new Error("Writer's adopted note did not confirm the original content and type.");
+      const title = original.frontmatter.get("title");
+      const heading = typeof title === "string" && title ? title : titleFromNote(path, original.body ?? "");
+      // "Use as manuscript" must keep already-typed notes. SDK contract
+      // promotion only accepts untyped records, so add membership and the
+      // mapped title in one ordinary SDK CAS, then verify its contract view.
+      // Copy only touched native maps: unrelated native values stay exact.
+      const local = binding.fields["title"] ?? "title";
+      const keys = local.startsWith("/") ? local.slice(1).split("/").map(key => key.replace(/~1/g, "/").replace(/~0/g, "~")) : [local];
+      const patch: wire.FmMap = new Map();
+      let output = patch, input: wire.FmMap = original.frontmatter;
+      for (const key of keys.slice(0, -1)) {
+        const value = input.get(key);
+        if (value !== undefined && !(value instanceof Map)) throw new Error("Writer cannot add a mapped title over a non-map field.");
+        const nested: wire.FmMap = new Map();
+        for (const [child, item] of value instanceof Map ? value : []) {
+          if (typeof child !== "string") throw new Error("Writer requires string keys for the mapped title.");
+          nested.set(child, item);
+        }
+        output.set(key, nested); output = nested; input = nested;
+      }
+      const key = keys.at(-1)!;
+      const existingTitle = input.get(key);
+      output.set(key, typeof existingTitle === "string" && existingTitle ? existingTitle : heading);
+      patch.set(binding.typeKey, withType(original.frontmatter.get(binding.typeKey), binding.name, original.types));
+      const base = [...patch.keys()].map(key => ({key, ...(original.frontmatter.has(key) ? {observed: original.frontmatter.get(key)!} : {})}));
+      const write = await this.nativeWrite(async ids => {
+        const [submitted] = await this.client.submit([{kind: "update", id: original.id, patch, base, ifRevision: original.revision}], {...ids, signal: this.signal, include: {body: true, document: true}});
+        if (!submitted) throw new Error("Writer lost the original adoption write.");
+        return submitted;
+      });
+      const current = await this.confirmed(write, original.id, contract);
+      if (current.body !== original.body || !current.types.includes(binding.name) || original.types.some(type => !current.types.includes(type))) throw new Error("Writer's adopted note did not confirm the original content and type.");
       return current.path;
     });
   }

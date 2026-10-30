@@ -31,6 +31,11 @@ describe("withType", () => {
     expect(withType("note", "writer-manuscript")).toEqual(["note", "writer-manuscript"]);
     expect(withType(["note", "draft"], "writer-manuscript")).toEqual(["note", "draft", "writer-manuscript"]);
     expect(withType("Writer-Manuscript", "writer-manuscript")).toBe("Writer-Manuscript");
+    expect(withType(undefined, "writer-manuscript", ["matched-note"])).toEqual(["matched-note", "writer-manuscript"]);
+    expect(withType(["writer-manuscript"], "writer-manuscript")).toEqual(["writer-manuscript"]);
+  });
+  it("refuses malformed explicit membership rather than discarding existing data", () => {
+    for (const value of [42, ["note", 42], new Date(), ""]) expect(() => withType(value, "writer-manuscript")).toThrow("invalid explicit type value");
   });
 });
 

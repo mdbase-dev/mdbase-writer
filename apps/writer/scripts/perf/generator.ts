@@ -1,5 +1,5 @@
 // Shared deterministic records for the opt-in Node benchmark and dev-only browser fixture.
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "../../src/backend/types.js";
 export const counts = { sources: 5_000, annotations: 30_000, comments: 3_000, notes: 20_000, manuscripts: 100, files: 5_000 };
 export const main = "manuscripts/main.md";
 const pad = (n: number) => String(n).padStart(5, "0");

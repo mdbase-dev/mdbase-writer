@@ -1,183 +1,60 @@
-# New SDK migration
+# Writer's SDK backend
 
-## Current declared Private setup SDK intake — 2026-10-15
+Writer uses the retained `vendor/sdk-eaa4e697-production-beta141.tgz` original.
+The original, its bundled runtime, trust and producer provenance are unchanged.
 
-SDK `9a033b252860ec8624da0abb5ffdecbac56332d2` replaces the prior
-`72f8ea6c` intake. Original archive SHA256:
-`90ef67523dfa11cb36efe0d996475f1a1c82ac71074e4cd4e95c6fbe02c18be9`.
-Native mediates the exact signed setup and publishes multi-pack lock changes
-atomically with the original CAS. The SDK retains only the protected original
-MID when capture is uncertain and gives classified setup conflicts actionable
-copy. No manifest, scope, grant custody or Hosted fallback is introduced.
-The packaged runtime remains actual source `a4331ad466a0d16e87ab3bedeb0963a1e0d1867e`,
-SHA256 `3c803e83f81a05855f6e30ca79036d6b19383048a6b11ba5c9a0b5ebf3a1bbe2`.
-The ordinary Sign in / Add chooser owns one popup and the original Native
-preparation, callback and custody ACK. The callback page delivers only; the
-original SDK closes after completion. No app-side alternate protocol, scope,
-key transfer or grant-store migration is introduced. Application declaration and
-storage identities remain unchanged. Tests and LAB builds do not prove Native
-admission, READ/edit/reload or production release qualification.
+## One connected backend
 
-## Prior intake notes (superseded SDK pin)
+Every normal build uses `createWriterMdbase`, the SDK collection gate and
+`NativeWriterBackend`. No environment means production, matching the manifest
+builder's default. Explicit LAB/staging/production builds still require their
+exact manifest origin; a mismatched or unknown target refuses rather than falling
+back. Consent returns are delivered to the SDK before any collection owner starts.
 
+The SDK owns account/collection selection, approval, setup, contract projection,
+record sessions, write receipts, recovery and files. `NextWriterRecords` only
+translates the SDK's display snapshot and Result shape for the existing workspace;
+it is not a second autosave or conflict engine.
 
-## Public application boundary
+Discovery pages identities without bodies and uses SDK contract queries for
+domain fields. Exact contract digests, record identities and snapshot generations
+are checked. Bodies remain lazy, scoped to open records, comments and selected
+source annotations. Watch changes invalidate discovery; ended watches reconnect
+with bounded backoff. File downloads verify identity/revision and complete bytes.
+People come from the SDK directory; failed identity access never guesses an author.
 
-LAB builds (`VITE_MDBASE_ENV=lab`, or `pnpm build:lab` from `apps/writer`) create
-one declaration-only public SDK singleton outside React and pass it to `App`.
-Production builds keep the existing Connect/demo entry until the production
-trust asset and cutover are approved. SDK mode lazily isolates the legacy entry
-and does not create a legacy session, parse collection URLs or reserve an
-app-owned popup.
+The old `ConnectBackend`, session/gates/picker, query-patched beta.125 originals,
+override and Connect dev/testing dependencies are deleted. PR 16's opt-in
+`NextBackend` predates this backend and is not revived.
 
-`createWriterMdbase` in `apps/writer/src/connect/sdk-application.ts` supplies
-Writer's unchanged manifest and explicit environment to the SDK's `createMdbase`
-front door, with `readiness: {typeIssues: "degrade"}`. The logical manifest ID is
-a declaration, not a native registration receipt; the SDK resolves the genuine
-native ID. An optional explicit registered ID must match that SDK binding. SDK
-startup, authorization, collection selection, configuration, foreground state and
-physical shutdown stay SDK-owned.
+## Demo and tests
 
-The collection screens come from `@mdbase-dev/ui/collections`, vendored as
-`vendor/mdbase-dev-ui-dev-9553ad66.tgz` (pin: `vendor/mdbase-ui-dev.json`). Its
-optional `@mdbase-dev/sdk` peer resolves to Writer's own SDK dependency.
-`SdkWriterRoot` calls `start()` and renders the shared `CollectionGate`, which
-owns sign-in, choosing, approval, setup review, problems and sign-out (always
-`signOut()`, never `close()`). Writer opens its domain UI only for the
-connection the gate hands over in phase `ready`, keyed by collection ID and
-generation; leaving that phase retires the scope's leases. The shared
-`CollectionSwitcher` sits in the top bar on the manuscript list and is hidden
-inside a manuscript, where leaving goes through the manuscript's own save guard.
-The `--mdbase-collections-*` properties map onto Writer's tokens in
-`apps/writer/src/ui/writer-collections.css`.
+Explicit development/LAB `?demo` URLs use the same backend on the retained SDK's
+`MemoryReplica`. The fixture supplies the catalog that MemoryReplica does not
+implement, a sample author and SDK-backed sample file uploads. It never contacts
+an account. `?demo=large` uses that same fixture with generated records.
 
-## Native domain repository
+Browser fault injection now uses the public replica and SDK APIs, not the old
+record test authority. Workspace tests use real SDK sessions, public remote-edit,
+deletion and write-failure hooks. These are deterministic stand-ins, not native
+runtime or live service acceptance.
 
-`NativeWriterBackend` implements the existing `WriterBackend` interface directly
-through the public connection's actual records, files and people clients. Both
-backends use the same `Manuscripts`, `Home` and `WorkspaceView` UI. The existing
-manuscript-only route and unsaved-navigation guard are shared; the SDK still owns
-collection URL handling. Theme, feedback, recent manuscripts, drafts, compilation
-and export continue through the existing application components.
+## Persisted data
 
-Discovery checks Writer's exact declared native contracts and actual type field
-mappings. Domain metadata comes from `queryContract` projections, not an
-application-side field-map projector. Complete bounded pages preserve the original
-record identities and snapshot; changed digests, revisions, repeated cursors and
-omitted records fail rather than falling back to raw fields. A record whose
-projection has an error stays listed without projected fields; it never blocks
-the collection. Unrelated definition diagnostics do not block usable Writer
-records, and an error on one of Writer's own type definitions makes only that type
-unavailable, with plain copy on Home. Exact required contracts still must pass.
-Untyped Markdown notes remain in the complete index and are listed on Home with a
-"No type" label.
-Starter type names are not recognised as native implementations.
-Bodies are loaded lazily using their original UUID/revision; protected or changed
-records are not treated as confirmed current content. Files are read by original
-file UUID/digest with current readback checks. **Image upload is unavailable in
-SDK mode:** Writer requires files list/read and declares files add optional. Its
-native backend does not enable uploads; the upload command and image paste/drop
-handler are hidden until incremental consent is integrated and validated.
-No adapter silently widens that permission or substitutes caller MIME metadata
-for native extension-based media classification.
+Manuscripts, chapters, comments and Reader metadata keep their existing formats.
+Writer's local draft JSON and workspace port remain because `DraftStore` reads
+previously saved browser backups; this is application data, not a legacy protocol
+shim. Connected draft namespaces remain the collection ID; the demo namespace
+remains `demo`. No data migration or fallback backend is introduced.
 
-Manuscript and comment creation/edits use public contract selectors; generic
-chapters remain generic. Note adoption uses one `promote:true` contract update
-with its mapped title and original revision. Comment withdrawal changes the body
-and mapped fields in one update, preserving nested sibling fields. Success requires the original confirmed receipt and
-current unheld, unresolved-free native readback. A lost submit reply retains its
-original SDK MID; typed `error.mutationId` must match that same operation. Another
-click reconciles the original operation and does not submit a new record. The SDK owns durable capture, journals and receipt recovery;
-its write ledger keeps and settles writes from earlier sessions, so Writer keeps no ledger of its own.
-People access uses the existing SDK directory with members omitted. Failed
-identity access may leave comments unsigned, never signed by a guessed account.
+## Dependency intake
 
-`NextWriterRecords` delegates leases, autosave, drafts, conflict handling and
-original recovery to the existing generic `client.records.open` session. For
-launch, shared workspace settings/body edits stay on that original generic session
-and its atomic flush. Contract APIs handle metadata reads and discrete repository
-writes. A contract-scoped lease is a post-launch improvement, not an application
-session/recovery engine to implement. Writer translates display values and explicit
-patches only. Scope retirement fences edits/flush completion and releases
-its owned or late-delivered leases; it never closes the borrowed client or a peer's
-lease. Repository disposal stops only its watches, its reconnect timer and owned
-scope. When Writer's own change watch goes stale, fails or closes, Writer recreates it
-through the public SDK. A discovery read does this at once; otherwise one background
-reconnect waits 0.5 s, doubling to 30 s, and the wait resets once a watch is
-active. Retired callbacks are fenced and there is never more than one watch or timer.
-A reconnected watch reloads the collection, and it never closes the borrowed client.
+UI and i18n are exact npm `0.1.0-beta.148` pins. The direct protocol original
+remains for canonical manifest validation and must match the retained SDK's
+bundled protocol. Native publication checks exact originals and npm UI integrity
+through `config/native-publish/production.json`; it does not rewrite producer
+facts to describe a different artifact.
 
-## Development package and evidence
-
-The normal original development archive from source
-`3f417b6d941a42444f17568d7489071d23fcb141`, original cut
-`sdk-dev-3f417b6d`, is pinned in `vendor/mdbase-next-sdk.json` (4346749 bytes,
-SHA256 `0c5f04c6adad67d747055ebe12963403e374aefde0999861d759f35e4e118ba6`).
-The SDK bundles the original beta129 `c280cd194ffd` protocol archive; Writer's
-ordinary direct `d765e675c3da` legacy protocol dependency is unchanged. This
-archive has no vendor warnings; the earlier unused-protocol exception is not
-carried forward.
-Both SHA256 and SHA512 were checked independently, followed by ordinary and frozen
-installation. There are no aliases, package rewrites, private SDK imports or
-installed-module swaps. Earlier SDK/native archives remain preserved. This cut
-includes atomic contract body updates/promotion and public explicit-digest
-`MemoryContract` fixtures, public error/status helpers and portable/native-origin
-sign-in APIs in one pin; no application loader workaround is supplied. The `41c`
-cut adds SDK-owned per-type readiness degradation, safe user-facing error copy
-and action labels, log-service CORS support and a thin-client entry. Writer opts
-into `{readiness: {typeIssues: "degrade"}}`; unavailable Writer types stay
-unavailable while usable types remain accessible. Packaged CORS code does not
-prove a deployed extension origin or authenticated acceptance.
-
-Root tests now use `createApplicationFixture` from `@mdbase-dev/sdk/testing` and
-its public structural entry, not hidden hooks on a production constructor.
-Catalog/type and lifecycle/readiness metadata stand-ins are explicit; record,
-lease, file, receipt and readback tests run through the real public SDK over
-`MemoryReplica`.
-
-The current cut adds SDK-owned lazy Worker startup, pairing only from a sign-in
-gesture, native-return opening and refused/expired sign-in recovery. Sign in stays
-enabled while authorizing and invokes SDK `approve()`; SDK refusal copy is unchanged.
-Image insertion declares `files:add` optional, but native uploads remain disabled
-until public incremental consent is integrated and validated. No startup add permission
-or app-side consent/renewal engine is introduced.
-
-This is **DEV/LAB development intake, not release qualification**. The original `4c`
-packet carries the 3,555,291-byte native runtime matching the committed
-`9f90af73e1591cafe9c35bdd42f18ae49d5a91a0186e78695e841fecabcd833a` pin,
-including the public setup-assessment ABI and owner-binding fixes,
-including the resources export and promotion support, registration-refusal
-guidance, Private-collection availability reasons and collection deletion APIs. Its
-`native.available=true` describes packaged integrity, not native launch,
-registration, custody or live authentication acceptance. The earlier source-only
-`2e2ae687` cut remains a separate immutable packet; it was not overwritten.
-Passing `MemoryReplica` tests does not establish runtime acceptance. Production
-remains legacy; this port has not been deployed or merged into Writer main.
-
-## Readiness and setup review
-
-`next/new-sdk` combines the public-entry line with settled readiness actions and
-SDK setup review. Missing or failed readiness offers **Check again** through
-`assess()`; a retired connection offers the SDK chooser. SDK `describeError`
-provides safe headings, copy and recovery actions, including validated update
-links for incompatible versions. Active checks remain loading. No native
-workspace is allocated before aggregate readiness and the original connection
-are current.
-
-Setup reads the SDK plan before showing its summary, changes, conflicts and
-refusal. Confirm applies that original object; an empty plan uses `configure()`.
-Unknown outcomes re-assess through the SDK rather than claim no changes or
-submit a fresh mutation automatically. Scope retirement fences the review.
-
-Live migration, update and suspension status uses `summarizeStatus` over the
-original client without replacing a still-current editable workspace, its local
-edits or record leases. Teardown removes only owned listeners/adapters, never the
-borrowed client.
-
-## Historical low-level sign-in UI
-
-`createNativeSignIn`/`NativeSignIn` remain optional legacy adapter preparation.
-They are not the public-entry SDK-mode bootstrap or a template for new app popup,
-storage or runtime code. New SDK mode delegates authorization to the public
-application in the original user gesture. Original artifacts and earlier evidence
-are retained; the unsafe SDK807 archive must not be reused.
+No deployment, publication or live connected-collection acceptance is implied by
+this migration. See [development](development.md) for verification and
+[native publisher](native-publisher.md) for the protected publication path.

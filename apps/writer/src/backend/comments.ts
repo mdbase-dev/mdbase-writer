@@ -1,6 +1,7 @@
-// Comment records as both backends write them: mdbase.comment contract
+// Comment records as Writer writes them: mdbase.comment contract
 // fields, mapped to and from a collection's own field names.
-import type { JsonObject, PeopleDirectory } from "@mdbase-dev/connect";
+import type { PeopleDirectory } from "@mdbase-dev/sdk";
+import type { JsonObject } from "./types.js";
 import { linkPath, recordLink, type CommentRecord, type CommentTarget } from "@mdbase-writer/core/comments";
 
 export interface NewComment {
@@ -60,12 +61,6 @@ export function peopleFromDirectory({ account, me, people }: Pick<PeopleDirector
     case "invalid":
       return { names, signing: { kind: "conflict", paths: me.paths }, ...settings };
   }
-}
-
-/** Why the account could not be checked, from the directory's problem. */
-export function signingFromProblem(problem: { readonly code: string; readonly message?: string }): Signing {
-  if (problem.code === "access_denied") return { kind: "not-approved" };
-  return { kind: "unavailable", reason: problem.message ?? problem.code };
 }
 
 /** A record path or link, compared as links resolve: without `.md`, ignoring case. */

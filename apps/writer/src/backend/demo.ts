@@ -1,248 +1,130 @@
-// A self-contained demo collection on the SDK's in-memory record authority:
-// real record sessions (autosave, conflicts, recovery) without an account.
-// Loaded only in development builds.
-import type { JsonObject } from "@mdbase-dev/connect";
-import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
+// Explicit development/LAB fixture. All collection and record operations use
+// Writer's one SDK backend over MemoryReplica; nothing here is persisted.
+import { connect, MdbasePeopleClient, toPlain, type MdbaseApplicationConnection, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
+import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import type { CslItem } from "@mdbase-writer/core";
-import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
-import { CollectionStore, starterSchema, type CollectionRow } from "./collection.js";
-
-import { changeFields, commentPath, newCommentFields, personKey, personLink, type People } from "./comments.js";
-import { manuscriptBody, bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionDelta, type CollectionIndex, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import manifest from "../generated/mdbase-app.json";
+import { domainContract, type Domain } from "./collection.js";
+import { personKey, personLink } from "./comments.js";
+import { NativeWriterBackend } from "./native.js";
+import { bodySummary, numberedPath, ok, fail, type JsonObject, type JsonValue } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
 const relative = (key: string) => key.replace(/^\.\.\/\.\.\/demo\//, "");
 
-export async function createDemoBackend(): Promise<WriterBackend> {
-  const authority = createRecordTestAuthority();
-  const paths = new Set<string>();
-  for (const [key, text] of Object.entries(markdown)) {
-    const { body, frontmatter } = splitFrontmatter(text);
-    authority.seed(relative(key), { body, frontmatter: frontmatter as JsonObject });
-    paths.add(relative(key));
+// MemoryReplica implements records/contracts but not the catalog. This is a
+// fixed fixture catalog, not a production schema or a legacy client facade.
+const definitions: readonly [Domain, string, readonly string[]][] = [
+  ["manuscript", "writer-manuscript", ["title", "template", "csl", "authors", "abstract", "date", "lang"]],
+  ["source", "reader-source", ["title", "csl"]],
+  ["annotation", "reader-annotation", ["source", "locator"]],
+  ["comment", "comment", ["document", "motivation", "status", "created_at", "created_by", "in_reply_to", "target", "suggestion", "resolved_at", "resolved_by", "modified_at", "deleted_at"]],
+  ["person", "person", ["name"]],
+];
+const contracts: MemoryContract[] = definitions.map(([domain, type, fields]) => {
+  const contract = domainContract(domain);
+  return {...contract, type, contractDigest: manifest.requirements.contracts.find(c => c.id === contract.id)?.digest ?? "sha256:" + "0".repeat(64),
+    fields: Object.fromEntries(fields.map(field => [field, field]))};
+});
+const catalog: wire.DescribeResult = {
+  specVersion: "0.3.0", settings: new Map(), inclusion: {include: ["image"]}, issues: [],
+  contracts: contracts.map(c => ({id: c.id, version: c.version, digest: c.contractDigest!, path: `_contracts/${c.id}.md`, contractType: "record", implementedBy: [c.type]})),
+  types: contracts.map(c => ({name: c.type, path: `_types/${c.type}.md`, implements: [{contract: c.id, version: c.version, fields: new Map(Object.entries(c.fields))}]})),
+};
+/** Fixture seed values must be actual CBOR maps, including nested CSL data. */
+export function demoValue(value: JsonValue): wire.Value {
+  if (Array.isArray(value)) return value.map(demoValue);
+  if (value !== null && typeof value === "object") return new Map(Object.entries(value).filter((entry): entry is [string, JsonValue] => entry[1] !== undefined).map(([key, item]) => [key, demoValue(item)]));
+  return value;
+}
+export function seedDemoRecord(replica: MemoryReplica, path: string, frontmatter: JsonObject, body: string) {
+  const value = frontmatter["type"];
+  const types = typeof value === "string" ? [value] : Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  return replica.seed({path, types, frontmatter: Object.fromEntries(Object.entries(frontmatter).filter((entry): entry is [string, JsonValue] => entry[1] !== undefined).map(([key, item]) => [key, demoValue(item)])), body});
+}
+
+export class DemoWriterBackend extends NativeWriterBackend {
+  override readonly kind = "demo";
+  override readonly draftNamespace = "demo";
+  private readonly lastWritten = new Map<string, {body: string; modified: string}>();
+  constructor(connection: MdbaseApplicationConnection, readonly replica: MemoryReplica, readonly sdkClient: MdbaseClient) {
+    super(connection, {collectionName: "Demo collection", signal: new AbortController().signal});
   }
-  const stopFollowing = authority.records.follow(authority.watch);
-  // Only the sources the demo manuscripts cite (the demo ships with public builds).
-  const library = (await import("../../demo/library.json")).default as CslItem[];
-  const store = new CollectionStore(starterSchema());
-  // Give the demo's CSL-only sources ordinary rows, like the large/Connect demo.
-  for (const item of library) {
-    const path = `sources/${item.id}.md`, existing = authority.get(path);
-    authority.seed(path, { body: existing?.body ?? "", frontmatter: { ...existing?.frontmatter, type: "reader-source", csl: item as JsonObject } });
-    paths.add(path);
+  override async listManuscripts() {
+    const listed = await super.listManuscripts();
+    if (!listed.ok) return listed;
+    return ok(await Promise.all(listed.value.map(async manuscript => {
+      const body = await this.readBody(manuscript.path);
+      if (!body.ok) return manuscript;
+      let written = this.lastWritten.get(manuscript.path);
+      if (!written || written.body !== body.value) {
+        written = {body: body.value, modified: new Date(Date.now() - (written ? 0 : (this.lastWritten.size * 4 + 2) * 86_400_000)).toISOString()};
+        this.lastWritten.set(manuscript.path, written);
+      }
+      return {...manuscript, ...bodySummary(body.value), modified: written.modified};
+    })));
   }
-  const rowAt = (path: string): CollectionRow | undefined => {
-    const record = authority.get(path);
-    if (!record) return undefined;
-    const type = record.frontmatter["type"];
-    const types = Array.isArray(type) ? type.filter((t): t is string => typeof t === "string") : typeof type === "string" ? [type] : [];
-    return { ...record, types };
-  };
-  store.upsert([...paths].map((p) => rowAt(p)!));
-  const files = new Map(Object.entries(assets).map(([key, url]) => [relative(key), url]));
-  const listeners = new Set<(paths: readonly string[]) => void>();
-  const dataListeners = new Set<(delta: CollectionDelta) => void>();
-  const changed = new Set<string>();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  store.files([...files.keys()]);
-  const queue = (at: readonly string[]) => {
-    for (const path of at) changed.add(path);
-    clearTimeout(timer);
-    timer = setTimeout(() => void flush(), 50);
-  };
-  const flush = async (): Promise<Result<void>> => {
-    clearTimeout(timer);
-    if (!changed.size) return ok(undefined);
-    const at = [...changed]; changed.clear();
-    const rows: CollectionRow[] = [], missing: string[] = [];
-    for (const path of at) {
-      const row = rowAt(path);
-      if (row) { paths.add(path); rows.push(row); } else { paths.delete(path); missing.push(path); }
-    }
-    const upsert = store.upsert(rows), removed = store.remove(missing);
-    for (const listener of dataListeners) listener({ ...upsert, ...removed, paths: at });
-    return ok(undefined);
-  };
-  const stopWatch = authority.watch.subscribe((change) => {
-    const at = change.kind === "record.renamed" ? [change.from, change.to]
-      : change.kind === "record.created" || change.kind === "record.updated" || change.kind === "record.deleted" ? [change.path] : [];
-    for (const listener of listeners) listener(at);
-    queue(at);
-  });
-  const names = store.people;
-  // The demo is written by the manuscript's author.
-  const me = [...paths].find((p) => names.get(personKey(p)) === "Jordan Ellis");
-  const people: People = { names, ...(me ? { me: { link: personLink(me), name: "Jordan Ellis" }, signing: { kind: "linked" } } : { signing: { kind: "unlinked" } }) };
-  const readComment = async (path: string): Promise<CommentRecord | null> => {
-    const opened = await authority.records.open(path, { autosave: false });
-    if (!opened.ok) return null;
-    const { frontmatter, body } = opened.value.session.getSnapshot();
-    opened.value.release();
-    return commentFromRecord(path, frontmatter, body);
-  };
-
-  // When each manuscript was last written, for the list: a few days before the
-  // demo opened, and then when this demo last changed its text.
-  const lastWritten = new Map<string, { body: string; modified: string }>();
-  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
-
-  const backend: WriterBackend & { authority: typeof authority } = {
-    /** Exposed so browser tests can simulate other applications' edits. */
-    authority,
-    kind: "demo",
-    collectionName: "Demo collection",
-    draftNamespace: "demo",
-
-    records: authority.records,
-    async listManuscripts() {
-      const out: ManuscriptSummary[] = [];
-      for (const m of store.manuscripts) {
-        // The body as it is now, edits in this demo included.
-        const opened = await authority.records.open(m.path, { autosave: false });
-        if (!opened.ok) {
-          out.push(m);
-          continue;
-        }
-        const { body, frontmatter } = opened.value.session.getSnapshot();
-        opened.value.release();
-        let written = lastWritten.get(m.path);
-        if (!written || written.body !== body) {
-          written = { body, modified: written ? new Date().toISOString() : daysAgo(lastWritten.size * 4 + 2) };
-          lastWritten.set(m.path, written);
-        }
-        out.push({ ...m, title: typeof frontmatter["title"] === "string" ? frontmatter["title"] : m.title, ...(typeof frontmatter["template"] === "string" ? { template: frontmatter["template"] } : {}), ...(typeof frontmatter["csl"] === "string" ? { style: frontmatter["csl"] } : {}), ...bodySummary(body), modified: written.modified });
-      }
-      return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
-    },
-    async createManuscript(input: NewManuscript): Promise<Result<string>> {
-      let path = `manuscripts/${manuscriptSlug(input.title)}.md`;
-      for (let n = 2; paths.has(path); n++) path = `manuscripts/${manuscriptSlug(input.title)}-${n}.md`;
-      const body = manuscriptBody(input.starter, store.library[0]?.key);
-      authority.seed(path, {
-        body,
-        frontmatter: { type: "writer-manuscript", title: input.title, template: input.template, csl: input.style },
-      });
-      paths.add(path);
-      store.upsert([rowAt(path)!]);
-      lastWritten.set(path, { body, modified: new Date().toISOString() });
-      return ok(path);
-    },
-    async adoptManuscript(path: string): Promise<Result<string>> {
-      const opened = await authority.records.open(path, { autosave: false });
-      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
-      const { session, release } = opened.value;
-      const { frontmatter, body } = session.getSnapshot();
-      const title = typeof frontmatter["title"] === "string" && frontmatter["title"] ? frontmatter["title"] : titleFromNote(path, body);
-      session.patchFrontmatter({ type: withType(frontmatter["type"], "writer-manuscript"), title });
-      const flushed = await session.flush();
-      release();
-      if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
-      store.upsert([rowAt(path)!]);
-      lastWritten.set(path, { body, modified: new Date().toISOString() });
-      return ok(path);
-    },
-    async createRecord(path: string, body: string) {
-      let at = path;
-      for (let n = 2; paths.has(at); n++) at = numberedPath(path, n);
-      authority.seed(at, { body, frontmatter: {} });
-      paths.add(at);
-      queue([at]);
-      return ok(at);
-    },
-    async index(): Promise<Result<CollectionIndex>> { return ok(store.index); },
-    async readBody(path: string) {
-      const opened = await authority.records.open(path, { autosave: false });
-      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
-      const { body } = opened.value.session.getSnapshot();
-      opened.value.release();
-      return ok(body);
-    },
-    async library() {
-      return ok(store.library);
-    },
-    async annotationPaths() {
-      return ok([...store.annotations.keys()]);
-    },
-    async annotationsForSource(source) {
-      const out = [];
-      for (const path of store.annotationsForSource(source).keys()) {
-        const record = authority.get(path);
-        if (!record) continue;
-        const a = sourceAnnotation(path, record.frontmatter, record.body ?? "");
-        if (a) out.push(a);
-      }
-      return ok(out);
-    },
-    async readFile(path: string) {
-      const url = files.get(path);
-      if (!url) return fail(`No file at ${path}.`);
-      return ok(new Uint8Array(await (await fetch(url)).arrayBuffer()));
-    },
-    async writeFile(path: string, bytes: Uint8Array, mediaType?: string) {
+  override async people() {
+    const people = this.replica.allRecords.filter(r => r.types.includes("person")).map(r => ({path: r.path, name: (toPlain(r.frontmatter) as JsonObject)["name"]}));
+    const names = new Map(people.filter((p): p is {path: string; name: string} => typeof p.name === "string").map(p => [personKey(p.path), p.name]));
+    const me = people.find(p => p.name === "Jordan Ellis");
+    return {names, ...(me ? {me: {link: personLink(me.path), name: "Jordan Ellis"}, signing: {kind: "linked" as const}} : {signing: {kind: "unlinked" as const}})};
+  }
+  // Demo-only uploads exercise SDK file APIs, not a production permission change.
+  async writeFile(path: string, bytes: Uint8Array) {
+    try {
       let target = path;
-      for (let n = 2; files.has(target) && n <= 50; n++) target = numberedPath(path, n);
-      files.set(target, URL.createObjectURL(new Blob([bytes as BlobPart], mediaType ? { type: mediaType } : {})));
-      const delta = store.files([target]);
-      for (const listener of dataListeners) listener({ ...delta, paths: [target] });
+      const files = new Set<string>();
+      for await (const file of this.sdkClient.files.list()) files.add(file.path);
+      for (let n = 2; files.has(target); n++) target = numberedPath(path, n);
+      await (await this.sdkClient.files.upload(target, bytes)).confirmed;
+      await this.reconcile();
       return ok(target);
-    },
-    async comments(scope) {
-      const out: CommentRecord[] = [];
-      for (const path of store.commentScope(scope)) {
-        const c = await readComment(path);
-        if (c) out.push(c);
-      }
-      return ok(out);
-    },
-    async createComment(input) {
-      const now = new Date();
-      const path = commentPath(now);
-      const fields = newCommentFields(input, now, people.me?.link);
-      authority.seed(path, { frontmatter: { type: "comment", ...fields }, body: input.text.trim() ? `${input.text.trim()}\n` : "" });
-      paths.add(path);
-      queue([path]);
-      const comment = commentFromRecord(path, fields, input.text);
-      return comment ? ok(comment) : fail("The comment could not be read back.");
-    },
-    async changeComment(comment, change) {
-      const opened = await authority.records.open(comment.path, { autosave: false });
-      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
-      const { session, release } = opened.value;
-      const { fields, body } = changeFields(comment, change, new Date(), people.me?.link);
-      session.patchFrontmatter(fields);
-      if (body !== undefined) session.setBody(body);
-      const flushed = await session.flush();
-      release();
-      if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
-      const next = await readComment(comment.path);
-      return next ? ok(next) : fail("The comment could not be read back.");
-    },
-    async people() {
-      return people;
-    },
-    onCollectionChange(listener) { dataListeners.add(listener); return () => dataListeners.delete(listener); },
-    flushChanges: flush,
-    async reconcile() {
-      store.reset();
-      store.upsert([...paths].flatMap((p) => { const row = rowAt(p); return row ? [row] : []; }));
-      store.files([...files.keys()]);
-      for (const listener of dataListeners) listener({ paths: [], reset: true });
-      return ok(undefined);
-    },
-    onExternalChange(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    dispose() {
-      clearTimeout(timer);
-      dataListeners.clear();
-      stopWatch();
-      stopFollowing();
-      authority.watch.close();
-      listeners.clear();
-    },
+    } catch (error) { return fail<string>(error instanceof Error ? error.message : "Demo upload failed."); }
+  }
+  override dispose() {super.dispose(); this.sdkClient.close();}
+}
+
+export async function createMemoryWriter(seed: (replica: MemoryReplica) => void): Promise<DemoWriterBackend> {
+  const replica = new MemoryReplica({confirmDelayMs: 0, contracts});
+  seed(replica);
+  const client = await connect({connector: replica.connector(), app: {name: "writer-demo", version: "demo"}, reconnect: false});
+  client.describe = async () => catalog;
+  // MemoryReplica only derives scalar `type` updates, not Core's type lists.
+  // Supply that missing catalog behavior in this disposable fixture only.
+  const submit = client.submit.bind(client);
+  client.submit = async (...args) => {
+    const writes = await submit(...args);
+    for (const record of replica.allRecords) {
+      const declared = record.frontmatter.get("type");
+      if (Array.isArray(declared)) record.types = declared.filter((value): value is string => typeof value === "string");
+    }
+    return writes;
   };
-  return backend;
+  const connection: MdbaseApplicationConnection = {id: client.collection, displayName: "Demo collection",
+    scope: {account: "demo", installation: "demo", collection: client.collection}, generation: "demo",
+    records: client, files: client.files, isCurrent: () => true,
+    // This fixture's people() supplies the demo author; no account is contacted.
+    people: new MdbasePeopleClient(client, {collection: client.collection, request: async () => {throw new Error("No demo account");}, isCurrent: () => true})};
+  return new DemoWriterBackend(connection, replica, client);
+}
+export async function createDemoBackend(): Promise<DemoWriterBackend> {
+  const library = (await import("../../demo/library.json")).default as CslItem[];
+  const backend = await createMemoryWriter(replica => {
+    for (const [key, text] of Object.entries(markdown)) {
+      const {body, frontmatter} = splitFrontmatter(text);
+      seedDemoRecord(replica, relative(key), frontmatter as JsonObject, body);
+    }
+    for (const item of library) {
+      const path = `sources/${item.id}.md`;
+      const existing = replica.allRecords.find(r => r.path === path);
+      seedDemoRecord(replica, path, {...(existing ? toPlain(existing.frontmatter) as JsonObject : {}), type: "reader-source", csl: item as JsonObject}, existing?.body ?? "");
+    }
+  });
+  try {
+    for (const [key, url] of Object.entries(assets)) await (await backend.sdkClient.files.upload(relative(key), new Uint8Array(await (await fetch(url)).arrayBuffer()))).confirmed;
+    return backend;
+  } catch (error) {backend.dispose(); throw error;}
 }

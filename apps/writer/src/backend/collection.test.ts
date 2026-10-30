@@ -1,9 +1,9 @@
-import type { CollectionDescription, JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "./types.js";
+import type { WriterSchemaDescription } from "./collection.js";
 import { describe, expect, it } from "vitest";
-import { validateCanonicalQueryInput } from "../../node_modules/@callumalpass/mdbase/dist/operations/canonical-query.js";
 import { annotationContract, commentContract, manuscriptContract, sourceContract, CollectionSchema, CollectionStore, starterSchema, type CollectionRow } from "./collection.js";
 const impl = (name: string, fields: Record<string, string>) => ({ typeName: name, typeVersion: 1, digest: "test", fields });
-const description: Pick<CollectionDescription, "types" | "contracts" | "configuration"> = {
+const description: WriterSchemaDescription = {
   types: ["reader-source", "reader-annotation", "writer-manuscript", "comment", "person"].map((name) => ({ name, schema: {}, extensions: {} })),
   contracts: [
     [sourceContract, impl("book", { csl: "bib" })], [annotationContract, impl("highlight", { source: "reading", locator: "page" })],
@@ -40,53 +40,18 @@ describe("collection semantics", () => {
     expect(store.people.get("person")).toBe("Person");
     expect(store.schema.bindings("manuscript")).toMatchObject({ ok: true, value: [{ typeKey: "kind" }] });
   });
-  it("classifies narrow values like full persisted discovery, including multi-role records and mtime", () => {
-    const full = fresh(), narrow = fresh();
-    const records = [
-      row("sources/a.md", ["book"], { bib: { id: "a" }, title: "Fallback title", unrelated: "wide" }),
-      row("mixed.md", ["paper", "highlight"], { heading: "Mixed", layout: "book", style: "apa", reading: "[[a]]", page: { label: "Not needed until hydrated" } }),
-      row("comments/root.md", ["feedback"], { about: "[[mixed]]", date: "2026-01-01", target: { quote: { exact: "Large anchor" } } }),
-      row("comments/reply.md", ["feedback"], { about: "[[elsewhere]]", date: "2026-01-02", parent: "[[root]]" }),
-      row("note.md", []), row("person.md", ["person"], { name: "Person" }),
-    ];
-    full.upsert(records.map(({ effectiveFrontmatter: _effective, ...r }) => r), true);
-    narrow.upsert(records.map((r) => ({ path: r.path, types: r.types,
-      values: Object.fromEntries(narrow.schema.discoverySelect().flatMap((s) => {
-        const field = /^record\[(.*)\]$/.exec(s.expression)?.[1];
-        const value = field ? r.frontmatter?.[JSON.parse(field) as string] : s.expression === "file.mtime" ? r.file?.mtime : undefined;
-        return value === undefined ? [] : [[s.name, value]];
-      })),
-    })), true);
-    expect(snapshot(narrow)).toEqual(snapshot(full));
-    expect([...narrow.annotationsForSource("sources/a.md").keys()]).toEqual(["mixed.md"]);
-    expect([...narrow.commentScope(["mixed.md"])]).toEqual(["comments/root.md", "comments/reply.md"]);
-    expect(narrow.manuscripts[0]?.modified).toBe("2026-01-01");
-  });
-  it.each([
-    ["configured collection", new CollectionSchema(description)],
-    ["starter collection", starterSchema()],
-    ["unconfigured collection", new CollectionSchema({ types: [], contracts: [] })],
-  ])("uses schema-valid discovery selection names for a %s", (_name, schema) => {
-    const select = schema.discoverySelect().map(({ name, expression }) => ({ name, expr: expression }));
-    expect(validateCanonicalQueryInput({ select })).toEqual([]);
-  });
-  it("reads manuscript modification time from the named metadata selection", () => {
+  it("reads manuscript modification time from SDK query metadata", () => {
     const store = fresh();
-    store.upsert([{ path: "paper.md", types: ["paper"], values: { heading: "Paper", file_mtime: "2026-01-02" } }], true);
-    expect(store.manuscripts).toEqual([{ path: "paper.md", title: "Paper", modified: "2026-01-02" }]);
+    store.upsert([{path: "paper.md", types: ["paper"], contractFields: {manuscript: {title: "Paper"}}, file: {mtime: "2026-01-02"}}], true);
+    expect(store.manuscripts).toEqual([{path: "paper.md", title: "Paper", modified: "2026-01-02"}]);
   });
-  it("escapes literal mapped field names rather than interpreting dots or CEL syntax", () => {
-    const schema = new CollectionSchema({ types: [], contracts: [{ ...annotationContract, contractType: "record", digest: "test", schema: {},
-      implementations: [impl("highlight", { source: 'a.b["source"]' })] }] });
-    expect(schema.discoverySelect()).toEqual([{ name: 'a.b["source"]', expression: 'record["a.b[\\"source\\"]"]' }]);
-  });
-  it("distinguishes structural starter roles from configured contract membership", () => {
+  it("requires described contract membership even for starter-named records", () => {
     const store = fresh();
     store.upsert([row("unbound.md", ["reader-source"], { csl: { id: "ignored" } })]);
     expect(store.library).toEqual([]);
-    expect(store.index.notePaths).toEqual([]);
+    expect(store.index.notePaths).toEqual(["unbound.md"]);
     const schema = new CollectionSchema({ types: description.types, contracts: [] });
-    expect(schema.setupStatus).toEqual({ sources: true, annotations: true, comments: false });
+    expect(schema.setupStatus).toEqual({ sources: false, annotations: false, comments: false });
     expect(schema.bindings("comment")).toEqual({ ok: true, value: [] });
     const demo = new CollectionStore(starterSchema());
     demo.upsert([row("source.md", ["reader-source"], { csl: { id: "starter" } })]);

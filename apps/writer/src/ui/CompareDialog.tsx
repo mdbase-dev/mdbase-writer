@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { useEffect, useRef, useState } from "react";
 import { Dialog } from "@mdbase-dev/ui/dialog";
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "../backend/types.js";
 
 /** Highlight the changed passage while keeping the unchanged context readable. */
 export function changedPassage(mine: string, theirs: string): { prefix: string; mine: string; theirs: string; suffix: string } {

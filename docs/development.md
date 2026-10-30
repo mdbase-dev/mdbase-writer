@@ -16,9 +16,9 @@ pnpm check               # typecheck and tests (core, app, manifest)
 pnpm build
 ```
 
-The `?demo` collection runs on the SDK's in-memory record authority
-(`@mdbase-dev/connect-testing`), so record sessions, autosave, conflicts, and recovery use the
-same SDK paths as a real collection. It is enabled in development and LAB builds, not staging
+The `?demo` collection runs on `MemoryReplica` from `@mdbase-dev/sdk/testing`,
+using the same `NativeWriterBackend` and SDK record sessions as a real collection.
+Its fixed catalog and sample identity are fixtures, not connected-collection acceptance. It is enabled in development and LAB builds, not staging
 or production. Demo changes are not durable collection data.
 
 The browser suite needs Chromium plus the `pandoc` and `unzip` CLIs to inspect downloaded
@@ -75,17 +75,15 @@ its feedback endpoint is loopback, and it is not connected-collection acceptance
 
 ## Against a real collection
 
-The hosted mdbase Connect service accepts applications served over HTTPS only, so a localhost
-build cannot use it. Either run Connect's local environment (`pnpm dev:environment:up` in the
-`mdbase-connect` checkout, then open Writer with `?server=<local connect URL>`), or deploy a build
-to an HTTPS origin and set `MDBASE_WRITER_ORIGIN` when writing the manifest:
+Connected builds use the SDK entry and their exact declared HTTPS origin.
+An ordinary build defaults to production, matching the manifest builder. Local
+`?demo` development never contacts an account. Legacy `?server=` and connector
+loopback settings no longer select a backend.
 
-```sh
-MDBASE_WRITER_ORIGIN=https://writer.example pnpm --filter @mdbase-writer/app build
-```
-
-`VITE_MDBASE_CONNECT_URL` and `VITE_MDBASE_CONNECT_LOOPBACK_URL` select the Connect service
-and local connector (defaults: production and port 28485).
+Use `pnpm build:production` for the production-origin bundle. The protected
+staging publisher has separately qualified staging originals: never relabel the
+production SDK archive as a staging one or retarget an arbitrary custom origin.
+See [SDK intake](new-sdk.md) and [native publication](native-publisher.md).
 
 Use a disposable test collection and review Writer's access and collection setup before approval.
 

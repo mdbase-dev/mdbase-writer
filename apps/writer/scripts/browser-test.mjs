@@ -158,7 +158,7 @@ await step("typing autosaves and updates the preview", async () => {
   keystrokeMs = Date.now() - started;
   assert.notEqual(await previewFingerprint("manuscripts/slow-change.md"), shownBefore, "the preview did not change");
   await waitFor(() => Object.values(Object.fromEntries([...window.writer.workspace.getSnapshot().records].map(([p, r]) => [p, r.snapshot.state]))).every((s) => s === "saved"), null, 10_000);
-  const saved = await page.evaluate(() => window.writer.backend.authority.writes.at(-1)?.body ?? window.writer.backend.authority.writes.at(-1));
+  const saved = await page.evaluate(async () => (await window.writer.backend.sdkClient.get({path: window.writer.workspace.main}, {body: true})).body);
   assert.match(JSON.stringify(saved), /Indeed\./);
 });
 
@@ -430,7 +430,7 @@ await step("editing a chapter re-typesets the whole manuscript", async () => {
 await step("an edit made elsewhere during typing becomes a resolvable conflict", async () => {
   await typeAtEndOfParagraph("Worms swallow earth", " Mine.");
   await page.evaluate(() => {
-    const a = window.writer.backend.authority;
+    const a = window.writer.backend.replica;
     const current = window.writer.workspace.getSnapshot().records.get("chapters/worms.md").snapshot.record;
     a.editElsewhere("chapters/worms.md", { body: current.body.replace("# Earthworms", "# Earthworms (theirs)") });
   });

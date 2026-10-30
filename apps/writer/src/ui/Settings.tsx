@@ -7,7 +7,7 @@ import { useLingui } from "@lingui/react";
 // typing never writes a half-parsed value per keystroke, and a change made
 // elsewhere (another app, "Use theirs") shows up in every field not being
 // edited. Problems with a setting appear under its field.
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "../backend/types.js";
 import { Select, type SelectItems } from "@mdbase-dev/ui/select";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 import { TEMPLATES, type MetaField } from "@mdbase-writer/core/meta";

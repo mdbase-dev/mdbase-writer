@@ -1,11 +1,5 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2026-10-23 23:06+1100\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"X-Generator: @lingui/cli\n"
-"Language: zh\n"
 
 #. placeholder {0}: Math.round((words / goal) * 100)
 #. placeholder {1}: formatNumber(goal)
@@ -375,10 +369,6 @@ msgstr "所属机构"
 msgid "All manuscripts"
 msgstr "所有手稿"
 
-#: src/ui/ConnectGate.tsx
-msgid "already present"
-msgstr "已存在"
-
 #. placeholder {0}: snap.annotationsLoad.problem ?? ""
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
@@ -508,10 +498,6 @@ msgstr "正在检查章节和图片，然后生成 {0}…"
 msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
 msgstr "正在检查章节和图片，然后生成 Word 文档…（首次使用约需加载 16 MB）"
 
-#: src/ui/ConnectGate.tsx
-msgid "Checking the collection"
-msgstr "正在检查集合"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
 msgstr "正在检查…"
@@ -523,10 +509,6 @@ msgstr "Chicago（作者-日期制）"
 #: src/ui/names.ts
 msgid "Chicago (notes and bibliography)"
 msgstr "Chicago（注释与参考文献制）"
-
-#: src/ui/ConnectGate.tsx
-msgid "Choose another collection"
-msgstr "选择其他集合"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
@@ -629,10 +611,6 @@ msgstr "仍在加载集合元数据。"
 msgid "Collection version"
 msgstr "集合版本"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Collections"
-msgstr "集合"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Commands"
 msgstr "命令"
@@ -687,26 +665,6 @@ msgstr "比较版本"
 msgid "Conflict"
 msgstr "冲突"
 
-#: src/ui/ConnectGate.tsx
-msgid "conflicts with an existing file"
-msgstr "与现有文件冲突"
-
-#: src/ui/ConnectGate.tsx
-msgid "Connect a collection"
-msgstr "连接集合"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Connect another collection…"
-msgstr "连接其他集合…"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Connected collections"
-msgstr "已连接的集合"
-
-#: src/ui/ConnectGate.tsx
-msgid "Connecting to mdbase connect"
-msgstr "正在连接到 mdbase Connect"
-
 #: src/ui/Home.tsx
 msgid "Continue writing"
 msgstr "继续写作"
@@ -719,17 +677,9 @@ msgstr "已复制"
 msgid "Copy key"
 msgstr "复制密钥"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Could not connect another collection."
-msgstr "无法连接其他集合。"
-
 #: src/ui/Home.tsx
 msgid "Could not create the manuscript. Please try again."
 msgstr "无法创建手稿，请重试。"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Could not switch collections."
-msgstr "无法切换集合。"
 
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
@@ -805,9 +755,9 @@ msgstr "如果无法完成保存，请在离开前下载本地副本。"
 msgid "Download local draft"
 msgstr "下载本地草稿"
 
-#: src/LegacyApp.tsx
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Download local drafts"
 msgstr "下载本地草稿"
 
@@ -944,10 +894,6 @@ msgstr "从图片创建插图…"
 msgid "Figures must be PNG, JPEG, GIF, SVG or WebP images."
 msgstr "插图必须使用 PNG、JPEG、GIF、SVG 或 WebP 图片。"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Filter collections"
-msgstr "筛选集合"
-
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
 msgstr "查找手稿"
@@ -1017,10 +963,6 @@ msgstr "脚注 [^{value}] 被引用了多次。"
 msgid "for citation terms and hyphenation"
 msgstr "用于引文术语和连字符规则"
 
-#: src/ui/NativeSignIn.tsx
-msgid "Forget collection"
-msgstr "忘记集合"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Format"
 msgstr "格式"
@@ -1074,10 +1016,6 @@ msgstr "此集合尚未设置高亮功能。"
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights from Reader"
 msgstr "来自 Reader 的高亮"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Hosted by mdbase"
-msgstr "由 mdbase 托管"
 
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
@@ -1202,10 +1140,6 @@ msgstr "保留我的版本"
 #: src/ui/WorkspaceView.tsx
 msgid "Keep writing"
 msgstr "继续写作"
-
-#: src/ui/ConnectGate.tsx
-msgid "kept as it is"
-msgstr "保持原样"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
@@ -1366,23 +1300,6 @@ msgstr "数学公式：存在未闭合的大括号。"
 msgid "Math: Unmatched closing brace."
 msgstr "数学公式：存在未匹配的右大括号。"
 
-#: src/ui/ConnectGate.tsx
-msgid "mdbase connect is unavailable"
-msgstr "mdbase Connect 不可用"
-
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer can't use this collection"
-msgstr "mdbase writer 无法使用此集合"
-
-#. placeholder {0}: literal(snapshot.info.displayName)
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
-msgstr "mdbase writer 需要在 <0>{0}</0> 中满足两类记录约定：手稿和用于引文的 Reader 来源。设置过程只会添加缺少的内容，不会更改现有记录。"
-
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library. Connect a collection to choose what it can access."
-msgstr "mdbase writer 将 mdbase 集合中的 Markdown 记录排版为 PDF 和 Word 文档，并使用 mdbase Reader 资料库中的引文。连接集合以选择它可以访问的内容。"
-
 #: src/ui/CompareDialog.tsx
 msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
 msgstr "合并后的 Markdown<0/><1>合并文本会在集合版本的基础上保留你本地更改的设置。</1>"
@@ -1471,11 +1388,6 @@ msgstr "下一个问题"
 #: src/ui/SourcesPanel.tsx
 msgid "No annotations on this source."
 msgstr "此来源没有注释。"
-
-#. placeholder {0}: query.trim()
-#: src/ui/CollectionPicker.tsx
-msgid "No collection matches “{0}”."
-msgstr "没有匹配“{0}”的集合。"
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
@@ -1630,10 +1542,6 @@ msgstr "关于珊瑚礁的形成"
 msgid "On the whole record"
 msgstr "针对整条记录"
 
-#: src/ui/CollectionPicker.tsx
-msgid "On your computer"
-msgstr "在你的电脑上"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Open"
 msgstr "打开"
@@ -1660,36 +1568,19 @@ msgstr "打开对应手稿以进行审阅"
 msgid "Open mdbase Reader"
 msgstr "打开 mdbase Reader"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Open now"
-msgstr "立即打开"
-
 #: src/ui/SourcesPanel.tsx
 msgid "Open Reader to add a source"
 msgstr "打开 Reader 以添加来源"
-
-#: src/connect/native-signin-ui.ts
-msgid "Open sign-in"
-msgstr "打开登录页面"
-
-#: src/connect/native-signin-ui.ts
-msgid "Open the mdbase tab again"
-msgstr "重新打开 mdbase 标签页"
 
 #: src/editor/chapter-cards.ts
 msgid "Open this passage in Reader"
 msgstr "在 Reader 中打开此段落"
 
-#: src/connect/native-signin-ui.ts
-msgid "Opening collections isn't available in this build yet."
-msgstr "此版本暂不支持打开集合。"
-
 #: src/App.tsx
-#: src/ui/ConnectGate.tsx
 msgid "Opening mdbase writer"
 msgstr "正在打开 mdbase writer"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "Opening the demo collection"
 msgstr "正在打开演示集合"
 
@@ -1807,10 +1698,6 @@ msgstr "上一个引文"
 msgid "Previous comment"
 msgstr "上一条评论"
 
-#: src/ui/ConnectGate.tsx
-msgid "Previously connected"
-msgstr "之前已连接"
-
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
 msgstr "问题"
@@ -1843,10 +1730,6 @@ msgstr "按手稿方式阅读<0>关闭后将显示原始 Markdown</0>"
 msgid "Reason for the suggestion"
 msgstr "建议理由"
 
-#: src/ui/ConnectGate.tsx
-msgid "Reconnect"
-msgstr "重新连接"
-
 #: src/ui/connection-notice.ts
 msgid "Reconnecting"
 msgstr "正在重新连接"
@@ -1871,7 +1754,7 @@ msgstr "拒绝"
 msgid "Rejected"
 msgstr "已拒绝"
 
-#: src/LegacyApp.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Reload"
 msgstr "重新加载"
 
@@ -1952,7 +1835,7 @@ msgstr "重试加载依赖项"
 msgid "Retry export"
 msgstr "重试导出"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Retry loading"
@@ -2073,18 +1956,6 @@ msgstr "设置字数目标"
 #: src/ui/Home.tsx
 msgid "Set goal"
 msgstr "设置目标"
-
-#: src/ui/ConnectGate.tsx
-msgid "Set up collection"
-msgstr "设置集合"
-
-#: src/ui/ConnectGate.tsx
-msgid "Set up this collection for writing"
-msgstr "设置此集合以进行写作"
-
-#: src/ui/ConnectGate.tsx
-msgid "Setting up…"
-msgstr "正在设置…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Settings"
@@ -2225,39 +2096,6 @@ msgstr "当前显示最近一次成功的预览；内容可能与最新文本不
 msgid "Sidebar"
 msgstr "侧边栏"
 
-#: src/connect/native-signin-ui.ts
-msgid "Sign in"
-msgstr "登录"
-
-#: src/connect/native-signin-ui.ts
-msgid "Sign in with your mdbase account to sync {appName} across your devices."
-msgstr "使用 mdbase 账户登录，以便在各设备间同步 {appName}。"
-
-#: src/connect/native-signin-ui.ts
-msgid "Sign out"
-msgstr "退出登录"
-
-#: src/ui/NativeSignIn.tsx
-msgid "Sign-in status"
-msgstr "登录状态"
-
-#: src/connect/native-signin-ui.ts
-msgid "Sign-in was interrupted. Please try again."
-msgstr "登录过程已中断。请重试。"
-
-#: src/connect/connect-popup.ts
-msgid "Sign-in window closed."
-msgstr "登录窗口已关闭。"
-
-#: src/connect/native-signin-ui.ts
-msgid "Signed in as {email}"
-msgstr "已以 {email} 身份登录"
-
-#. placeholder {0}: selected.displayName
-#: src/connect/native-signin-ui.ts
-msgid "Signed in. Opening {0}…"
-msgstr "已登录。正在打开 {0}…"
-
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Some changes are not saved"
@@ -2267,13 +2105,9 @@ msgstr "部分更改尚未保存"
 msgid "Some images or chapters could not be loaded. See Problems for their locations."
 msgstr "部分图片或章节无法加载。请在“问题”中查看其位置。"
 
-#: src/LegacyApp.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Something went wrong"
 msgstr "出了点问题"
-
-#: src/ui/ConnectGate.tsx
-msgid "Something went wrong."
-msgstr "出了点问题。"
 
 #: src/editor/insight.ts
 msgid "Source"
@@ -2362,14 +2196,6 @@ msgctxt "comment tooltip"
 msgid "Suggestion"
 msgstr "建议"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Switch collection"
-msgstr "切换集合"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Switch collection: {name}"
-msgstr "切换集合：{name}"
-
 #: src/ui/WorkspaceView.tsx
 msgid "System"
 msgstr "系统"
@@ -2396,7 +2222,7 @@ msgstr "该章节尚未打开。"
 msgid "The compile worker stopped."
 msgstr "编译工作进程已停止。"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "The demo could not be loaded"
 msgstr "无法加载演示内容"
 
@@ -2475,10 +2301,6 @@ msgstr "主题"
 msgid "Thesis or book"
 msgstr "论文或书籍"
 
-#: src/ui/ConnectGate.tsx
-msgid "This action could not be completed. Please try again."
-msgstr "无法完成此操作。请重试。"
-
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
 msgstr "此设置适用于此浏览器中的所有手稿。"
@@ -2491,17 +2313,9 @@ msgstr "这会更改此浏览器中的界面语言，而不是手稿的语言。
 msgid "This collection does not accept files from Writer."
 msgstr "此集合不接受来自 Writer 的文件。"
 
-#: src/ui/ConnectGate.tsx
-msgid "This collection is unavailable"
-msgstr "此集合不可用"
-
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "无法打开此集合视图。请从上方栏中选择其他集合，或重新加载后重试。"
-
-#: src/ui/ConnectGate.tsx
-msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr "这是本地开发版本。托管的 mdbase connect 服务仅接受通过 HTTPS 提供的应用，因此请使用 Connect 本地环境（在 mdbase-connect 中运行 <0>pnpm dev:environment:up</0>），或打开<1>演示集合</1>。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This list"
@@ -2543,10 +2357,6 @@ msgstr "标题<0/>{0}"
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "修订"
-
-#: src/ui/ConnectGate.tsx
-msgid "Try again"
-msgstr "重试"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2643,18 +2453,9 @@ msgstr "视图"
 msgid "Wait for the manuscript to open before exporting."
 msgstr "请等待手稿打开后再导出。"
 
-#: src/connect/native-signin-ui.ts
-msgid "Waiting for approval in the mdbase tab…"
-msgstr "正在等待 mdbase 标签页中的批准…"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Waiting for approval…"
 msgstr "正在等待批准…"
-
-#: src/ui/CollectionPicker.tsx
-#: src/ui/ConnectGate.tsx
-msgid "Waiting for mdbase connect…"
-msgstr "正在等待 mdbase connect…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -2663,18 +2464,6 @@ msgstr "谁的评论"
 #: src/ui/CommentsPanel.tsx
 msgid "Why (optional)"
 msgstr "原因（可选）"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be added"
-msgstr "将添加"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be removed"
-msgstr "将移除"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be updated"
-msgstr "将更新"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdraw"
@@ -2707,11 +2496,6 @@ msgstr "字数，例如 8000"
 #: src/ui/WorkspaceView.tsx
 msgid "Write"
 msgstr "写作"
-
-#: src/ui/ConnectGate.tsx
-#: src/ui/NativeSignIn.tsx
-msgid "Write from your collection"
-msgstr "从你的集合开始写作"
 
 #: src/editor/Editor.tsx
 msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
@@ -2750,11 +2534,6 @@ msgstr "无法验证你的账户（{0}）。"
 msgid "Your account is not linked to a person record in this collection."
 msgstr "你的账户未关联到此集合中的人员记录。"
 
-#: src/connect/connect-popup.ts
-#: src/connect/native-signin-ui.ts
-msgid "Your browser blocked the sign-in tab."
-msgstr "浏览器已拦截登录标签页。"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Your comments are not signed."
 msgstr "你的评论未签名。"
@@ -2775,7 +2554,7 @@ msgstr "如果存储空间可用，本地草稿会备份在此浏览器中。如
 msgid "Your local text"
 msgstr "你的本地文本"
 
-#: src/LegacyApp.tsx
+#: src/ui/WriterErrorBoundary.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
 msgstr "已保存的文本位于你的集合中。如果存储空间可用，尚未发送的本地草稿会备份在此浏览器中。重新加载前请下载副本。"
 

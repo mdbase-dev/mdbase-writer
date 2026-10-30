@@ -2,8 +2,10 @@
 import { act, cleanup } from "@testing-library/react";
 import { render } from "../test/render.js";
 import { useCallback } from "react";
-import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
+import { connect, type MdbaseClient } from "@mdbase-dev/sdk";
+import { MemoryReplica } from "@mdbase-dev/sdk/testing";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { NextWriterRecords } from "../backend/next-records.js";
 import type { RecordView } from "../workspace/workspace.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 
@@ -18,12 +20,15 @@ vi.mock("./paging.js", async importOriginal => {
 });
 const scrollIntoView = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
 beforeEach(() => Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value() {} }));
-afterEach(() => { cleanup(); reveals.mockClear(); });
+const clients: MdbaseClient[] = [];
+afterEach(() => { cleanup(); reveals.mockClear(); for (const client of clients.splice(0)) client.close(); });
 
 async function fixture(body: string) {
-  const authority = createRecordTestAuthority();
-  authority.seed("main.md", { body, frontmatter: { title: "Document" } });
-  const opened = await authority.records.open("main.md", { autosave: false });
+  const replica = new MemoryReplica({ confirmDelayMs: 0 });
+  replica.seed({ path: "main.md", body, frontmatter: { title: "Document" } });
+  const client = await connect({ connector: replica.connector(), app: { name: "writer-outline-test", version: "test" }, reconnect: false });
+  clients.push(client);
+  const opened = await new NextWriterRecords(client, new AbortController().signal).open("main.md", { autosave: false });
   if (!opened.ok) throw new Error(opened.problem.code);
   const { session, release } = opened.value;
   const props = { main: "main.md", order: ["main.md"], chapters: [], words: 100, byRecord: new Map(), active: "main.md", onOpen: vi.fn(), onJump: vi.fn(), onMove: vi.fn(), onAdd: vi.fn() };
