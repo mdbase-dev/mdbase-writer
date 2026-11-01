@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@mdbase-dev/connect': file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz
-
 importers:
 
   .:
@@ -60,8 +57,8 @@ importers:
         specifier: 6.9.0
         version: 6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0)
       '@mdbase-dev/connect':
-        specifier: file:../../vendor/connect-beta125-legacy-query-2a89e9ef.tgz
-        version: file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz
+        specifier: 0.1.0-beta.149
+        version: 0.1.0-beta.149
       '@mdbase-dev/connect-protocol':
         specifier: file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz
         version: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz
@@ -112,11 +109,11 @@ importers:
         specifier: 6.9.0
         version: 6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.7(supports-color@7.2.0)))(babel-plugin-macros@3.1.0)(rolldown@1.2.11)(supports-color@7.2.0)(vite@8.3.1(@types/node@22.20.4)(jiti@2.7.0)(yaml@2.9.1))
       '@mdbase-dev/connect-dev':
-        specifier: 0.1.0-beta.125
-        version: 0.1.0-beta.125
+        specifier: 0.1.0-beta.149
+        version: 0.1.0-beta.149
       '@mdbase-dev/connect-testing':
-        specifier: 0.1.0-beta.125
-        version: 0.1.0-beta.125
+        specifier: 0.1.0-beta.149
+        version: 0.1.0-beta.149
       '@testing-library/react':
         specifier: 16.3.2
         version: 16.3.2(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -570,23 +567,22 @@ packages:
   '@marijn/find-cluster-break@1.0.4':
     resolution: {integrity: sha512-Wy0V7+SGUjnF9/TkiM1hKVDPj7jKXduPNboMVtHTA8dySMURWqfg/JZ9E2Sq8JgSJmkl7k7Qe9FLeMSrSraWmQ==}
 
-  '@mdbase-dev/connect-dev@0.1.0-beta.125':
-    resolution: {integrity: sha512-fBYTD3+Fcl+I1FBvMiZ9tAGlvnaab+NRZ+J6pcuu3PdesZfbyanFDB5QRdpuXV+HVo8lbaXG145qQCpV2Wo4ZQ==}
+  '@mdbase-dev/connect-dev@0.1.0-beta.149':
+    resolution: {integrity: sha512-k2qGRHJvf+EaSde/vn68JuT6S3DG3QzAVZCTLY0q2Fb2gUxQgBYZwOv5RMJEO0IMrts+xMfWW+O3+wvQns+cGA==}
     hasBin: true
 
-  '@mdbase-dev/connect-protocol@0.1.0-beta.125':
-    resolution: {integrity: sha512-q6aEZ1+dVAXvoN84FgDLMhqCnCdlsXhp0K5M+Wcp2x2ICUIoE/lA+eDg4AJqDqdWZ3Nq2mkiczvat6HG2y8EeQ==}
+  '@mdbase-dev/connect-protocol@0.1.0-beta.149':
+    resolution: {integrity: sha512-e2owN1+/JNR2fICXXaRKHxeQgKRlGGcDgpT8+WLPZ84ya6JGpzuE40zL9ztezjn7U4Yj4m5JbqrcGAigR3YK0g==}
 
   '@mdbase-dev/connect-protocol@file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz':
     resolution: {integrity: sha512-c0iOOWEcNJRstdyUJ6aqJ3puVR5C9jXW4MBHmQnHI2c4vgOeKi5VWfiuueWx3ArvtwB3nPuAaXHhll/OKH/+Yw==, tarball: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz}
     version: 0.1.0-beta.129
 
-  '@mdbase-dev/connect-testing@0.1.0-beta.125':
-    resolution: {integrity: sha512-o9tJZNPRsClsbP6n7OqzDZ0Ijm3xrlXmVmZ1LniK4e6Yed2asYU+7QYJuIbCp7iXFyfuwdiFj9Z+qMG00Rxvlg==}
+  '@mdbase-dev/connect-testing@0.1.0-beta.149':
+    resolution: {integrity: sha512-7kRJZivAp3NG0C2mGtp/FMXBDqLvyy8ELSqsPYfwxUI9L2B8JF9FuWJo0PLnl+8uWLdL+AlBl738URWXX4KKjg==}
 
-  '@mdbase-dev/connect@file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz':
-    resolution: {integrity: sha512-DbmsalmFBZg1sKn3WQ92WtHsZwDUVGtQAV2MzkC3F4kJmJGY1w+TBGWMlE1YLIxiVNKHo9eL4qeGErMpJPYJbg==, tarball: file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz}
-    version: 0.1.0-beta.125
+  '@mdbase-dev/connect@0.1.0-beta.149':
+    resolution: {integrity: sha512-m/pnWm1crBvFxliJuu/oalegX2UOhvmaZN92yPlCJNEvDhsK9Ym9gvIXbCKszxNF9XL/wGBgCJT6bwoOIwPnow==}
 
   '@mdbase-dev/i18n@0.1.0-beta.147':
     resolution: {integrity: sha512-6WlBrS1hsiT2sppyAHHSLrr18fknqkm6xZsCy7YIFZHR0z5MMRA5oSl5UOMmGjkNr5Ji81ISpcmgZXVjDM5EJg==}
@@ -2284,17 +2280,16 @@ snapshots:
 
   '@marijn/find-cluster-break@1.0.4': {}
 
-  '@mdbase-dev/connect-dev@0.1.0-beta.125':
+  '@mdbase-dev/connect-dev@0.1.0-beta.149':
     dependencies:
-      '@mdbase-dev/connect': file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz
-      '@mdbase-dev/connect-protocol': 0.1.0-beta.125
+      '@mdbase-dev/connect': 0.1.0-beta.149
+      '@mdbase-dev/connect-protocol': 0.1.0-beta.149
       ajv: 8.20.0
       yaml: 2.9.1
 
-  '@mdbase-dev/connect-protocol@0.1.0-beta.125':
+  '@mdbase-dev/connect-protocol@0.1.0-beta.149':
     dependencies:
-      ajv: 8.20.0
-      ajv-formats: 3.0.1(ajv@8.20.0)
+      '@noble/hashes': 2.4.0
       yaml: 2.9.1
 
   '@mdbase-dev/connect-protocol@file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz':
@@ -2302,14 +2297,14 @@ snapshots:
       '@noble/hashes': 2.4.0
       yaml: 2.9.1
 
-  '@mdbase-dev/connect-testing@0.1.0-beta.125':
+  '@mdbase-dev/connect-testing@0.1.0-beta.149':
     dependencies:
-      '@mdbase-dev/connect': file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz
-      '@mdbase-dev/connect-protocol': 0.1.0-beta.125
+      '@mdbase-dev/connect': 0.1.0-beta.149
+      '@mdbase-dev/connect-protocol': 0.1.0-beta.149
 
-  '@mdbase-dev/connect@file:vendor/connect-beta125-legacy-query-2a89e9ef.tgz':
+  '@mdbase-dev/connect@0.1.0-beta.149':
     dependencies:
-      '@mdbase-dev/connect-protocol': 0.1.0-beta.125
+      '@mdbase-dev/connect-protocol': 0.1.0-beta.149
 
   '@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)':
     dependencies:
