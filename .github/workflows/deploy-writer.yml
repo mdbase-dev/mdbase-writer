@@ -38,6 +38,9 @@ jobs:
       url: ${{ inputs.target == 'production' && 'https://writer.mdbase.dev/' || 'https://staging.mdbase-writer.pages.dev/' }}
     env:
       MDBASE_ENV: ${{ inputs.target }}
+      # Cross-checked against MDBASE_ENV by deploy-pages.mjs and the build;
+      # a mismatch refuses instead of building against another environment.
+      MDBASE_CONNECT_URL: ${{ inputs.target == 'production' && 'https://connect.mdbase.dev' || 'https://connect-staging.mdbase.dev' }}
     steps:
       - name: Require main
         if: github.ref != 'refs/heads/main'
@@ -83,6 +86,18 @@ jobs:
             sleep 5
           done
           echo "::error::$ORIGIN/.well-known/mdbase-app.json does not declare $ORIGIN/"
+          exit 1
+      - name: Verify served bundle targets the environment's Connect
+        env:
+          ORIGIN: ${{ inputs.target == 'production' && 'https://writer.mdbase.dev' || 'https://staging.mdbase-writer.pages.dev' }}
+        run: |
+          for attempt in {1..12}; do
+            if node apps/writer/scripts/verify-connect-target.mjs "$MDBASE_ENV" --origin "$ORIGIN"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::$ORIGIN serves a bundle that does not target only $MDBASE_CONNECT_URL"
           exit 1
 
   native-dispatch:

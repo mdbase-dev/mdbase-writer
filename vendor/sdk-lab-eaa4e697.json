@@ -1,0 +1,79 @@
+{
+  "package": "@mdbase-dev/sdk",
+  "version": "0.0.0",
+  "artifact": "sdk-dev-eaa4e697-lab.tgz",
+  "sourceCommit": "eaa4e697fc1198f32fc3714f377342a24c56d985",
+  "environment": "lab",
+  "bytes": 4461725,
+  "sha256": "ec8249e19d9d27893ac7ae83b99473a7aad550e4ab54a42dd20786dfd42b8a70",
+  "provenance": {
+    "schema": "mdbn-sdk/application-assets/1",
+    "environment": "lab",
+    "trust": {
+      "environment": "lab",
+      "cpOrigin": "https://connect-lab.mdbase.dev",
+      "logOrigin": "https://mdbase-next-log-lab-20261005.callumalpass.workers.dev",
+      "sha256": "88fe5249be83d7db9999d88d4f62acaca79e8bdcabe2c9f236e2942014de3334",
+      "sourceCommit": "8a014fe2abd2d9c6a8b1ed3e77c35cfda3392d3e",
+      "sourceVersion": "0.1.0-beta.129"
+    },
+    "handoff": {
+      "contextSha256": "bb64091576b43ea8da2d439a88797214c5eb5456dcec890a6b37dbfaf9fd61bd",
+      "receiptSha256": "e94178f0af46b7cb0dbb9616c7cfbe39dc89bc0f5da9853790c3e2092dd0d490",
+      "asset_length": 876,
+      "asset_path": "next-trust/lab.json",
+      "image_publication": {
+        "run_attempt": 1,
+        "run_id": 37387689654
+      },
+      "proof_sha256": {
+        "image-release-bundle.json": "d44c83ae6b7eb96c2da292d46998624745ad1598cb2db78a886e6c1445c44510",
+        "image-release-bundle.sigstore.json": "62254f47727a2f9858f02d5933136bb4ff3fd912b0b4db6a581cc415e2d7540c",
+        "release-trust-bundle.json": "be38a8fc4d1424eef7bb3f6dc787613bc951d3055989140822177b7e8bece872",
+        "release-trust-bundle.sigstore.json": "af6998677c45ca8fb89585f62c111e3f11881a5697a5a646015a94d922bdf77e"
+      },
+      "publisher_qualification": {
+        "run_attempt": 1,
+        "run_id": 37415232024
+      },
+      "trust_publication": {
+        "publisher_commit": "cff82f952b1cc1c6b9d92599894170835c7c54e5",
+        "run_attempt": 1,
+        "run_id": 37416649031
+      }
+    },
+    "verifier": {
+      "source": "0e44e1e100c2bba9608c5ac3145d6cdee30fa4e2",
+      "sha256": "4c72bcc8c2ee9c95663ad4e2edfcf7a52aa2743ed7308b5031570a35982af6e4",
+      "clockOverride": false
+    },
+    "runtime": {
+      "sha256": "6984f87d98e29d9f99c6b07f7728f716d1f7b2e3585a74bcc2046ba259a8afab",
+      "bytes": 3676583,
+      "maxBytes": 3676583,
+      "source": {
+        "repository": "mdbase-dev/mdbase-next",
+        "commit": "725d72b2e43b2b744062e055e43feaeb41838399"
+      },
+      "qualification": "integrity-pinned, not separately signed"
+    },
+    "sqlite": {
+      "sha256": "2ee8f3dab694532afc8840e07703127287662d08b74e6ff50491ce63f00d5752",
+      "bytes": 868907,
+      "maxBytes": 1100000,
+      "initializer": {
+        "sha256": "a6d3fe46aa3f924e7686329f97b0564549ef1f787e0c19924179aef7f72bcc01",
+        "bytes": 642742
+      },
+      "package": "@sqlite.org/sqlite-wasm",
+      "version": "3.53.4-build2",
+      "qualification": "integrity-pinned, not separately signed"
+    }
+  },
+  "intake": {
+    "source": "LAB-packaged archive of SDK commit eaa4e697, produced for the citation-claims LAB acceptance run",
+    "originalArchiveUnmodified": true,
+    "releaseQualified": false,
+    "note": "Archive identity and embedded public release context only; not new trust authentication or deployment qualification."
+  }
+}
