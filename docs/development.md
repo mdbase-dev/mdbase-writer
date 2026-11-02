@@ -13,8 +13,18 @@ From the repository root:
 pnpm install
 pnpm dev                 # http://127.0.0.1:5320/?demo — a demo collection, no account needed
 pnpm check               # typecheck and tests (core, app, manifest)
-pnpm build
+pnpm build:production    # or: pnpm --filter @mdbase-writer/app build:staging | build:lab
 ```
+
+A Writer build must name its environment (`VITE_MDBASE_ENV=lab|staging|production`); plain
+`pnpm build` refuses rather than default to production. Each SDK original packages exactly one
+environment's Connect trust, so the lab, staging and production originals are installed side by
+side (`@mdbase-dev/sdk-lab`, `@mdbase-dev/sdk-staging`, `@mdbase-dev/sdk`) and
+`apps/writer/scripts/writer-sdk.mjs` aliases the build to the verified original for its
+environment. A Connect URL that disagrees with the environment is refused, and every targeted
+build ends with `scripts/verify-connect-target.mjs`, which fails unless the bundle's only Connect
+origin is that environment's. Only demo/test fixture builds (`VITE_WRITER_DEMO=1`) may omit the
+environment.
 
 The `?demo` collection runs on the SDK's in-memory record authority
 (`@mdbase-dev/connect-testing`), so record sessions, autosave, conflicts, and recovery use the
@@ -140,6 +150,9 @@ pnpm --filter @mdbase-writer/app deploy:staging   # https://staging.mdbase-write
 pnpm --filter @mdbase-writer/app deploy:prod      # https://writer.mdbase.dev, production Connect, connector 28485
 ```
 
+Each deploy builds against that environment's SDK original and Connect origin, checks the bundle
+before uploading, and the workflow re-checks the served bundle with
+`node apps/writer/scripts/verify-connect-target.mjs <target> --origin <app origin>`.
 Staging and production refuse to deploy uncommitted changes
 (`MDBASE_WRITER_ALLOW_DIRTY=1` overrides). Only LAB serves the demo collection at `?demo`.
 

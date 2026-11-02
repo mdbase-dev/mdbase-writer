@@ -11,7 +11,7 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "build:production": "VITE_MDBASE_ENV=production VITE_MDBASE_EDITOR_URL=https://editor.mdbase.dev pnpm build",
-    "build:publisher-compat": "pnpm build && node scripts/native-tool-compat.mjs",
+    "build:publisher-compat": "pnpm build:production && node scripts/native-tool-compat.mjs",
     "check": "pnpm i18n:check && pnpm typecheck && pnpm test",
     "i18n:extract": "pnpm --filter @mdbase-writer/app i18n:extract",
     "i18n:compile": "pnpm --filter @mdbase-writer/app i18n:compile",

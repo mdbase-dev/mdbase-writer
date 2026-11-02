@@ -36,7 +36,11 @@ jobs:
           git diff --exit-code -- apps/writer/src/i18n/locales
       - run: pnpm check
       # Demo is development/LAB-only, so verify the production build separately.
-      - run: pnpm build
+      # Each targeted build fails unless its bundle's only Connect origin is
+      # that environment's (scripts/verify-connect-target.mjs).
+      - run: pnpm build:production
+      - name: Verify the staging build targets staging Connect
+        run: pnpm --filter @mdbase-writer/app build:staging
       - name: Install export inspection tools
         # The browser suite reads downloaded DOCX/ZIP files with these CLIs.
         run: |

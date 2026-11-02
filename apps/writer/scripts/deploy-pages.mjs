@@ -5,6 +5,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { assertReproducibleDeployment, pagesProject, writerDeploymentFor } from "./deployment-environment.mjs";
+import { assertConnectTarget } from "./verify-connect-target.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const { target, deployment } = writerDeploymentFor(process.env);
@@ -32,10 +33,14 @@ async function verify() {
   if (manifest.homepage !== home || manifest.redirect_uris?.[0] !== home || manifest.redirect_uris.length !== 1) {
     throw new Error(`The built manifest does not declare ${home}.`);
   }
+  const scripts = [];
   for (const file of await files(join(root, "dist"))) {
     const size = (await stat(file)).size;
     if (size > PAGES_FILE_LIMIT) throw new Error(`${file} is ${size} bytes, over Pages' 25 MiB limit.`);
+    if (/\.(?:m?js|cjs)$/u.test(file)) scripts.push(await readFile(file, "utf8"));
   }
+  // The bundled SDK decides which Connect the deployment talks to.
+  assertConnectTarget(target, scripts);
   const routes = JSON.parse(await readFile(join(root, "dist", "_routes.json"), "utf8"));
   if (routes.include?.join() !== "/wasm/*") throw new Error("Functions must be limited to /wasm/*.");
 }
