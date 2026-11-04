@@ -48,7 +48,7 @@
     "@mdbase-dev/connect": "0.1.0-beta.149",
     "@mdbase-dev/connect-protocol": "file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz",
     "@mdbase-dev/i18n": "0.1.0-beta.147",
-    "@mdbase-dev/sdk": "file:../../vendor/sdk-4443fd15-production-beta149.tgz",
+    "@mdbase-dev/sdk": "file:../../vendor/sdk-45b12064-production-beta153.tgz",
     "@mdbase-dev/sdk-lab": "file:../../vendor/sdk-dev-eaa4e697-lab.tgz",
     "@mdbase-dev/sdk-staging": "file:../../vendor/sdk-dev-eaa4e697-staging.tgz",
     "@mdbase-dev/ui": "0.1.0-beta.147",

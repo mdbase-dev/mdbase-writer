@@ -13,9 +13,9 @@ const metadata=bytes=>JSON.parse(/^const metadata = (\{.*\});$/m.exec(bytes.toSt
 const member=(archive,path)=>execFileSync('tar',['-xOf',resolve(root,'vendor',archive),`package/dist/${path}`],{maxBuffer:8_000_000});
 
 test('production archive matches TaskNotes; installed SDK matches the explicit target',async()=>{
- const pin=JSON.parse(await read('vendor/sdk-production-beta149.json'));
- assert.equal(pin.sha256,'e573c3c2df74076a868e8422ec4e6cf233ede3007806757a03000aed865dedb6');
- assert.equal(pin.sourceCommit,'4443fd15c4a591e46538eae24cf8425708e6a7f0');
+ const pin=JSON.parse(await read('vendor/sdk-production-beta153.json'));
+ assert.equal(pin.sha256,'cb0d08603890ec7d3848352245b1a50572ae61f19199a305632b804fe3545f2e');
+ assert.equal(pin.sourceCommit,'45b120644deed3525b8182be081110478adaa397');
  assert.equal(hash(await read(`vendor/${pin.artifact}`)),pin.sha256);
  const pkg=JSON.parse(await read('apps/writer/package.json'));
  const target=process.env.VITE_MDBASE_ENV==='staging'?'staging':'production';
