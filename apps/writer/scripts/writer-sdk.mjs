@@ -21,7 +21,7 @@ const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 export const writerSdkPins = Object.freeze({
   lab: "sdk-lab-eaa4e697.json",
   staging: "sdk-staging-eaa4e697.json",
-  production: "sdk-production-beta153.json",
+  production: "sdk-production-beta154.json",
 });
 
 /** Installed package names to try, in order. The plain name comes first so a
