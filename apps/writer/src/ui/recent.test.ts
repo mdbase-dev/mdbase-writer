@@ -8,6 +8,12 @@ function memory(): Storage {
 }
 
 describe("what the home screen remembers", () => {
+  it("retains the last edited chapter when its manuscript is reopened", () => {
+    const store = memory();
+    recordOpened("demo", "book.md", store, new Date("2026-11-06T00:00:00Z"), "chapters/second.md");
+    recordOpened("demo", "book.md", store, new Date("2026-11-06T01:00:00Z"));
+    expect(recentManuscripts("demo", store)[0]).toEqual({ path: "book.md", at: "2026-11-06T01:00:00.000Z", chapter: "chapters/second.md" });
+  });
   it("lists manuscripts most recently opened first, without repeats", () => {
     const store = memory();
     recordOpened("demo", "a.md", store, new Date("2026-10-01T00:00:00Z"));

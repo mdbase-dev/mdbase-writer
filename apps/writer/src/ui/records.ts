@@ -9,7 +9,7 @@ import { connectionNoticeLabels, type ConnectionNotice } from "./connection-noti
 export const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
   get saved() { return t`Saved`; },
   get saved_on_device() { return t`Saved on this device; waiting for sync`; },
-  get unsaved() { return t`Unsaved`; },
+  get unsaved() { return t`Saving…`; },
   get saving() { return t`Saving…`; },
   get conflict() { return t`Changed elsewhere`; },
   get recovery() { return t`Recovering save…`; },
@@ -19,7 +19,7 @@ export const STATE_LABEL: Record<SessionSnapshot["state"], string> = {
 /** Unsettled save states, in few words, for a phone's top bar (the editor's banner says more). */
 export const STATE_SHORT_LABEL: Partial<Record<SessionSnapshot["state"], string>> = {
   get saved_on_device() { return t`On device · pending sync`; },
-  get unsaved() { return t`Unsaved`; },
+  get unsaved() { return t`Saving…`; },
   get saving() { return t`Saving…`; },
   get recovery() { return t`Recovering save…`; },
   get conflict() { return t`Conflict`; },

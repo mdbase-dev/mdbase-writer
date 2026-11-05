@@ -4,7 +4,7 @@ import { useLingui } from "@lingui/react";
 // editor reports edits and adopts external changes as remote transactions.
 import { mdbasePopupTheme } from "@mdbase-dev/ui/codemirror";
 import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap, startCompletion } from "@codemirror/autocomplete";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
@@ -34,6 +34,7 @@ const remote = Annotation.define<boolean>();
 const phraseCache = new Map([["en", englishCodeMirrorPhrases]]);
 
 export interface EditorHandle {
+  focus(): void;
   /** Scrolls to `offset` (selecting up to `to`, when given) and focuses the editor unless `focus` is false. */
   reveal(offset: number, options?: { to?: number; focus?: boolean }): void;
   /** Replaces the selection with text (a citation, a quotation) and leaves the cursor after it; with `complete`, opens completions there. */
@@ -160,7 +161,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
           lintGutter(),
           autocompletion({ override: [slashCommands(() => latest.current.inserts ?? []), writerCompletions(() => latest.current.completion)] }),
           mdbasePopupTheme,
-          keymap.of([...formattingKeymap, ...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap, indentWithTab]),
+          keymap.of([...formattingKeymap, ...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...completionKeymap]),
           writerLanguage(),
           writerInsight(() => latest.current.insight, (target) => latest.current.onFollow?.(target)),
           chapterCards(() => latest.current.chapters),
@@ -198,6 +199,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
     latest.current.onCursor?.(v.state.selection.main.head);
     shownDiagnostics.current = "";
     onReady?.({
+      focus() { v.focus(); },
       reveal(offset, options) {
         const at = Math.min(offset, v.state.doc.length);
         const head = options?.to === undefined ? at : Math.min(options.to, v.state.doc.length);

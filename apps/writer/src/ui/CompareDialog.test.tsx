@@ -30,7 +30,9 @@ it("keeps an edited merge across unrelated renders and resets it for a new local
   const rendered = render(<CompareDialog comparison={comparison} {...callbacks} />);
   const field = () => screen.getByRole<HTMLTextAreaElement>("textbox", { name: /Merged Markdown/ });
   expect(field().value).toBe("Local text");
+  expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save merged version" }).disabled).toBe(true);
   fireEvent.change(field(), { target: { value: "Reviewed merged text" } });
+  expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save merged version" }).disabled).toBe(false);
   rendered.rerender(<CompareDialog comparison={{ ...comparison, theirFields: { template: "article" } }} {...callbacks} />);
   expect(field().value).toBe("Reviewed merged text");
   rendered.rerender(<CompareDialog comparison={{ ...comparison, mine: "New local version" }} {...callbacks} />);

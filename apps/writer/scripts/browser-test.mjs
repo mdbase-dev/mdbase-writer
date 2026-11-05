@@ -356,16 +356,17 @@ await step("F8 goes to the next problem", async () => {
 });
 
 await step("the sidebar and preview can be hidden, and the layout is remembered", async () => {
-  await page.getByRole("button", { name: "Sidebar" }).click();
+  await page.getByRole("button", { name: "Sidebar", exact: true }).click();
   await page.locator('.outline[aria-hidden="true"]').waitFor({ state: "attached" });
   await page.locator(".outline").waitFor({ state: "hidden" });
   assert.equal(await page.locator(".outline").isVisible(), false);
   await page.getByRole("button", { name: "Editor only" }).click();
+  await page.locator(".preview-pane").waitFor({ state: "hidden" });
   assert.equal(await page.locator(".preview-pane").isVisible(), false);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("mdbase-writer:layout")));
   assert.equal(saved.sidebar, false);
   assert.equal(saved.view, "write");
-  await page.getByRole("button", { name: "Sidebar" }).click();
+  await page.getByRole("button", { name: "Sidebar", exact: true }).click();
   await page.getByRole("button", { name: "Editor and preview" }).click();
   await page.locator(".preview-pane").waitFor({ state: "visible" });
   await page.waitForFunction(() => Math.round(document.querySelector(".outline").getBoundingClientRect().width) === 272);
@@ -414,6 +415,7 @@ await step("a thesis follows embedded chapter records", async () => {
   assert.deepEqual(s.diagnostics, []);
   const rows = await page.locator(".record-name").allTextContents();
   assert.deepEqual(rows, ["Patient Observation", "Coral reefs", "Earthworms"]);
+  await page.locator(".outline-manuscript").click();
   // The manuscript's embeds are drawn as chapter cards.
   await waitFor(() => [...document.querySelectorAll(".cm-chapter-title")].map((e) => e.textContent).join("|") === "Coral reefs|Earthworms", null);
   await page.screenshot({ path: "out/e2e-thesis.png" });
@@ -437,7 +439,7 @@ await step("an edit made elsewhere during typing becomes a resolvable conflict",
     const current = window.writer.workspace.getSnapshot().records.get("chapters/worms.md").snapshot.record;
     a.editElsewhere("chapters/worms.md", { body: current.body.replace("# Earthworms", "# Earthworms (theirs)") });
   });
-  await page.getByText("This record changed elsewhere").waitFor({ timeout: 10_000 });
+  await page.getByText("This chapter changed elsewhere").waitFor({ timeout: 10_000 });
   await page.getByRole("button", { name: "Compare versions" }).click();
   await page.getByRole("dialog", { name: "Compare conflicting versions" }).waitFor();
   await page.getByRole("button", { name: "Keep mine" }).click();

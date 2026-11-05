@@ -8,6 +8,19 @@ const origin = new URL(base).origin;
 assert.ok(["127.0.0.1", "localhost"].includes(new URL(base).hostname));
 await mkdir("out/i18n", { recursive: true });
 const browser = await chromium.launch({ headless: true });
+const localeNames = { en: "English", it: "Italiano", ja: "日本語", de: "Deutsch", zh: "简体中文" };
+async function openLanguage(page) {
+  await page.locator(".home, .workspace").waitFor();
+  if (await page.locator(".home").count()) await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').click();
+  await page.locator(".cm-content").waitFor();
+  if (!await page.locator(".settings-sheet").count()) await page.keyboard.press("Control+,");
+  await page.locator(".interface-language [role=combobox]").waitFor();
+}
+async function chooseLanguage(page, locale) {
+  await openLanguage(page);
+  await page.locator(".interface-language [role=combobox]").click();
+  await page.getByRole("option", { name: localeNames[locale], exact: true }).click();
+}
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, locale: "en-US", recordVideo: { dir: "out/i18n/recordings", size: { width: 1440, height: 960 } } });
   const page = await context.newPage();
@@ -15,14 +28,16 @@ try {
   page.on("pageerror", error => errors.push(String(error)));
   await page.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
   await page.goto(new URL("?demo", base).href);
-  const picker = page.locator(".interface-language select:visible");
-  await picker.waitFor();
+  const picker = page.locator(".interface-language [role=combobox]:visible");
   await page.locator(".manuscript-row").filter({ hasText: "Patient Observation" }).waitFor();
   assert.equal(await page.locator("html").getAttribute("lang"), "en");
 
-  assert.equal(await picker.locator("option").count(), 10);
-  assert.equal(await picker.locator('option[value="it"]').textContent(), "Italiano");
-  await picker.selectOption("it");
+  assert.equal(await page.locator(".topbar .interface-language").count(), 0);
+  await openLanguage(page);
+  await picker.click();
+  assert.equal(await page.getByRole("option").count(), 10);
+  assert.equal(await page.getByRole("option", { name: "Italiano", exact: true }).textContent(), "Italiano");
+  await page.getByRole("option", { name: "Italiano", exact: true }).click();
   await page.waitForFunction(() => document.documentElement.lang === "it");
   assert.equal(await page.evaluate(() => localStorage.getItem("mdbase-writer:interface-locale")), "it");
   const italianFormatting = await page.evaluate(async () => {
@@ -41,16 +56,23 @@ try {
     comments: ["0 commenti aperti", "1 commento aperto", "2 commenti aperti"],
     date: "23 ottobre 2026", number: "12.345,5", relative: "ieri",
   });
+  await page.keyboard.press("Escape");
+  await page.locator(".bar-back").click();
+  await page.locator(".home").waitFor();
   await page.screenshot({ path: "out/i18n/italian-home.png", fullPage: true });
   await page.reload();
   await page.waitForFunction(() => document.documentElement.lang === "it");
-  assert.equal(await picker.inputValue(), "it");
+  await openLanguage(page);
+  assert.match(await picker.innerText(), /Italiano/);
 
-  await picker.selectOption("ja");
+  await chooseLanguage(page, "ja");
   await page.waitForFunction(() => document.documentElement.lang === "ja");
   assert.equal(await page.evaluate(() => localStorage.getItem("mdbase-writer:interface-locale")), "ja");
+  await page.keyboard.press("Escape");
+  await page.locator(".bar-back").click();
+  await page.locator(".home").waitFor();
   await page.screenshot({ path: "out/i18n/japanese-home.png", fullPage: true });
-  await page.locator(".manuscript-row").filter({ hasText: "Patient Observation" }).click();
+  await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').click();
   const editor = page.locator(".cm-content");
   await editor.waitFor();
   const manuscriptSource = () => page.evaluate(() => {
@@ -67,7 +89,7 @@ try {
   await page.keyboard.press("Escape");
   await page.keyboard.press("Control+,");
   await page.locator(".settings-sheet").waitFor();
-  await picker.selectOption("de");
+  await chooseLanguage(page, "de");
   await page.waitForFunction(() => document.documentElement.lang === "de");
   assert.equal(await manuscriptSource(), before, "language switching must not edit the manuscript");
   await page.screenshot({ path: "out/i18n/german-settings.png", fullPage: true });
@@ -76,19 +98,19 @@ try {
   await page.locator(".cm-content").waitFor();
   await page.keyboard.press("Control+,");
   await page.locator(".settings-sheet").waitFor();
-  assert.equal(await picker.inputValue(), "de");
+  assert.match(await picker.innerText(), /Deutsch/);
   await page.setViewportSize({ width: 390, height: 844 });
   await picker.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "out/i18n/narrow-language-control.png", fullPage: true });
   const bounds = await picker.boundingBox();
   assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 390 && bounds.y >= 0 && bounds.y + bounds.height <= 844, "language setting remains reachable on a narrow viewport");
   // Chinese is an authored product catalogue, not just a translated editor phrase set.
-  await picker.selectOption("zh");
+  await chooseLanguage(page, "zh");
   await page.waitForFunction(() => document.documentElement.lang === "zh");
   assert.match(await picker.getAttribute("aria-label"), /[\u3400-\u9fff]/);
   assert.equal(await manuscriptSource(), before);
   await page.screenshot({ path: "out/i18n/chinese-settings-narrow.png", fullPage: true });
-  await picker.selectOption("it");
+  await chooseLanguage(page, "it");
   await page.waitForFunction(() => document.documentElement.lang === "it");
   assert.equal(await manuscriptSource(), before);
   await page.screenshot({ path: "out/i18n/italian-settings-narrow.png", fullPage: true });
@@ -98,7 +120,7 @@ try {
   await page.waitForFunction(() => document.querySelector('.cm-search input[name="search"]')?.getAttribute("placeholder") === "Trova");
   await page.keyboard.press("Escape");
   await page.keyboard.press("Control+,");
-  await picker.selectOption("zh");
+  await chooseLanguage(page, "zh");
   await page.waitForFunction(() => document.documentElement.lang === "zh");
   // Menu descriptors must not cache labels from the previous interface language.
   await page.keyboard.press("Escape");
@@ -124,13 +146,14 @@ try {
     return route.continue();
   });
   await failedPage.goto(new URL("?demo", base).href);
-  const failedPicker = failedPage.locator(".interface-language select");
+  await openLanguage(failedPage);
+  const failedPicker = failedPage.locator(".interface-language [role=combobox]");
   await failedPicker.waitFor();
-  await failedPicker.selectOption("de");
+  await chooseLanguage(failedPage, "de");
   await failedPage.locator(".interface-language-error").waitFor();
   assert.equal(await failedPage.locator("html").getAttribute("lang"), "en");
   assert.notEqual(await failedPage.evaluate(() => localStorage.getItem("mdbase-writer:interface-locale")), "de");
-  await failedPicker.selectOption("ja");
+  await chooseLanguage(failedPage, "ja");
   await failedPage.waitForFunction(() => document.documentElement.lang === "ja");
   assert.equal(await failedPage.locator(".interface-language-error").count(), 0, "a successful retry clears the prior error");
   await failure.close();
@@ -140,7 +163,8 @@ try {
   await negotiatedPage.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
   await negotiatedPage.goto(new URL("?demo", base).href);
   await negotiatedPage.waitForFunction(() => document.documentElement.lang === "it");
-  assert.equal(await negotiatedPage.locator(".interface-language select").inputValue(), "it");
+  await openLanguage(negotiatedPage);
+  assert.match(await negotiatedPage.locator(".interface-language [role=combobox]").innerText(), /Italiano/);
   await negotiated.close();
   console.log("i18n browser: ten locales/Italiano picker, Italian negotiation/persistence, plurals/date/number/relative time and CodeMirror, synchronous English, Japanese CodeMirror, unchanged manuscript, narrow picker, authored Chinese settings and chunk-failure retention passed.");
 } finally {

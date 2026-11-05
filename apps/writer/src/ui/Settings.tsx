@@ -55,7 +55,7 @@ export function Settings({
 }) {
   useLingui();
   const titleId = useId();
-  const sheet = useRef<HTMLElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
   const { host, present } = useOverlay(open, ".settings-sheet", "translateX(-12px)");
   // Opening moves focus into the sheet (unless a field was asked for); closing returns it.
   useEffect(() => {
@@ -99,7 +99,7 @@ export function Settings({
   const authorsKey = !("authors" in fm) && "author" in fm ? "author" : "authors";
 
   return (
-    <div ref={host} className="overlay-host"><aside
+    <div ref={host} className="overlay-host"><div
       ref={sheet}
       className="settings-sheet"
       role="dialog"
@@ -170,7 +170,7 @@ export function Settings({
       </section>
       {onLivePreview && (
         <section className="editor-prefs" aria-labelledby={`${titleId}-editor`}>
-          <h2 id={`${titleId}-editor`}><Trans>Editor</Trans></h2>
+          <h2 id={`${titleId}-editor`}><Trans>Editor preferences</Trans></h2>
           <label className="pref-row" title={t`Citations show who they cite, figures and tables are drawn, and marks are hidden until the cursor reaches their line. The text is not changed.`}>
             <input type="checkbox" checked={livePreview} onChange={onLivePreview} />
             <span><Trans>Read as the manuscript<span className="muted small">Off shows the Markdown as written</span></Trans></span>
@@ -178,7 +178,7 @@ export function Settings({
           <p className="muted small dialog-note"><Trans>This applies in this browser, to every manuscript.</Trans></p>
         </section>
       )}
-    </aside></div>
+    </div></div>
   );
 }
 

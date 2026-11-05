@@ -58,6 +58,8 @@ export interface SourcesRequest {
 }
 
 export function SourcesPanel({
+  query,
+  setQuery,
   library,
   cited,
   atCursor,
@@ -76,6 +78,8 @@ export function SourcesPanel({
   sitesFor,
   onJump,
 }: {
+  query: string;
+  setQuery(query: string): void;
   /** Where a source is cited, by section, for an expanded row. */
   sitesFor?(key: string): readonly CitationSite[];
   onJump?(record: string, offset: number): void;
@@ -100,7 +104,6 @@ export function SourcesPanel({
   request?: SourcesRequest | null;
 }) {
   useLingui();
-  const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const libraryWindow = useRowWindow(LIBRARY_PREVIEW);
   const citedWindow = useRowWindow();
@@ -278,10 +281,10 @@ export function SourcesPanel({
           </div>
           {highlightSearch && (inHighlights.length > 0 || (results.length > 0 && highlightIndex.pending > 0)) && (
             <div className="source-group">
-              <h3 className="sidebar-heading" id="sources-highlights"><Trans>
+              <h2 className="sidebar-heading" id="sources-highlights"><Trans>
                 In highlights <span className="heading-count">{inHighlights.length}</span>
                 {highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>}
-              </Trans></h3>
+              </Trans></h2>
               <ul aria-labelledby="sources-highlights">
                 {inHighlights.map(({ entry, annotation }) => (
                   <li key={entry.key}>
@@ -299,18 +302,18 @@ export function SourcesPanel({
       ) : (
         <>
           <div className="source-group">
-            <h3 className="sidebar-heading" id="sources-cited"><Trans>
+            <h2 className="sidebar-heading" id="sources-cited"><Trans>
               In this manuscript <span className="heading-count">{inManuscript.length}</span>
-            </Trans></h3>
+            </Trans></h2>
             {inManuscript.length ? <ul aria-labelledby="sources-cited">{shownCited.map(row)}</ul> : <p className="muted small"><Trans>Nothing cited yet. Cite a source below, or type <code>[@</code> in the editor.</Trans></p>}
           </div>
           {citedWindow.from > 0 && <button type="button" className="sidebar-more" onClick={citedWindow.previous}><Trans>Show previous 50 cited sources</Trans></button>}
           {inManuscript.length > citedWindow.from + citedWindow.size && <button type="button" className="sidebar-more" onClick={citedWindow.more}><Trans>Show 50 more cited sources · {inManuscript.length}</Trans></button>}
           {rest.length > 0 && (
             <div className="source-group">
-              <h3 className="sidebar-heading" id="sources-library"><Trans>
+              <h2 className="sidebar-heading" id="sources-library"><Trans>
                 Library <span className="heading-count">{rest.length}</span>
-              </Trans></h3>
+              </Trans></h2>
               <ul aria-labelledby="sources-library">{shownRest.map(row)}</ul>
               {libraryWindow.from > 0 && <button type="button" className="sidebar-more" onClick={libraryWindow.previous}><Trans>Show previous 50 sources</Trans></button>}
               {rest.length > libraryWindow.from + shownRest.length && (
