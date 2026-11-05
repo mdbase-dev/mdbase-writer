@@ -118,7 +118,7 @@ label > .mdbase-select { width: 100%; }
 .bar-back:hover { background: var(--subtle); color: var(--ink); }
 .bar-back .icon { width: 16px; height: 16px; }
 .bar-divider { width: 1px; height: 20px; background: var(--line); flex: none; }
-.bar-title { font-weight: 700; min-width: 4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-title { margin: 0; font-size: inherit; font-weight: 700; min-width: 4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The title gives way last: everything else in the bar keeps its size. */
 .bar > :not(.bar-title, .bar-spacer) { flex: none; }
 .bar-words { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -555,17 +555,18 @@ blockquote.thread-quote::after { content: "”"; }
 
 .write { grid-area: write; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
 .write > .editor { flex: 1; }
-.preview-pane { grid-area: preview; min-height: 0; min-width: 0; display: grid; grid-template-rows: auto 1fr; background: var(--preview-bg); }
+.preview-pane { grid-area: preview; min-height: 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); background: var(--preview-bg); }
+.preview-top { min-width: 0; }
 .pane-header { display: flex; align-items: center; gap: 0.7rem; padding: 0.35rem 1rem; border-bottom: 1px solid var(--line); min-height: 38px; background: var(--canvas); min-width: 0; }
 .pane-title { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pane-path { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .preview-header { background: var(--preview-bg); gap: 0.5rem; }
-.preview-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-meta { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .preview-errors { color: var(--danger); }
-.preview-setting { padding: 0.1rem 0.25rem; margin: 0 -0.1rem; border: 0; border-radius: 4px; background: none; color: inherit; font-size: inherit; cursor: pointer; }
+.preview-setting { max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; white-space: nowrap; padding: 0.1rem 0.25rem; margin: 0 -0.1rem; border: 0; border-radius: 4px; background: none; color: inherit; font-size: inherit; cursor: pointer; }
 .preview-setting:hover { background: var(--subtle); color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .page-indicator { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.zoom { display: inline-flex; align-items: center; gap: 1px; padding: 1px; border: 1px solid var(--line); border-radius: 6px; background: var(--canvas); }
+.zoom { flex: none; display: inline-flex; align-items: center; gap: 1px; padding: 1px; border: 1px solid var(--line); border-radius: 6px; background: var(--canvas); }
 .zoom-value { min-width: 4.6rem; height: 26px; border: 0; background: none; font-size: 12px; color: var(--ink-soft); cursor: pointer; font-variant-numeric: tabular-nums; border-radius: 4px; }
 .zoom-value:hover { background: var(--subtle); color: var(--ink); }
 .banner { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.5rem 1rem; border-bottom: 1px solid var(--line); color: var(--danger); }
@@ -702,11 +703,14 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
 .phone-only { display: none; }
 
 /* Narrower windows: fewer words in the bar. */
+@media (max-width: 1600px) {
+  .bar-back span { display: none; }
+}
+
 @media (max-width: 1400px) {
   .bar-words { display: none; }
   .bar .button-label { display: none; }
   .bar-problems .button-label { display: none; }
-  .bar-back span, .bar .demo-identity { display: none; }
 }
 
 /* Phones and narrow windows: one part at a time, chosen with tabs at the bottom. */
@@ -714,14 +718,27 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .topbar { gap: 0.4rem; padding: 0 0.5rem 0 16px; }
   .mdbase-app-switcher .wordmark-label, .mdbase-app-switcher-chevron { display: none; }
   .bar { gap: 0.4rem; }
+  .app:has(.workspace) .topbar { height: auto; min-height: 48px; align-items: flex-start; padding-top: 2px; padding-bottom: 2px; }
+  .app:has(.workspace) .bar { flex-wrap: wrap; }
+  .bar-title { flex: 1; min-width: 0; }
+  .bar .bar-spacer { display: none; }
+  .bar-back, .bar .mdbase-button, .bar .mdbase-icon-button, .topbar .mdbase-app-switcher-trigger { min-width: 44px; min-height: 44px; }
+  .bar-back { justify-content: center; padding: 0; }
+  .preview-header { padding: 0.25rem 0.5rem; }
+  .preview-header .bar-spacer { display: none; }
+  .preview-header .mdbase-icon-button, .zoom-value, .preview-setting { min-height: 44px; }
+  .preview-header .mdbase-icon-button { min-width: 44px; }
+  .preview-meta { display: flex; align-items: center; }
+  .preview-meta .preview-setting { min-width: 0; }
+  .preview-meta .preview-setting:first-of-type { flex: 1; }
   /* "No problems" is the Write tab's missing badge here. */
   .bar-back span, .bar-divider, .bar-layout, .bar-problems.is-clear { display: none; }
-  /* Only a save state that needs attention, in few words. The title gives way first; if the bar is still too wide the notice does, rather than push the buttons off screen. */
+  /* Unsettled save and connection feedback wraps below the phone toolbar. */
   .bar .mdbase-save-notice.is-long { display: none; }
   /* Export is rarely what a phone is for; it moves into the More menu. */
   .bar .split-button { display: none; }
-  .bar .mdbase-save-notice.is-short { display: block; flex: 0 0.001 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .bar .mdbase-button { padding: 0 0.55rem; min-height: 32px; }
+  .bar .mdbase-save-notice.is-short { display: block; order: 2; flex: 1 0 100%; white-space: normal; padding-bottom: 4px; }
+  .bar .mdbase-button { padding: 0 0.55rem; }
   .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "main" "tabs"; }
   .pane-tabs { grid-area: tabs; display: flex; border-top: 1px solid var(--line); background: var(--canvas); padding-bottom: env(safe-area-inset-bottom); }
   .pane-tabs button { flex: 1; display: grid; justify-items: center; gap: 2px; height: var(--pane-tab-height); padding: 6px 0 4px; border: 0; background: none; font: inherit; font-size: 11.5px; color: var(--muted); }
@@ -746,7 +763,7 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .editor .cm-content { padding: 1rem 10px 40vh 0; }
   .editor .cm-gutterElement { padding-right: 0; }
   .editor .cm-gutter-lint { width: 10px; }
-  .bar .demo-identity { display: block; white-space: normal; max-width: 64px; line-height: 1.2; }
+  .bar .demo-identity { display: block; order: 1; flex: 1 0 100%; line-height: 1.5; padding-bottom: 4px; }
   .new-manuscript { grid-template-columns: 1fr; }
   .continue-card { flex-direction: column; align-items: stretch; }
   .shortcuts div { grid-template-columns: 1fr; gap: 0.2rem; }

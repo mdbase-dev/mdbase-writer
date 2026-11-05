@@ -32,6 +32,35 @@ async function open(f: Awaited<ReturnType<typeof fixture>>): Promise<NextWriterL
 }
 
 describe("NextWriterRecords SDK lease value translation (stand-in, not native/runtime)", () => {
+  it("keeps held versions protected until the canonical SDK hold resolution", async () => {
+    const fixtureState = await fixture();
+    const lease = await open(fixtureState);
+    const hold = fixtureState.replica.hold(fixtureState.record.id, { mine: "Held local version", theirs: "Held collection version" });
+    await vi.waitFor(() => expect(lease.session.getSnapshot()).toMatchObject({ state: "conflict", remote: null }));
+    lease.session.setBody("Local draft while held\n");
+    expect((await lease.session.flush({ timeoutMs: 100 })).ok).toBe(false);
+    expect(lease.session.getNativeSnapshot().remote?.state.hold).toBeTruthy();
+    expect(lease.session.getSnapshot()).toMatchObject({ state: "conflict", remote: null, body: "Local draft while held\n" });
+    expect(await fixtureState.client.listHolds()).toHaveLength(1);
+    expect((await fixtureState.client.save(fixtureState.client.resolveHold(hold, "keep_mine"))).outcome).toBe("confirmed");
+    expect((await lease.session.flush({ timeoutMs: 100 })).ok).toBe(false);
+    await vi.waitFor(() => expect(lease.session.getSnapshot().remote).not.toBeNull());
+    lease.session.resolve({ body: "Deliberately merged draft\n" });
+    expect((await lease.session.flush({ timeoutMs: 100 })).ok).toBe(true);
+    expect(lease.session.getSnapshot()).toMatchObject({ state: "saved", remote: null, body: "Deliberately merged draft\n" });
+  });
+
+  it("retains comparison and merge through the SDK for an ordinary concurrent edit", async () => {
+    const fixtureState = await fixture();
+    const lease = await open(fixtureState);
+    lease.session.setBody("Local concurrent edit\n");
+    fixtureState.replica.editElsewhere(fixtureState.record.id, { body: "Collection concurrent edit\n" });
+    await vi.waitFor(() => expect(lease.session.getSnapshot()).toMatchObject({ state: "conflict", body: "Local concurrent edit\n", remote: { body: "Collection concurrent edit\n" } }));
+    lease.session.resolve({ body: "Merged concurrent edit\n" });
+    expect((await lease.session.flush({ timeoutMs: 100 })).ok).toBe(true);
+    expect((await fixtureState.client.get(fixtureState.record.id, { body: true })).body).toBe("Merged concurrent edit\n");
+  });
+
   it("opens an explicit native path and projects display JSON without replacing the native view", async () => {
     const f = await fixture();
     const nativeOpen = f.nativeOpen;

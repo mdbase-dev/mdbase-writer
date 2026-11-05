@@ -68,7 +68,7 @@ import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activit
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { plural as countLabel, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
-import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
+import { ConnectionNoticeContext } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
@@ -345,9 +345,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const manuscriptTitle = recordTitle(snap.records.get(workspace.main), workspace.main);
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
   if (snap.pendingSettings) states.push("unsaved");
-  const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
-  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, workspace.kind);
+  const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => s === "saved_on_device") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
   const connection = useContext(ConnectionNoticeContext);
+  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, connection);
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -860,8 +860,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const { columns, areas } = gridFor(layout);
 
   return (
-    <div
+    <main
       ref={grid}
+      aria-labelledby="manuscript-title"
       className={`workspace pane-${pane} view-${layout.view}${layout.sidebar ? "" : " no-sidebar"}`}
       style={{ "--grid-columns": columns, "--grid-areas": areas } as React.CSSProperties}
     >
@@ -872,13 +873,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             <span><Trans>Manuscripts</Trans></span>
           </button>
           <span className="bar-divider" aria-hidden="true" />
-          <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
+          <h1 id="manuscript-title" className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</h1>
           {workspace.kind === "demo" && <span className="demo-identity"><Trans>Demo · resets on reload</Trans></span>}
-          {connection && saveNotice.tone !== "attention"
-            ? <SaveNotice tone="pending" label={connectionNoticeLabels[connection]} className="is-long" />
-            : <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />}
+          <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />
           <CollectionSaveWarning />
-          {saveNotice.shortLabel && <SaveNotice tone="attention" label={saveNotice.shortLabel} className="is-short" />}
+          {saveNotice.shortLabel && <SaveNotice tone={saveNotice.tone} label={saveNotice.shortLabel} className="is-short" />}
           <span className="bar-words" title={icuPlural(order.length, { one: "In # record; citations, code and math are not counted", other: "In # records; citations, code and math are not counted" })}>
             {countLabel(stats.words, "word")}
           </span>
@@ -1009,8 +1008,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>}
         {activeView?.snapshot.state === "conflict" && (
           <div className="banner" role="alert">
-            <span><Trans>This record changed elsewhere while you were editing it.</Trans></span>
-            <button type="button" className="mdbase-button" onClick={() => setComparisonPath(active)}><Trans>Compare versions</Trans></button>
+            <span>{activeView.snapshot.remote ? <Trans>This record changed elsewhere while you were editing it.</Trans> : <Trans>The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts.</Trans>}</span>
+            {activeView.snapshot.remote && <button type="button" className="mdbase-button" onClick={() => setComparisonPath(active)}><Trans>Compare versions</Trans></button>}
             <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           </div>
         )}
@@ -1122,7 +1121,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             </button>
           </div>
         </header>
-        {snap.previewProblem && <div className="banner" role="alert"><span>{translate`Preview unavailable: ${snap.previewProblem}. You can keep writing.`}</span><button type="button" className="mdbase-button" onClick={() => void workspace.retryPreview()}><Trans>Retry preview</Trans></button></div>}
         {(snap.assetProblems.size > 0 || snap.recordProblems.size > 0) && <div className="banner" role="alert">
           <span><Trans>Some images or chapters could not be loaded. See Problems for their locations.</Trans></span>
           <button type="button" className="mdbase-button" onClick={() => { void workspace.retryAssets(); void workspace.retryRecords(); }}><Trans>Retry dependencies</Trans></button>
@@ -1135,6 +1133,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           marks={snap.result?.marks ?? NO_MARKS}
           onSource={onPreviewSource}
           problem={snap.previewProblem}
+          onRetry={() => void workspace.retryPreview()}
           stale={Boolean(snap.previewProblem || snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready" || snap.result && !snap.result.artifact)}
           onJump={onPreviewJump}
           follow={follow}
@@ -1186,6 +1185,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           { id: "settings", group: translate`Manuscript`, label: translate`Manuscript settings`, shortcut: "mod+,", run: () => setSettingsOpen(true) },
           { id: "search", group: translate`Manuscript`, label: translate`Search the manuscript`, shortcut: "mod+shift+f", keywords: translate`find all chapters`, run: showSearch },
           { id: "sources", group: translate`Manuscript`, label: translate`Find a source`, shortcut: "mod+shift+e", run: () => showSources() },
+          { id: "next-problem", group: translate`Manuscript`, label: translate`Next problem`, shortcut: "F8", run: () => stepProblem(1) },
+          { id: "manuscripts", group: translate`Manuscript`, label: translate`All manuscripts`, keywords: translate`back home close`, run: () => void requestClose() },
+          { id: "problems", group: translate`Manuscript`, label: problemsOpen ? translate`Hide problems` : translate`Show problems`, keywords: translate`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
           { id: "bold", group: translate`Format`, label: translate`Bold`, shortcut: "mod+b", run: () => editor.current?.format("bold") },
           { id: "italic", group: translate`Format`, label: translate`Italic`, shortcut: "mod+i", run: () => editor.current?.format("italic") },
           { id: "code", group: translate`Format`, label: translate`Inline code`, run: () => editor.current?.format("code") },
@@ -1197,18 +1199,15 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           { id: "next-comment", group: translate`Comments`, label: translate`Next comment`, shortcut: "F7", run: () => stepComment(1) },
           { id: "previous-comment", group: translate`Comments`, label: translate`Previous comment`, shortcut: "shift+F7", run: () => stepComment(-1) },
           { id: "lower-panel", group: translate`View`, label: layout.lowerTab ? translate`Close the lower sidebar panel` : translate`Show a second sidebar panel`, keywords: translate`split stack outline comments sources`, run: toggleLower },
-          { id: "next-problem", group: translate`Manuscript`, label: translate`Next problem`, shortcut: "F8", run: () => stepProblem(1) },
-          { id: "manuscripts", group: translate`Manuscript`, label: translate`All manuscripts`, keywords: translate`back home close`, run: () => void requestClose() },
           { id: "sidebar", group: translate`View`, label: layout.sidebar ? translate`Hide the sidebar` : translate`Show the sidebar`, shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
           { id: "live-preview", group: translate`View`, label: layout.livePreview ? translate`Show Markdown as written` : translate`Read as the manuscript`, keywords: translate`source markup raw live preview chips`, run: toggleLivePreview },
-          { id: "problems", group: translate`Manuscript`, label: problemsOpen ? translate`Hide problems` : translate`Show problems`, keywords: translate`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
           ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: translate`View`, label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
-          ...(snap.phase === "ready" ? [{ id: "export-pdf", group: translate`Export`, label: translate`Export PDF`, run: () => runExport("pdf") }] : []),
-          { id: "export-docx", group: translate`Export`, label: translate`Export Word (DOCX)`, run: () => runExport("docx") },
-          { id: "export-bundle", group: translate`Export`, label: translate`Export Pandoc bundle (zip)`, run: () => runExport("bundle") },
           ...(themeChoice
             ? themePreferences.filter((t) => t !== themeChoice.theme).map((t) => ({ id: `theme-${t}`, group: translate`View`, label: translate`${THEME_NAME[t]} theme`, keywords: translate`appearance dark light`, run: () => themeChoice.setTheme(t) }))
             : []),
+          ...(snap.phase === "ready" ? [{ id: "export-pdf", group: translate`Export`, label: translate`Export PDF`, run: () => runExport("pdf") }] : []),
+          { id: "export-docx", group: translate`Export`, label: translate`Export Word (DOCX)`, run: () => runExport("docx") },
+          { id: "export-bundle", group: translate`Export`, label: translate`Export Pandoc bundle (zip)`, run: () => runExport("bundle") },
           { id: "shortcuts", group: translate`Help`, label: translate`Keyboard shortcuts`, shortcut: "?", run: () => setShortcutsOpen(true) },
         ]}
       />
@@ -1254,7 +1253,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           )}
         </div>
       )}
-    </div>
+    </main>
   );
 }
 
@@ -1335,11 +1334,11 @@ function InlineComposer({ editor, at, children }: { editor: React.RefObject<Edit
 function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { diagnostics: readonly WriterDiagnostic[]; pending: boolean; checking: boolean; open: boolean; setOpen(open: boolean): void }) {
   useLingui();
   if (!diagnostics.length) {
-    const label = pending ? translate`Dependencies not checked` : checking ? translate`Checking…` : translate`No problems`;
+    const label = pending ? translate`Dependencies not checked` : checking ? translate`Checking…` : translate`No manuscript problems`;
     return (
-      <span className={`bar-problems ${checking && !pending ? "is-checking" : "is-clear"}`} title={pending ? translate`Collection dependencies have not been checked yet` : checking ? translate`The line being typed is checked once typing pauses` : translate`No problems`}>
+      <span className={`bar-problems ${checking && !pending ? "is-checking" : "is-clear"}`} title={pending ? translate`Collection dependencies have not been checked yet` : checking ? translate`The line being typed is checked once typing pauses` : translate`No manuscript problems`}>
         {pending || checking ? <span className="spinner" aria-hidden="true" /> : <CheckIcon />}
-        <span className="button-label">{label}</span>
+        <span className={pending || checking ? "button-label" : "visually-hidden"}>{label}</span>
       </span>
     );
   }

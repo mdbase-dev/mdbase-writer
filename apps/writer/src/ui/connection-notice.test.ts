@@ -25,7 +25,8 @@ it("never reads as connected while offline, reconnecting or holding changes", ()
       sync: sync("offline"),
       writes: { saveState: "saved_on_device" },
     } as never),
-  ).toBe("saved_on_device");
+  ).toBe("offline");
+  expect(connectionNotice({ ...ready, writes: { saveState: "saved_on_device" } } as never)).toBe("saved_on_device");
   expect(
     connectionNotice({ phase: { kind: "opening" }, live: false } as never),
   ).toBeNull();

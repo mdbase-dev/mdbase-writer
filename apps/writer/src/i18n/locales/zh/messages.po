@@ -1502,6 +1502,10 @@ msgstr "集合中没有与模板 {value} 匹配的文件。"
 msgid "No manuscript matches “{filter}”."
 msgstr "没有匹配“{filter}”的手稿。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "No manuscript problems"
+msgstr "文稿没有问题"
+
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "没有匹配“{query}”的笔记。"
@@ -1513,10 +1517,6 @@ msgstr "没有未解决的评论"
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
 msgstr "此集合中没有其他笔记。"
-
-#: src/ui/WorkspaceView.tsx
-msgid "No problems"
-msgstr "没有问题"
 
 #. placeholder {0}: this.target
 #: src/editor/chapter-cards.ts
@@ -1627,9 +1627,21 @@ msgstr "尚无已解决的评论。"
 msgid "Offline"
 msgstr "离线"
 
+#: src/ui/records.ts
+msgid "Offline · on device, pending sync"
+msgstr "离线 · 已存于此设备，等待同步"
+
+#: src/ui/records.ts
+msgid "Offline · saved on this device; waiting for sync"
+msgstr "离线 · 已保存到此设备，等待同步"
+
 #: src/ui/WorkspaceView.tsx
 msgid "On a citation: show the source. On a cross-reference: go to what it labels"
 msgstr "对于引文：显示来源。对于交叉引用：跳转到它所指向的内容。"
+
+#: src/ui/records.ts
+msgid "On device · pending sync"
+msgstr "已存于此设备 · 等待同步"
 
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
@@ -1800,17 +1812,8 @@ msgid "Preview only"
 msgstr "仅预览"
 
 #: src/preview/Preview.tsx
-msgid "Preview rendering failed: {renderProblem}. Your text is still available in the editor."
-msgstr "预览渲染失败：{renderProblem}。你的文本仍可在编辑器中使用。"
-
-#. placeholder {0}: snap.previewProblem
-#: src/ui/WorkspaceView.tsx
-msgid "Preview unavailable: {0}. You can keep writing."
-msgstr "预览不可用：{0}。你可以继续写作。"
-
-#: src/preview/Preview.tsx
-msgid "Preview unavailable. You can keep writing."
-msgstr "预览不可用。你可以继续写作。"
+msgid "Preview unavailable: {failure}. You can keep writing."
+msgstr "预览不可用：{failure}。您可以继续写作。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
@@ -1975,7 +1978,7 @@ msgstr "重试加载"
 msgid "Retry opening"
 msgstr "重试打开"
 
-#: src/ui/WorkspaceView.tsx
+#: src/preview/Preview.tsx
 msgid "Retry preview"
 msgstr "重试预览"
 
@@ -2039,10 +2042,6 @@ msgstr "保存合并后的版本"
 #: src/ui/records.ts
 msgid "Saved"
 msgstr "已保存"
-
-#: src/ui/records.ts
-msgid "Saved for this demo session"
-msgstr "已保存到本次演示会话"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
@@ -2413,6 +2412,10 @@ msgstr "注释 {value} 没有可嵌入的引用文字。"
 msgid "The chapter is not open."
 msgstr "该章节尚未打开。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts."
+msgstr "集合版本暂时无法比较。请先解决集合中被保留或尚未解决的更改，再在此保存。您可以下载本地草稿。"
+
 #: src/compile/client.ts
 msgid "The compile worker stopped."
 msgstr "编译工作进程已停止。"
@@ -2548,6 +2551,7 @@ msgstr "此记录已在其他位置删除。你的本地文本仍保留在此处
 msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
 msgstr "此记录已删除。请下载本地草稿以保留内容；无法将草稿恢复到已删除的记录中。"
 
+#: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Title"
 msgstr "标题"
@@ -2555,11 +2559,6 @@ msgstr "标题"
 #: src/ui/WorkspaceView.tsx
 msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
 msgstr "标题、作者、摘要、引文格式、版式和语言（{MOD_LABEL}-,）"
-
-#. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
-#: src/ui/Home.tsx
-msgid "Title<0/>{0}"
-msgstr "标题<0/>{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
@@ -2736,6 +2735,10 @@ msgstr "从你的集合开始写作"
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"
 msgstr "在此处编辑引文；它不再随注释内容同步"
+
+#: src/ui/writer-collections.tsx
+msgid "Write, cite, and typeset your manuscript"
+msgstr "撰写、引用并排版您的文稿"
 
 #: src/workspace/workspace.ts
 msgid "Writer cannot ask for access here."
