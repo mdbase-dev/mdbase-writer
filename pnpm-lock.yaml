@@ -66,8 +66,8 @@ importers:
         specifier: 0.1.0-beta.147
         version: 0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)
       '@mdbase-dev/sdk':
-        specifier: file:../../vendor/sdk-35fa2e6c-production-beta155.tgz
-        version: file:vendor/sdk-35fa2e6c-production-beta155.tgz
+        specifier: file:../../vendor/sdk-4370800f-production-beta156.tgz
+        version: file:vendor/sdk-4370800f-production-beta156.tgz
       '@mdbase-dev/sdk-lab':
         specifier: file:../../vendor/sdk-dev-eaa4e697-lab.tgz
         version: '@mdbase-dev/sdk@file:vendor/sdk-dev-eaa4e697-lab.tgz'
@@ -76,7 +76,7 @@ importers:
         version: '@mdbase-dev/sdk@file:vendor/sdk-dev-eaa4e697-staging.tgz'
       '@mdbase-dev/ui':
         specifier: 0.1.0-beta.147
-        version: 0.1.0-beta.147(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-35fa2e6c-production-beta155.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 0.1.0-beta.147(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@mdbase-writer/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -598,9 +598,9 @@ packages:
       '@lingui/react': 6.9.0
       react: ^19.2.0
 
-  '@mdbase-dev/sdk@file:vendor/sdk-35fa2e6c-production-beta155.tgz':
-    resolution: {integrity: sha512-Cs6qHOzsm1kF6ftHUiUhTH8fiDsDERoLyacI3LyvRP9dfVastbAkmIgStmvoSQ5xIAZ1MasL8x/tq1zcL3AUzA==, tarball: file:vendor/sdk-35fa2e6c-production-beta155.tgz}
-    version: 0.1.0-beta.155
+  '@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz':
+    resolution: {integrity: sha512-kseXPV3xoAabzirdPraV+osz6IG0te0lHDUOBWLklzG26XL4/jb8b/CMwd2fTEitE6lIINFFju6JpE5PfC8wag==, tarball: file:vendor/sdk-4370800f-production-beta156.tgz}
+    version: 0.1.0-beta.156
     engines: {node: '>=20'}
     bundledDependencies:
       - '@mdbase-dev/connect-protocol'
@@ -2342,7 +2342,7 @@ snapshots:
       - rolldown
       - supports-color
 
-  '@mdbase-dev/sdk@file:vendor/sdk-35fa2e6c-production-beta155.tgz':
+  '@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz':
     dependencies:
       '@noble/ciphers': 2.4.0
       '@noble/curves': 2.4.0
@@ -2360,7 +2360,7 @@ snapshots:
       '@noble/curves': 2.4.0
       '@noble/hashes': 2.4.0
 
-  '@mdbase-dev/ui@0.1.0-beta.147(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-35fa2e6c-production-beta155.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@mdbase-dev/ui@0.1.0-beta.147(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@fontsource-variable/atkinson-hyperlegible-next': 5.3.0
       '@fontsource/azeret-mono': 5.3.0
@@ -2370,7 +2370,7 @@ snapshots:
       react: 19.3.0
     optionalDependencies:
       '@codemirror/view': 6.43.13
-      '@mdbase-dev/sdk': file:vendor/sdk-35fa2e6c-production-beta155.tgz
+      '@mdbase-dev/sdk': file:vendor/sdk-4370800f-production-beta156.tgz
       react-dom: 19.3.0(react@19.3.0)
 
   '@messageformat/date-skeleton@1.1.0': {}
