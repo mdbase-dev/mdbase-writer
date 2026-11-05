@@ -26,10 +26,10 @@ export const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
 };
 
 /** A recovered checkpoint is not an acknowledged save until it is reviewed. */
-export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecoveredDrafts: boolean): { tone: SaveTone; label: string; shortLabel: string | undefined } {
+export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecoveredDrafts: boolean, kind: "connect" | "demo"): { tone: SaveTone; label: string; shortLabel: string | undefined } {
   return hasRecoveredDrafts
     ? { tone: "attention", label: t`Review local drafts`, shortLabel: t`Review drafts` }
-    : { tone: STATE_TONE[state], label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
+    : { tone: STATE_TONE[state], label: kind === "demo" && state === "saved" ? t`Saved for this demo session` : STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
 }
 
 export function recordTitle(view: RecordView | undefined, path: string): string {

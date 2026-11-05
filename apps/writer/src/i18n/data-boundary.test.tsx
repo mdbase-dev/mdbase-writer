@@ -54,6 +54,7 @@ it.each(["en", "it"] as const)("renders markup-shaped and backslashed user paths
   const manuscripts = Array.from({ length: 6 }, (_, i) => ({ path: `m${i}.md`, title: `Manuscript ${i}` }));
   render(<Home backend={backend({ recordPaths: [path], filePaths: [], notePaths: [path], untypedPaths: [path] }, manuscripts)} onOpen={vi.fn()} />);
   const meta = await screen.findByText((_, element) => element?.className === "manuscript-meta" && element.textContent?.includes("notes/") === true);
+  expect(document.querySelector(".demo-identity")).toBeNull();
   expect(meta.textContent).toContain(path);
   const search = screen.getByRole<HTMLInputElement>("searchbox");
   const { fireEvent } = await import("@testing-library/react");

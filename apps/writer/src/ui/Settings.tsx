@@ -19,6 +19,7 @@ import { ChevronUp, CloseIcon, MinusIcon, PlusIcon } from "./icons.js";
 import { styleName, templateName } from "./names.js";
 import { intlLocale } from "../i18n/presentation.js";
 import { InterfaceLanguage } from "../i18n/provider.js";
+import { useOverlay } from "./overlays.js";
 
 type JsonValue = JsonObject[string];
 
@@ -55,6 +56,7 @@ export function Settings({
   useLingui();
   const titleId = useId();
   const sheet = useRef<HTMLElement>(null);
+  const { host, present } = useOverlay(open, ".settings-sheet", "translateX(-12px)");
   // Opening moves focus into the sheet (unless a field was asked for); closing returns it.
   useEffect(() => {
     if (!open) return;
@@ -81,7 +83,7 @@ export function Settings({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
-  if (!view || !open) return null;
+  if (!view || !present) return null;
   const fm = view.snapshot.frontmatter;
   const patch = (p: JsonObject) => workspace.patchFrontmatter(workspace.main, p);
   const str = (k: string) => (typeof fm[k] === "string" ? (fm[k] as string) : typeof fm[k] === "number" ? String(fm[k]) : "");
@@ -97,7 +99,7 @@ export function Settings({
   const authorsKey = !("authors" in fm) && "author" in fm ? "author" : "authors";
 
   return (
-    <aside
+    <div ref={host} className="overlay-host"><aside
       ref={sheet}
       className="settings-sheet"
       role="dialog"
@@ -176,7 +178,7 @@ export function Settings({
           <p className="muted small dialog-note"><Trans>This applies in this browser, to every manuscript.</Trans></p>
         </section>
       )}
-    </aside>
+    </aside></div>
   );
 }
 

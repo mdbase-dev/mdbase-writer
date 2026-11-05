@@ -1,7 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog } from "./overlays.js";
 
 export interface PendingExport {
   bytes: Uint8Array;

@@ -24,8 +24,11 @@ afterAll(() => {
     else Reflect.deleteProperty(HTMLDialogElement.prototype, name);
   }
 });
-beforeEach(() => vi.useFakeTimers());
-afterEach(() => { cleanup(); vi.runOnlyPendingTimers(); vi.useRealTimers(); });
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+});
+afterEach(() => { cleanup(); vi.runOnlyPendingTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 const pending: PendingExport = {
   bytes: new Uint8Array([80, 75]), type: "application/octet-stream", name: "test.docx",

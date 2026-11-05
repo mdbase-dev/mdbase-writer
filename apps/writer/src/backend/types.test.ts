@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { libraryEntry, manuscriptSlug, titleFromNote, withType } from "./types.js";
+import { libraryEntry, manuscriptBody, manuscriptSlug, titleFromNote, withType } from "./types.js";
+
+it("starts a blank manuscript without a scaffold and keeps the worked example opt-in", () => {
+  expect(manuscriptBody()).toBe("");
+  expect(manuscriptBody(true, "example2026")).toContain("[@example2026, p. 12]");
+  expect(manuscriptBody(true)).toContain("# Introduction {#sec-intro}");
+});
 
 describe("libraryEntry", () => {
   it("uses the CSL id as the citekey and the CSL title", () => {
