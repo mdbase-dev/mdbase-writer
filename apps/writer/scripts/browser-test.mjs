@@ -353,7 +353,7 @@ await step("F8 goes to the next problem", async () => {
 
 await step("the sidebar and preview can be hidden, and the layout is remembered", async () => {
   await page.getByRole("button", { name: "Sidebar" }).click();
-  assert.equal(await page.locator(".outline").isVisible(), false);
+  await page.locator(".outline").waitFor({ state: "hidden" });
   await page.getByRole("button", { name: "Editor only" }).click();
   assert.equal(await page.locator(".preview-pane").isVisible(), false);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("mdbase-writer:layout")));
@@ -362,6 +362,7 @@ await step("the sidebar and preview can be hidden, and the layout is remembered"
   await page.getByRole("button", { name: "Sidebar" }).click();
   await page.getByRole("button", { name: "Editor and preview" }).click();
   await page.locator(".preview-pane").waitFor({ state: "visible" });
+  await page.waitForFunction(() => document.querySelector(".outline").getBoundingClientRect().width === 272);
 });
 
 await step("the sidebar resizes by dragging its edge or with the arrow keys", async () => {
@@ -375,9 +376,11 @@ await step("the sidebar resizes by dragging its edge or with the arrow keys", as
   assert.equal(await width(), 372);
   await handle.focus();
   await page.keyboard.press("ArrowLeft");
+  await page.waitForFunction(() => Math.round(document.querySelector(".outline").getBoundingClientRect().width) === 356);
   assert.equal(await width(), 356);
   assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem("mdbase-writer:layout")))).sidebarWidth, 356);
   await handle.dblclick();
+  await page.waitForFunction(() => Math.round(document.querySelector(".outline").getBoundingClientRect().width) === 272);
   assert.equal(await width(), 272);
 });
 

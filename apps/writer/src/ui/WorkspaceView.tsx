@@ -18,7 +18,7 @@ import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorI
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog, CommandPalette, Popover } from "./overlays.js";
 import {
   AlertIcon,
   BooksIcon,
@@ -55,8 +55,6 @@ import type { CitationSite } from "./SourcesPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { ProblemsStrip } from "./ProblemsStrip.js";
-import { CommandPalette } from "@mdbase-dev/ui/command-palette";
-import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
@@ -685,9 +683,15 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   // Keyboard shortcuts (listed in the shortcuts dialog).
   const shortcuts = useRef<(e: KeyboardEvent) => void>(() => {});
   shortcuts.current = (e: KeyboardEvent) => {
+    const mod = isMod(e);
+    if (mod && !e.shiftKey && e.key.toLowerCase() === "k" && e.target instanceof Element && e.target.closest(".mdbase-command-backdrop")) {
+      e.preventDefault();
+      e.stopPropagation();
+      setPaletteOpen((open) => !open);
+      return;
+    }
     if (e.target instanceof Element && e.target.closest("dialog[open]")) return;
     if (document.querySelector("dialog[open]") && e.key !== "F8") return;
-    const mod = isMod(e);
     let handled = true;
     if (mod && !e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, sidebar: !l.sidebar }));
     else if (mod && e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, view: VIEW_ORDER[(VIEW_ORDER.indexOf(l.view) + 1) % VIEW_ORDER.length] as View }));
@@ -807,12 +811,16 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   if (snap.phase === "failed") {
     return (
       <ConnectLayout app="writer" title="This manuscript could not be opened" error={snap.problem}>
+        {workspace.kind === "demo" && <>
+          <p>Demo changes last only until reload. Reloading resets the sample collection, so a manuscript you created here may no longer exist.</p>
+          <button className="mdbase-button is-primary" type="button" onClick={() => onClose()}>Back to demo manuscripts</button>
+        </>}
         <FeedbackButton topic="problem" />
         <button className="mdbase-connect-action" type="button" onClick={() => void workspace.retryOpen()}>Retry opening</button>
         {snap.recoveredDrafts.size > 0 && <><p>A local draft is still available in this browser.</p><button type="button" className="mdbase-connect-action" onClick={downloadDrafts}>Download local drafts</button></>}
-        <button className="mdbase-connect-action" type="button" onClick={() => onClose()}>
+        {workspace.kind !== "demo" && <button className="mdbase-connect-action" type="button" onClick={() => onClose()}>
           Back to manuscripts
-        </button>
+        </button>}
       </ConnectLayout>
     );
   }
@@ -835,7 +843,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
-          <SaveNotice tone={STATE_TONE[overall]} label={STATE_LABEL[overall]} className="is-long" />
+          {workspace.kind === "demo" && <span className="demo-identity">Demo · resets on reload</span>}
+          <SaveNotice tone={STATE_TONE[overall]} label={workspace.kind === "demo" && overall === "saved" ? "Saved for this demo session" : STATE_LABEL[overall]} className="is-long" />
           {STATE_SHORT_LABEL[overall] && <SaveNotice tone="attention" label={STATE_SHORT_LABEL[overall]} className="is-short" />}
           <span className="bar-words" title={`In ${plural(order.length, "record")}; citations, code and math are not counted`}>
             {plural(stats.words, "word")}
@@ -897,7 +906,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
       </InTopbar>
 
-      <aside className="outline" aria-label="Manuscript sidebar">
+      <aside className="outline" aria-label="Manuscript sidebar" inert={!layout.sidebar && pane !== "outline"}>
         <SidebarTabs
           tab={layout.tab}
           onTab={setSidebarTab}
@@ -1032,7 +1041,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             className="muted small preview-meta"
             title={timings && !snap.compiling ? `Typeset in ${Math.round(timings.assembleMs + timings.compileMs)} ms` : undefined}
           >
-            {slowCompile ? (
+            {slowCompile && snap.result ? (
               "Typesetting…"
             ) : snap.result ? (
               <>
@@ -1296,16 +1305,6 @@ function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { dia
   );
 }
 
-function Popover({ id, trigger, width, label, align = "start", focus, onClose, children }: { id: string; trigger: React.RefObject<HTMLElement | null>; width: number; label: string; align?: "start" | "end"; focus?: string; onClose(refocus: boolean): void; children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useMenuPopover(ref, trigger, onClose, { width, align, focus });
-  return (
-    <div ref={ref} id={id} className="mdbase-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, ref.current)}>
-      {children}
-    </div>
-  );
-}
-
 /** What can be inserted at the cursor, each with the Markdown it stands for. */
 function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setOpen(open: boolean): void; commands: readonly InsertCommand[]; disabled: boolean }) {
   const trigger = useRef<HTMLButtonElement>(null);
@@ -1327,8 +1326,7 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
         <InsertIcon />
         <span className="button-label">Insert</span>
       </button>
-      {open && (
-        <Popover id={id} trigger={trigger} width={340} label="Insert" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+        <Popover open={open} id={id} trigger={trigger} width={340} label="Insert" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
@@ -1340,7 +1338,6 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
           ))}
           <p className="popover-note">Or type <kbd>/</kbd> in the text to pick one there.</p>
         </Popover>
-      )}
     </>
   );
 }
@@ -1395,8 +1392,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           <ChevronDown className="chevron" />
         </button>
       </div>
-      {open && (
-        <Popover id={id} trigger={group} width={320} label="Export" align="end" focus={`[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
+        <Popover open={open} id={id} trigger={group} width={320} label="Export" align="end" focus={`[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
@@ -1404,7 +1400,6 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           {item("docx", "Word (DOCX)", customTemplate ? "Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB." : "Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB.")}
           {item("bundle", "Pandoc bundle (zip)", "Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself")}
         </Popover>
-      )}
     </>
   );
 }
@@ -1432,8 +1427,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
       >
         <MoreIcon />
       </button>
-      {open && (
-        <Popover id={id} trigger={trigger} width={240} label="More" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+        <Popover open={open} id={id} trigger={trigger} width={240} label="More" align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
@@ -1466,7 +1460,6 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
             </div>
           )}
         </Popover>
-      )}
     </>
   );
 }

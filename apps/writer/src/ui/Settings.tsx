@@ -15,6 +15,7 @@ import type { ManuscriptWorkspace, RecordView } from "../workspace/workspace.js"
 import { joinSoftBreaks } from "../editor/join-lines.js";
 import { ChevronUp, CloseIcon, MinusIcon, PlusIcon } from "./icons.js";
 import { templateName } from "./names.js";
+import { useOverlay } from "./overlays.js";
 
 type JsonValue = JsonObject[string];
 
@@ -63,6 +64,7 @@ export function Settings({
   onLivePreview?(): void;
 }) {
   const titleId = useId();
+  const { host, present } = useOverlay(open, ".settings-sheet", "translateX(-12px)");
   const sheet = useRef<HTMLElement>(null);
   // Opening moves focus into the sheet (unless a field was asked for); closing returns it.
   useEffect(() => {
@@ -90,7 +92,7 @@ export function Settings({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
-  if (!view || !open) return null;
+  if (!view || !present) return null;
   const fm = view.snapshot.frontmatter;
   const patch = (p: JsonObject) => workspace.patchFrontmatter(workspace.main, p);
   const str = (k: string) => (typeof fm[k] === "string" ? (fm[k] as string) : typeof fm[k] === "number" ? String(fm[k]) : "");
@@ -106,12 +108,13 @@ export function Settings({
   const authorsKey = !("authors" in fm) && "author" in fm ? "author" : "authors";
 
   return (
-    <aside
+    <div ref={host} className="overlay-host"><aside
       ref={sheet}
       className="settings-sheet"
       role="dialog"
       aria-modal="false"
       aria-labelledby={titleId}
+      inert={!open}
     >
       <header className="settings-sheet-header">
         <h2 id={titleId}>Manuscript settings</h2>
@@ -188,7 +191,7 @@ export function Settings({
           <p className="muted small dialog-note">These apply in this browser, to every manuscript.</p>
         </section>
       )}
-    </aside>
+    </aside></div>
   );
 }
 

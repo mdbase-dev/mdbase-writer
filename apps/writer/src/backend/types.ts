@@ -141,7 +141,7 @@ export function manuscriptFrontmatter(frontmatter: JsonObject, fields: Readonly<
 
 export const manuscriptBody = (starter = false, citekey?: string): string => starter
   ? `# Introduction {#sec-intro}\n\nStart writing here. This manuscript stays ordinary Markdown in your collection.\n\n${citekey ? `A cited claim [@${citekey}, p. 12].` : "Add a source in Reader, then type [@ to find it by author or title."}\n\n## A labelled figure\n\nReplace the path below with an image in your collection. Until then, Writer will report a missing image.\n\n![An example figure](figures/example.png){#fig-example}\n\nRefer to it with @fig-example, and to this section with @sec-intro.\n\n## Chapters\n\nUse **Add chapter** in the Outline to create and embed a chapter. Existing records can be embedded on a line of their own with \`![[chapters/one]]\`.\n\n## Finishing\n\nUse Settings to choose a layout and citation style. Export PDF, Word, or a Pandoc bundle.\n`
-  : "# Introduction {#sec-intro}\n\n";
+  : "";
 
 /** The citekey of a CSL-JSON item in a Reader source's `csl` field. */
 export function libraryEntry(path: string, frontmatter: JsonObject | undefined, modified?: string): LibraryEntry | null {

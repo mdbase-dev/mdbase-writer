@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog } from "./overlays.js";
 import type { JsonObject } from "@mdbase-dev/connect";
 
 /** Highlight the changed passage while keeping the unchanged context readable. */

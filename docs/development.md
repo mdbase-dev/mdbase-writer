@@ -32,13 +32,20 @@ pnpm --filter @mdbase-writer/app test:browser
 COLD_CACHE=1 pnpm --filter @mdbase-writer/app test:browser
 ```
 
-If port 5320 is occupied, use `pnpm dev --port 5321` and run both suites with
+If port 5320 is occupied, use `pnpm dev --port 5321` and run the suites with
 `BASE=http://127.0.0.1:5321/ pnpm --filter @mdbase-writer/app test:browser`.
 Stop the development server after testing.
 
 This runs the baseline suite and fault-injection checks for recovery, early exports, chapter
-history, conflicts, cancellation and selectable preview text. Run only the latter with
+history, conflicts, cancellation and selectable preview text. Run only the reliability suite with
 `pnpm --filter @mdbase-writer/app test:browser:reliability`.
+
+The polish regression matrix runs in Chromium at 1440×900 and 390×844, in both themes and
+normal/reduced motion. It samples `document.getAnimations()` and rAF trajectories, reverses
+Settings, commands, menus and the sidebar mid-transition, switches Reduce on during motion,
+and checks Find height, contrast, Fit width, preview links
+and demo reset recovery. Run it alone with `pnpm --filter @mdbase-writer/app test:browser:polish`;
+its JSON measurements and screenshots are written to `apps/writer/out/polish-r1/`.
 
 The existing browser acceptance coverage uses the demo collection, including the LAB deployment.
 Acceptance against a real Connect collection has not yet been recorded in the architecture notes.

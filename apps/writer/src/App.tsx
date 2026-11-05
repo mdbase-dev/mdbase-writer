@@ -15,7 +15,7 @@ import { ConnectGate } from "./ui/ConnectGate.js";
 import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { Home } from "./ui/Home.js";
 import { localNamespace, recentManuscripts, recordOpened } from "./ui/recent.js";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog } from "./ui/overlays.js";
 import { zip } from "./export/zip.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { ThemeChoice, TopbarSlot } from "./ui/topbar.js";

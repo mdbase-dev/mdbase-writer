@@ -57,7 +57,7 @@ export function saveLayout(layout: Layout): void {
 export function gridFor(layout: Layout): { columns: string; areas: string } {
   const cols: [string, string][] = [];
   // Hidden, the sidebar leaves a rail of its tabs.
-  cols.push(layout.sidebar ? [`${clampSidebar(layout.sidebarWidth)}px`, "outline"] : ["44px", "rail"]);
+  cols.push([layout.sidebar ? `${clampSidebar(layout.sidebarWidth)}px` : "44px", "outline"]);
   if (layout.view !== "preview") cols.push([`minmax(0, ${layout.view === "both" ? layout.split : 1}fr)`, "write"]);
   if (layout.view === "both") cols.push(["7px", "divider"]);
   if (layout.view !== "write") cols.push([`minmax(0, ${layout.view === "both" ? 1 - layout.split : 1}fr)`, "preview"]);

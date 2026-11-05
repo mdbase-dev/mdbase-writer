@@ -141,6 +141,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           highlightActiveLine(),
           highlightSelectionMatches(),
           search({ top: true }),
+          EditorState.phrases.of({ "match case": "Match case", "regexp": "Regular expression", "by word": "Whole words", "Find": "Find in this record", "next": "Next", "previous": "Previous", "all": "Select all", "replace": "Replace", "replace all": "Replace all" }),
           lintGutter(),
           autocompletion({ override: [slashCommands(() => latest.current.inserts ?? []), writerCompletions(() => latest.current.completion)] }),
           mdbasePopupTheme,
@@ -159,7 +160,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, joinL
           EditorView.lineWrapping,
           joining.current.of(joinLines ? joinLinesExtension() : []),
           EditorState.readOnly.of(readOnly),
-          placeholder("Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."),
+          placeholder("Start writing. Type / to insert or @ to cite."),
           EditorView.contentAttributes.of({ "aria-label": `Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
           EditorView.updateListener.of((u) => {
             if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);

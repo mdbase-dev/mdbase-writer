@@ -9,7 +9,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { bodySummary, fail, type ManuscriptSummary, type Result, type WriterBackend } from "../backend/types.js";
 import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog } from "./overlays.js";
 import { chapterEmbeds } from "../workspace/chapters.js";
 import { wordCount } from "../words.js";
 import { PlusIcon, SearchIcon } from "./icons.js";
@@ -160,7 +160,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
           <div>
             <h1>Manuscripts</h1>
             <p className="muted">
-              In {collectionPicker ?? <strong>{backend.collectionName}</strong>}
+              {backend.kind === "demo" ? <strong>Demo · resets on reload</strong> : <>In {collectionPicker ?? <strong>{backend.collectionName}</strong>}</>}
               {backend.kind === "connect" && <> via mdbase Connect</>}
               {sources !== null && sources > 0 && <> · {sources} {sources === 1 ? "source" : "sources"} to cite from mdbase Reader</>}
               {sources === 0 && <> · {backend.setupStatus?.sources === false ? "Sources not set up" : "No sources yet"}</>}
