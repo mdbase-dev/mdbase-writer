@@ -25,7 +25,7 @@ index bcfea34790878f2f3a54be5dbc0e0e0e34f3a214..6e44cd93e0f9d1d2f70760fe5a387aa1
      const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
      globalThis.setTimeout(() => inputRef.current?.focus(), 0);
 -    return () => previous?.focus();
-+    return () => { if (!activated.current) previous?.focus(); };
++    return () => { if (!activated.current || document.activeElement === document.body) previous?.focus(); };
    }, []);
    const run = (command, alternate = false) => {
 +    activated.current = true;

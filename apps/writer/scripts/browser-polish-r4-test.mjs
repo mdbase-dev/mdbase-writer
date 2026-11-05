@@ -61,6 +61,8 @@ try {
       await typeInEditor(page, " OPEN_HANDOFF ");
       await page.keyboard.press("Control+z");
       await page.keyboard.press("Control+End");
+      await command(page, "Save now");
+      await typeInEditor(page, " PALETTE_RETURN ");
       const before = await page.evaluate(() => [...window.writer.workspace.getSnapshot().records].map(([path, record]) => [path, record.snapshot.body]));
       await command(page, "Find a source");
       await page.keyboard.type("earth");

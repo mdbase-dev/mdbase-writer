@@ -254,12 +254,13 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   useLayoutEffect(() => { citationNavRef.current = { order, snap, cursor, active }; }, [order, snap, cursor, active]);
   const activeView = snap.records.get(active);
   useLayoutEffect(() => {
-    if (snap.phase !== "ready" || openedChapter.current) return;
+    if (snap.phase !== "ready" || snap.indexLoad.phase === "loading" || openedChapter.current) return;
     openedChapter.current = true;
+    if (workspace.hasUnsavedChanges()) return;
     const chapters = workspace.chapterPaths();
     const last = recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.chapter;
     setActive(last && chapters.includes(last) ? last : chapters.find(chapter => chapter !== null) ?? workspace.main);
-  }, [workspace, snap.phase]);
+  }, [workspace, snap.phase, snap.indexLoad.phase]);
   useLayoutEffect(() => {
     if (narrow && pane === "write") editor.current?.focus();
   }, [pane, narrow]);
