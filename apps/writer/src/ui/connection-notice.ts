@@ -28,10 +28,10 @@ export function connectionNotice(
 ): ConnectionNotice | null {
   if (!snapshot || (snapshot.phase && snapshot.phase.kind !== "ready"))
     return null;
-  if (snapshot.writes?.saveState === "saved_on_device")
-    return "saved_on_device";
   const health = snapshot.sync?.health ?? snapshot.transport?.kind ?? null;
   if (!online || health === "offline") return "offline";
+  if (snapshot.writes?.saveState === "saved_on_device")
+    return "saved_on_device";
   if (
     health === "unreachable" ||
     health === "server_busy" ||

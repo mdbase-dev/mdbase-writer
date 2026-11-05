@@ -58,6 +58,15 @@ sidebar panel, its keyboard tabs and focus return, preview Fit containment, info
 contrast, Find/Replace, and demo-only save/reset identity. Non-loopback requests are blocked.
 These are Chromium viewport fixtures, not real-account or physical-phone qualification.
 
+The same polish command also exercises native SDK in-memory records in all eight contexts:
+offline/local-only save feedback remains visible in Write mode, held versions cannot offer
+an unsupported comparison, local drafts can be downloaded, and ordinary concurrent edits
+can be compared and deliberately merged. The native fixture uses the SDK hold-resolution
+path to clear its test hold; Writer does not bypass native protection. Preview containment
+is asserted while Preview is selected, not only after returning to Write. The workspace's
+main landmark, manuscript heading, divider regions and phone toolbar hit areas are checked
+alongside these interactions. Screenshots and the result matrix are in `apps/writer/out/polish-r2/`.
+
 The cursor/undo/redo regression also runs against optimized production React with a real
 compiler and Preview canvas (development React can hide update-scheduling failures):
 

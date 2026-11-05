@@ -380,8 +380,7 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
         className="new-dialog"
       >
         <form className="new-manuscript" onSubmit={(e) => void create(e)}>
-          <label className="span-2"><Trans>
-            Title
+          <div className="span-2"><label><Trans>Title</Trans>
             <input
               ref={titleField}
               className="mdbase-field"
@@ -395,8 +394,8 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
               aria-describedby={untitled ? "new-title-problem" : undefined}
               autoFocus
             />
-            {untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>}
-          </Trans></label>
+          </label>
+          {untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>}</div>
           <label><Trans>
             Layout
             <Select aria-label={t`Layout`} value={template} options={templateOptions()} onChange={setTemplate} />

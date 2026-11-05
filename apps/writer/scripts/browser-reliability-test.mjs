@@ -341,6 +341,10 @@ try {
     });
     await open(page);
     await page.getByRole("button", { name: retryName, exact: true }).waitFor();
+    assert.equal(await page.getByRole("alert").filter({ hasText: "Preview unavailable" }).count(), 1);
+    assert.equal((await page.locator(".preview-pane").innerText()).match(/You can keep writing\./g)?.length, 1);
+    assert.doesNotMatch(await page.locator(".preview-pane").innerText(), /\.\. You can keep writing/);
+    assert.equal(await page.locator('.bar-problems[title="No manuscript problems"]').count(), 1);
     const chapter = "chapters/worms.md";
     await page.waitForFunction((chapter) => window.writer.workspace.getSnapshot().records.has(chapter), chapter);
     await page.locator(`.record-row[data-path="${chapter}"]`).click();

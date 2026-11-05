@@ -1502,6 +1502,10 @@ msgstr "Aucun fichier de la collection ne correspond au modèle {value}."
 msgid "No manuscript matches “{filter}”."
 msgstr "Aucun manuscrit ne correspond à « {filter} »."
 
+#: src/ui/WorkspaceView.tsx
+msgid "No manuscript problems"
+msgstr "Aucun problème dans le manuscrit"
+
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "Aucune note ne correspond à « {query} »."
@@ -1513,10 +1517,6 @@ msgstr "Aucun commentaire ouvert"
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
 msgstr "Aucune autre note dans cette collection."
-
-#: src/ui/WorkspaceView.tsx
-msgid "No problems"
-msgstr "Aucun problème"
 
 #. placeholder {0}: this.target
 #: src/editor/chapter-cards.ts
@@ -1627,9 +1627,21 @@ msgstr "Rien n’est encore résolu."
 msgid "Offline"
 msgstr "Hors ligne"
 
+#: src/ui/records.ts
+msgid "Offline · on device, pending sync"
+msgstr "Hors ligne · sur cet appareil, synchronisation en attente"
+
+#: src/ui/records.ts
+msgid "Offline · saved on this device; waiting for sync"
+msgstr "Hors ligne · enregistré sur cet appareil ; synchronisation en attente"
+
 #: src/ui/WorkspaceView.tsx
 msgid "On a citation: show the source. On a cross-reference: go to what it labels"
 msgstr "Sur une citation : afficher la source. Sur un renvoi : aller à l’élément qu’il désigne"
+
+#: src/ui/records.ts
+msgid "On device · pending sync"
+msgstr "Sur cet appareil · synchronisation en attente"
 
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
@@ -1800,17 +1812,8 @@ msgid "Preview only"
 msgstr "Aperçu seul"
 
 #: src/preview/Preview.tsx
-msgid "Preview rendering failed: {renderProblem}. Your text is still available in the editor."
-msgstr "Échec du rendu de l’aperçu : {renderProblem}. Votre texte reste disponible dans l’éditeur."
-
-#. placeholder {0}: snap.previewProblem
-#: src/ui/WorkspaceView.tsx
-msgid "Preview unavailable: {0}. You can keep writing."
-msgstr "Aperçu indisponible : {0}. Vous pouvez continuer à écrire."
-
-#: src/preview/Preview.tsx
-msgid "Preview unavailable. You can keep writing."
-msgstr "Aperçu indisponible. Vous pouvez continuer à écrire."
+msgid "Preview unavailable: {failure}. You can keep writing."
+msgstr "Aperçu indisponible : {failure}. Vous pouvez continuer à écrire."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
@@ -1975,7 +1978,7 @@ msgstr "Réessayer le chargement"
 msgid "Retry opening"
 msgstr "Réessayer l’ouverture"
 
-#: src/ui/WorkspaceView.tsx
+#: src/preview/Preview.tsx
 msgid "Retry preview"
 msgstr "Réessayer l’aperçu"
 
@@ -2039,10 +2042,6 @@ msgstr "Enregistrer la version fusionnée"
 #: src/ui/records.ts
 msgid "Saved"
 msgstr "Enregistré"
-
-#: src/ui/records.ts
-msgid "Saved for this demo session"
-msgstr "Enregistré pour cette session de démonstration"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
@@ -2413,6 +2412,10 @@ msgstr "L’annotation {value} ne contient aucune citation à intégrer."
 msgid "The chapter is not open."
 msgstr "Le chapitre n’est pas ouvert."
 
+#: src/ui/WorkspaceView.tsx
+msgid "The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts."
+msgstr "La version de la collection ne peut pas être comparée. Résolvez les modifications retenues ou non résolues dans la collection avant d’enregistrer ici. Vous pouvez télécharger vos brouillons locaux."
+
 #: src/compile/client.ts
 msgid "The compile worker stopped."
 msgstr "Le processus de compilation s’est arrêté."
@@ -2548,6 +2551,7 @@ msgstr "Ce document a été supprimé ailleurs. Votre texte local reste disponib
 msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
 msgstr "Ce document a été supprimé. Téléchargez le brouillon local pour le conserver ; il ne peut pas être restauré dans un document supprimé."
 
+#: src/ui/Home.tsx
 #: src/ui/Settings.tsx
 msgid "Title"
 msgstr "Titre"
@@ -2555,11 +2559,6 @@ msgstr "Titre"
 #: src/ui/WorkspaceView.tsx
 msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
 msgstr "Titre, auteurs, résumé, style de citation, mise en page et langue ({MOD_LABEL}-,)"
-
-#. placeholder {0}: untitled && <span id="new-title-problem" className="field-problem severity-error"><Trans>Give the manuscript a title; it can be changed later.</Trans></span>
-#: src/ui/Home.tsx
-msgid "Title<0/>{0}"
-msgstr "Titre<0/>{0}"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
@@ -2736,6 +2735,10 @@ msgstr "Écrire depuis votre collection"
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"
 msgstr "Écrivez la citation ici pour la modifier ; elle ne suit plus l’annotation"
+
+#: src/ui/writer-collections.tsx
+msgid "Write, cite, and typeset your manuscript"
+msgstr "Rédigez, citez et mettez en page votre manuscrit"
 
 #: src/workspace/workspace.ts
 msgid "Writer cannot ask for access here."

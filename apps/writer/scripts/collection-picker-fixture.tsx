@@ -1,6 +1,7 @@
 // Browser-test fixture: no Connect daemon, authorization, or collection writes.
 import { createRoot } from "react-dom/client";
 import { CollectionPicker } from "../src/ui/CollectionPicker.js";
+import { AppI18nProvider } from "../src/i18n/provider.js";
 
 export function mount() {
   const host = document.createElement("div");
@@ -8,7 +9,7 @@ export function mount() {
   const calls: unknown[] = [];
   const state = { calls, fail: false, finish: () => {} };
   const root = createRoot(host);
-  root.render(<CollectionPicker name="Current" collectionId="current" connections={[
+  root.render(<AppI18nProvider><CollectionPicker name="Current" collectionId="current" connections={[
     { collectionId: "current", displayName: "Cached name", authority: { kind: "hosted" } },
     { collectionId: "other", displayName: "Other", authority: { kind: "connector" } },
   ] as never} session={{
@@ -22,6 +23,6 @@ export function mount() {
         state.finish = () => resolve({ ok: false, problem: { message: "Authorization cancelled" } });
       });
     },
-  } as never} />);
+  } as never} /></AppI18nProvider>);
   return state;
 }

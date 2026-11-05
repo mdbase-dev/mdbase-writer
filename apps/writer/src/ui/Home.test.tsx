@@ -6,6 +6,7 @@ import { fail, ok, type CollectionIndex, type ManuscriptSummary, type Result, ty
 import { Home } from "./Home.js";
 
 beforeAll(() => {
+  globalThis.matchMedia ??= () => ({ matches: true, media: "", onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => true });
   HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) { this.open = true; };
   HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) { this.open = false; };
   class Observer implements IntersectionObserver {
@@ -15,6 +16,17 @@ beforeAll(() => {
   globalThis.IntersectionObserver ??= Observer;
 });
 afterEach(cleanup);
+
+it("keeps title validation in the description rather than the accessible name", async () => {
+  render(<Home backend={backend({ recordPaths: [], filePaths: [], notePaths: [] })} onOpen={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "New manuscript" }));
+  fireEvent.click(screen.getByRole("button", { name: "Create manuscript" }));
+  const title = screen.getByRole("textbox", { name: "Title" });
+  expect(title.getAttribute("aria-invalid")).toBe("true");
+  expect(title.getAttribute("aria-describedby")).toBe("new-title-problem");
+  expect(document.getElementById("new-title-problem")?.closest("label")).toBeNull();
+  expect(document.activeElement).toBe(title);
+});
 
 const message = 'Writer can\'t use the "native-comment" type because its definition has an error. Comments that use it are unavailable until the type is fixed; everything else still works.';
 function backend(index: CollectionIndex, manuscripts: Result<ManuscriptSummary[]> = ok([])): WriterBackend {

@@ -123,7 +123,7 @@ function snapshot(value: NativeSnapshot): RecordSessionSnapshot {
     body: value.body,
     frontmatter: toPlain(new Map(value.frontmatter)) as JsonObject,
     record: record(value.record),
-    remote: value.remote ? record(value.remote) : null,
+    remote: value.remote && value.remote.state.state === "confirmed" && !value.remote.state.hold && !value.remote.state.unresolved ? record(value.remote) : null,
     dirty: value.dirty,
     problem: value.problem,
   };

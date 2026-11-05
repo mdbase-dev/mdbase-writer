@@ -74,6 +74,7 @@ try {
   for (const width of [1440, 390]) for (const colorScheme of ["light", "dark"]) for (const reducedMotion of ["no-preference", "reduce"]) {
     const name = `${width}-${colorScheme}-${reducedMotion}`;
     const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 }, colorScheme, reducedMotion });
+    await context.addInitScript(() => localStorage.setItem("mdbase-writer:export", "bundle"));
     await context.route("**/*", route => new URL(route.request().url()).origin === new URL(base).origin ? route.continue() : route.abort());
     const page = await context.newPage();
     const errors = [];
@@ -101,11 +102,16 @@ try {
       await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').click();
       await page.locator(".cm-content").waitFor();
       assert.match(await page.locator(".demo-identity").innerText(), /resets on reload/);
+      if (width === 1440) {
+        await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return snapshot.phase === "ready" && snapshot.indexLoad.phase === "ready" && snapshot.libraryLoad.phase === "ready" && snapshot.annotationsLoad.phase === "ready"; });
+        assert.ok(await page.locator(".bar-title").evaluate(element => element.getBoundingClientRect().width >= 240), "Settled manuscript title is too narrow");
+      }
       if (name === "1440-light-no-preference") {
         for (const middleWidth of [901, 1000, 1180, 1280]) {
           await page.setViewportSize({ width: middleWidth, height: 900 });
           assert.ok(await page.locator('.bar button[aria-label="More"]').evaluate(element => element.getBoundingClientRect().right <= innerWidth), `Toolbar overflow at ${middleWidth}px`);
-          assert.match(await page.locator('.bar .mdbase-save-notice.is-long').innerText(), /demo session/);
+          assert.equal(await page.locator('.bar .mdbase-save-notice.is-long').innerText(), "Saved");
+          assert.match(await page.locator(".demo-identity").innerText(), /resets on reload/);
         }
         await page.setViewportSize({ width, height: 900 });
       }
@@ -114,6 +120,10 @@ try {
       result.startup = await page.evaluate(() => ({ editorMs: window.startup.find((frame) => frame.editor)?.elapsed, canvasMs: window.startup.find((frame) => frame.canvas)?.elapsed, drawnMs: window.startup.find((frame) => frame.drawn)?.elapsed }));
       result.preview = await page.locator(".preview").evaluate((element) => ({ width: element.clientWidth, scrollWidth: element.scrollWidth, pages: [...element.querySelectorAll(".preview-page")].map((page) => page.getBoundingClientRect().width) }));
       assert.ok(result.preview.scrollWidth <= result.preview.width + 1, "Fit preview overflows");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Document overflows while Preview is selected");
+      assert.ok(await page.locator(".preview-header").evaluate(element => element.getBoundingClientRect().right <= innerWidth), "Preview header overflows");
+      assert.equal(await page.getByRole("main").count(), 1);
+      assert.equal(await page.getByRole("heading", { level: 1 }).innerText(), await page.locator(".bar-title").getAttribute("title"));
       assert.equal(await page.locator(".text-layer a").evaluateAll((anchors) => anchors.filter((anchor) => !anchor.textContent.trim() && !anchor.getAttribute("aria-label")?.trim()).length), 0);
       const semantics = await page.evaluate(async () => {
         const { semanticLayer } = await import("/src/preview/semantics.ts");
@@ -205,6 +215,7 @@ try {
       if (!reduced) assert.ok(Math.abs(result.settingsReopen.interruption.before.opacity - result.settingsReopen.interruption.after.opacity) < 0.02);
       await probe(page, ".settings-sheet", "settings");
       result.paletteIn = await probe(page, ".mdbase-command-backdrop", "palette");
+      assert.deepEqual(await page.locator(".mdbase-command-group").allTextContents(), ["Manuscript", "Format", "Insert", "Comments", "View", "Export", "Help"]);
       motion(result.paletteIn, reduced, 160);
       result.paletteOut = await probe(page, ".mdbase-command-backdrop", "escape");
       motion(result.paletteOut, reduced, 120);
@@ -294,7 +305,8 @@ try {
     assert.equal(await page.getByText("Preparing the preview. You can keep writing.", { exact: true }).count(), 1);
     assert.equal(await page.getByText("Typesetting…", { exact: true }).count(), 0);
     await page.locator(".cm-content").fill("A temporary demo paragraph.");
-    await page.getByText("Saved for this demo session", { exact: true }).waitFor({ state: "visible" });
+    await page.locator(".bar .mdbase-save-notice.is-saved").waitFor({ state: "visible" });
+    assert.equal(await page.locator(".bar .demo-identity").innerText(), "Demo · resets on reload");
     await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].every((record) => record.snapshot.state === "saved"));
     release();
     await page.reload();
