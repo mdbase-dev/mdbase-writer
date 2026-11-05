@@ -14,7 +14,9 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { bodySummary, fail, type ManuscriptSummary, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
 import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
-import { Dialog } from "./overlays.js";
+import { CommandPalette, Dialog } from "./overlays.js";
+import { Shortcuts } from "./Shortcuts.js";
+import type { Command } from "@mdbase-dev/ui/command-palette";
 import { chapterEmbeds } from "../workspace/chapters.js";
 import { wordCount } from "../words.js";
 import { PlusIcon, SearchIcon } from "./icons.js";
@@ -32,7 +34,7 @@ const UNTYPED_SHOWN = 20;
 const templateOptions = () => TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const styleOptions = () => STYLES.map((s) => ({ value: s.id, label: styleName(s.id) }));
 
-export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode }) {
+export function Home({ backend, onOpen, collectionPicker, returnPath }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null }) {
   useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -47,6 +49,9 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
   const [reload, setReload] = useState(0);
   const bodyCache = useRef(new Map<string, Promise<Result<string>>>());
   const rows = useRef<HTMLUListElement>(null);
+  const restored = useRef(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [limitReads] = useState(() => limitConcurrency(4));
   const [sources, setSources] = useState<number | null>(null);
   const [dialog, setDialog] = useState(false);
@@ -145,6 +150,35 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
     const sorted = byRecentlyEdited(manuscripts ?? []);
     return words.length ? sorted.filter((m) => words.every((w) => `${m.title} ${m.path}`.toLowerCase().includes(w))) : sorted;
   }, [manuscripts, filter]);
+  const commands: Command[] = [
+    { id: "new", group: t`Manuscripts`, label: t`New manuscript`, run: () => setDialog(true) },
+    ...shown.map(manuscript => ({ id: manuscript.path, group: t`Open manuscript`, label: manuscript.title, run: () => onOpen(manuscript.path) })),
+    ...(backend.kind !== "demo" ? [{ id: "collection", group: t`Collection`, label: t`Choose collection`, run: () => document.querySelector<HTMLButtonElement>(".writer-collection-switcher .mdbase-collections-trigger, .collection-picker-trigger")?.click() }] : []),
+    { id: "shortcuts", group: t`Help`, label: t`Keyboard shortcuts`, shortcut: "mod+/", run: () => setShortcutsOpen(true) },
+  ];
+  useEffect(() => {
+    if (!returnPath || restored.current || !manuscripts) return;
+    const row = [...(rows.current?.querySelectorAll<HTMLButtonElement>("[data-path]") ?? [])].find(element => element.dataset["path"] === returnPath);
+    if (row) { row.focus(); restored.current = true; }
+  }, [returnPath, manuscripts]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || document.querySelector("dialog[open]")) return;
+      const mod = event.ctrlKey || event.metaKey;
+      if (mod && event.code === "KeyK") { event.preventDefault(); setPaletteOpen(true); }
+      else if (mod && event.code === "Slash") { event.preventDefault(); setShortcutsOpen(true); }
+      else if (!(event.target instanceof Element && event.target.closest("input, textarea, [contenteditable=true]")) && ["ArrowDown", "ArrowUp", "j", "k"].includes(event.key)) {
+        const buttons = [...(rows.current?.querySelectorAll<HTMLButtonElement>("[data-path]") ?? [])];
+        if (!buttons.length) return;
+        event.preventDefault();
+        const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const backwards = event.key === "ArrowUp" || event.key === "k";
+        buttons[current < 0 ? (backwards ? buttons.length - 1 : 0) : (current + (backwards ? buttons.length - 1 : 1)) % buttons.length]?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.filter((entry) => entry.isIntersecting).map((entry) => (entry.target as HTMLElement).dataset["path"]).filter((path): path is string => Boolean(path));
@@ -171,9 +205,9 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
         <header className="home-header">
           <div>
             <h1><Trans>Manuscripts</Trans></h1>
-            {backend.kind === "demo" && <p className="demo-identity"><Trans>Demo · resets on reload</Trans></p>}
             <p className="muted"><Trans>
               In {collectionPicker ?? <strong>{backend.collectionName}</strong>}
+              {backend.kind === "demo" && <><Trans> · resets on reload</Trans></>}
               {backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>}
               {sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>}
               {sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>}
@@ -271,8 +305,8 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
         {unavailable.length > 0 && <div className="home-unavailable" role="status">
           {unavailable.map((t) => <p key={t.name} className="muted">{t.message}</p>)}
         </div>}
-        {untypedShown.length > 0 && <section className="home-untyped" aria-label={t`Notes without a type`}>
-          <h2><Trans>Notes without a type</Trans></h2>
+        {backend.kind !== "demo" && untypedShown.length > 0 && <section className="home-untyped" aria-label={t`Other notes`}>
+          <h2><Trans>Other notes</Trans></h2>
           <ul className="manuscripts">
             {(allUntyped ? untypedShown : untypedShown.slice(0, UNTYPED_SHOWN)).map((path) => <li key={path}>
               <button type="button" className="manuscript-row" onClick={() => onOpen(path)} title={path}>
@@ -287,6 +321,8 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
       </section>
 
       <NewManuscriptDialog backend={backend} open={dialog} onClose={() => setDialog(false)} onOpen={onOpen} candidates={candidates} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} label={t`Writer commands`} />
+      <Shortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} commands={commands} />
     </main>
   );
 }

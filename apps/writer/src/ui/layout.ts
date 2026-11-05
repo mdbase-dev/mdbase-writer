@@ -55,13 +55,13 @@ export function saveLayout(layout: Layout): void {
 
 /** Grid columns and areas for the desktop workspace. */
 export function gridFor(layout: Layout): { columns: string; areas: string } {
-  const cols: [string, string][] = [];
-  // Hidden, the sidebar leaves a rail of its tabs.
-  cols.push([layout.sidebar ? `${clampSidebar(layout.sidebarWidth)}px` : "44px", "outline"]);
-  if (layout.view !== "preview") cols.push([`minmax(0, ${layout.view === "both" ? layout.split : 1}fr)`, "write"]);
-  if (layout.view === "both") cols.push(["7px", "divider"]);
-  if (layout.view !== "write") cols.push([`minmax(0, ${layout.view === "both" ? 1 - layout.split : 1}fr)`, "preview"]);
-  return { columns: cols.map((c) => c[0]).join(" "), areas: `"${cols.map((c) => c[1]).join(" ")}"` };
+  const columns = [
+    layout.sidebar ? `${clampSidebar(layout.sidebarWidth)}px` : "44px",
+    `minmax(0, ${layout.view === "preview" ? 0 : layout.view === "both" ? layout.split : 1}fr)`,
+    layout.view === "both" ? "7px" : "0px",
+    `minmax(0, ${layout.view === "write" ? 0 : layout.view === "both" ? 1 - layout.split : 1}fr)`,
+  ];
+  return { columns: columns.join(" "), areas: '"outline write divider preview"' };
 }
 
 export function nextZoom(scale: number, direction: 1 | -1): number {

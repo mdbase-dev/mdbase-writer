@@ -60,6 +60,8 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
     return new Promise<boolean>(finish => setNavigation({message: saved.message, finish}));
   });
   const [view, setView] = useState<{backend: WriterBackend; workspace: ManuscriptWorkspace | null} | null>(null);
+  const lastPath = useRef<string | null>(path);
+  useEffect(() => { if (path) lastPath.current = path; }, [path]);
   useEffect(() => {
     const owned = path ? new ManuscriptWorkspace(backend, path) : null;
     let active = true;
@@ -76,7 +78,7 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
   }, [backend, current]);
   const since = useMemo(() => path ? recentManuscripts(localNamespace(backend)).find(entry => entry.path === path)?.at : undefined, [backend, path]);
   useEffect(() => {if (path) recordOpened(localNamespace(backend), path);}, [backend, path]);
-  if (!path) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} />;
+  if (!path) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} returnPath={lastPath.current} />;
   if (!current) return null;
   return <>
     <WorkspaceView key={current.main} workspace={current} since={since} onClose={force => setPath(null, force)} />

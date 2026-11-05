@@ -2,7 +2,7 @@
 // Build first: pnpm build:editing-test, then node scripts/browser-editing-test.mjs.
 import assert from "node:assert/strict";
 import http from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -31,9 +31,23 @@ let browser;
 try {
   const base = `http://127.0.0.1:${server.address().port}`;
   browser = await chromium.launch({ executablePath: process.env.CHROME });
+  const tracing = await browser.newBrowserCDPSession();
+  await tracing.send("Tracing.start", { categories: "disabled-by-default-v8.cpu_profiler", transferMode: "ReturnAsStream" });
   const context = await browser.newContext({ viewport: { width: 1500, height: 950 }, serviceWorkers: "block" });
   await context.route("**/*", route => route.request().url().startsWith(`${base}/`) ? route.continue() : route.abort());
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    window.previewProfile = [];
+    const OriginalWorker = window.Worker;
+    window.Worker = class extends OriginalWorker {
+      constructor(...args) {
+        super(...args);
+        this.addEventListener("message", ({ data }) => {
+          if (data.type === "ready" || data.type === "result") window.previewProfile.push({ elapsed: performance.now(), type: data.type, initMs: data.initMs, timings: data.timings });
+        });
+      }
+    };
+  });
   const errors = [];
   page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
   page.on("pageerror", error => errors.push(error.stack ?? error.message));
@@ -44,10 +58,28 @@ try {
   const body = () => page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; });
   await page.goto(`${base}/?demo&manuscript=manuscripts%2Fpatient-observation.md`);
   await painted();
+  const profile = await page.evaluate(() => ({ paintedMs: performance.now(), messages: window.previewProfile, resources: performance.getEntriesByType("resource").map(({ name, startTime, duration, transferSize }) => ({ name: new URL(name).pathname, startTime, duration, transferSize })) }));
+  profile.workers = await Promise.all(page.workers().map(worker => worker.evaluate(() => performance.getEntriesByType("resource").map(({ name, startTime, duration, transferSize }) => ({ name: new URL(name).pathname, startTime, duration, transferSize })))));
+  await mkdir("out/editing", { recursive: true });
+  await writeFile("out/editing/first-preview.json", JSON.stringify(profile, null, 2));
+  const completedTrace = new Promise(resolve => tracing.once("Tracing.tracingComplete", resolve));
+  await tracing.send("Tracing.end");
+  const { stream } = await completedTrace;
+  let trace = "";
+  for (;;) {
+    const chunk = await tracing.send("IO.read", { handle: stream });
+    trace += chunk.data;
+    if (chunk.eof) break;
+  }
+  await tracing.send("IO.close", { handle: stream });
+  await writeFile("out/editing/first-preview-trace.json", trace);
+  console.log(`production first preview: ${Math.round(profile.paintedMs)}ms; compiler ready: ${Math.round(profile.messages.find(message => message.type === "ready")?.initMs)}ms`);
+  await page.locator(".outline-manuscript").click();
   const editor = page.locator(".cm-content[contenteditable=true]");
   await editor.click();
   await page.keyboard.press("Control+a");
   await page.keyboard.insertText(`# Long editing test\n\n## Section one\n\n${"A sentence with several words. ".repeat(380)}\n\n## Section two\n\n- First item\n- Second item\n\n[Link](https://example.com)\n`);
+  assert.match(await body(), /^# Long editing test/);
   await painted();
   for (let round = 0; round < 4; round++) {
     await page.keyboard.press("Control+End");

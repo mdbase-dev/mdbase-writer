@@ -18,6 +18,10 @@ msgid " · Comments not set up"
 msgstr " · 댓글이 설정되지 않음"
 
 #: src/ui/Home.tsx
+msgid " · resets on reload"
+msgstr " · 새로고침 시 초기화"
+
+#: src/ui/Home.tsx
 msgid " via mdbase Connect"
 msgstr " · mdbase Connect를 통해"
 
@@ -135,64 +139,12 @@ msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
 msgstr "{commentsTitle} (단축키: {MOD_LABEL}-Shift-M)"
 
 #: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} F"
-msgstr "단축키 {MOD_LABEL} {ALT_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} M"
-msgstr "단축키 {MOD_LABEL} {ALT_LABEL} M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} S"
-msgstr "단축키 {MOD_LABEL} {ALT_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} B / {MOD_LABEL} I"
-msgstr "굵게 {MOD_LABEL} B / 기울임 {MOD_LABEL} I"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} F"
-msgstr "단축키 {MOD_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} K"
 msgstr "단축키 {MOD_LABEL} K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} S"
-msgstr "단축키 {MOD_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift \\"
-msgstr "단축키 {MOD_LABEL} Shift \\"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift E"
-msgstr "단축키 {MOD_LABEL} Shift E"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift F"
-msgstr "단축키 {MOD_LABEL} Shift F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift K"
-msgstr "단축키 {MOD_LABEL} Shift K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift M"
-msgstr "단축키 {MOD_LABEL} Shift M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift S"
-msgstr "단축키 {MOD_LABEL} Shift S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
 msgstr "굵게 ({MOD_LABEL}-B)"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL}-click"
-msgstr "{MOD_LABEL}-클릭"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
@@ -283,10 +235,6 @@ msgstr "<0/> 장 추가"
 msgid "<0/> Include a worked example of citations, figures and chapters"
 msgstr "<0/> 인용, 그림 및 장이 포함된 예시를 추가하세요"
 
-#: src/ui/CommentsPanel.tsx
-msgid "<0/> On the record"
-msgstr "<0/> 레코드 전체"
-
 #: src/ui/Settings.tsx
 msgid "<0/>Add author"
 msgstr "<0/>저자 추가"
@@ -314,10 +262,6 @@ msgstr "장 제목이 필요합니다."
 #: src/i18n/diagnostics.ts
 msgid "A citation cannot mix cross-references and citekeys."
 msgstr "인용에는 상호 참조와 citekey를 함께 사용할 수 없습니다."
-
-#: src/ui/CommentsPanel.tsx
-msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
-msgstr "본문 구간이 아니라 레코드 전체에 다는 댓글입니다(특정 구간에 댓글을 달려면 편집기에서 텍스트를 선택하세요)."
 
 #: src/ui/Home.tsx
 msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
@@ -350,10 +294,6 @@ msgstr "추가"
 #: src/pwa-install.ts
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "홈 화면에 {appName}을(를) 추가하려면 공유를 탭한 다음 홈 화면에 추가를 선택하세요."
-
-#: src/ui/WorkspaceView.tsx
-msgid "Add a footnote"
-msgstr "각주 추가"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -448,10 +388,6 @@ msgstr "백업 저장되지 않은 내용 복구"
 msgid "Bold"
 msgstr "굵게"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Bold / italic (again to remove it)"
-msgstr "굵게 / 기울임꼴(다시 누르면 해제)"
-
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -528,6 +464,10 @@ msgstr "Chicago(각주 및 참고문헌)"
 msgid "Choose another collection"
 msgstr "다른 컬렉션 선택"
 
+#: src/ui/Home.tsx
+msgid "Choose collection"
+msgstr "컬렉션 선택"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "인용"
@@ -558,10 +498,6 @@ msgstr "인용"
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
 msgstr "{0} 인용"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr "출처를 인용하거나 키, 저자, 제목 또는 연도로 레이블 참조"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
@@ -604,14 +540,14 @@ msgstr "설정 닫기"
 msgid "Close the lower panel"
 msgstr "아래쪽 패널 닫기"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Close the lower sidebar panel"
-msgstr "사이드바 아래쪽 패널 닫기"
-
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
 msgstr "코드"
+
+#: src/ui/Home.tsx
+msgid "Collection"
+msgstr "컬렉션"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
@@ -659,6 +595,10 @@ msgstr "선택 영역에 댓글 달기"
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
 msgstr "선택 영역에 댓글 달기({MOD_LABEL}-{ALT_LABEL}-M)"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Comment on this text"
+msgstr "이 텍스트에 댓글 달기"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
@@ -773,7 +713,6 @@ msgstr "삭제됨"
 msgid "Deleted elsewhere"
 msgstr "다른 곳에서 삭제됨"
 
-#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Demo · resets on reload"
 msgstr "데모 · 새로고침하면 초기화됨"
@@ -838,7 +777,6 @@ msgstr "순서를 바꾸려면 드래그하거나 Alt-↑/↓를 누르세요"
 msgid "edited {0}"
 msgstr "{0} 수정됨"
 
-#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "편집기"
@@ -848,16 +786,12 @@ msgid "Editor and preview"
 msgstr "편집기 및 미리보기"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Editor and preview → editor only → preview only"
-msgstr "편집기 및 미리보기 → 편집기만 → 미리보기만"
-
-#: src/ui/WorkspaceView.tsx
 msgid "Editor only"
 msgstr "편집기만"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Embed a record"
-msgstr "레코드 삽입"
+#: src/ui/Settings.tsx
+msgid "Editor preferences"
+msgstr "편집기 환경설정"
 
 #: src/workspace/workspace.ts
 msgid "Embedded record could not be loaded: {problem}"
@@ -982,15 +916,11 @@ msgstr "이 본문 구간의 출처를 찾아 뒤에 인용"
 msgid "find all chapters"
 msgstr "모든 장 찾기"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Find and replace in this record"
-msgstr "이 레코드에서 찾기 및 바꾸기"
-
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "출처에서 찾기"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/Shortcuts.tsx
 msgid "Find or run a command"
 msgstr "명령 찾기 또는 실행"
 
@@ -1050,6 +980,7 @@ msgstr "원고 제목을 입력하세요. 나중에 변경할 수 있습니다."
 msgid "grid columns rows"
 msgstr "격자 열 행"
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "도움말"
@@ -1114,19 +1045,24 @@ msgid "in {0} · "
 msgstr "{0} · "
 
 #. placeholder {0}: collectionPicker ?? <strong>{backend.collectionName}</strong>
-#. placeholder {1}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
-#. placeholder {2}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
-#. placeholder {3}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
-#. placeholder {4}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
+#. placeholder {1}: backend.kind === "demo" && <><Trans> · resets on reload</Trans></>
+#. placeholder {2}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
+#. placeholder {3}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
+#. placeholder {4}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
+#. placeholder {5}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
 #: src/ui/Home.tsx
-msgid "In {0}{1}{2}{3}{4}"
-msgstr "{0}{1}{2}{3}{4}에서"
+msgid "In {0}{1}{2}{3}{4}{5}"
+msgstr "{0}{1}{2}{3}{4}{5}에서"
 
 #. placeholder {0}: inHighlights.length
 #. placeholder {1}: highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>
 #: src/ui/SourcesPanel.tsx
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "하이라이트 <0>{0}</0>{1}개에서"
+
+#: src/ui/Shortcuts.tsx
+msgid "In the editor, press Tab to move to the next control."
+msgstr "편집기에서 Tab 키를 누르면 다음 컨트롤로 이동합니다."
 
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
@@ -1168,10 +1104,6 @@ msgstr "{0} 삽입"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "인용, 각주, 상호 참조, 그림, 표 또는 수식을 삽입합니다(또는 텍스트에서 / 입력)."
-
-#: src/ui/WorkspaceView.tsx
-msgid "Insert a footnote, figure, table, equation, cross-reference or citation"
-msgstr "각주, 그림, 표, 수식, 상호 참조 또는 인용 삽입"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Insert at the cursor"
@@ -1216,6 +1148,8 @@ msgstr "계속 작성"
 msgid "kept as it is"
 msgstr "그대로 유지됨"
 
+#: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "키보드 단축키"
@@ -1313,10 +1247,6 @@ msgstr "출처 검색 중…"
 msgid "Lower panel"
 msgstr "아래쪽 패널"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Make the selection a link"
-msgstr "선택 영역을 링크로 만들기"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
 msgstr "이 수정 적용"
@@ -1393,8 +1323,8 @@ msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF 
 msgstr "mdbase writer는 mdbase 컬렉션의 Markdown 레코드를 조판해 PDF 및 Word 문서로 만들고 mdbase Reader 라이브러리의 출처를 인용합니다. 컬렉션을 연결하여 접근할 항목을 선택하세요."
 
 #: src/ui/CompareDialog.tsx
-msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
-msgstr "Markdown 병합 완료<0/><1>병합된 텍스트에는 컬렉션 버전을 바탕으로 로컬 설정 변경 사항이 반영됩니다.</1>"
+msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
+msgstr "병합된 Markdown<0/><1>내 텍스트로 시작합니다. 올바르게 편집한 다음 저장하세요. 로컬 설정은 유지됩니다.</1>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Mine"
@@ -1456,14 +1386,6 @@ msgstr "마지막 방문 이후 새 항목"
 #: src/editor/comments.ts
 msgid "New suggestion"
 msgstr "새 제안"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous comment"
-msgstr "다음/이전 댓글"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous problem"
-msgstr "다음/이전 문제"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1594,10 +1516,6 @@ msgstr "메모<0/>"
 msgid "Notes"
 msgstr "메모"
 
-#: src/ui/Home.tsx
-msgid "Notes without a type"
-msgstr "유형이 없는 메모"
-
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr "아직 인용한 항목이 없습니다. 아래 출처를 인용하거나 편집기에서 <0>[@</0>를 입력하세요."
@@ -1635,10 +1553,6 @@ msgstr "오프라인 · 이 기기에 저장, 동기화 대기 중"
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "오프라인 · 이 기기에 저장됨, 동기화 대기 중"
 
-#: src/ui/WorkspaceView.tsx
-msgid "On a citation: show the source. On a cross-reference: go to what it labels"
-msgstr "인용에서는 출처 표시, 상호 참조에서는 해당 레이블 위치로 이동"
-
 #: src/ui/records.ts
 msgid "On device · pending sync"
 msgstr "이 기기에 저장 · 동기화 대기 중"
@@ -1646,6 +1560,10 @@ msgstr "이 기기에 저장 · 동기화 대기 중"
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
 msgstr "산호초의 형성에 관하여"
+
+#: src/ui/Shortcuts.tsx
+msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
+msgstr "원고 목록에서 화살표 키 또는 J와 K를 사용하고 Enter로 여세요."
 
 #: src/ui/CommentsPanel.tsx
 msgid "On the whole record"
@@ -1676,6 +1594,10 @@ msgstr "Reader에서 열기 <0/>"
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
 msgstr "검토하려면 해당 원고 열기"
+
+#: src/ui/Home.tsx
+msgid "Open manuscript"
+msgstr "원고 열기"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -1742,6 +1664,10 @@ msgstr "또는 텍스트에서 <0>/</0>를 입력해 항목을 선택하세요."
 #: src/ui/Home.tsx
 msgid "or use a note you already have"
 msgstr "또는 기존 메모 사용"
+
+#: src/ui/Home.tsx
+msgid "Other notes"
+msgstr "기타 노트"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
@@ -1901,10 +1827,6 @@ msgstr "삭제"
 msgid "Remove author {0}"
 msgstr "저자 {0} 삭제"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Rename the chapter chosen in the outline"
-msgstr "개요에서 선택한 장 이름 변경"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "다시 열기"
@@ -2031,13 +1953,13 @@ msgstr "복구된 로컬 초안 검토"
 msgid "Review the recovered local drafts before leaving."
 msgstr "나가기 전에 복구된 로컬 초안을 검토하세요."
 
-#: src/ui/WorkspaceView.tsx
-msgid "Save all records now"
-msgstr "모든 레코드 지금 저장"
-
 #: src/ui/CompareDialog.tsx
 msgid "Save merged version"
 msgstr "병합된 버전 저장"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Save now"
+msgstr "지금 저장"
 
 #: src/ui/records.ts
 msgid "Saved"
@@ -2060,14 +1982,6 @@ msgstr "저자, 제목, 연도 또는 키로 검색"
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "원고 검색"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Search the whole manuscript"
-msgstr "원고 전체 검색"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Second panel"
-msgstr "두 번째 패널"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -2159,14 +2073,6 @@ msgstr "답글 50개 더 표시 · {0}"
 msgid "Show 50 more sources · {0}"
 msgstr "출처 50개 더 표시 · {0}"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second panel beneath (outline and comments together)"
-msgstr "아래에 두 번째 패널 표시(개요와 댓글 함께)"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second sidebar panel"
-msgstr "두 번째 사이드바 패널 표시"
-
 #. placeholder {0}: untypedShown.length
 #: src/ui/Home.tsx
 msgid "Show all {0} notes without a type"
@@ -2187,10 +2093,6 @@ msgstr "편집기에서 표시"
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "Markdown 원문 표시"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show or hide the sidebar"
-msgstr "사이드바 표시 또는 숨기기"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 chapters"
@@ -2331,6 +2233,10 @@ msgid "Sources."
 msgstr "출처."
 
 #: src/ui/WorkspaceView.tsx
+msgid "Split sidebar"
+msgstr "사이드바 분할"
+
+#: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
 msgstr "분할 스택 개요 댓글 출처"
 
@@ -2413,8 +2319,8 @@ msgid "The chapter is not open."
 msgstr "장이 열려 있지 않습니다."
 
 #: src/ui/WorkspaceView.tsx
-msgid "The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts."
-msgstr "컬렉션 버전을 비교할 수 없습니다. 여기에서 저장하기 전에 컬렉션의 보류되거나 해결되지 않은 변경 사항을 해결하세요. 로컬 초안은 다운로드할 수 있습니다."
+msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
+msgstr "컬렉션 버전을 비교할 수 없습니다. 여기서 저장하기 전에 컬렉션의 충돌을 해결하거나 로컬 초안을 다운로드하세요."
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
@@ -2511,6 +2417,10 @@ msgstr "이 설정은 이 브라우저의 모든 원고에 적용됩니다."
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr "이 설정은 이 브라우저의 인터페이스 언어를 변경하며 원고 언어는 변경하지 않습니다."
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter changed elsewhere while you were editing it."
+msgstr "편집 중에 이 장이 다른 곳에서 변경되었습니다."
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "이 컬렉션은 Writer에서 파일을 받지 않습니다."
@@ -2528,20 +2438,12 @@ msgid "This is a local development build. The hosted mdbase connect service only
 msgstr "이 버전은 로컬 개발 빌드입니다. 호스팅된 mdbase connect 서비스는 HTTPS로 제공되는 앱만 허용하므로 Connect의 로컬 환경(mdbase-connect에서 <0>pnpm dev:environment:up</0> 실행)을 사용하거나 <1>데모 컬렉션</1>을 여세요."
 
 #: src/ui/WorkspaceView.tsx
-msgid "This list"
-msgstr "이 목록"
-
-#: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "이 원고를 열지 못했습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "이 본문 구간은 더 이상 텍스트에 없습니다."
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record changed elsewhere while you were editing it."
-msgstr "편집하는 동안 다른 곳에서 이 레코드가 변경되었습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
@@ -2609,10 +2511,6 @@ msgstr "알 수 없는 인용 스타일 \"{value}\"입니다. {other}를 사용�
 msgid "Unknown template \"{value}\"; using article."
 msgstr "알 수 없는 템플릿 \"{value}\"입니다. article을 사용합니다."
 
-#: src/ui/records.ts
-msgid "Unsaved"
-msgstr "저장되지 않음"
-
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
 msgstr "저장되지 않은 초안"
@@ -2674,6 +2572,10 @@ msgstr "승인 대기 중…"
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
 msgstr "mdbase connect 대기 중…"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Whole text"
+msgstr "전체 텍스트"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -2744,6 +2646,7 @@ msgstr "원고를 작성하고 인용을 추가하고 조판하세요"
 msgid "Writer cannot ask for access here."
 msgstr "Writer는 여기에서 접근을 요청할 수 없습니다."
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer 명령"

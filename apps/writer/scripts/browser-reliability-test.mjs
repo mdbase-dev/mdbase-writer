@@ -29,6 +29,8 @@ async function scenario(name, run) {
 const open = async (page) => {
   await page.goto(`${base}?demo&manuscript=${encodeURIComponent(main)}`);
   await page.waitForFunction(() => window.writer?.workspace?.getSnapshot().phase === "ready");
+  await page.locator(".outline-manuscript").click();
+  await page.getByRole("textbox", { name: `Markdown for ${main}`, exact: true }).waitFor();
 };
 const painted = (page) => page.waitForFunction(() => {
   const snap = window.writer?.workspace?.getSnapshot();
@@ -441,6 +443,7 @@ try {
     await page.goto(`${base}?demo`);
     await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
     await painted(page);
+    await page.locator(".outline-manuscript").click();
     await page.evaluate(() => {
       const { workspace, backend } = window.writer;
       const snapshot = workspace.getSnapshot().records.get(workspace.main).snapshot;

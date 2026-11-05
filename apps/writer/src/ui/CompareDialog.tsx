@@ -68,14 +68,14 @@ export function CompareDialog({ comparison, canRestore = true, onClose, onResolv
         </div></details>}
         {comparison.kind === "conflict" && <label className="merge-field"><Trans>Merged Markdown
           <textarea className="mdbase-field" rows={12} value={merged} onChange={(event) => setMerge({ ...merge, text: event.target.value })} />
-          <span className="muted small">The merged text keeps your local setting changes on top of the collection version.</span>
+          <span className="muted small">This starts with your text. Edit it until it is right, then save. Your local settings are kept.</span>
         </Trans></label>}
         {!canRestore && <p><Trans>This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record.</Trans></p>}
         <div className="compare-actions">
           <button type="button" className="mdbase-button" onClick={onDownload}><Trans>Download local draft</Trans></button>
           <button type="button" className="mdbase-button" onClick={() => onResolve("theirs")}><Trans>Use collection version</Trans></button>
           <button type="button" className="mdbase-button" disabled={!canRestore} onClick={() => onResolve("mine")}>{comparison.kind === "draft" ? t`Restore local draft` : t`Keep mine`}</button>
-          {comparison.kind === "conflict" && <button type="button" className="mdbase-button is-primary" onClick={() => onResolve({ body: merged })}><Trans>Save merged version</Trans></button>}
+          {comparison.kind === "conflict" && <button type="button" className="mdbase-button is-primary" disabled={merged === comparison.mine} onClick={() => onResolve({ body: merged })}><Trans>Save merged version</Trans></button>}
         </div>
       </>}
     </Dialog>

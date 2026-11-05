@@ -20,7 +20,6 @@ import { CollectionPicker } from "./ui/CollectionPicker.js";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { ThemeChoice, TopbarSlot } from "./ui/topbar.js";
 import { ThemeSelect } from "@mdbase-dev/ui/theme-select";
-import { InterfaceLanguage } from "./i18n/provider.js";
 import { ConnectLayout, OpeningScreen } from "@mdbase-dev/ui/screens";
 
 import { ManuscriptWorkspace } from "./workspace/workspace.js";
@@ -44,7 +43,6 @@ export function LegacyApp() {
           <header className="topbar">
             <AppSwitcher />
             <div className="topbar-slot" ref={setSlot} />
-            <InterfaceLanguage />
             <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} />
             <FeedbackButton />
           </header>

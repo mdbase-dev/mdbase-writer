@@ -17,7 +17,7 @@ import { equationSnippet, figureSnippet, tableSnippet } from "../editor/snippets
 import type { InsertCommand } from "../editor/slash.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
 import { authorYear } from "../editor/library-search.js";
-import { ALT_LABEL, MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget } from "../editor/insight.js";
+import { MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import { formatNumber } from "../i18n/presentation.js";
@@ -74,6 +74,8 @@ import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar, ThemeChoice } from "./topbar.js";
 import { signalFailure, signalResult } from "./mark.js";
+import { recentManuscripts, recordOpened } from "./recent.js";
+import { Shortcuts } from "./Shortcuts.js";
 
 /** Which part a phone shows. */
 type Pane = "outline" | "write" | "preview";
@@ -180,6 +182,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   // Most typesets finish between keystrokes; saying so each time only flickers.
   const slowCompile = useSustained(snap.compiling, 600);
   const [active, setActive] = useState(workspace.main);
+  const openedChapter = useRef(false);
   const [pane, setPane] = useState<Pane>("write");
   const [layout, setLayoutState] = useState<Layout>(() => ({ ...loadLayout(), tab: rememberedTabs.get(workspace.main) ?? "outline" }));
   const lower = useOverlay(layout.lowerTab !== null, ".sidebar-lower", "translateY(-3px)");
@@ -200,6 +203,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const themeChoice = useContext(ThemeChoice);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sourcesRequest, setSourcesRequest] = useState<SourcesRequest | null>(null);
+  const [sourceQuery, setSourceQuery] = useState("");
   const [previewView, setPreviewView] = useState<PreviewView | null>(null);
   const zoomLabel = formatNumber(layout.zoom === "fit" ? previewView?.scale ?? 1 : layout.zoom, { style: "percent", maximumFractionDigits: 0 });
   const [cursor, setCursor] = useState<{ record: string; offset: number } | null>(null);
@@ -214,7 +218,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const exportJob = useRef<AbortController | null>(null);
   const lastExport = useRef<ExportFormat>(exportFormat);
   useEffect(() => () => exportJob.current?.abort(), []);
-  const pendingReveal = useRef<{ offset: number; to?: number; focus?: boolean } | null>(null);
+  const revealRequest = useRef<{ record: string; offset: number; to?: number; focus?: boolean } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null);
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -233,6 +237,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     });
   }, []);
   const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
+  const setView = useCallback((view: View) => {
+    setLayout(current => ({ ...current, view }));
+    if (view !== "preview") requestAnimationFrame(() => editor.current?.focus());
+  }, [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => {
     rememberedTabs.set(workspace.main, tab);
     // The lower panel never repeats the upper: the two swap.
@@ -245,6 +253,17 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const citationNavRef = useRef({ order, snap, cursor, active });
   useLayoutEffect(() => { citationNavRef.current = { order, snap, cursor, active }; }, [order, snap, cursor, active]);
   const activeView = snap.records.get(active);
+  useLayoutEffect(() => {
+    if (snap.phase !== "ready" || snap.indexLoad.phase === "loading" || openedChapter.current) return;
+    openedChapter.current = true;
+    if (workspace.hasUnsavedChanges()) return;
+    const chapters = workspace.chapterPaths();
+    const last = recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.chapter;
+    setActive(last && chapters.includes(last) ? last : chapters.find(chapter => chapter !== null) ?? workspace.main);
+  }, [workspace, snap.phase, snap.indexLoad.phase]);
+  useLayoutEffect(() => {
+    if (narrow && pane === "write") editor.current?.focus();
+  }, [pane, narrow]);
   const dependencyDiagnostics = workspace.dependencyDiagnostics();
   const allDiagnostics = useMemo(() => [...discoveredDiagnostics(snap.result?.diagnostics ?? NO_DIAGNOSTICS, snap), ...dependencyDiagnostics]
     .map(d => ({ ...d, message: diagnosticMessage(d.message, d.copy) })), [snap, dependencyDiagnostics, interfaceLocale]);
@@ -382,9 +401,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     if (options?.focus !== false) setPane("write");
     setLayout((l) => (l.view === "preview" ? { ...l, view: "both" } : l));
     setCursor({ record, offset });
+    revealRequest.current = { record, offset, ...options };
     if (record === active && editor.current) editor.current.reveal(offset, options);
     else {
-      pendingReveal.current = { offset, ...options };
       setActive(record);
     }
   }, [active, setLayout]);
@@ -397,6 +416,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   // Stable handlers, so the editor and preview only render when what they show changes.
   const onEditorChange = useCallback((text: string) => {
     workspace.setBody(active, text);
+    if (active !== workspace.main) recordOpened(workspace.namespace, workspace.main, undefined, undefined, active);
     setTyping(true);
     clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(() => setTyping(false), SETTLE_MS);
@@ -411,14 +431,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   const onEditorReady = useCallback((handle: EditorHandle) => {
     editor.current = handle;
-    if (pendingReveal.current !== null) {
-      const { offset, ...options } = pendingReveal.current;
-      pendingReveal.current = null;
-      // The editor that is current by then: in development React sets a new
-      // editor up twice, and the first is gone before the frame.
-      requestAnimationFrame(() => editor.current?.reveal(offset, options));
+    if (revealRequest.current?.record === active) {
+      handle.reveal(revealRequest.current.offset, revealRequest.current);
+    } else {
+      handle.focus();
     }
-  }, []);
+  }, [active]);
 
   const showSources = useCallback((key?: string) => {
     setLayout((l) => (l.sidebar && l.tab === "sources" ? l : { ...l, sidebar: true, tab: "sources" }));
@@ -726,7 +744,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     const mod = isMod(e);
     let handled = true;
     if (mod && !e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, sidebar: !l.sidebar }));
-    else if (mod && e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, view: VIEW_ORDER[(VIEW_ORDER.indexOf(l.view) + 1) % VIEW_ORDER.length] as View }));
+    else if (mod && e.shiftKey && e.code === "Backslash") setView(VIEW_ORDER[(VIEW_ORDER.indexOf(layout.view) + 1) % VIEW_ORDER.length] as View);
     else if (mod && e.shiftKey && e.code === "KeyF") showSearch();
     else if (mod && e.shiftKey && e.code === "KeyE") showSources();
     else if (mod && e.shiftKey && e.code === "KeyM") showComments();
@@ -738,7 +756,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
     else if (mod && !e.shiftKey && e.code === "KeyS") void workspace.retrySave().then(signalResult);
     else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
-    else if (mod && (e.key === "?" || (e.shiftKey && e.code === "Slash"))) setShortcutsOpen(true);
+    else if (mod && e.code === "Slash") setShortcutsOpen(true);
     else if (!mod && e.key === "?" && !isTextEntry(e.target)) setShortcutsOpen(true);
     else if (e.key === "F8" && !mod) stepProblem(e.shiftKey ? -1 : 1);
     else handled = false;
@@ -756,6 +774,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   const sourcesPanel = (
     <SourcesPanel
+      query={sourceQuery}
+      setQuery={setSourceQuery}
       library={snap.library}
       cited={stats.cited}
       atCursor={citedAtCursor}
@@ -800,6 +820,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               active={active}
               cursor={cursor}
               onOpen={(path) => {
+                revealRequest.current = null;
                 setActive(path);
                 setPane("write");
               }}
@@ -858,6 +879,38 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   const timings = snap.result?.timings;
   const { columns, areas } = gridFor(layout);
+  const commands: Command[] = [
+    { id: "save", group: translate`Manuscript`, label: translate`Save now`, shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
+    { id: "local-drafts", group: translate`Manuscript`, label: translate`Download local drafts`, keywords: translate`backup unsaved recovery`, run: downloadDrafts },
+    { id: "settings", group: translate`Manuscript`, label: translate`Manuscript settings`, shortcut: "mod+,", run: () => setSettingsOpen(true) },
+    { id: "search", group: translate`Manuscript`, label: translate`Search the manuscript`, shortcut: "mod+shift+f", keywords: translate`find all chapters`, run: showSearch },
+    { id: "sources", group: translate`Manuscript`, label: translate`Find a source`, shortcut: "mod+shift+e", run: () => showSources() },
+    { id: "next-problem", group: translate`Manuscript`, label: translate`Next problem`, shortcut: "F8", run: () => stepProblem(1) },
+    { id: "manuscripts", group: translate`Manuscript`, label: translate`All manuscripts`, keywords: translate`back home close`, run: () => void requestClose() },
+    { id: "problems", group: translate`Manuscript`, label: problemsOpen ? translate`Hide problems` : translate`Show problems`, keywords: translate`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
+    { id: "bold", group: translate`Format`, label: translate`Bold`, shortcut: "mod+b", run: () => editor.current?.format("bold") },
+    { id: "italic", group: translate`Format`, label: translate`Italic`, shortcut: "mod+i", run: () => editor.current?.format("italic") },
+    { id: "code", group: translate`Format`, label: translate`Inline code`, run: () => editor.current?.format("code") },
+    { id: "link", group: translate`Format`, label: translate`Link`, shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
+    ...paletteInserts,
+    { id: "comment", group: translate`Comments`, label: translate`Comment on the selection`, shortcut: "mod+alt+m", run: () => startComment("comment") },
+    { id: "suggest", group: translate`Comments`, label: translate`Suggest an edit to the selection`, shortcut: "mod+alt+s", keywords: translate`track changes`, run: () => startComment("suggest") },
+    { id: "comments", group: translate`Comments`, label: translate`Show comments`, shortcut: "mod+shift+m", run: showComments },
+    { id: "next-comment", group: translate`Comments`, label: translate`Next comment`, shortcut: "F7", run: () => stepComment(1) },
+    { id: "previous-comment", group: translate`Comments`, label: translate`Previous comment`, shortcut: "shift+F7", run: () => stepComment(-1) },
+    { id: "lower-panel", group: translate`View`, label: layout.lowerTab ? translate`Close the lower panel` : translate`Split sidebar`, keywords: translate`split stack outline comments sources`, run: toggleLower },
+    { id: "sidebar", group: translate`View`, label: layout.sidebar ? translate`Hide the sidebar` : translate`Show the sidebar`, shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
+    { id: "live-preview", group: translate`View`, label: layout.livePreview ? translate`Show Markdown as written` : translate`Read as the manuscript`, keywords: translate`source markup raw live preview chips`, run: toggleLivePreview },
+    ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: translate`View`, label: VIEW_NAME[view], run: () => setView(view) })),
+    ...(themeChoice
+      ? themePreferences.filter((t) => t !== themeChoice.theme).map((t) => ({ id: `theme-${t}`, group: translate`View`, label: translate`${THEME_NAME[t]} theme`, keywords: translate`appearance dark light`, run: () => themeChoice.setTheme(t) }))
+      : []),
+    ...(snap.phase === "ready" ? [{ id: "export-pdf", group: translate`Export`, label: translate`Export PDF`, run: () => runExport("pdf") }] : []),
+    { id: "export-docx", group: translate`Export`, label: translate`Export Word (DOCX)`, run: () => runExport("docx") },
+    { id: "export-bundle", group: translate`Export`, label: translate`Export Pandoc bundle (zip)`, run: () => runExport("bundle") },
+    { id: "shortcuts", group: translate`Help`, label: translate`Keyboard shortcuts`, shortcut: "mod+/", run: () => setShortcutsOpen(true) },
+  ];
+
 
   return (
     <main
@@ -904,7 +957,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               {VIEW_ORDER.map((v) => {
                 const Icon = v === "both" ? SplitIcon : v === "write" ? EditorOnly : PageIcon;
                 return (
-                  <button key={v} type="button" aria-pressed={layout.view === v} onClick={() => setLayout((l) => ({ ...l, view: v }))} aria-label={VIEW_NAME[v]} title={translate`${VIEW_NAME[v]} (${MOD_LABEL}-Shift-\\ cycles)`}>
+                  <button key={v} type="button" aria-pressed={layout.view === v} onClick={() => setView(v)} aria-label={VIEW_NAME[v]} title={translate`${VIEW_NAME[v]} (${MOD_LABEL}-Shift-\\ cycles)`}>
                     <Icon />
                   </button>
                 );
@@ -983,10 +1036,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           })}
         </nav>
       )}
-      <section className="write" aria-label={translate`Editor`}>
+      <section className="write" aria-label={translate`Editor`} inert={narrow ? pane !== "write" : layout.view === "preview"}>
         {active !== workspace.main && (
           <header className="pane-header">
-            <button type="button" className="link small" onClick={() => setActive(workspace.main)}>
+            <button type="button" className="link small" onClick={() => { revealRequest.current = null; setActive(workspace.main); }}>
               ← {recordTitle(snap.records.get(workspace.main), workspace.main)}
             </button>
             <span className="pane-title">{recordTitle(activeView, active)}</span>
@@ -1008,7 +1061,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>}
         {activeView?.snapshot.state === "conflict" && (
           <div className="banner" role="alert">
-            <span>{activeView.snapshot.remote ? <Trans>This record changed elsewhere while you were editing it.</Trans> : <Trans>The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts.</Trans>}</span>
+            <span>{activeView.snapshot.remote ? <Trans>This chapter changed elsewhere while you were editing it.</Trans> : <Trans>The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts.</Trans>}</span>
             {activeView.snapshot.remote && <button type="button" className="mdbase-button" onClick={() => setComparisonPath(active)}><Trans>Compare versions</Trans></button>}
             <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           </div>
@@ -1080,7 +1133,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         onChange={(split) => setLayout((l) => ({ ...l, split }))}
       />
 
-      <section className="preview-pane" aria-label={translate`Preview`}>
+      <section className="preview-pane" aria-label={translate`Preview`} inert={narrow ? pane !== "preview" : layout.view === "write"}>
         <div className="preview-top">
         <header className="pane-header preview-header">
           <span
@@ -1174,42 +1227,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         livePreview={layout.livePreview}
         onLivePreview={toggleLivePreview}
       />
-      <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} />
+      <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} commands={commands} />
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         label={translate`Writer commands`}
-        commands={[
-          { id: "save", group: translate`Manuscript`, label: translate`Save all records now`, shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
-          { id: "local-drafts", group: translate`Manuscript`, label: translate`Download local drafts`, keywords: translate`backup unsaved recovery`, run: downloadDrafts },
-          { id: "settings", group: translate`Manuscript`, label: translate`Manuscript settings`, shortcut: "mod+,", run: () => setSettingsOpen(true) },
-          { id: "search", group: translate`Manuscript`, label: translate`Search the manuscript`, shortcut: "mod+shift+f", keywords: translate`find all chapters`, run: showSearch },
-          { id: "sources", group: translate`Manuscript`, label: translate`Find a source`, shortcut: "mod+shift+e", run: () => showSources() },
-          { id: "next-problem", group: translate`Manuscript`, label: translate`Next problem`, shortcut: "F8", run: () => stepProblem(1) },
-          { id: "manuscripts", group: translate`Manuscript`, label: translate`All manuscripts`, keywords: translate`back home close`, run: () => void requestClose() },
-          { id: "problems", group: translate`Manuscript`, label: problemsOpen ? translate`Hide problems` : translate`Show problems`, keywords: translate`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
-          { id: "bold", group: translate`Format`, label: translate`Bold`, shortcut: "mod+b", run: () => editor.current?.format("bold") },
-          { id: "italic", group: translate`Format`, label: translate`Italic`, shortcut: "mod+i", run: () => editor.current?.format("italic") },
-          { id: "code", group: translate`Format`, label: translate`Inline code`, run: () => editor.current?.format("code") },
-          { id: "link", group: translate`Format`, label: translate`Link`, shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
-          ...paletteInserts,
-          { id: "comment", group: translate`Comments`, label: translate`Comment on the selection`, shortcut: "mod+alt+m", run: () => startComment("comment") },
-          { id: "suggest", group: translate`Comments`, label: translate`Suggest an edit to the selection`, shortcut: "mod+alt+s", keywords: translate`track changes`, run: () => startComment("suggest") },
-          { id: "comments", group: translate`Comments`, label: translate`Show comments`, shortcut: "mod+shift+m", run: showComments },
-          { id: "next-comment", group: translate`Comments`, label: translate`Next comment`, shortcut: "F7", run: () => stepComment(1) },
-          { id: "previous-comment", group: translate`Comments`, label: translate`Previous comment`, shortcut: "shift+F7", run: () => stepComment(-1) },
-          { id: "lower-panel", group: translate`View`, label: layout.lowerTab ? translate`Close the lower sidebar panel` : translate`Show a second sidebar panel`, keywords: translate`split stack outline comments sources`, run: toggleLower },
-          { id: "sidebar", group: translate`View`, label: layout.sidebar ? translate`Hide the sidebar` : translate`Show the sidebar`, shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
-          { id: "live-preview", group: translate`View`, label: layout.livePreview ? translate`Show Markdown as written` : translate`Read as the manuscript`, keywords: translate`source markup raw live preview chips`, run: toggleLivePreview },
-          ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: translate`View`, label: VIEW_NAME[view], run: () => setLayout((l) => ({ ...l, view })) })),
-          ...(themeChoice
-            ? themePreferences.filter((t) => t !== themeChoice.theme).map((t) => ({ id: `theme-${t}`, group: translate`View`, label: translate`${THEME_NAME[t]} theme`, keywords: translate`appearance dark light`, run: () => themeChoice.setTheme(t) }))
-            : []),
-          ...(snap.phase === "ready" ? [{ id: "export-pdf", group: translate`Export`, label: translate`Export PDF`, run: () => runExport("pdf") }] : []),
-          { id: "export-docx", group: translate`Export`, label: translate`Export Word (DOCX)`, run: () => runExport("docx") },
-          { id: "export-bundle", group: translate`Export`, label: translate`Export Pandoc bundle (zip)`, run: () => runExport("bundle") },
-          { id: "shortcuts", group: translate`Help`, label: translate`Keyboard shortcuts`, shortcut: "?", run: () => setShortcutsOpen(true) },
-        ]}
+        commands={commands}
       />
       <CompareDialog comparison={comparison} canRestore={compared?.state !== "deleted"} onClose={() => setComparisonPath(null)} onDownload={downloadDrafts} onResolve={(choice) => {
         if (!comparisonPath) return;
@@ -1291,7 +1314,7 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
           </button>
         ))}
       </div>
-      <button type="button" className="mdbase-icon-button is-small sidebar-split" aria-pressed={split} onClick={onSplit} title={split ? translate`Close the lower panel` : translate`Show a second panel beneath (outline and comments together)`} aria-label={translate`Second panel`}>
+      <button type="button" className="mdbase-icon-button is-small sidebar-split" aria-pressed={split} onClick={onSplit} title={split ? translate`Close the lower panel` : translate`Split sidebar`} aria-label={translate`Split sidebar`}>
         <SplitVerticalIcon />
       </button>
     </div>
@@ -1610,45 +1633,3 @@ function SidebarResizer({ width, onChange }: { width: number; onChange(width: nu
     />
   );
 }
-
-function shortcuts(): readonly [string, string][] { return [
-  [`${MOD_LABEL} \\`, translate`Show or hide the sidebar`],
-  [translate`${MOD_LABEL} Shift \\`, translate`Editor and preview → editor only → preview only`],
-  [translate`${MOD_LABEL} Shift F`, translate`Search the whole manuscript`],
-  [translate`${MOD_LABEL} Shift E`, translate`Find a source`],
-  [translate`${MOD_LABEL} Shift M`, translate`Show comments`],
-  ["F7 / Shift F7", translate`Next / previous comment`],
-  ["F2", translate`Rename the chapter chosen in the outline`],
-  [`${MOD_LABEL} ,`, translate`Manuscript settings`],
-  [translate`${MOD_LABEL} B / ${MOD_LABEL} I`, translate`Bold / italic (again to remove it)`],
-  [translate`${MOD_LABEL} Shift K`, translate`Make the selection a link`],
-  [translate`${MOD_LABEL} ${ALT_LABEL} M`, translate`Comment on the selection`],
-  [translate`${MOD_LABEL} ${ALT_LABEL} S`, translate`Suggest an edit to the selection`],
-  [translate`${MOD_LABEL} ${ALT_LABEL} F`, translate`Add a footnote`],
-  ["/", translate`Insert a footnote, figure, table, equation, cross-reference or citation`],
-  [translate`${MOD_LABEL} S`, translate`Save all records now`],
-  [translate`${MOD_LABEL} Shift S`, translate`Export`],
-  ["F8 / Shift F8", translate`Next / previous problem`],
-  [translate`${MOD_LABEL}-click`, translate`On a citation: show the source. On a cross-reference: go to what it labels`],
-  ["@ or [@", translate`Cite a source or refer to a label (by key, author, title or year)`],
-  ["![[", translate`Embed a record`],
-  [translate`${MOD_LABEL} F`, translate`Find and replace in this record`],
-  [translate`${MOD_LABEL} K`, translate`Find or run a command`],
-  ["?", translate`This list`],
-]; }
-
-const Shortcuts = memo(function Shortcuts({ open, onClose }: { open: boolean; onClose(): void }) {
-  useLingui();
-  return (
-    <Dialog open={open} onClose={onClose} title={translate`Keyboard shortcuts`} className="shortcuts-dialog">
-      <dl className="shortcuts">
-        {shortcuts().map(([keys, what]) => (
-          <div key={keys}>
-            <dt><kbd>{keys}</kbd></dt>
-            <dd>{what}</dd>
-          </div>
-        ))}
-      </dl>
-    </Dialog>
-  );
-});

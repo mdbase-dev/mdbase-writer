@@ -1,0 +1,78 @@
+diff --git a/css/collections.css b/css/collections.css
+index 02b9c582c2f804854d7316971c9d6ed20443d93c..417b5cdd42dea063469071f427cb6bf64f7e2177 100644
+--- a/css/collections.css
++++ b/css/collections.css
+@@ -616,7 +616,7 @@
+   gap: 4px;
+ }
+
+-.mdbase-collections-setup-section h3 {
++.mdbase-collections-setup-section h2 {
+   margin: 0;
+   color: var(--_text-soft);
+   font-size: var(--_font-size-caption);
+diff --git a/dist/CommandPalette.js b/dist/CommandPalette.js
+index bcfea34790878f2f3a54be5dbc0e0e0e34f3a214..6e44cd93e0f9d1d2f70760fe5a387aa1a6f03be5 100644
+--- a/dist/CommandPalette.js
++++ b/dist/CommandPalette.js
+@@ -92,13 +92,15 @@ function OpenCommandPalette({
+   const [active, setActive] = useState(0);
+   const inputRef = useRef(null);
+   const paletteRef = useRef(null);
++  const activated = useRef(false);
+   const matches = useMemo(() => matchingCommands(commands, query, showAll), [commands, query, showAll]);
+   useEffect(() => {
+     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+     globalThis.setTimeout(() => inputRef.current?.focus(), 0);
+-    return () => previous?.focus();
++    return () => { if (!activated.current || document.activeElement === document.body) previous?.focus(); };
+   }, []);
+   const run = (command, alternate = false) => {
++    activated.current = true;
+     onClose();
+     (alternate && command.alternate ? command.alternate.run : command.run)();
+   };
+diff --git a/dist/collections/CollectionGate.js b/dist/collections/CollectionGate.js
+index 989230686789b006a4ecc7a07d31310c33416d74..ac685fae1075946b1114ac93c74fb483699f65b8 100644
+--- a/dist/collections/CollectionGate.js
++++ b/dist/collections/CollectionGate.js
+@@ -158,7 +158,7 @@ function GateScreen({
+   const Heading = layout === "page" ? "h1" : "h2";
+   const opening = view.kind === "starting" || view.kind === "opening";
+   const announce = view.kind === "authorizing" ? view.heading : "";
+-  return _jsxs("div", {
++  return _jsxs(layout === "page" ? "main" : "div", {
+     ref: root,
+     className: "mdbase-collections mdbase-collections-gate",
+     "data-layout": layout,
+@@ -182,7 +182,7 @@ function GateScreen({
+         children: headingText
+       }), opening ? _jsx(OpeningScreen, {
+         app: options.app,
+-        layout: layout,
++        layout: "panel",
+         title: headingText,
+         detail: lead ?? undefined
+       }) : lead && _jsx("p", {
+diff --git a/dist/collections/SetupReview.js b/dist/collections/SetupReview.js
+index e22bb3aa78c3694731df6238a5d4cd4265f2f8c6..a4bef8823f523262666d3d0b72a3b72d6ea8ba20 100644
+--- a/dist/collections/SetupReview.js
++++ b/dist/collections/SetupReview.js
+@@ -136,7 +136,7 @@ export function SetupReview({
+       children: nothing ? ui.copy.setupNothing : plan.summary
+     }), plan.changes.length > 0 && _jsxs("section", {
+       className: "mdbase-collections-setup-section",
+-      children: [_jsx("h3", {
++      children: [_jsx("h2", {
+         children: ui.copy.setupChanges
+       }), _jsx("ul", {
+         className: "mdbase-collections-setup-list",
+@@ -146,7 +146,7 @@ export function SetupReview({
+       })]
+     }), plan.conflicts.length > 0 && _jsxs("section", {
+       className: "mdbase-collections-setup-section",
+-      children: [_jsx("h3", {
++      children: [_jsx("h2", {
+         children: ui.copy.setupConflicts
+       }), _jsx("ul", {
+         className: "mdbase-collections-setup-list",

@@ -29,7 +29,7 @@ async function probe(page, selector, action, reverse) {
     };
     const measure = () => {
       const element = document.querySelector(selector);
-      if (!element) return null;
+      if (!element || (element instanceof HTMLDialogElement && !element.open)) return null;
       const style = getComputedStyle(element);
       return { left: element.getBoundingClientRect().left, height: element.getBoundingClientRect().height, opacity: Number(style.opacity), transform: style.transform, columns: style.gridTemplateColumns, rows: style.gridTemplateRows, inert: element.inert, hidden: element.ariaHidden };
     };
@@ -40,7 +40,8 @@ async function probe(page, selector, action, reverse) {
     await new Promise((resolve) => {
       const sample = () => {
         const elapsed = performance.now() - started;
-        frames.push({ elapsed, ...measure() });
+        const measurement = measure();
+        frames.push({ elapsed, present: measurement !== null, ...measurement });
         for (const animation of document.getAnimations()) {
           const target = animation.effect?.target;
           if (target?.matches?.(selector) && !animations.some((entry) => entry.id === animation.id && entry.duration === animation.effect.getTiming().duration && entry.startTime === animation.startTime)) {
@@ -58,7 +59,7 @@ async function probe(page, selector, action, reverse) {
       };
       requestAnimationFrame(sample);
     });
-    return { frames, animations, interruption };
+    return { selector, frames, animations, interruption };
   }, { selector, action, reverse });
 }
 
@@ -67,6 +68,19 @@ function motion(result, reduced, duration, property = "opacity") {
   else {
     assert.ok(result.animations.some((animation) => animation.duration === duration), `Missing ${duration}ms animation`);
     assert.ok(new Set(result.frames.map((frame) => frame[property]).filter((value) => value !== undefined)).size >= 3, `No continuous ${property} trajectory`);
+  }
+  if (duration === 120 && [".mdbase-dialog", ".mdbase-command-backdrop", ".settings-sheet", ".sidebar-lower", ".popover"].includes(result.selector)) {
+    let opacity = 1;
+    let removed = false;
+    for (const frame of result.frames) {
+      assert.ok(!removed || !frame.present, "Exiting overlay reappeared after removal");
+      if (!frame.present) removed = true;
+      else {
+        assert.ok(frame.opacity <= opacity + 0.005, `Exit opacity rose from ${opacity} to ${frame.opacity} at ${frame.elapsed}ms`);
+        opacity = frame.opacity;
+      }
+    }
+    assert.ok(removed, "Exit never removed the overlay");
   }
 }
 
@@ -83,7 +97,7 @@ try {
     try {
       await page.goto(`${base}?demo`);
       await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').waitFor();
-      assert.match(await page.locator(".home").innerText(), /Demo · resets on reload/);
+      assert.match(await page.locator(".home").innerText(), /Demo collection · resets on reload/);
       motion(await probe(page, ".mdbase-dialog", "new"), reducedMotion === "reduce", 160);
       motion(await probe(page, ".mdbase-dialog", "dialog-close"), reducedMotion === "reduce", 120);
       await page.evaluate(() => {

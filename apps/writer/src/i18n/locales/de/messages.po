@@ -18,6 +18,10 @@ msgid " · Comments not set up"
 msgstr " · Kommentare nicht eingerichtet"
 
 #: src/ui/Home.tsx
+msgid " · resets on reload"
+msgstr " · wird beim Neuladen zurückgesetzt"
+
+#: src/ui/Home.tsx
 msgid " via mdbase Connect"
 msgstr " über mdbase Connect"
 
@@ -135,64 +139,12 @@ msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
 msgstr "{commentsTitle} ({MOD_LABEL}-Shift-M)"
 
 #: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} F"
-msgstr "{MOD_LABEL} {ALT_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} M"
-msgstr "{MOD_LABEL} {ALT_LABEL} M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} S"
-msgstr "{MOD_LABEL} {ALT_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} B / {MOD_LABEL} I"
-msgstr "{MOD_LABEL} B / {MOD_LABEL} I"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} F"
-msgstr "{MOD_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} K"
 msgstr "{MOD_LABEL} K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} S"
-msgstr "{MOD_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift \\"
-msgstr "{MOD_LABEL} Shift \\"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift E"
-msgstr "{MOD_LABEL} Shift E"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift F"
-msgstr "{MOD_LABEL} Shift F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift K"
-msgstr "{MOD_LABEL} Shift K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift M"
-msgstr "{MOD_LABEL} Shift M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift S"
-msgstr "{MOD_LABEL} Shift S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
 msgstr "{MOD_LABEL}-B"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL}-click"
-msgstr "{MOD_LABEL}-Klick"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
@@ -283,10 +235,6 @@ msgstr "<0/> Kapitel hinzufügen"
 msgid "<0/> Include a worked example of citations, figures and chapters"
 msgstr "<0/> Ein ausgearbeitetes Beispiel mit Quellenangaben, Abbildungen und Kapiteln einfügen"
 
-#: src/ui/CommentsPanel.tsx
-msgid "<0/> On the record"
-msgstr "<0/> Zum gesamten Datensatz"
-
 #: src/ui/Settings.tsx
 msgid "<0/>Add author"
 msgstr "<0/>Autor hinzufügen"
@@ -314,10 +262,6 @@ msgstr "Ein Kapitel benötigt einen Titel."
 #: src/i18n/diagnostics.ts
 msgid "A citation cannot mix cross-references and citekeys."
 msgstr "Ein Zitat kann keine Querverweise und Citekeys mischen."
-
-#: src/ui/CommentsPanel.tsx
-msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
-msgstr "Ein Kommentar zum gesamten Datensatz, nicht zu einer Textpassage (wählen Sie im Editor Text aus, um ihn zu kommentieren)"
 
 #: src/ui/Home.tsx
 msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
@@ -350,10 +294,6 @@ msgstr "Hinzufügen"
 #: src/pwa-install.ts
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "Fügen Sie {appName} zum Startbildschirm hinzu: Tippen Sie auf „Teilen“ und dann auf „Zum Startbildschirm hinzufügen“."
-
-#: src/ui/WorkspaceView.tsx
-msgid "Add a footnote"
-msgstr "Fußnote hinzufügen"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -448,10 +388,6 @@ msgstr "Sicherung ungespeichert Wiederherstellung"
 msgid "Bold"
 msgstr "Fett"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Bold / italic (again to remove it)"
-msgstr "Fett / kursiv (erneut anwenden, um die Formatierung zu entfernen)"
-
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -528,6 +464,10 @@ msgstr "Chicago (Fußnoten und Literaturverzeichnis)"
 msgid "Choose another collection"
 msgstr "Eine andere Sammlung auswählen"
 
+#: src/ui/Home.tsx
+msgid "Choose collection"
+msgstr "Sammlung auswählen"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "Quellenangabe"
@@ -558,10 +498,6 @@ msgstr "Zitieren"
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
 msgstr "{0} zitieren"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr "Eine Quelle zitieren oder auf ein Label (über Schlüssel, Autor, Titel oder Jahr) verweisen"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
@@ -604,14 +540,14 @@ msgstr "Einstellungen schließen"
 msgid "Close the lower panel"
 msgstr "Unteres Bedienfeld schließen"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Close the lower sidebar panel"
-msgstr "Unteres Seitenleistenfeld schließen"
-
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
 msgstr "Code"
+
+#: src/ui/Home.tsx
+msgid "Collection"
+msgstr "Sammlung"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
@@ -645,7 +581,7 @@ msgstr "Befehle, Tastenkürzel und Design"
 #: src/editor/selection-bar.tsx
 #: src/ui/CommentsPanel.tsx
 msgid "Comment"
-msgstr "Kommentieren"
+msgstr "Kommentar"
 
 #: src/editor/comments.ts
 msgctxt "comment tooltip"
@@ -659,6 +595,10 @@ msgstr "Auswahl kommentieren"
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
 msgstr "Auswahl kommentieren ({MOD_LABEL}-{ALT_LABEL}-M)"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Comment on this text"
+msgstr "Diesen Text kommentieren"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
@@ -773,7 +713,6 @@ msgstr "Gelöscht"
 msgid "Deleted elsewhere"
 msgstr "Andernorts gelöscht"
 
-#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Demo · resets on reload"
 msgstr "Demo · wird beim Neuladen zurückgesetzt"
@@ -838,7 +777,6 @@ msgstr "Zum Neuordnen ziehen oder Alt-↑/↓ drücken"
 msgid "edited {0}"
 msgstr "bearbeitet {0}"
 
-#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "Editor"
@@ -848,16 +786,12 @@ msgid "Editor and preview"
 msgstr "Editor und Vorschau"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Editor and preview → editor only → preview only"
-msgstr "Editor und Vorschau → nur Editor → nur Vorschau"
-
-#: src/ui/WorkspaceView.tsx
 msgid "Editor only"
 msgstr "Nur Editor"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Embed a record"
-msgstr "Datensatz einbetten"
+#: src/ui/Settings.tsx
+msgid "Editor preferences"
+msgstr "Editoreinstellungen"
 
 #: src/workspace/workspace.ts
 msgid "Embedded record could not be loaded: {problem}"
@@ -982,15 +916,11 @@ msgstr "Eine Quelle für diese Passage suchen und direkt danach zitieren"
 msgid "find all chapters"
 msgstr "alle Kapitel finden"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Find and replace in this record"
-msgstr "In diesem Datensatz suchen und ersetzen"
-
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "In Quellen suchen"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/Shortcuts.tsx
 msgid "Find or run a command"
 msgstr "Befehl suchen oder ausführen"
 
@@ -1050,6 +980,7 @@ msgstr "Geben Sie dem Manuskript einen Titel; Sie können ihn später ändern."
 msgid "grid columns rows"
 msgstr "Raster, Spalten, Zeilen"
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "Hilfe"
@@ -1114,19 +1045,24 @@ msgid "in {0} · "
 msgstr "in {0} · "
 
 #. placeholder {0}: collectionPicker ?? <strong>{backend.collectionName}</strong>
-#. placeholder {1}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
-#. placeholder {2}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
-#. placeholder {3}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
-#. placeholder {4}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
+#. placeholder {1}: backend.kind === "demo" && <><Trans> · resets on reload</Trans></>
+#. placeholder {2}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
+#. placeholder {3}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
+#. placeholder {4}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
+#. placeholder {5}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
 #: src/ui/Home.tsx
-msgid "In {0}{1}{2}{3}{4}"
-msgstr "In {0}{1}{2}{3}{4}"
+msgid "In {0}{1}{2}{3}{4}{5}"
+msgstr "Innerhalb von {0}{1}{2}{3}{4}{5}"
 
 #. placeholder {0}: inHighlights.length
 #. placeholder {1}: highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>
 #: src/ui/SourcesPanel.tsx
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "In den Hervorhebungen <0>{0}</0>{1}"
+
+#: src/ui/Shortcuts.tsx
+msgid "In the editor, press Tab to move to the next control."
+msgstr "Drücke im Editor die Tabulatortaste, um zum nächsten Steuerelement zu wechseln."
 
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
@@ -1168,10 +1104,6 @@ msgstr "{0} einfügen"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "Eine Quellenangabe, Fußnote, Querverweis, Abbildung, Tabelle oder Gleichung einfügen (oder / im Text eingeben)"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Insert a footnote, figure, table, equation, cross-reference or citation"
-msgstr "Eine Fußnote, Abbildung, Tabelle, Gleichung, einen Querverweis oder eine Quellenangabe einfügen"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Insert at the cursor"
@@ -1216,6 +1148,8 @@ msgstr "Weiter schreiben"
 msgid "kept as it is"
 msgstr "unverändert beibehalten"
 
+#: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "Tastenkombinationen"
@@ -1313,10 +1247,6 @@ msgstr "Quellen werden gesucht…"
 msgid "Lower panel"
 msgstr "Unterer Bereich"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Make the selection a link"
-msgstr "Auswahl in einen Link umwandeln"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
 msgstr "Änderung übernehmen"
@@ -1393,8 +1323,8 @@ msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF 
 msgstr "mdbase writer erstellt aus Markdown-Datensätzen in einer mdbase-Sammlung PDF- und Word-Dokumente mit Quellenangaben aus Ihrer mdbase Reader-Bibliothek. Verbinden Sie eine Sammlung, um festzulegen, worauf mdbase writer zugreifen kann."
 
 #: src/ui/CompareDialog.tsx
-msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
-msgstr "Zusammengeführtes Markdown<0/><1>Der zusammengeführte Text behält Ihre lokalen Einstellungsänderungen zusätzlich zur Version aus der Sammlung bei.</1>"
+msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
+msgstr "Zusammengeführtes Markdown<0/><1>Dies beginnt mit Ihrem Text. Bearbeiten und speichern Sie ihn. Ihre lokalen Einstellungen bleiben erhalten.</1>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Mine"
@@ -1456,14 +1386,6 @@ msgstr "Neu seit Ihrem letzten Besuch"
 #: src/editor/comments.ts
 msgid "New suggestion"
 msgstr "Neuer Vorschlag"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous comment"
-msgstr "Nächster / vorheriger Kommentar"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous problem"
-msgstr "Nächstes / vorheriges Problem"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1594,10 +1516,6 @@ msgstr "Notiz<0/>"
 msgid "Notes"
 msgstr "Notizen"
 
-#: src/ui/Home.tsx
-msgid "Notes without a type"
-msgstr "Notizen ohne Typ"
-
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr "Noch nichts zitiert. Zitieren Sie unten eine Quelle oder geben Sie <0>[@</0> im Editor ein."
@@ -1635,10 +1553,6 @@ msgstr "Offline · auf dem Gerät, Synchronisierung ausstehend"
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "Offline · auf diesem Gerät gespeichert; wartet auf Synchronisierung"
 
-#: src/ui/WorkspaceView.tsx
-msgid "On a citation: show the source. On a cross-reference: go to what it labels"
-msgstr "Bei einer Quellenangabe: Quelle anzeigen. Bei einem Querverweis: zum bezeichneten Element springen"
-
 #: src/ui/records.ts
 msgid "On device · pending sync"
 msgstr "Auf dem Gerät · Synchronisierung ausstehend"
@@ -1646,6 +1560,10 @@ msgstr "Auf dem Gerät · Synchronisierung ausstehend"
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
 msgstr "Zur Entstehung von Korallenriffen"
+
+#: src/ui/Shortcuts.tsx
+msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
+msgstr "Verwenden Sie in der Manuskriptliste die Pfeiltasten oder J und K und dann Eingabe zum Öffnen."
 
 #: src/ui/CommentsPanel.tsx
 msgid "On the whole record"
@@ -1676,6 +1594,10 @@ msgstr "In Reader öffnen <0/>"
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
 msgstr "Öffnen Sie das zugehörige Manuskript, um den Entwurf zu prüfen."
+
+#: src/ui/Home.tsx
+msgid "Open manuscript"
+msgstr "Manuskript öffnen"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -1742,6 +1664,10 @@ msgstr "Oder geben Sie <0>/</0> im Text ein, um dort eines auszuwählen."
 #: src/ui/Home.tsx
 msgid "or use a note you already have"
 msgstr "oder eine vorhandene Notiz verwenden"
+
+#: src/ui/Home.tsx
+msgid "Other notes"
+msgstr "Andere Notizen"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
@@ -1901,10 +1827,6 @@ msgstr "Entfernen"
 msgid "Remove author {0}"
 msgstr "Autor {0} entfernen"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Rename the chapter chosen in the outline"
-msgstr "Das in der Gliederung ausgewählte Kapitel umbenennen"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "Erneut öffnen"
@@ -2031,13 +1953,13 @@ msgstr "Wiederhergestellten lokalen Entwurf prüfen"
 msgid "Review the recovered local drafts before leaving."
 msgstr "Prüfen Sie die wiederhergestellten lokalen Entwürfe, bevor Sie die Seite verlassen."
 
-#: src/ui/WorkspaceView.tsx
-msgid "Save all records now"
-msgstr "Alle Datensätze jetzt speichern"
-
 #: src/ui/CompareDialog.tsx
 msgid "Save merged version"
 msgstr "Zusammengeführte Version speichern"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Save now"
+msgstr "Jetzt speichern"
 
 #: src/ui/records.ts
 msgid "Saved"
@@ -2060,14 +1982,6 @@ msgstr "Nach Autor, Titel, Jahr oder Zitierkürzel suchen"
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "Manuskript durchsuchen"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Search the whole manuscript"
-msgstr "Gesamtes Manuskript durchsuchen"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Second panel"
-msgstr "Zweiter Seitenleistenbereich"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -2159,14 +2073,6 @@ msgstr "50 weitere Antworten anzeigen · {0}"
 msgid "Show 50 more sources · {0}"
 msgstr "50 weitere Quellen anzeigen · {0}"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second panel beneath (outline and comments together)"
-msgstr "Einen zweiten Bereich darunter anzeigen (Gliederung und Kommentare zusammen)"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second sidebar panel"
-msgstr "Einen zweiten Seitenleistenbereich anzeigen"
-
 #. placeholder {0}: untypedShown.length
 #: src/ui/Home.tsx
 msgid "Show all {0} notes without a type"
@@ -2187,10 +2093,6 @@ msgstr "Im Editor anzeigen"
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "Markdown wie eingegeben anzeigen"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show or hide the sidebar"
-msgstr "Seitenleiste ein- oder ausblenden"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 chapters"
@@ -2331,6 +2233,10 @@ msgid "Sources."
 msgstr "Quellen."
 
 #: src/ui/WorkspaceView.tsx
+msgid "Split sidebar"
+msgstr "Seitenleiste teilen"
+
+#: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
 msgstr "aufteilen untereinander Gliederung Kommentare Quellen"
 
@@ -2413,8 +2319,8 @@ msgid "The chapter is not open."
 msgstr "Das Kapitel ist nicht geöffnet."
 
 #: src/ui/WorkspaceView.tsx
-msgid "The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts."
-msgstr "Die Sammlungsversion ist nicht zum Vergleich verfügbar. Löse zurückgehaltene oder ungelöste Änderungen in der Sammlung, bevor du hier speicherst. Du kannst deine lokalen Entwürfe herunterladen."
+msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
+msgstr "Die Sammlungsversion kann nicht verglichen werden. Beheben Sie die Konflikte in der Sammlung, bevor Sie hier speichern, oder laden Sie Ihre lokalen Entwürfe herunter."
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
@@ -2511,6 +2417,10 @@ msgstr "Diese Einstellung gilt in diesem Browser für alle Manuskripte."
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr "Dies ändert die Sprache der Benutzeroberfläche in diesem Browser, nicht die Sprache des Manuskripts."
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter changed elsewhere while you were editing it."
+msgstr "Dieses Kapitel wurde während Ihrer Bearbeitung anderswo geändert."
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "Diese Sammlung nimmt keine Dateien von Writer an."
@@ -2528,20 +2438,12 @@ msgid "This is a local development build. The hosted mdbase connect service only
 msgstr "Dies ist ein lokaler Entwicklungsbuild. Der gehostete Dienst mdbase connect akzeptiert nur Anwendungen, die über HTTPS bereitgestellt werden. Verwenden Sie daher die lokale Connect-Umgebung (<0>pnpm dev:environment:up</0> in mdbase-connect) oder öffnen Sie die <1>Demo-Sammlung</1>."
 
 #: src/ui/WorkspaceView.tsx
-msgid "This list"
-msgstr "Diese Liste"
-
-#: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "Dieses Manuskript konnte nicht geöffnet werden"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "Diese Textstelle ist nicht mehr im Text vorhanden."
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record changed elsewhere while you were editing it."
-msgstr "Dieser Datensatz wurde an anderer Stelle geändert, während Sie ihn bearbeitet haben."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
@@ -2609,10 +2511,6 @@ msgstr "Unbekannter Zitierstil „{value}“; {other} wird verwendet."
 msgid "Unknown template \"{value}\"; using article."
 msgstr "Unbekannte Vorlage „{value}“; „article“ wird verwendet."
 
-#: src/ui/records.ts
-msgid "Unsaved"
-msgstr "Nicht gespeichert"
-
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
 msgstr "Nicht gespeicherte Entwürfe"
@@ -2674,6 +2572,10 @@ msgstr "Warten auf Freigabe…"
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
 msgstr "Warten auf mdbase connect…"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Whole text"
+msgstr "Gesamter Text"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -2744,6 +2646,7 @@ msgstr "Schreibe, zitiere und setze dein Manuskript"
 msgid "Writer cannot ask for access here."
 msgstr "Writer kann hier keinen Zugriff anfordern."
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer-Befehle"

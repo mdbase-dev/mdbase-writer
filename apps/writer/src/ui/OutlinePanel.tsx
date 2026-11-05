@@ -114,9 +114,9 @@ export function OutlinePanel({
       <RecordHeadings view={mainView} path={main} cursor={cursor?.record === main ? cursor.offset : null} onJump={onJump} comments={commentOffsets?.get(main)} problems={byRecord.get(main)} />
 
       {rest.length > 0 && (
-        <h3 className="sidebar-heading outline-chapters" id="outline-chapters"><Trans>
+        <h2 className="sidebar-heading outline-chapters" id="outline-chapters"><Trans>
           Chapters <span className="heading-count">{chapters.filter(Boolean).length}</span>
-        </Trans></h3>
+        </Trans></h2>
       )}
       {rest.length > 0 && (
         <ol ref={list} className="records" aria-labelledby="outline-chapters" onDragOver={(e) => dragging !== null && e.preventDefault()} onDrop={onDrop}>

@@ -77,7 +77,7 @@ try {
         if (name === "Comments") await page.waitForFunction(() => window.writer.workspace.getSnapshot().commentsLoad.phase === "ready");
         await audit(page, `${name.toLowerCase()}-${width}`);
       }
-      await page.getByRole("button", { name: "Second panel", exact: true }).click();
+      await page.getByRole("button", { name: "Split sidebar", exact: true }).click();
       await audit(page, `split-sidebar-${width}`);
       await page.getByRole("button", { name: "Close the lower panel", exact: true }).click();
       if (width < 900) await page.getByRole("navigation", { name: "View", exact: true }).getByRole("button", { name: /Write/ }).click();

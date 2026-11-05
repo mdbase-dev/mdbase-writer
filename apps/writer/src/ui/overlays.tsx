@@ -10,7 +10,7 @@ export function useOverlay(open: boolean, selector: string, offset: string) {
   if (open && !present) setPresent(true);
 
   useLayoutEffect(() => {
-    if (!present) return;
+    if (!present) { animation.current?.cancel(); animation.current = null; return; }
     const element = host.current?.querySelector<HTMLElement>(selector);
     if (!element) return;
     element.inert = !open;
@@ -18,9 +18,8 @@ export function useOverlay(open: boolean, selector: string, offset: string) {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     let active = true;
     const finish = () => {
-      animation.current?.cancel();
-      animation.current = null;
       if (!open) setPresent(false);
+      else if (reduced.matches) { animation.current?.cancel(); animation.current = null; }
     };
     const changed = () => { if (reduced.matches) finish(); };
     if (reduced.matches) finish();
@@ -52,7 +51,7 @@ export function Dialog(props: ComponentProps<typeof SharedDialog>) {
 }
 
 export function CommandPalette(props: ComponentProps<typeof SharedCommandPalette>) {
-  const { host, present } = useOverlay(props.open, ".mdbase-command-backdrop", "translateY(-3px)");
+  const { host, present } = useOverlay(props.open, ".mdbase-command-backdrop", "none");
   return <div ref={host} className="overlay-host"><SharedCommandPalette {...props} open={present} /></div>;
 }
 

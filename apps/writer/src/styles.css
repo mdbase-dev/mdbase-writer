@@ -64,6 +64,29 @@ a, .link { color: var(--accent); }
 .pad { padding: 1rem; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.home, .workspace, .editor { opacity: 1; transition: opacity 160ms var(--ease-out); }
+@starting-style { .home, .workspace, .editor { opacity: 0; } }
+.write, .preview-pane { transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out), visibility 0s; }
+.preview-meta { display: flex; align-items: center; }
+.preview-header > .bar-spacer { display: none; }
+.preview-meta .preview-setting:first-of-type { flex: 0 1 auto; }
+.preview-meta .preview-setting:last-of-type { flex: none; }
+.bar .mdbase-save-notice.mdbase-settle { animation-duration: 400ms; }
+.app .mdbase-collections-brand { display: none; }
+.mdbase-command-palette { transform: none; transition: transform 160ms var(--ease-out); }
+@starting-style { .mdbase-command-palette { transform: translateY(-3px); } }
+.mdbase-command-backdrop[aria-hidden="true"] .mdbase-command-palette { transform: translateY(-3px); transition-duration: 120ms; }
+.mdbase-feedback-sr-only { top: 0; }
+:is(.mdbase-button, .mdbase-icon-button, .manuscript-row) { transition: background 120ms var(--ease-out), transform 120ms var(--ease-out); }
+:is(.mdbase-button, .mdbase-icon-button):active { transform: scale(.98); background: color-mix(in oklch, var(--accent) 18%, var(--surface)); }
+.mdbase-button.is-primary:active { background: color-mix(in oklch, var(--accent) 85%, black); }
+.manuscript-row:active { background: var(--selected); }
+.compare-text mark { background: color-mix(in oklch, var(--warning) 25%, var(--surface)); border-left: 2px solid var(--warning); }
+@media (pointer: coarse) {
+  :is(button, .mdbase-field, .mdbase-select, .sidebar-tabs button, .sidebar-lower-tabs button, .bar-back, .outline-manuscript, .record-row, .source-row) { min-height: 44px; }
+  :is(.mdbase-icon-button, .sidebar-tabs button, .sidebar-lower-tabs button, .mdbase-app-switcher) { min-width: 44px; }
+  .popover kbd { display: none; }
+}
 
 button, select, input, textarea {
   font: inherit;
@@ -82,14 +105,8 @@ label > .mdbase-select { width: 100%; }
 .grant-return { margin: 2rem auto; max-width: 32rem; padding: 0 1rem; text-align: center; color: var(--color-text-soft, inherit); }
 .topbar { display: flex; align-items: center; gap: 0.75rem; height: 48px; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid var(--line); min-width: 0; }
 .topbar-slot { flex: 1; min-width: 0; display: flex; align-items: center; }
-.interface-language { position: relative; flex: 0 1 auto; min-width: 0; max-width: 10rem; }
-.interface-language select { width: 100%; min-width: 0; text-overflow: ellipsis; }
-/* Workspace chrome is dense: its interface setting lives in the settings sheet. */
-.app:has(.workspace) .topbar > .interface-language { display: none; }
-.settings-sheet .interface-language { display: block; max-width: 18rem; }
-.settings-sheet .interface-language-error { position: static; display: block; width: auto; margin-top: 0.5rem; }
-.interface-language-error { position: absolute; inset-inline-end: 0; top: 100%; z-index: 20; width: min(24rem, 85vw); padding: 0.75rem; background: var(--surface); color: var(--danger); border: 1px solid var(--line); }
-@media (max-width: 600px) { .interface-language { max-width: 7rem; } }
+.interface-language { display: block; min-width: 0; max-width: 18rem; }
+.interface-language-error { display: block; margin-top: 0.5rem; padding: 0.75rem; background: var(--surface); color: var(--danger); border: 1px solid var(--line); }
 /* The theme choice sits quietly in the bar but keeps its chevron, so it reads as a control. */
 .topbar-theme.mdbase-select:not(:hover, [aria-expanded="true"]) { border-color: transparent; }
 /* Inside a manuscript the theme moves into its More menu, leaving the bar to the manuscript. */
@@ -254,11 +271,11 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: var(--grid-areas);
   min-height: 0;
-  transition: grid-template-columns 160ms var(--ease-out);
+  transition: grid-template-columns 160ms var(--ease-out), opacity 160ms var(--ease-out);
 }
 .workspace.no-sidebar { transition-duration: 120ms; }
 .is-resizing .workspace, .workspace:has(.sidebar-resizer:focus) { transition: none; }
-.view-write .preview-pane, .view-preview .write, .view-write .divider, .view-preview .divider { display: none; }
+.view-write .preview-pane, .view-preview .write, .view-write .divider, .view-preview .divider { opacity: 0; visibility: hidden; overflow: clip; transition-delay: 0s, 0s, 160ms; }
 .pane-tabs { display: none; }
 .tone-pending .dot { background: var(--warning); }
 .tone-danger .dot { background: var(--danger); }
@@ -563,7 +580,7 @@ blockquote.thread-quote::after { content: "”"; }
 .preview-header { background: var(--preview-bg); gap: 0.5rem; }
 .preview-meta { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .preview-errors { color: var(--danger); }
-.preview-setting { max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; white-space: nowrap; padding: 0.1rem 0.25rem; margin: 0 -0.1rem; border: 0; border-radius: 4px; background: none; color: inherit; font-size: inherit; cursor: pointer; }
+.preview-setting { min-width: 0; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; white-space: nowrap; padding: 0.1rem 0.25rem; margin: 0 -0.1rem; border: 0; border-radius: 4px; background: none; color: inherit; font-size: inherit; cursor: pointer; }
 .preview-setting:hover { background: var(--subtle); color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .page-indicator { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .zoom { flex: none; display: inline-flex; align-items: center; gap: 1px; padding: 1px; border: 1px solid var(--line); border-radius: 6px; background: var(--canvas); }
@@ -591,7 +608,7 @@ blockquote.thread-quote::after { content: "”"; }
 .editor .cm-search br { flex-basis: 100%; height: 0; }
 .editor .cm-search button[name="close"] { top: 8px; right: 8px; color: var(--muted); }
 @media (max-width: 900px) { .editor .cm-search label { min-height: 44px; } }
-.editor .cm-scroller { font-family: "Atkinson Hyperlegible", sans-serif; line-height: 1.65; }
+.editor .cm-scroller { font-family: var(--sans); line-height: 1.65; }
 .editor .cm-content { max-width: 72ch; margin: 0 auto; padding: 1.5rem 1.25rem 40vh; caret-color: var(--ink); }
 .editor .cm-activeLine { background: transparent; }
 .editor .cm-focused { outline: none; }
@@ -629,13 +646,13 @@ blockquote.thread-quote::after { content: "”"; }
 /* Quick fixes in a problem's tooltip. */
 .editor .cm-editor .cm-diagnosticAction { margin: 2px 0 2px 6px; padding: 1px 7px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); color: var(--accent); font: 12px/1.5 var(--sans); cursor: pointer; }
 .editor .cm-editor .cm-diagnosticAction:hover { background: var(--selected); }
-.cm-ref-tip { max-width: 26rem; padding: 0.5rem 0.7rem; display: grid; gap: 0.25rem; font-family: "Atkinson Hyperlegible", sans-serif; font-size: 13px; line-height: 1.45; }
+.cm-ref-tip { max-width: 26rem; padding: 0.5rem 0.7rem; display: grid; gap: 0.25rem; font-family: var(--sans); font-size: 13px; line-height: 1.45; }
 .cm-ref-kind { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .cm-ref-body { color: var(--ink); }
 .cm-ref-hint { font-size: 11px; color: var(--faint); }
 
 /* Live preview: the editor reads like the manuscript until the cursor is on a line (live-preview.ts). */
-.cm-lp-chip { display: inline-block; max-width: 24em; margin: 0 1px; padding: 0 0.35em; border-radius: 4px; vertical-align: baseline; font-size: 0.88em; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; }
+.cm-lp-chip { display: inline-block; max-width: 24em; margin: 0 1px; padding: 0 0.35em; border-radius: 4px; vertical-align: -0.2em; font-size: 0.88em; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; }
 .cm-lp-chip.is-cite { color: var(--accent); background: color-mix(in oklch, var(--accent) 9%, transparent); }
 .cm-lp-chip.is-ref { color: var(--ink-soft); background: var(--subtle); }
 .cm-lp-chip.is-label { color: var(--muted); background: var(--subtle); font-family: var(--mono); font-size: 0.72em; letter-spacing: -0.01em; vertical-align: 0.1em; }
@@ -722,7 +739,7 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .app:has(.workspace) .bar { flex-wrap: wrap; }
   .bar-title { flex: 1; min-width: 0; }
   .bar .bar-spacer { display: none; }
-  .bar-back, .bar .mdbase-button, .bar .mdbase-icon-button, .topbar .mdbase-app-switcher-trigger { min-width: 44px; min-height: 44px; }
+  .bar-back, .bar .mdbase-button, .bar .mdbase-icon-button, .topbar .mdbase-app-switcher { min-width: 44px; min-height: 44px; }
   .bar-back { justify-content: center; padding: 0; }
   .preview-header { padding: 0.25rem 0.5rem; }
   .preview-header .bar-spacer { display: none; }
@@ -752,11 +769,11 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .sidebar-rail { display: none; }
   .settings-sheet { width: 100vw; border-right: 0; }
   .outline, .write, .preview-pane { grid-area: main; border-right: 0; }
-  .workspace .write, .workspace .preview-pane { display: none; }
+  .workspace { overflow: clip; }
+  .workspace .write, .workspace .preview-pane { opacity: 0; visibility: hidden; transform: translateX(12px); pointer-events: none; transition-delay: 0s, 0s, 160ms; }
   .workspace .outline { display: grid; z-index: 2; opacity: 0; visibility: hidden; transform: translateX(-12px); background: var(--canvas); pointer-events: none; transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out), visibility 0s 120ms, grid-template-rows var(--lower-duration) var(--ease-out); }
   .workspace.pane-outline .outline { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out), visibility 0s, grid-template-rows var(--lower-duration) var(--ease-out); }
-  .workspace.pane-write .write { display: flex; }
-  .workspace.pane-preview .preview-pane { display: grid; }
+  .workspace.pane-write .write, .workspace.pane-preview .preview-pane { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition-delay: 0s; }
   .divider, .sidebar-resizer { display: none !important; }
   .phone-only { display: grid; }
   .pane-path, .page-indicator { display: none; }

@@ -9,7 +9,7 @@ import { NO_PEOPLE } from "../backend/comments.js";
 import { ok } from "../backend/types.js";
 vi.mock("../apps.js", () => ({ readerSourceHref: () => undefined }));
 const renderToStaticMarkup = (child: ReactNode) => renderStatic(createElement(I18nProvider, { i18n }, child));
-const sources = { library: [], cited: new Map(), canInsert: true, loadAnnotations: async () => ok([]), onInsert() {}, onStepCitation() {} };
+const sources = { query: "", setQuery() {}, library: [], cited: new Map(), canInsert: true, loadAnnotations: async () => ok([]), onInsert() {}, onStepCitation() {} };
 describe("quiet panel states and bounds", () => {
   it("distinguishes loading, failure, not set up and empty sources", () => {
     const show = (extra: object) => renderToStaticMarkup(createElement(SourcesPanel, { ...sources, ...extra }));

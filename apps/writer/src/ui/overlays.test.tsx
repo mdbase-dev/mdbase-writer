@@ -68,6 +68,17 @@ it("cancels entrance and exit immediately when Reduce changes", () => {
   expect(runs[2]?.cancel).toHaveBeenCalledOnce();
 });
 
+it("keeps the filled exit frame until React removes the panel", async () => {
+  const view = render(<Harness open />);
+  await act(async () => runs[0]?.finish());
+  view.rerender(<Harness open={false} />);
+  const panel = view.container.querySelector("aside")!;
+  runs[1]?.cancel.mockImplementation(() => { expect(panel.isConnected).toBe(false); });
+  await act(async () => runs[1]?.finish());
+  expect(runs[1]?.cancel).toHaveBeenCalledOnce();
+  expect(panel.isConnected).toBe(false);
+});
+
 it("starts no animation under Reduce and cancels owned motion on unmount", () => {
   media.matches = true;
   const view = render(<Harness open />);

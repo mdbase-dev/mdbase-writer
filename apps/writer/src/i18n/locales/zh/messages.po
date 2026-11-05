@@ -18,6 +18,10 @@ msgid " · Comments not set up"
 msgstr " · 尚未设置评论功能"
 
 #: src/ui/Home.tsx
+msgid " · resets on reload"
+msgstr " · 重新加载时重置"
+
+#: src/ui/Home.tsx
 msgid " via mdbase Connect"
 msgstr "，通过 mdbase Connect"
 
@@ -135,64 +139,12 @@ msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
 msgstr "{commentsTitle}（{MOD_LABEL}-Shift-M）"
 
 #: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} F"
-msgstr "{MOD_LABEL} {ALT_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} M"
-msgstr "{MOD_LABEL} {ALT_LABEL} M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} S"
-msgstr "{MOD_LABEL} {ALT_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} B / {MOD_LABEL} I"
-msgstr "{MOD_LABEL} B / {MOD_LABEL} I"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} F"
-msgstr "{MOD_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} K"
 msgstr "{MOD_LABEL} K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} S"
-msgstr "{MOD_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift \\"
-msgstr "按 {MOD_LABEL} + Shift + 反斜杠"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift E"
-msgstr "按 {MOD_LABEL} + Shift + E"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift F"
-msgstr "按 {MOD_LABEL} + Shift + F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift K"
-msgstr "按 {MOD_LABEL} + Shift + K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift M"
-msgstr "按 {MOD_LABEL} + Shift + M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift S"
-msgstr "按 {MOD_LABEL} + Shift + S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
 msgstr "{MOD_LABEL}-B"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL}-click"
-msgstr "{MOD_LABEL}-单击"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
@@ -283,10 +235,6 @@ msgstr "<0/> 添加章节"
 msgid "<0/> Include a worked example of citations, figures and chapters"
 msgstr "<0/> 包含引文、插图和章节的完整示例"
 
-#: src/ui/CommentsPanel.tsx
-msgid "<0/> On the record"
-msgstr "<0/> 对整条记录评论"
-
 #: src/ui/Settings.tsx
 msgid "<0/>Add author"
 msgstr "<0/>添加作者"
@@ -314,10 +262,6 @@ msgstr "章节需要标题。"
 #: src/i18n/diagnostics.ts
 msgid "A citation cannot mix cross-references and citekeys."
 msgstr "同一处引文不能混用交叉引用和 citekey。"
-
-#: src/ui/CommentsPanel.tsx
-msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
-msgstr "对整条记录发表评论，而非针对某段文字（在编辑器中选择文本即可评论该段）"
 
 #: src/ui/Home.tsx
 msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
@@ -350,10 +294,6 @@ msgstr "添加"
 #: src/pwa-install.ts
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "将 {appName} 添加到主屏幕：轻点“分享”，然后选择“添加到主屏幕”。"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Add a footnote"
-msgstr "添加脚注"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -448,10 +388,6 @@ msgstr "备份 未保存 恢复"
 msgid "Bold"
 msgstr "粗体"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Bold / italic (again to remove it)"
-msgstr "粗体 / 斜体（再次按下可取消）"
-
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -528,6 +464,10 @@ msgstr "Chicago（注释与参考文献制）"
 msgid "Choose another collection"
 msgstr "选择其他集合"
 
+#: src/ui/Home.tsx
+msgid "Choose collection"
+msgstr "选择集合"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "引文"
@@ -558,10 +498,6 @@ msgstr "引用"
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
 msgstr "引用 {0}"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr "引用来源或引用标签（按键、作者、标题或年份查找）"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
@@ -604,14 +540,14 @@ msgstr "关闭设置"
 msgid "Close the lower panel"
 msgstr "关闭下方面板"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Close the lower sidebar panel"
-msgstr "关闭侧边栏下方面板"
-
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
 msgstr "代码"
+
+#: src/ui/Home.tsx
+msgid "Collection"
+msgstr "集合"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
@@ -659,6 +595,10 @@ msgstr "评论所选内容"
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
 msgstr "评论所选内容（{MOD_LABEL}-{ALT_LABEL}-M）"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Comment on this text"
+msgstr "评论此文本"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
@@ -773,7 +713,6 @@ msgstr "已删除"
 msgid "Deleted elsewhere"
 msgstr "已在其他位置删除"
 
-#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Demo · resets on reload"
 msgstr "演示 · 重新加载后重置"
@@ -838,7 +777,6 @@ msgstr "拖动，或按 Alt-↑/↓，以重新排序"
 msgid "edited {0}"
 msgstr "编辑时间：{0}"
 
-#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "编辑器"
@@ -848,16 +786,12 @@ msgid "Editor and preview"
 msgstr "编辑器和预览"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Editor and preview → editor only → preview only"
-msgstr "编辑器和预览 → 仅编辑器 → 仅预览"
-
-#: src/ui/WorkspaceView.tsx
 msgid "Editor only"
 msgstr "仅编辑器"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Embed a record"
-msgstr "嵌入记录"
+#: src/ui/Settings.tsx
+msgid "Editor preferences"
+msgstr "编辑器偏好设置"
 
 #: src/workspace/workspace.ts
 msgid "Embedded record could not be loaded: {problem}"
@@ -982,15 +916,11 @@ msgstr "查找此段文字的来源并在其后插入引文"
 msgid "find all chapters"
 msgstr "查找 全部 章节"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Find and replace in this record"
-msgstr "在此记录中查找并替换"
-
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "在来源中查找"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/Shortcuts.tsx
 msgid "Find or run a command"
 msgstr "查找或运行命令"
 
@@ -1050,6 +980,7 @@ msgstr "为手稿命名；之后仍可更改。"
 msgid "grid columns rows"
 msgstr "网格 列 行"
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "帮助"
@@ -1114,19 +1045,24 @@ msgid "in {0} · "
 msgstr "位于 {0} · "
 
 #. placeholder {0}: collectionPicker ?? <strong>{backend.collectionName}</strong>
-#. placeholder {1}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
-#. placeholder {2}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
-#. placeholder {3}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
-#. placeholder {4}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
+#. placeholder {1}: backend.kind === "demo" && <><Trans> · resets on reload</Trans></>
+#. placeholder {2}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
+#. placeholder {3}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
+#. placeholder {4}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
+#. placeholder {5}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
 #: src/ui/Home.tsx
-msgid "In {0}{1}{2}{3}{4}"
-msgstr "位于 {0}{1}{2}{3}{4}"
+msgid "In {0}{1}{2}{3}{4}{5}"
+msgstr "在 {0}{1}{2}{3}{4}{5} 中"
 
 #. placeholder {0}: inHighlights.length
 #. placeholder {1}: highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>
 #: src/ui/SourcesPanel.tsx
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "在高亮内容 <0>{0}</0>{1}"
+
+#: src/ui/Shortcuts.tsx
+msgid "In the editor, press Tab to move to the next control."
+msgstr "在编辑器中按 Tab 键可移至下一个控件。"
 
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
@@ -1168,10 +1104,6 @@ msgstr "插入 {0}"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "插入引文、脚注、交叉引用、插图、表格或公式（也可在文本中输入 /）"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Insert a footnote, figure, table, equation, cross-reference or citation"
-msgstr "插入脚注、插图、表格、公式、交叉引用或引文"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Insert at the cursor"
@@ -1216,6 +1148,8 @@ msgstr "继续写作"
 msgid "kept as it is"
 msgstr "保持原样"
 
+#: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
@@ -1313,10 +1247,6 @@ msgstr "正在查找来源…"
 msgid "Lower panel"
 msgstr "下方面板"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Make the selection a link"
-msgstr "将所选内容设为链接"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
 msgstr "应用此编辑"
@@ -1393,8 +1323,8 @@ msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF 
 msgstr "mdbase writer 将 mdbase 集合中的 Markdown 记录排版为 PDF 和 Word 文档，并使用 mdbase Reader 资料库中的引文。连接集合以选择它可以访问的内容。"
 
 #: src/ui/CompareDialog.tsx
-msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
-msgstr "合并后的 Markdown<0/><1>合并文本会在集合版本的基础上保留你本地更改的设置。</1>"
+msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
+msgstr "合并后的 Markdown<0/><1>以你的文本为起点。编辑至正确后保存。你的本地设置将保留。</1>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Mine"
@@ -1456,14 +1386,6 @@ msgstr "自上次访问后新增"
 #: src/editor/comments.ts
 msgid "New suggestion"
 msgstr "新建议"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous comment"
-msgstr "下一条 / 上一条评论"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous problem"
-msgstr "下一个 / 上一个问题"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1594,10 +1516,6 @@ msgstr "笔记<0/>"
 msgid "Notes"
 msgstr "笔记"
 
-#: src/ui/Home.tsx
-msgid "Notes without a type"
-msgstr "无类型的笔记"
-
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr "尚未引用任何内容。请在下方引用来源，或在编辑器中输入 <0>[@</0>。"
@@ -1635,10 +1553,6 @@ msgstr "离线 · 已存于此设备，等待同步"
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "离线 · 已保存到此设备，等待同步"
 
-#: src/ui/WorkspaceView.tsx
-msgid "On a citation: show the source. On a cross-reference: go to what it labels"
-msgstr "对于引文：显示来源。对于交叉引用：跳转到它所指向的内容。"
-
 #: src/ui/records.ts
 msgid "On device · pending sync"
 msgstr "已存于此设备 · 等待同步"
@@ -1646,6 +1560,10 @@ msgstr "已存于此设备 · 等待同步"
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
 msgstr "关于珊瑚礁的形成"
+
+#: src/ui/Shortcuts.tsx
+msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
+msgstr "在稿件列表中，使用方向键或 J 和 K，然后按 Enter 打开。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "On the whole record"
@@ -1676,6 +1594,10 @@ msgstr "在 Reader 中打开 <0/>"
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
 msgstr "打开对应手稿以进行审阅"
+
+#: src/ui/Home.tsx
+msgid "Open manuscript"
+msgstr "打开稿件"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -1742,6 +1664,10 @@ msgstr "也可以在文本中输入 <0>/</0>，然后在此处选择。"
 #: src/ui/Home.tsx
 msgid "or use a note you already have"
 msgstr "或使用已有笔记"
+
+#: src/ui/Home.tsx
+msgid "Other notes"
+msgstr "其他笔记"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
@@ -1901,10 +1827,6 @@ msgstr "移除"
 msgid "Remove author {0}"
 msgstr "移除作者 {0}"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Rename the chapter chosen in the outline"
-msgstr "重命名在大纲中选定的章节"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "重新打开"
@@ -2031,13 +1953,13 @@ msgstr "审阅恢复的本地草稿"
 msgid "Review the recovered local drafts before leaving."
 msgstr "离开前请审阅恢复的本地草稿。"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Save all records now"
-msgstr "立即保存所有记录"
-
 #: src/ui/CompareDialog.tsx
 msgid "Save merged version"
 msgstr "保存合并后的版本"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Save now"
+msgstr "立即保存"
 
 #: src/ui/records.ts
 msgid "Saved"
@@ -2060,14 +1982,6 @@ msgstr "按作者、标题、年份或键搜索"
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "搜索手稿"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Search the whole manuscript"
-msgstr "搜索整篇手稿"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Second panel"
-msgstr "第二面板"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -2159,14 +2073,6 @@ msgstr "再显示 50 条回复 · {0}"
 msgid "Show 50 more sources · {0}"
 msgstr "再显示 50 个来源 · {0}"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second panel beneath (outline and comments together)"
-msgstr "在下方显示第二个面板（同时显示大纲和评论）"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second sidebar panel"
-msgstr "显示第二个侧边栏面板"
-
 #. placeholder {0}: untypedShown.length
 #: src/ui/Home.tsx
 msgid "Show all {0} notes without a type"
@@ -2187,10 +2093,6 @@ msgstr "在编辑器中显示"
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "显示原始 Markdown"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show or hide the sidebar"
-msgstr "显示或隐藏侧边栏"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 chapters"
@@ -2331,6 +2233,10 @@ msgid "Sources."
 msgstr "来源。"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Split sidebar"
+msgstr "拆分侧边栏"
+
+#: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
 msgstr "分栏、堆叠、大纲、评论、来源"
 
@@ -2413,8 +2319,8 @@ msgid "The chapter is not open."
 msgstr "该章节尚未打开。"
 
 #: src/ui/WorkspaceView.tsx
-msgid "The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts."
-msgstr "集合版本暂时无法比较。请先解决集合中被保留或尚未解决的更改，再在此保存。您可以下载本地草稿。"
+msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
+msgstr "无法比较集合中的版本。请先在集合中解决冲突再在此保存，或下载本地下的草稿。"
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
@@ -2511,6 +2417,10 @@ msgstr "此设置适用于此浏览器中的所有手稿。"
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr "这会更改此浏览器中的界面语言，而不是手稿的语言。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter changed elsewhere while you were editing it."
+msgstr "你编辑此章节时，它已在其他位置被更改。"
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "此集合不接受来自 Writer 的文件。"
@@ -2528,20 +2438,12 @@ msgid "This is a local development build. The hosted mdbase connect service only
 msgstr "这是本地开发版本。托管的 mdbase connect 服务仅接受通过 HTTPS 提供的应用，因此请使用 Connect 本地环境（在 mdbase-connect 中运行 <0>pnpm dev:environment:up</0>），或打开<1>演示集合</1>。"
 
 #: src/ui/WorkspaceView.tsx
-msgid "This list"
-msgstr "此列表"
-
-#: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "无法打开此手稿"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "此段内容已不在文本中"
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record changed elsewhere while you were editing it."
-msgstr "你编辑期间，此记录已在其他位置更改。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
@@ -2609,10 +2511,6 @@ msgstr "未知的引文格式“{value}”；将使用 {other}。"
 msgid "Unknown template \"{value}\"; using article."
 msgstr "未知的模板“{value}”；将使用 article。"
 
-#: src/ui/records.ts
-msgid "Unsaved"
-msgstr "未保存"
-
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
 msgstr "未保存的草稿"
@@ -2674,6 +2572,10 @@ msgstr "正在等待批准…"
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
 msgstr "正在等待 mdbase connect…"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Whole text"
+msgstr "全文"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -2744,6 +2646,7 @@ msgstr "撰写、引用并排版您的文稿"
 msgid "Writer cannot ask for access here."
 msgstr "Writer 无法在此处请求访问权限。"
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer 命令"

@@ -18,6 +18,10 @@ msgid " · Comments not set up"
 msgstr " · コメント未設定"
 
 #: src/ui/Home.tsx
+msgid " · resets on reload"
+msgstr " · 再読み込みでリセット"
+
+#: src/ui/Home.tsx
 msgid " via mdbase Connect"
 msgstr "（mdbase Connect 経由）"
 
@@ -135,64 +139,12 @@ msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
 msgstr "{commentsTitle}（{MOD_LABEL}-Shift-M）"
 
 #: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} F"
-msgstr "{MOD_LABEL} {ALT_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} M"
-msgstr "{MOD_LABEL} {ALT_LABEL} M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} {ALT_LABEL} S"
-msgstr "{MOD_LABEL} {ALT_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} B / {MOD_LABEL} I"
-msgstr "{MOD_LABEL} B / {MOD_LABEL} I"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} F"
-msgstr "{MOD_LABEL} F"
-
-#: src/ui/WorkspaceView.tsx
 msgid "{MOD_LABEL} K"
 msgstr "{MOD_LABEL} K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} S"
-msgstr "{MOD_LABEL} S"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift \\"
-msgstr "{MOD_LABEL} Shift \\"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift E"
-msgstr "{MOD_LABEL} Shift E"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift F"
-msgstr "{MOD_LABEL} Shift F"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift K"
-msgstr "{MOD_LABEL} Shift K"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift M"
-msgstr "{MOD_LABEL} Shift M"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} Shift S"
-msgstr "{MOD_LABEL} Shift S"
 
 #: src/editor/selection-bar.tsx
 msgid "{MOD_LABEL}-B"
 msgstr "{MOD_LABEL}-B"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL}-click"
-msgstr "{MOD_LABEL}-クリック"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
@@ -283,10 +235,6 @@ msgstr "<0/>章を追加"
 msgid "<0/> Include a worked example of citations, figures and chapters"
 msgstr "<0/>引用、図、章の具体例を含める"
 
-#: src/ui/CommentsPanel.tsx
-msgid "<0/> On the record"
-msgstr "<0/>レコード全体にコメント"
-
 #: src/ui/Settings.tsx
 msgid "<0/>Add author"
 msgstr "<0/>著者を追加"
@@ -314,10 +262,6 @@ msgstr "章にはタイトルが必要です。"
 #: src/i18n/diagnostics.ts
 msgid "A citation cannot mix cross-references and citekeys."
 msgstr "引用に相互参照とcitekeyを混在させることはできません。"
-
-#: src/ui/CommentsPanel.tsx
-msgid "A comment on the whole record, not on a passage (select text in the editor to comment on it)"
-msgstr "レコード全体へのコメントで、本文箇所へのコメントではありません（本文箇所にコメントするには、エディターでテキストを選択してください）"
 
 #: src/ui/Home.tsx
 msgid "A draft is what was typed but not saved to the collection. Opening its manuscript offers it back."
@@ -350,10 +294,6 @@ msgstr "追加"
 #: src/pwa-install.ts
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "ホーム画面に{appName}を追加：共有をタップし、「ホーム画面に追加」を選択してください。"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Add a footnote"
-msgstr "脚注を追加"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -448,10 +388,6 @@ msgstr "下書き 未保存 バックアップ 復元"
 msgid "Bold"
 msgstr "太字"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Bold / italic (again to remove it)"
-msgstr "太字／斜体（もう一度クリックで解除）"
-
 #: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
@@ -528,6 +464,10 @@ msgstr "シカゴ（注・参考文献方式）"
 msgid "Choose another collection"
 msgstr "別のコレクションを選択"
 
+#: src/ui/Home.tsx
+msgid "Choose collection"
+msgstr "コレクションを選択"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "引用"
@@ -558,10 +498,6 @@ msgstr "引用"
 #: src/ui/SourcesPanel.tsx
 msgid "Cite {0}"
 msgstr "{0}を引用"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Cite a source or refer to a label (by key, author, title or year)"
-msgstr "出典を引用するか、キー・著者・タイトル・年でラベルを参照"
 
 #. placeholder {0}: locator.trim()
 #: src/ui/SourcesPanel.tsx
@@ -604,14 +540,14 @@ msgstr "設定を閉じる"
 msgid "Close the lower panel"
 msgstr "下部パネルを閉じる"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Close the lower sidebar panel"
-msgstr "下部サイドバーパネルを閉じる"
-
 #: src/editor/selection-bar.tsx
 msgctxt "inline code formatting action"
 msgid "Code"
 msgstr "コード"
+
+#: src/ui/Home.tsx
+msgid "Collection"
+msgstr "コレクション"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Collection dependencies have not been checked yet"
@@ -659,6 +595,10 @@ msgstr "選択範囲にコメント"
 #: src/editor/selection-bar.tsx
 msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
 msgstr "選択範囲にコメント（{MOD_LABEL}-{ALT_LABEL}-M）"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Comment on this text"
+msgstr "このテキストにコメントする"
 
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
@@ -773,7 +713,6 @@ msgstr "削除済み"
 msgid "Deleted elsewhere"
 msgstr "別の場所で削除されました"
 
-#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Demo · resets on reload"
 msgstr "デモ · 再読み込みでリセット"
@@ -838,7 +777,6 @@ msgstr "ドラッグまたはAlt-↑/↓で並べ替え"
 msgid "edited {0}"
 msgstr "{0}に編集"
 
-#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "エディター"
@@ -848,16 +786,12 @@ msgid "Editor and preview"
 msgstr "エディターとプレビュー"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Editor and preview → editor only → preview only"
-msgstr "エディターとプレビュー → エディターのみ → プレビューのみ"
-
-#: src/ui/WorkspaceView.tsx
 msgid "Editor only"
 msgstr "エディターのみ"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Embed a record"
-msgstr "レコードを埋め込む"
+#: src/ui/Settings.tsx
+msgid "Editor preferences"
+msgstr "エディターの設定"
 
 #: src/workspace/workspace.ts
 msgid "Embedded record could not be loaded: {problem}"
@@ -982,15 +916,11 @@ msgstr "この箇所の出典を検索し、その後に引用を挿入"
 msgid "find all chapters"
 msgstr "すべての章を検索"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Find and replace in this record"
-msgstr "このレコード内を検索して置換"
-
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "出典内を検索"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/Shortcuts.tsx
 msgid "Find or run a command"
 msgstr "コマンドを検索または実行"
 
@@ -1050,6 +980,7 @@ msgstr "原稿にタイトルを付けてください。後から変更できま
 msgid "grid columns rows"
 msgstr "グリッド、列、行"
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "ヘルプ"
@@ -1114,19 +1045,24 @@ msgid "in {0} · "
 msgstr "{0} 内 · "
 
 #. placeholder {0}: collectionPicker ?? <strong>{backend.collectionName}</strong>
-#. placeholder {1}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
-#. placeholder {2}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
-#. placeholder {3}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
-#. placeholder {4}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
+#. placeholder {1}: backend.kind === "demo" && <><Trans> · resets on reload</Trans></>
+#. placeholder {2}: backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>
+#. placeholder {3}: sources !== null && sources > 0 && <> · {icuPlural(sources, { one: "# source to cite from mdbase Reader", other: "# sources to cite from mdbase Reader" })}</>
+#. placeholder {4}: sources === 0 && <> · {backend.setupStatus?.sources === false ? t`Sources not set up` : t`No sources yet`}</>
+#. placeholder {5}: backend.setupStatus?.comments === false && <><Trans> · Comments not set up</Trans></>
 #: src/ui/Home.tsx
-msgid "In {0}{1}{2}{3}{4}"
-msgstr "{0}{1}{2}{3}{4} 内"
+msgid "In {0}{1}{2}{3}{4}{5}"
+msgstr "{0}{1}{2}{3}{4}{5} 内"
 
 #. placeholder {0}: inHighlights.length
 #. placeholder {1}: highlightIndex.pending > 0 && <span className="heading-count"><Trans>· searching {highlightIndex.pending} more</Trans></span>
 #: src/ui/SourcesPanel.tsx
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "ハイライト内 <0>{0}</0>{1}"
+
+#: src/ui/Shortcuts.tsx
+msgid "In the editor, press Tab to move to the next control."
+msgstr "エディターで Tab を押すと、次のコントロールに移動します。"
 
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
@@ -1168,10 +1104,6 @@ msgstr "{0}を挿入"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "引用、脚注、相互参照、図、表、数式を挿入（または本文で / を入力）"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Insert a footnote, figure, table, equation, cross-reference or citation"
-msgstr "脚注、図、表、数式、相互参照、引用を挿入"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Insert at the cursor"
@@ -1216,6 +1148,8 @@ msgstr "執筆を続ける"
 msgid "kept as it is"
 msgstr "そのまま保持"
 
+#: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "キーボードショートカット"
@@ -1313,10 +1247,6 @@ msgstr "出典を検索中…"
 msgid "Lower panel"
 msgstr "下部パネル"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Make the selection a link"
-msgstr "選択範囲をリンクにする"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
 msgstr "この編集を適用"
@@ -1393,8 +1323,8 @@ msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF 
 msgstr "mdbase writerは、mdbaseコレクション内のMarkdownレコードを組版し、mdbase Readerライブラリの引用を含むPDFやWord文書を作成します。コレクションを接続して、アクセスを許可する対象を選んでください。"
 
 #: src/ui/CompareDialog.tsx
-msgid "Merged Markdown<0/><1>The merged text keeps your local setting changes on top of the collection version.</1>"
-msgstr "統合されたMarkdown<0/><1>統合テキストには、コレクションのバージョンにローカル設定の変更が反映されています。</1>"
+msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
+msgstr "マージした Markdown<0/><1>自分のテキストから始まります。内容を確認・編集して保存してください。ローカル設定は保持されます。</1>"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Mine"
@@ -1456,14 +1386,6 @@ msgstr "前回の訪問以降の新着"
 #: src/editor/comments.ts
 msgid "New suggestion"
 msgstr "新しい提案"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous comment"
-msgstr "次／前のコメント"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Next / previous problem"
-msgstr "次／前の問題"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1594,10 +1516,6 @@ msgstr "ノート<0/>"
 msgid "Notes"
 msgstr "ノート"
 
-#: src/ui/Home.tsx
-msgid "Notes without a type"
-msgstr "タイプのないノート"
-
 #: src/ui/SourcesPanel.tsx
 msgid "Nothing cited yet. Cite a source below, or type <0>[@</0> in the editor."
 msgstr "まだ何も引用されていません。下の出典を引用するか、エディターで<0>[@</0>と入力してください。"
@@ -1635,10 +1553,6 @@ msgstr "オフライン · この端末に保存、同期待ち"
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "オフライン · この端末に保存済み、同期待ち"
 
-#: src/ui/WorkspaceView.tsx
-msgid "On a citation: show the source. On a cross-reference: go to what it labels"
-msgstr "引用では出典を表示します。相互参照では、ラベルが示す対象に移動します"
-
 #: src/ui/records.ts
 msgid "On device · pending sync"
 msgstr "この端末に保存 · 同期待ち"
@@ -1646,6 +1560,10 @@ msgstr "この端末に保存 · 同期待ち"
 #: src/ui/Home.tsx
 msgid "On the formation of coral reefs"
 msgstr "サンゴ礁の形成について"
+
+#: src/ui/Shortcuts.tsx
+msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
+msgstr "原稿一覧では、矢印キーまたは J と K を使い、Enter で開きます。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "On the whole record"
@@ -1676,6 +1594,10 @@ msgstr "Readerで開く<0/>"
 #: src/ui/Home.tsx
 msgid "Open its manuscript to review it"
 msgstr "原稿を開いて確認してください"
+
+#: src/ui/Home.tsx
+msgid "Open manuscript"
+msgstr "原稿を開く"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -1742,6 +1664,10 @@ msgstr "または本文で<0>/</0>と入力して、そこで選択できます�
 #: src/ui/Home.tsx
 msgid "or use a note you already have"
 msgstr "またはすでにあるノートを使用"
+
+#: src/ui/Home.tsx
+msgid "Other notes"
+msgstr "その他のノート"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
@@ -1901,10 +1827,6 @@ msgstr "削除"
 msgid "Remove author {0}"
 msgstr "著者{0}を削除"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Rename the chapter chosen in the outline"
-msgstr "アウトラインで選択した章の名前を変更"
-
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "再度開く"
@@ -2031,13 +1953,13 @@ msgstr "復元したローカル下書きを確認"
 msgid "Review the recovered local drafts before leaving."
 msgstr "移動する前に、復元したローカル下書きを確認してください。"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Save all records now"
-msgstr "すべてのレコードを今すぐ保存"
-
 #: src/ui/CompareDialog.tsx
 msgid "Save merged version"
 msgstr "統合したバージョンを保存"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Save now"
+msgstr "今すぐ保存"
 
 #: src/ui/records.ts
 msgid "Saved"
@@ -2060,14 +1982,6 @@ msgstr "著者名、タイトル、年、キーで検索"
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "原稿を検索"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Search the whole manuscript"
-msgstr "原稿全体を検索"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Second panel"
-msgstr "第2パネル"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -2159,14 +2073,6 @@ msgstr "返信をさらに50件表示 · {0}"
 msgid "Show 50 more sources · {0}"
 msgstr "出典をさらに50件表示 · {0}"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second panel beneath (outline and comments together)"
-msgstr "下に2つ目のパネルを表示（アウトラインとコメントをまとめて表示）"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show a second sidebar panel"
-msgstr "2つ目のサイドバーパネルを表示"
-
 #. placeholder {0}: untypedShown.length
 #: src/ui/Home.tsx
 msgid "Show all {0} notes without a type"
@@ -2187,10 +2093,6 @@ msgstr "エディターで表示"
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "Markdownをそのまま表示"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Show or hide the sidebar"
-msgstr "サイドバーを表示／非表示"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 chapters"
@@ -2331,6 +2233,10 @@ msgid "Sources."
 msgstr "出典。"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Split sidebar"
+msgstr "サイドバーを分割"
+
+#: src/ui/WorkspaceView.tsx
 msgid "split stack outline comments sources"
 msgstr "分割 スタック アウトライン コメント 出典"
 
@@ -2413,8 +2319,8 @@ msgid "The chapter is not open."
 msgstr "その章は開いていません。"
 
 #: src/ui/WorkspaceView.tsx
-msgid "The collection version is not available for comparison. Resolve held or unresolved changes in the collection before saving here. You can download your local drafts."
-msgstr "コレクションのバージョンは比較できません。ここで保存する前に、コレクションの保留中または未解決の変更を解決してください。ローカルの下書きはダウンロードできます。"
+msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
+msgstr "コレクションのバージョンを比較できません。ここで保存する前にコレクション内の競合を解決するか、ローカルの下書きをダウンロードしてください。"
 
 #: src/compile/client.ts
 msgid "The compile worker stopped."
@@ -2511,6 +2417,10 @@ msgstr "このブラウザーのすべての原稿に適用されます。"
 msgid "This changes the interface in this browser, not the manuscript’s language."
 msgstr "これはこのブラウザーのインターフェース言語を変更します。原稿の言語は変わりません。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter changed elsewhere while you were editing it."
+msgstr "編集中にこの章が別の場所で変更されました。"
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "このコレクションは Writer からのファイルを受け付けません。"
@@ -2528,20 +2438,12 @@ msgid "This is a local development build. The hosted mdbase connect service only
 msgstr "これはローカル開発用ビルドです。ホスト型の mdbase connect サービスは HTTPS で提供されるアプリケーションのみを受け付けるため、Connect のローカル環境（mdbase-connect の <0>pnpm dev:environment:up</0>）を使用するか、<1>デモコレクション</1>を開いてください。"
 
 #: src/ui/WorkspaceView.tsx
-msgid "This list"
-msgstr "このリスト"
-
-#: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "この原稿を開けませんでした"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "この箇所は本文にありません"
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record changed elsewhere while you were editing it."
-msgstr "編集中に、このレコードが別の場所で変更されました。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This record was deleted elsewhere. Your local text is still available here."
@@ -2609,10 +2511,6 @@ msgstr "不明な引用スタイル「{value}」です。{other}を使用しま�
 msgid "Unknown template \"{value}\"; using article."
 msgstr "不明なテンプレート「{value}」です。articleを使用します。"
 
-#: src/ui/records.ts
-msgid "Unsaved"
-msgstr "未保存"
-
 #: src/ui/Home.tsx
 msgid "Unsaved drafts"
 msgstr "未保存の下書き"
@@ -2674,6 +2572,10 @@ msgstr "承認を待っています…"
 #: src/ui/ConnectGate.tsx
 msgid "Waiting for mdbase connect…"
 msgstr "mdbase connect を待っています…"
+
+#: src/ui/CommentsPanel.tsx
+msgid "Whole text"
+msgstr "テキスト全体"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"
@@ -2744,6 +2646,7 @@ msgstr "原稿を執筆し、引用を挿入して組版する"
 msgid "Writer cannot ask for access here."
 msgstr "Writer はここでアクセスを要求できません。"
 
+#: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer コマンド"

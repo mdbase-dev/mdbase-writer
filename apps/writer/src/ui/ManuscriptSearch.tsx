@@ -109,9 +109,9 @@ export function ManuscriptSearch({
           </p>
           {result.groups.map((group) => (
             <section key={group.record} className="search-group" aria-label={recordTitle(group.record)}>
-              <h3 className="sidebar-heading" title={group.record}>
+              <h2 className="sidebar-heading" title={group.record}>
                 {recordTitle(group.record)} <span className="heading-count">{group.hits.length}</span>
-              </h3>
+              </h2>
               <ul>
                 {group.hits.map((hit) => {
                   const i = index++;

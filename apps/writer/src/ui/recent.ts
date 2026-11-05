@@ -7,6 +7,7 @@ export interface RecentEntry {
   readonly path: string;
   /** When it was last opened (ISO 8601). */
   readonly at: string;
+  readonly chapter?: string;
 }
 
 const RECENT_KEPT = 8;
@@ -28,10 +29,12 @@ export function recentManuscripts(namespace: string, store: Pick<Storage, "getIt
 }
 
 /** Notes that `path` was opened now; it moves to the front of the list. */
-export function recordOpened(namespace: string, path: string, store: Pick<Storage, "getItem" | "setItem"> | undefined = storage(), now = new Date()): void {
+export function recordOpened(namespace: string, path: string, store: Pick<Storage, "getItem" | "setItem"> | undefined = storage(), now = new Date(), chapter?: string): void {
   try {
-    const rest = recentManuscripts(namespace, store).filter((e) => e.path !== path);
-    store?.setItem(recentKey(namespace), JSON.stringify([{ path, at: now.toISOString() }, ...rest].slice(0, RECENT_KEPT)));
+    const previous = recentManuscripts(namespace, store);
+    const lastChapter = chapter ?? previous.find(entry => entry.path === path)?.chapter;
+    const rest = previous.filter((e) => e.path !== path);
+    store?.setItem(recentKey(namespace), JSON.stringify([{ path, at: now.toISOString(), ...(lastChapter ? { chapter: lastChapter } : {}) }, ...rest].slice(0, RECENT_KEPT)));
   } catch {
     // Storage may be unavailable; the home screen then has no "continue" card.
   }

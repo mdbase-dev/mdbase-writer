@@ -141,9 +141,9 @@ export function CommentsPanel({
             </button>
           ))}
         </div>
-        <button type="button" className="text-button" onClick={onWholeRecord} title={t`A comment on the whole record, not on a passage (select text in the editor to comment on it)`}><Trans>
-          <PlusIcon /> On the record
-        </Trans></button>
+        <button type="button" className="text-button" onClick={onWholeRecord} title={t`Comment on this text`}>
+          <PlusIcon /><span><Trans>Comment</Trans></span>
+        </button>
       </div>
       {placed.length > 0 && (authors.length > 1 || newCount > 0) && (
         <div className="comments-who">
@@ -184,7 +184,7 @@ export function CommentsPanel({
           const heading =
             grouped && p.record !== lastRecord ? (
               <li className="threads-record" key={`h:${p.record}`}>
-                <h3 className="sidebar-heading" title={recordTitle(p.record)}>{recordTitle(p.record)}</h3>
+                <h2 className="sidebar-heading" title={recordTitle(p.record)}>{recordTitle(p.record)}</h2>
               </li>
             ) : null;
           lastRecord = p.record;
@@ -329,7 +329,7 @@ const Thread = memo(function Thread({
     <li className={`thread${active ? " is-active" : ""}${at === null ? " is-detached" : ""}${open ? "" : " is-resolved"}${isNew ? " is-new" : ""}`} data-thread={root.path}>
       <button type="button" className="thread-anchor" onClick={() => onSelect(placed)} title={at === null ? t`This passage is no longer in the text` : t`Show in the editor`}>
         {isNew && <span className="thread-new small"><Trans>New since your last visit</Trans></span>}
-        {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{plainPassage(root.target.quote.exact) || t`(a point in the text)`}</blockquote> : <span className="thread-whole small muted"><Trans>On the whole record</Trans></span>}
+        {suggestion ? <Suggestion root={root} /> : root.target ? <blockquote className="thread-quote">{plainPassage(root.target.quote.exact) || t`(a point in the text)`}</blockquote> : <span className="thread-whole small muted"><Trans>Whole text</Trans></span>}
         {at === null && <span className="thread-detached small"><Trans>Detached: the text has changed</Trans></span>}
       </button>
       <Comment comment={root} people={people} />
