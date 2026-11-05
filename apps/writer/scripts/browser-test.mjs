@@ -357,6 +357,8 @@ await step("F8 goes to the next problem", async () => {
 
 await step("the sidebar and preview can be hidden, and the layout is remembered", async () => {
   await page.getByRole("button", { name: "Sidebar" }).click();
+  await page.locator('.outline[aria-hidden="true"]').waitFor({ state: "attached" });
+  await page.locator(".outline").waitFor({ state: "hidden" });
   assert.equal(await page.locator(".outline").isVisible(), false);
   await page.getByRole("button", { name: "Editor only" }).click();
   assert.equal(await page.locator(".preview-pane").isVisible(), false);
@@ -366,6 +368,7 @@ await step("the sidebar and preview can be hidden, and the layout is remembered"
   await page.getByRole("button", { name: "Sidebar" }).click();
   await page.getByRole("button", { name: "Editor and preview" }).click();
   await page.locator(".preview-pane").waitFor({ state: "visible" });
+  await page.waitForFunction(() => Math.round(document.querySelector(".outline").getBoundingClientRect().width) === 272);
 });
 
 await step("the sidebar resizes by dragging its edge or with the arrow keys", async () => {

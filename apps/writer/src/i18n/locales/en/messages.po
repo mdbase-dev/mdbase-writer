@@ -773,6 +773,15 @@ msgstr "Deleted"
 msgid "Deleted elsewhere"
 msgstr "Deleted elsewhere"
 
+#: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Demo · resets on reload"
+msgstr "Demo · resets on reload"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
+msgstr "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
+
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
 msgstr "Dependencies not checked"
@@ -1778,6 +1787,10 @@ msgstr "Pandoc/Quarto Markdown with its sources, style and images, to build othe
 msgid "PDF export timed out. Retry the preview and export again."
 msgstr "PDF export timed out. Retry the preview and export again."
 
+#: src/preview/Preview.tsx
+msgid "Preparing the preview. You can keep writing."
+msgstr "Preparing the preview. You can keep writing."
+
 #: src/ui/WorkspaceView.tsx
 msgid "Preview"
 msgstr "Preview"
@@ -2026,6 +2039,10 @@ msgstr "Save merged version"
 #: src/ui/records.ts
 msgid "Saved"
 msgstr "Saved"
+
+#: src/ui/records.ts
+msgid "Saved for this demo session"
+msgstr "Saved for this demo session"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
@@ -2318,6 +2335,10 @@ msgstr "Sources."
 msgid "split stack outline comments sources"
 msgstr "split stack outline comments sources"
 
+#: src/editor/Editor.tsx
+msgid "Start writing. Type / to insert or @ to cite."
+msgstr "Start writing. Type / to insert or @ to cite."
+
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2565,7 +2586,6 @@ msgstr "Typeset in {0} ms"
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
 msgstr "Typesetting took too long. Your editor is still available; retry the preview."
 
-#: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
 msgstr "Typesetting…"
@@ -2712,10 +2732,6 @@ msgstr "Write"
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
 msgstr "Write from your collection"
-
-#: src/editor/Editor.tsx
-msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"

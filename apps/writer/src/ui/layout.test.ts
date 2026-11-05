@@ -19,7 +19,7 @@ describe("gridFor", () => {
     expect(gridFor({ ...DEFAULT_LAYOUT, sidebarWidth: 320 }).columns).toMatch(/^320px /);
     expect(gridFor({ ...DEFAULT_LAYOUT, sidebarWidth: 90 }).columns).toMatch(/^200px /);
     // Hidden, the sidebar leaves a rail of its tabs.
-    expect(gridFor({ ...DEFAULT_LAYOUT, sidebar: false }).areas).toBe(`"rail write divider preview"`);
+    expect(gridFor({ ...DEFAULT_LAYOUT, sidebar: false }).areas).toBe(`"outline write divider preview"`);
     expect(gridFor({ ...DEFAULT_LAYOUT, sidebar: false }).columns.startsWith("44px")).toBe(true);
   });
   it("rounds and bounds a dragged width", () => {

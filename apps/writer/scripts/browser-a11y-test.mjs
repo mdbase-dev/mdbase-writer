@@ -36,6 +36,7 @@ async function escapeTo(page, dialog, opener) {
   await dialog.waitFor();
   await page.keyboard.press("Escape");
   await dialog.waitFor({ state: "hidden" });
+  await page.waitForFunction(element => element === document.activeElement, await opener.elementHandle());
   assert.ok(await opener.evaluate(el => el === document.activeElement), "Escape must return focus to the opener");
 }
 

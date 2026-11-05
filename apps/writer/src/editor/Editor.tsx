@@ -103,7 +103,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
   const [phraseProblem, setPhraseProblem] = useState(false);
   const translatedExtensions = () => [
     EditorState.phrases.of(phrases.current),
-    placeholder(t`Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table.`),
+    placeholder(t`Start writing. Type / to insert or @ to cite.`),
     EditorView.contentAttributes.of({ "aria-label": t`Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
   ];
   const host = useRef<HTMLDivElement>(null);

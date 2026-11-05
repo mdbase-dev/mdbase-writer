@@ -14,7 +14,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { bodySummary, fail, type ManuscriptSummary, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
 import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog } from "./overlays.js";
 import { chapterEmbeds } from "../workspace/chapters.js";
 import { wordCount } from "../words.js";
 import { PlusIcon, SearchIcon } from "./icons.js";
@@ -171,6 +171,7 @@ export function Home({ backend, onOpen, collectionPicker }: { backend: WriterBac
         <header className="home-header">
           <div>
             <h1><Trans>Manuscripts</Trans></h1>
+            {backend.kind === "demo" && <p className="demo-identity"><Trans>Demo · resets on reload</Trans></p>}
             <p className="muted"><Trans>
               In {collectionPicker ?? <strong>{backend.collectionName}</strong>}
               {backend.kind === "connect" && <><Trans> via mdbase Connect</Trans></>}

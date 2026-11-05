@@ -2,7 +2,7 @@ import { Trans } from "@lingui/react/macro";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { useEffect, useRef, useState } from "react";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog } from "./overlays.js";
 import type { JsonObject } from "@mdbase-dev/connect";
 
 /** Highlight the changed passage while keeping the unchanged context readable. */

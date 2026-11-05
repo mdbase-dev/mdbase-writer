@@ -773,6 +773,15 @@ msgstr "削除済み"
 msgid "Deleted elsewhere"
 msgstr "別の場所で削除されました"
 
+#: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Demo · resets on reload"
+msgstr "デモ · 再読み込みでリセット"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
+msgstr "デモの原稿は再読み込みするとリセットされます。デモの原稿一覧に戻ってやり直してください。"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
 msgstr "依存関係は確認されていません"
@@ -1778,6 +1787,10 @@ msgstr "出典、スタイル、画像を含むPandoc/Quarto Markdown（他の�
 msgid "PDF export timed out. Retry the preview and export again."
 msgstr "PDFエクスポートがタイムアウトしました。プレビューを再試行してから、もう一度エクスポートしてください。"
 
+#: src/preview/Preview.tsx
+msgid "Preparing the preview. You can keep writing."
+msgstr "プレビューを準備しています。そのまま執筆を続けられます。"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Preview"
 msgstr "プレビュー"
@@ -2026,6 +2039,10 @@ msgstr "統合したバージョンを保存"
 #: src/ui/records.ts
 msgid "Saved"
 msgstr "保存済み"
+
+#: src/ui/records.ts
+msgid "Saved for this demo session"
+msgstr "このデモセッション内で保存済み"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
@@ -2318,6 +2335,10 @@ msgstr "出典。"
 msgid "split stack outline comments sources"
 msgstr "分割 スタック アウトライン コメント 出典"
 
+#: src/editor/Editor.tsx
+msgid "Start writing. Type / to insert or @ to cite."
+msgstr "書き始めましょう。/ で挿入、@ で引用できます。"
+
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2565,7 +2586,6 @@ msgstr "{0}ミリ秒で組版しました"
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
 msgstr "組版に時間がかかりすぎました。エディターは引き続き利用できます。プレビューを再試行してください。"
 
-#: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
 msgstr "組版中…"
@@ -2712,10 +2732,6 @@ msgstr "執筆"
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
 msgstr "コレクションから執筆"
-
-#: src/editor/Editor.tsx
-msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr "Markdown で執筆してください。[@citekey] の形式で引用し、/ と入力すると脚注・図・表を追加できます。"
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"

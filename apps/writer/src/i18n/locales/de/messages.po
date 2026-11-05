@@ -773,6 +773,15 @@ msgstr "Gelöscht"
 msgid "Deleted elsewhere"
 msgstr "Andernorts gelöscht"
 
+#: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Demo · resets on reload"
+msgstr "Demo · wird beim Neuladen zurückgesetzt"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
+msgstr "Demo-Manuskripte werden beim Neuladen zurückgesetzt. Kehren Sie zu den Demo-Manuskripten zurück, um neu anzufangen."
+
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
 msgstr "Abhängigkeiten nicht geprüft"
@@ -1778,6 +1787,10 @@ msgstr "Pandoc-/Quarto-Markdown mit Quellen, Formatvorlage und Bildern, um selbs
 msgid "PDF export timed out. Retry the preview and export again."
 msgstr "Der PDF-Export hat das Zeitlimit überschritten. Wiederholen Sie Vorschau und Export."
 
+#: src/preview/Preview.tsx
+msgid "Preparing the preview. You can keep writing."
+msgstr "Die Vorschau wird vorbereitet. Sie können weiterschreiben."
+
 #: src/ui/WorkspaceView.tsx
 msgid "Preview"
 msgstr "Vorschau"
@@ -2026,6 +2039,10 @@ msgstr "Zusammengeführte Version speichern"
 #: src/ui/records.ts
 msgid "Saved"
 msgstr "Gespeichert"
+
+#: src/ui/records.ts
+msgid "Saved for this demo session"
+msgstr "Für diese Demo-Sitzung gespeichert"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
@@ -2318,6 +2335,10 @@ msgstr "Quellen."
 msgid "split stack outline comments sources"
 msgstr "aufteilen untereinander Gliederung Kommentare Quellen"
 
+#: src/editor/Editor.tsx
+msgid "Start writing. Type / to insert or @ to cite."
+msgstr "Beginnen Sie zu schreiben. Tippen Sie / zum Einfügen oder @ zum Zitieren."
+
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2565,7 +2586,6 @@ msgstr "Satz in {0} ms"
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
 msgstr "Das Setzen hat zu lange gedauert. Sie können den Editor weiter verwenden; laden Sie die Vorschau erneut."
 
-#: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
 msgstr "Satz wird erstellt…"
@@ -2712,10 +2732,6 @@ msgstr "Schreiben"
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
 msgstr "Aus Ihrer Sammlung schreiben"
-
-#: src/editor/Editor.tsx
-msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr "Schreiben Sie in Markdown. Zitieren Sie mit [@citekey]; geben Sie / ein, um eine Fußnote, Abbildung oder Tabelle einzufügen."
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"

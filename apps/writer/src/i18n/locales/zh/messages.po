@@ -773,6 +773,15 @@ msgstr "已删除"
 msgid "Deleted elsewhere"
 msgstr "已在其他位置删除"
 
+#: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Demo · resets on reload"
+msgstr "演示 · 重新加载后重置"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
+msgstr "演示文稿会在重新加载后重置。请返回演示文稿列表重新开始。"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Dependencies not checked"
 msgstr "尚未检查依赖项"
@@ -1778,6 +1787,10 @@ msgstr "包含来源、样式和图片的 Pandoc/Quarto Markdown，可供你自�
 msgid "PDF export timed out. Retry the preview and export again."
 msgstr "PDF 导出超时。请重试预览，然后重新导出。"
 
+#: src/preview/Preview.tsx
+msgid "Preparing the preview. You can keep writing."
+msgstr "正在准备预览。你可以继续写作。"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Preview"
 msgstr "预览"
@@ -2026,6 +2039,10 @@ msgstr "保存合并后的版本"
 #: src/ui/records.ts
 msgid "Saved"
 msgstr "已保存"
+
+#: src/ui/records.ts
+msgid "Saved for this demo session"
+msgstr "已保存到本次演示会话"
 
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
@@ -2318,6 +2335,10 @@ msgstr "来源。"
 msgid "split stack outline comments sources"
 msgstr "分栏、堆叠、大纲、评论、来源"
 
+#: src/editor/Editor.tsx
+msgid "Start writing. Type / to insert or @ to cite."
+msgstr "开始写作。输入 / 插入内容，或输入 @ 引用文献。"
+
 #. placeholder {0}: stored.value
 #: src/ui/WorkspaceView.tsx
 msgid "Stored {0}. Write the caption."
@@ -2565,7 +2586,6 @@ msgstr "排版用时 {0} 毫秒"
 msgid "Typesetting took too long. Your editor is still available; retry the preview."
 msgstr "排版超时。编辑器仍可使用；请重试预览。"
 
-#: src/preview/Preview.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Typesetting…"
 msgstr "正在排版…"
@@ -2712,10 +2732,6 @@ msgstr "写作"
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
 msgstr "从你的集合开始写作"
-
-#: src/editor/Editor.tsx
-msgid "Write in Markdown. Cite with [@citekey]; type / to add a footnote, figure or table."
-msgstr "使用 Markdown 写作。使用 [@citekey] 添加引文；输入 / 可添加脚注、插图或表格。"
 
 #: src/editor/chapter-cards.ts
 msgid "Write the quotation here, to edit it; it no longer follows the annotation"

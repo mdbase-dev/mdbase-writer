@@ -23,7 +23,7 @@ import { wordCount } from "../words.js";
 import { formatNumber } from "../i18n/presentation.js";
 import { diagnosticMessage } from "../i18n/diagnostics.js";
 import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { CommandPalette, Dialog, Popover, useOverlay } from "./overlays.js";
 import {
   AlertIcon,
   BooksIcon,
@@ -62,8 +62,7 @@ import type { CitationSite } from "./SourcesPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { ProblemsStrip } from "./ProblemsStrip.js";
-import { CommandPalette, type Command } from "@mdbase-dev/ui/command-palette";
-import { moveMenuFocus, useMenuPopover } from "@mdbase-dev/ui/popover";
+import type { Command } from "@mdbase-dev/ui/command-palette";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
@@ -183,6 +182,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [active, setActive] = useState(workspace.main);
   const [pane, setPane] = useState<Pane>("write");
   const [layout, setLayoutState] = useState<Layout>(() => ({ ...loadLayout(), tab: rememberedTabs.get(workspace.main) ?? "outline" }));
+  const lower = useOverlay(layout.lowerTab !== null, ".sidebar-lower", "translateY(-3px)");
+  const lastLowerTab = useRef<SidebarTab>(layout.lowerTab ?? "comments");
+  if (layout.lowerTab) lastLowerTab.current = layout.lowerTab;
+  const lowerTab = layout.lowerTab ?? lastLowerTab.current;
   const narrow = useNarrow();
   const [notice, setNotice] = useState<Notice | null>(null);
   // An export has no count to show, so the mark streams until it ends or is cancelled.
@@ -343,7 +346,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const states = [...snap.records.values()].map((r) => r.snapshot.state);
   if (snap.pendingSettings) states.push("unsaved");
   const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
-  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0);
+  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, workspace.kind);
   const connection = useContext(ConnectionNoticeContext);
 
   useEffect(() => {
@@ -841,8 +844,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   if (snap.phase === "failed") {
     return (
       <ConnectLayout app="writer" title={translate`This manuscript could not be opened`} error={snap.problem}>
+        {workspace.kind === "demo" && <p><Trans>Demo manuscripts reset on reload. Return to the demo manuscripts to start again.</Trans></p>}
         <FeedbackButton topic="problem" />
-        <button className="mdbase-connect-action" type="button" onClick={() => void workspace.retryOpen()}><Trans>Retry opening</Trans></button>
+        {workspace.kind !== "demo" && <button className="mdbase-connect-action" type="button" onClick={() => void workspace.retryOpen()}><Trans>Retry opening</Trans></button>}
         {snap.recoveredDrafts.size > 0 && <><p><Trans>A local draft is still available in this browser.</Trans></p><button type="button" className="mdbase-connect-action" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></>}
         <button className="mdbase-connect-action" type="button" onClick={() => onClose()}><Trans>
           Back to manuscripts
@@ -869,6 +873,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <span className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</span>
+          {workspace.kind === "demo" && <span className="demo-identity"><Trans>Demo · resets on reload</Trans></span>}
           {connection && saveNotice.tone !== "attention"
             ? <SaveNotice tone="pending" label={connectionNoticeLabels[connection]} className="is-long" />
             : <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />}
@@ -934,7 +939,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
       </InTopbar>
 
-      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} aria-label={translate`Manuscript sidebar`}>
+      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} aria-label={translate`Manuscript sidebar`} inert={narrow ? pane !== "outline" : !layout.sidebar} aria-hidden={(narrow ? pane !== "outline" : !layout.sidebar) || undefined}>
         <SidebarTabs
           tab={layout.tab}
           onTab={setSidebarTab}
@@ -947,21 +952,21 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         <div ref={sidebarPanel} onScroll={(e) => sidebarScroll.current.set(layout.tab, e.currentTarget.scrollTop)} className="sidebar-panel" role="tabpanel" id={`sidebar-${layout.tab}`} aria-labelledby={`sidebar-tab-${layout.tab}`}>
           {layout.tab !== "sources" && panelFor(layout.tab)}
           {/* Sources stays mounted (hidden) so its search, expanded source and scroll last across tab switches. */}
-          {layout.lowerTab !== "sources" && <div hidden={layout.tab !== "sources"}>{sourcesPanel}</div>}
+          {(!lower.present || lowerTab !== "sources") && <div hidden={layout.tab !== "sources"}>{sourcesPanel}</div>}
         </div>
-        {layout.lowerTab && (
+        <div ref={lower.host} className="lower-host">{lower.present && (
           <div className="sidebar-lower">
             <div className="sidebar-lower-tabs">
-              <div className="sidebar-tab-list" role="tablist" aria-label={translate`Lower panel`}>
+              <div className="sidebar-tab-list" role="tablist" aria-label={translate`Lower panel`} onKeyDown={(event) => moveSidebarTab(event, SIDEBAR_TABS.filter((tab) => tab !== layout.tab), lowerTab, setLowerTab, "lower-sidebar-tab")}>
                 {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
-                  <button key={t} type="button" role="tab" aria-selected={layout.lowerTab === t} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
+                  <button key={t} id={`lower-sidebar-tab-${t}`} type="button" role="tab" aria-selected={lowerTab === t} aria-controls={`lower-sidebar-${t}`} tabIndex={lowerTab === t ? 0 : -1} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
                 ))}
               </div>
-              <button type="button" className="mdbase-icon-button is-small" aria-label={translate`Close the lower panel`} title={translate`Close the lower panel`} onClick={() => setLowerTab(null)}><CloseIcon /></button>
+              <button type="button" className="mdbase-icon-button is-small" aria-label={translate`Close the lower panel`} title={translate`Close the lower panel`} onClick={(event) => { setLowerTab(null); event.currentTarget.closest(".outline")?.querySelector<HTMLButtonElement>(".sidebar-split")?.focus(); }}><CloseIcon /></button>
             </div>
-            <div className="sidebar-panel is-lower" role="tabpanel">{panelFor(layout.lowerTab)}</div>
+            <div className="sidebar-panel is-lower" role="tabpanel" id={`lower-sidebar-${lowerTab}`} aria-labelledby={`lower-sidebar-tab-${lowerTab}`}>{panelFor(lowerTab)}</div>
           </div>
-        )}
+        )}</div>
         <SidebarResizer width={layout.sidebarWidth} onChange={(sidebarWidth) => setLayout((l) => ({ ...l, sidebarWidth }))} />
       </aside>
 
@@ -1083,7 +1088,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             className="muted small preview-meta"
             title={timings && !snap.compiling ? translate`Typeset in ${Math.round(timings.assembleMs + timings.compileMs)} ms` : undefined}
           >
-            {slowCompile ? (
+            {slowCompile && snap.artifact ? (
               translate`Typesetting…`
             ) : snap.result ? (
               <>
@@ -1253,21 +1258,22 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   );
 }
 
+function moveSidebarTab(event: React.KeyboardEvent, tabs: readonly SidebarTab[], current: SidebarTab, onTab: (tab: SidebarTab) => void, prefix: string) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const next = event.key === "Home" ? tabs[0] : event.key === "End" ? tabs[tabs.length - 1] : tabs[(tabs.indexOf(current) + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+  if (!next) return;
+  onTab(next);
+  requestAnimationFrame(() => document.getElementById(`${prefix}-${next}`)?.focus());
+}
+
 /** Outline, Sources and Comments, as tabs: ←/→ move between them. A second panel can open beneath. */
 function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSplit }: { tab: SidebarTab; onTab(tab: SidebarTab): void; sources: number; comments: number; commentsTitle: string; split: boolean; onSplit(): void }) {
   useLingui();
   const tabs = SIDEBAR_TABS;
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
-    e.preventDefault();
-    const next = e.key === "Home" ? tabs[0] : e.key === "End" ? tabs[tabs.length - 1] : tabs[(tabs.indexOf(tab) + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
-    if (!next) return;
-    onTab(next);
-    requestAnimationFrame(() => document.getElementById(`sidebar-tab-${next}`)?.focus());
-  };
   return (
     <div className="sidebar-tabs">
-      <div className="sidebar-tab-list" role="tablist" aria-label={translate`Sidebar`} onKeyDown={onKeyDown}>
+      <div className="sidebar-tab-list" role="tablist" aria-label={translate`Sidebar`} onKeyDown={(event) => moveSidebarTab(event, tabs, tab, onTab, "sidebar-tab")}>
         {tabs.map((t) => (
           <button
             key={t}
@@ -1354,17 +1360,6 @@ function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { dia
   );
 }
 
-function Popover({ id, trigger, width, label, align = "start", focus, onClose, children }: { id: string; trigger: React.RefObject<HTMLElement | null>; width: number; label: string; align?: "start" | "end"; focus?: string; onClose(refocus: boolean): void; children: ReactNode }) {
-  useLingui();
-  const ref = useRef<HTMLDivElement>(null);
-  useMenuPopover(ref, trigger, onClose, { width, align, focus });
-  return (
-    <div ref={ref} id={id} className="mdbase-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(e) => moveMenuFocus(e, ref.current)}>
-      {children}
-    </div>
-  );
-}
-
 /** What can be inserted at the cursor, each with the Markdown it stands for. */
 function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setOpen(open: boolean): void; commands: readonly InsertCommand[]; disabled: boolean }) {
   useLingui();
@@ -1387,8 +1382,7 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
         <InsertIcon />
         <span className="button-label"><Trans>Insert</Trans></span>
       </button>
-      {open && (
-        <Popover id={id} trigger={trigger} width={340} label={translate`Insert`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+      <Popover open={open} id={id} trigger={trigger} width={340} label={translate`Insert`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
@@ -1400,7 +1394,7 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
           ))}
           <p className="popover-note"><Trans>Or type <kbd>/</kbd> in the text to pick one there.</Trans></p>
         </Popover>
-      )}
+
     </>
   );
 }
@@ -1457,8 +1451,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           <ChevronDown className="chevron" />
         </button>
       </div>
-      {open && (
-        <Popover id={id} trigger={group} width={320} label={translate`Export`} align="end" focus={`[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
+      <Popover open={open} id={id} trigger={group} width={320} label={translate`Export`} align="end" focus={`[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
@@ -1466,7 +1459,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           {item("docx", translate`Word (DOCX)`, customTemplate ? translate`Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB.` : translate`Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB.`)}
           {item("bundle", translate`Pandoc bundle (zip)`, translate`Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself`)}
         </Popover>
-      )}
+
     </>
   );
 }
@@ -1496,8 +1489,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
       >
         <MoreIcon />
       </button>
-      {open && (
-        <Popover id={id} trigger={trigger} width={240} label={translate`More`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+      <Popover open={open} id={id} trigger={trigger} width={240} label={translate`More`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
@@ -1530,7 +1522,6 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
             </div>
           )}
         </Popover>
-      )}
     </>
   );
 }

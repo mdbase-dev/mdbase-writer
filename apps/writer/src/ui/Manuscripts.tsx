@@ -4,7 +4,7 @@ import { useLingui } from "@lingui/react";
 // Existing manuscript navigation/workspace shared by legacy, sample and SDK
 // backends. This reads only the app's manuscript route; SDK owns collection URL.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Dialog } from "@mdbase-dev/ui/dialog";
+import { Dialog } from "./overlays.js";
 import type { WriterBackend } from "../backend/types.js";
 import { useWriterFeedbackContext } from "../FeedbackRoot.js";
 import { downloadLocalDrafts } from "./download-local-drafts.js";

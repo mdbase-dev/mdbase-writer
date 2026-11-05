@@ -50,6 +50,14 @@ This runs the baseline suite and fault-injection checks for recovery, early expo
 history, conflicts, cancellation and selectable preview text. Run only the latter with
 `pnpm --filter @mdbase-writer/app test:browser:reliability`.
 
+Run `pnpm --filter @mdbase-writer/app test:browser:polish` against the same local server
+for the eight-context desktop/phone, light/dark and normal/Reduce matrix. It samples actual
+`document.getAnimations()` targets and rAF trajectories for 160 ms entrances, 120 ms exits,
+interruption, reversal and runtime Reduce cancellation. Coverage includes the retained lower
+sidebar panel, its keyboard tabs and focus return, preview Fit containment, information-text
+contrast, Find/Replace, and demo-only save/reset identity. Non-loopback requests are blocked.
+These are Chromium viewport fixtures, not real-account or physical-phone qualification.
+
 The cursor/undo/redo regression also runs against optimized production React with a real
 compiler and Preview canvas (development React can hide update-scheduling failures):
 
