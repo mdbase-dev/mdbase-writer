@@ -56,6 +56,12 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
       dedupe: ["react", "react-dom", "@codemirror/state", "@codemirror/view", "@codemirror/language", "@lezer/common", "@lezer/highlight", "@lezer/markdown"],
     },
     server: { host: "127.0.0.1", port: 5320, strictPort: true },
-    build: { target: "es2022", sourcemap: true },
+    build: { target: "es2022", sourcemap: true,
+      rollupOptions: { output: {
+        entryFileNames: environment["VITE_MDBASE_WRITER_BUILD_ID"]
+          ? `assets/[name]-[hash]-${environment["VITE_MDBASE_WRITER_BUILD_ID"].slice(0, 12)}.js`
+          : "assets/[name]-[hash].js",
+      } },
+    },
   };
 });

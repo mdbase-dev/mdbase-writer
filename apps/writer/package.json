@@ -29,8 +29,6 @@
     "test:browser:editing": "node scripts/browser-editing-test.mjs",
     "typecheck": "pnpm manifest && tsc -p tsconfig.json",
     "deploy:lab": "MDBASE_ENV=lab node scripts/deploy-pages.mjs",
-    "deploy:staging": "MDBASE_ENV=staging node scripts/deploy-pages.mjs",
-    "deploy:prod": "MDBASE_ENV=production node scripts/deploy-pages.mjs",
     "upload:compiler": "node scripts/upload-compiler.mjs"
   },
   "dependencies": {
@@ -47,7 +45,7 @@
     "@lingui/core": "6.9.0",
     "@lingui/react": "6.9.0",
     "@mdbase-dev/connect": "0.1.0-beta.149",
-    "@mdbase-dev/connect-protocol": "file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.129-c280cd194ffd.tgz",
+    "@mdbase-dev/connect-protocol": "file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.145-e6e66bcd172f.tgz",
     "@mdbase-dev/i18n": "0.1.0-beta.147",
     "@mdbase-dev/sdk": "file:../../vendor/sdk-4370800f-production-beta156.tgz",
     "@mdbase-dev/sdk-lab": "file:../../vendor/sdk-dev-eaa4e697-lab.tgz",

@@ -609,7 +609,7 @@ await step("the phone layout switches between write, preview and outline", async
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Preview", exact: true }).click();
   await page.locator(".preview-pane").waitFor({ state: "visible" });
-  assert.equal(await page.locator(".write").isVisible(), false);
+  await page.locator(".write").waitFor({ state: "hidden" });
   await page.screenshot({ path: "out/e2e-mobile-preview.png" });
   await page.getByRole("button", { name: "Sidebar", exact: true }).click();
   await page.locator(".outline").waitFor({ state: "visible" });
