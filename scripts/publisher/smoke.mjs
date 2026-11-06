@@ -26,9 +26,10 @@ export async function smoke(chromium,source,target='production') {
   });
   const response=await page.goto(origins[target]+'/',{waitUntil:'networkidle',timeout:90000});
   need(response?.status()===200,'entry-unavailable');
-  // Cloudflare injects its Insights beacon as a cross-origin module script.
+  // Cloudflare injects its Insights beacon as a cross-origin module script, and
+  // the shell registration script is a second same-origin module outside assets.
   const entries=(await page.locator('script[type="module"][src]').evaluateAll(nodes=>nodes.map(node=>node.src)))
-   .filter(url=>new URL(url).origin===origins[target]);
+   .filter(url=>new URL(url).origin===origins[target] && new URL(url).pathname.startsWith('/assets/'));
   need(entries.length===1,'entry-asset-required');
   assertEntryAsset(entries[0],source,target);
   const entry=await context.request.get(entries[0]);
