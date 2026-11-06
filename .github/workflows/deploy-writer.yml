@@ -15,6 +15,10 @@ on:
         options:
           - staging
           - production
+      drill:
+        description: Deliberately fail smoke after uploading the already-live production source (manual only).
+        type: boolean
+        default: false
 
 permissions:
   actions: read
@@ -24,7 +28,7 @@ concurrency:
   group: writer-pages-${{ github.event_name == 'workflow_dispatch' && inputs.target || github.ref }}
   cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
-# CI is ci.yml. Only ops dispatches this immutable publication workflow.
+# CI is ci.yml. Ops and direct operators dispatch this immutable publisher.
 jobs:
   admit:
     # Validate dispatch shape before acquiring an environment.
@@ -41,6 +45,7 @@ jobs:
           TARGET: ${{ inputs.target }}
           SOURCE_SHA: ${{ inputs.source_sha }}
           GITHUB_TOKEN: ${{ github.token }}
+          DRILL: ${{ inputs.drill && 'true' || 'false' }}
         run: |
           set -euo pipefail
           case "$TARGET" in staging|production) ;; *) exit 1 ;; esac
@@ -48,6 +53,7 @@ jobs:
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$GITHUB_REF" == refs/heads/main ]]
           node scripts/publisher/refs.mjs
+          node scripts/publisher/drill.mjs admit
 
   inputs:
     needs: admit
@@ -263,6 +269,14 @@ jobs:
           path: ${{ runner.temp }}/writer-receipt/previous.json
           if-no-files-found: error
           retention-days: 90
+      - name: Drill requires the exact source already live before upload
+        if: inputs.drill && steps.compatibility.outputs.ready == 'true'
+        timeout-minutes: 1
+        env:
+          DRILL: ${{ inputs.drill && 'true' || 'false' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/publisher/drill.mjs before-upload "$RUNNER_TEMP/writer-receipt"
       - name: Recheck immutable inventory and upload once
         id: upload
         if: steps.compatibility.outputs.ready == 'true'
@@ -294,7 +308,11 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: node scripts/publisher/hosting.mjs "$RUNNER_TEMP/writer-receipt/plan.json" "$RUNNER_TEMP/writer-receipt/inventory.json" "$RUNNER_TEMP/writer-receipt/deployment.json" "$RUNNER_TEMP/writer-upload/artifact" > "$RUNNER_TEMP/writer-receipt/verification.json"
+          DRILL: ${{ inputs.drill && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          node scripts/publisher/hosting.mjs "$RUNNER_TEMP/writer-receipt/plan.json" "$RUNNER_TEMP/writer-receipt/inventory.json" "$RUNNER_TEMP/writer-receipt/deployment.json" "$RUNNER_TEMP/writer-upload/artifact" > "$RUNNER_TEMP/writer-receipt/verification.json"
+          if [ "$DRILL" = true ]; then node scripts/publisher/drill.mjs uploaded "$RUNNER_TEMP/writer-receipt"; fi
       - name: Preserve honest failure or complete static-publication receipt
         timeout-minutes: 1
         if: always() && steps.compatibility.outputs.ready == 'true'
@@ -340,6 +358,23 @@ jobs:
       - name: Fresh load, source entry asset, readiness and sign-in
         timeout-minutes: 3
         run: node scripts/publisher/smoke.mjs "$RUNNER_TEMP/writer-smoke-tool" "$RUNNER_TEMP/writer-smoke.json"
+      - name: Read this run's verified upload receipt for the manual drill
+        if: inputs.drill && inputs.target == 'production' && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "writer-receipt-production-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --dir "$RUNNER_TEMP/writer-drill"
+      - name: Deliberate smoke failure after real same-source production upload
+        if: inputs.drill && inputs.target == 'production' && github.event_name == 'workflow_dispatch'
+        env:
+          DRILL: ${{ inputs.drill && 'true' || 'false' }}
+        run: node scripts/publisher/drill.mjs fail "$RUNNER_TEMP/writer-drill" "$RUNNER_TEMP/writer-drill.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && inputs.drill
+        with:
+          name: writer-production-drill-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/writer-drill.json
+          if-no-files-found: warn
+          retention-days: 90
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
