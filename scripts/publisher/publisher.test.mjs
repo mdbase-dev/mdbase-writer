@@ -10,6 +10,7 @@ import { it } from 'node:test';
 import { createRequire } from 'node:module';
 const {parse}=createRequire(new URL('../../apps/writer/package.json',import.meta.url))('yaml');
 import { assertDispatch, assertCheckout, assertAncestor, deploymentFor } from './refs.mjs';
+import { sourceRoot } from './publisher.mjs';
 import { loadOriginals, productionPin, compareInstalled, protectedHashes } from './originals.mjs';
 import { authenticateProduction, stagingArchive } from './authentication.mjs';
 import { prepareInstall } from './install-inputs.mjs';
@@ -215,4 +216,8 @@ it('authenticates the real SDK and compares the installed SDK, protocol and revi
  const intake=await loadOriginals({target:'production',repoRoot,hashes,installed:true});
  assert.equal(intake.authentication.kind,'npm-provenance');
  assert.equal(intake.archives.ui.patch.sha256,'e10535ddaeeb89191adead755be385ef674c9437145d65a6cd623c5aedde13ae');
+});
+it('reads candidate data from the source root, not the workflow checkout',()=>{
+ assert.equal(sourceRoot({WRITER_SOURCE_ROOT:'/candidate'}),'/candidate');
+ assert.equal(sourceRoot({}),process.cwd());
 });

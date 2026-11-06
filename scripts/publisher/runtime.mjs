@@ -7,7 +7,7 @@ const [command,root,planPath,deploymentPath,preflightPath]=process.argv.slice(2)
 try {
  if(command==='prepare-runtime') await prepareRuntimeOriginals(resolve('.'),resolve(root));
  else {
-  const policy=await sourceHostingPolicy(resolve('.'));
+  const policy=await sourceHostingPolicy(resolve(process.env.WRITER_SOURCE_ROOT??'.'));
   if(command==='upload-config'){
    await mkdir(root,{recursive:true});await writeFile(join(root,'wrangler.json'),JSON.stringify(uploadConfiguration(policy),null,2),{flag:'wx'});
   }else if(command==='metadata'){

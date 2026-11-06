@@ -4,9 +4,9 @@ import { resolve } from 'node:path';
 import { verifyServedAssets } from '../../apps/writer/scripts/verify-served.mjs';
 import { readHostingMetadata, sourceHostingPolicy } from '../lib/writer-hosting-policy.mjs';
 export async function verifyPublication(plan,inventory,deployment,artifactRoot,{sleep=ms=>new Promise(r=>setTimeout(r,ms)),now=()=>performance.now()}={}) {
- const policy=await sourceHostingPolicy(process.cwd());
+ const repoRoot=process.env.WRITER_SOURCE_ROOT??process.cwd(),policy=await sourceHostingPolicy(repoRoot);
  const metadata=await readHostingMetadata({policy,plan,deployment,accountId:process.env.CLOUDFLARE_ACCOUNT_ID,apiToken:process.env.CLOUDFLARE_API_TOKEN});
- const publication={repoRoot:process.cwd(),artifactRoot,plan,deployment,metadata};
+ const publication={repoRoot,artifactRoot,plan,deployment,metadata};
  const check=origin=>verifyServedAssets({origin,inventory,publication});
  const immutable=await check(deployment.url);
  if(!immutable.ok)return {...immutable,origins:[{origin:deployment.url,...immutable}]};

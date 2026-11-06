@@ -13,7 +13,9 @@ export { assertInventoryCoverage } from './checks.mjs';
 import { assertRuntimeOriginals } from '../lib/writer-runtime-originals.mjs';
 import { assertArtifactMetadata, assertArtifactRun } from './artifact.mjs';
 const need=(ok,message)=>{if(!ok)throw Error(`Writer publisher refusal: ${message}`);};
-export async function sourcePlan({env=process.env,cwd=env.WRITER_SOURCE_ROOT??process.cwd(),installed=false}={}) {
+// Runtime pins and hosting policy are the candidate's data, so an ancestor of main validates against itself.
+export const sourceRoot=(env=process.env)=>env.WRITER_SOURCE_ROOT??process.cwd();
+export async function sourcePlan({env=process.env,cwd=sourceRoot(env),installed=false}={}) {
  const binding=assertDispatch(env),source=assertCheckout(binding,cwd);
  const sdkTrust=await loadOriginals({target:binding.target,repoRoot:cwd,hashes:protectedHashes(env),installed});
  const target=deploymentFor(binding.target);
@@ -27,8 +29,8 @@ export async function publicationInventory(directory,plan) {
  const inventory=await inventoryDirectory(directory,{maxFileBytes:25*1024*1024});
  assertBuiltTarget({target:plan.target,manifest:JSON.parse(await readFile(join(directory,'.well-known/mdbase-app.json'),'utf8')),routes:JSON.parse(await readFile(join(directory,'_routes.json'),'utf8'))});
  assertInventoryCoverage(inventory,plan.sdkTrust);
- coveredHostingControls(await sourceHostingPolicy(process.cwd()),inventory);
- await assertRuntimeOriginals(process.cwd(),resolve(directory,'..'));
+ coveredHostingControls(await sourceHostingPolicy(sourceRoot()),inventory);
+ await assertRuntimeOriginals(sourceRoot(),resolve(directory,'..'));
  return inventory;
 }
 export function deploymentPrefix(output) {
