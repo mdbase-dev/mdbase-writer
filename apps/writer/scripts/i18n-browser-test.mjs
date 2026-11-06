@@ -11,7 +11,7 @@ const browser = await chromium.launch({ headless: true });
 const localeNames = { en: "English", it: "Italiano", ja: "日本語", de: "Deutsch", zh: "简体中文" };
 async function openLanguage(page) {
   await page.locator(".home, .workspace").waitFor();
-  if (await page.locator(".home").count()) await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').click();
+  if (await page.locator(".home").count()) await page.locator('.home [data-path][data-path="manuscripts/slow-change.md"]').click();
   await page.locator(".cm-content").waitFor();
   if (!await page.locator(".settings-sheet").count()) await page.keyboard.press("Control+,");
   await page.locator(".interface-language [role=combobox]").waitFor();
@@ -72,7 +72,7 @@ try {
   await page.locator(".bar-back").click();
   await page.locator(".home").waitFor();
   await page.screenshot({ path: "out/i18n/japanese-home.png", fullPage: true });
-  await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').click();
+  await page.locator('.home [data-path][data-path="manuscripts/slow-change.md"]').click();
   const editor = page.locator(".cm-content");
   await editor.waitFor();
   const manuscriptSource = () => page.evaluate(() => {

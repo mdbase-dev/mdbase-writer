@@ -23,6 +23,23 @@ export function mountSignIn() {
   root.render(<AppI18nProvider><App sdk={sdk} /></AppI18nProvider>);
 }
 
+export async function mountCollectionLimit() {
+  const fixture = await createTestApp({
+    declaration: { id: "writer.limit", name: "Writer limit", origin: "https://lab.mdbase-writer.pages.dev", environment: "lab", manifest },
+    collections: [{ name: "Drafts" }],
+    phase: "choosing",
+  });
+  let snapshot = { ...fixture.mdbase.getSnapshot(), links: { account: "https://connect-lab.mdbase.dev/account", manageAccess: "https://connect-lab.mdbase.dev/account/access" } };
+  const listeners = new Set<() => void>();
+  const sdk = { ...fixture.mdbase, getSnapshot: () => snapshot, subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; }, addCollection: async () => { throw { problem: "account_collection_quota_exceeded" }; } };
+  document.getElementById("root")!.hidden = true;
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  root.render(<AppI18nProvider><button type="button" onClick={() => { snapshot = { ...snapshot, collections: [] }; for (const listener of listeners) listener(); }}>Free a collection slot</button><App sdk={sdk} /></AppI18nProvider>);
+  return { close: async () => { root.unmount(); host.remove(); await fixture.close(); } };
+}
+
 export async function mountNative(body = "# Original manuscript\n\nConfirmed native text.\n") {
   const names = ["manuscript", "source", "comment"];
   const fixture = await createTestApp({

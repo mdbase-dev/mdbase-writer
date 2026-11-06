@@ -1,4 +1,4 @@
-// The other mdbase apps: local builds point at local copies of them.
+// The other mdbase apps, selected by the build's environment.
 import { mdbaseAppHref, withAppUrls } from "@mdbase-dev/ui/apps";
 
 export const appUrls = {

@@ -38,6 +38,7 @@ export function Settings({
   filePaths,
   problems,
   open,
+  modal = false,
   onClose,
   focus,
   livePreview = true,
@@ -48,6 +49,7 @@ export function Settings({
   filePaths: readonly string[];
   problems: readonly WriterDiagnostic[];
   open: boolean;
+  modal?: boolean;
   onClose(): void;
   focus: SettingsFocus | null;
   livePreview?: boolean;
@@ -55,20 +57,16 @@ export function Settings({
 }) {
   useLingui();
   const titleId = useId();
-  const sheet = useRef<HTMLDivElement>(null);
+  const sheet = useRef<HTMLDialogElement>(null);
   const { host, present } = useOverlay(open, ".settings-sheet", "translateX(-12px)");
-  // Opening moves focus into the sheet (unless a field was asked for); closing returns it.
-  useEffect(() => {
-    if (!open) return;
-    const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (!focus) sheet.current?.querySelector<HTMLElement>("input, textarea, button.mdbase-select")?.focus();
-    return () => {
-      // Only when focus was in the sheet, which has gone (it is on the body), or is still in it.
-      const now = document.activeElement;
-      if (before?.isConnected && (!now || now === document.body || sheet.current?.contains(now))) before.focus();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only opening moves focus
-  }, [open]);
+  useLayoutEffect(() => {
+    const dialog = sheet.current;
+    if (!dialog) return;
+    dialog.close();
+    if (open && modal) dialog.showModal();
+    else if (present) dialog.show();
+    if (open && !focus) dialog.querySelector<HTMLElement>("input, textarea, button.mdbase-select")?.focus();
+  }, [open, modal, present, Boolean(view)]);
   // Escape closes the sheet wherever focus is, unless something else (a choice list,
   // a menu, the editor's completions, a dialog) took it first.
   const close = useRef(onClose);
@@ -76,7 +74,7 @@ export function Settings({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || e.defaultPrevented || document.querySelector("dialog[open]")) return;
+      if (e.key !== "Escape" || e.defaultPrevented || document.querySelector("dialog[open]:not([inert]):not(.settings-sheet)")) return;
       e.preventDefault();
       close.current();
     };
@@ -99,12 +97,22 @@ export function Settings({
   const authorsKey = !("authors" in fm) && "author" in fm ? "author" : "authors";
 
   return (
-    <div ref={host} className="overlay-host"><div
+    <div ref={host} className="overlay-host"><dialog
       ref={sheet}
       className="settings-sheet"
       role="dialog"
-      aria-modal="false"
+      aria-modal={modal}
       aria-labelledby={titleId}
+      onCancel={event => { event.preventDefault(); onClose(); }}
+      onKeyDown={event => {
+        if (!modal || event.key !== "Tab" || event.defaultPrevented) return;
+        const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button, input, textarea, select, [tabindex="0"]')].filter(element => element.checkVisibility() && !element.matches(":disabled") && !element.closest("[inert]"));
+        const first = controls[0], last = controls.at(-1);
+        if (event.shiftKey ? document.activeElement === first : document.activeElement === last) {
+          event.preventDefault();
+          (event.shiftKey ? last : first)?.focus();
+        }
+      }}
     >
       <header className="settings-sheet-header">
         <h2 id={titleId}><Trans>Manuscript settings</Trans></h2>
@@ -178,7 +186,7 @@ export function Settings({
           <p className="muted small dialog-note"><Trans>This applies in this browser, to every manuscript.</Trans></p>
         </section>
       )}
-    </div></div>
+    </dialog></div>
   );
 }
 

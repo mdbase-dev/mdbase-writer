@@ -1,13 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { assertReproducibleDeployment, uncommittedBuildInputs, writerDeploymentFor, writerDeployments } from "./deployment-environment.mjs";
+import { assertReproducibleDeployment, uncommittedBuildInputs, writerAppUrlsFor, writerDeploymentFor, writerDeployments } from "./deployment-environment.mjs";
 
 test("deploys target lab by default, which alone serves the demo", () => {
   assert.deepEqual(writerDeploymentFor({}), { target: "lab", deployment: writerDeployments.lab });
   assert.equal(writerDeployments.lab.demo, true);
   assert.equal(writerDeployments.staging.demo, false);
   assert.equal(writerDeployments.production.demo, false);
+});
+
+test("each environment binds every sibling app and rejects missing or foreign URLs", () => {
+  for (const target of Object.keys(writerDeployments)) {
+    const urls = writerAppUrlsFor(target);
+    assert.equal(urls.writer, writerDeployments[target].origin);
+    assert.equal(urls.editor, writerDeployments[target].editorUrl);
+    assert.equal(urls.reader, writerDeployments[target].readerUrl);
+    for (const app of Object.keys(urls)) {
+      const key = `VITE_MDBASE_${app.toUpperCase()}_URL`;
+      assert.throws(() => writerAppUrlsFor(target, { [key]: "" }), /missing or foreign/);
+      assert.throws(() => writerAppUrlsFor(target, { [key]: "https://foreign.example" }), /missing or foreign/);
+    }
+  }
 });
 
 test("staging and production are explicit, and production uses the custom domain", () => {

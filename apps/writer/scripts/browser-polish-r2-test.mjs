@@ -19,9 +19,9 @@ try {
     page.on("pageerror", error => errors.push(error.message));
     try {
       await page.goto(`${base}?demo`);
-      await page.locator(".manuscript-row").first().waitFor();
+      await page.locator(".home [data-path]").first().waitFor();
       await page.evaluate(async () => { window.nativeFixture = await (await import("/scripts/browser-a11y-fixture.tsx")).mountNative("# Original manuscript\r\n\r\n"); });
-      await page.locator('.manuscript-row[data-path="writing/main.md"]').click();
+      await page.locator('.home [data-path][data-path="writing/main.md"]').click();
       await page.locator(".cm-content").waitFor();
       await page.keyboard.type("CRLF_OPEN");
       assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().records.get("writing/main.md").snapshot.body), "# Original manuscript\n\nCRLF_OPEN");
@@ -41,8 +41,8 @@ try {
       const semanticViolations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ["landmark-one-main", "page-has-heading-one", "region"] })).violations);
       assert.deepEqual(semanticViolations.map(violation => violation.id), []);
       if (width === 390) {
-        const targets = await page.locator('.bar-back, .bar button[aria-label="Insert"], .bar button[aria-label="Settings"], .bar button[aria-label="More"]').evaluateAll(elements => elements.map(element => ({ label: element.getAttribute("aria-label"), width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })));
-        assert.equal(targets.length, 4);
+        const targets = await page.locator('.bar-back, .bar button[aria-label="Insert"], .bar button[aria-label="More"]').evaluateAll(elements => elements.map(element => ({ label: element.getAttribute("aria-label"), width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })));
+        assert.equal(targets.length, 3);
         assert.ok(targets.every(target => target.width >= 44 && target.height >= 44), JSON.stringify(targets));
       }
       await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].every(record => record.snapshot.state === "saved"));

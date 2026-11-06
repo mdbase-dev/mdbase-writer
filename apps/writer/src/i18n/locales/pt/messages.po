@@ -74,13 +74,13 @@ msgstr "{0, plural, one {Exportado {name} com # problema: {firstProblem}} other 
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr "{0, plural, one {Em # registro; citações, código e fórmulas matemáticas não são contabilizados} other {Em # registros; citações, código e fórmulas matemáticas não são contabilizados}}"
+msgid "{0, plural, one {In # chapter; citations, code and math are not counted} other {In # chapters; citations, code and math are not counted}}"
+msgstr "{0, plural, one {Em # capítulo; citações, código e fórmulas não são contados} other {Em # capítulos; citações, código e fórmulas não são contados}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr "{0, plural, one {Revise # rascunho local recuperado. A edição está pausada nesse registro até você restaurar o rascunho local ou usar a versão da coleção.} other {Revise # rascunhos locais recuperados. A edição está pausada nesses registros até você restaurar os rascunhos locais ou usar as versões da coleção.}}"
+msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that chapter until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those chapters until you restore the local drafts or use the collection versions.}}"
+msgstr "{0, plural, one {Revise # rascunho local recuperado. A edição está pausada nesse capítulo até você restaurar o rascunho local ou usar a versão da coleção.} other {Revise # rascunhos locais recuperados. A edição está pausada nesses capítulos até você restaurar os rascunhos locais ou usar as versões da coleção.}}"
 
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
@@ -131,8 +131,8 @@ msgid "{0}backed up {1}"
 msgstr "{0} com backup em {1}"
 
 #: src/workspace/workspace.ts
-msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr "{at}: este registro foi excluído; baixe o rascunho local antes de sair."
+msgid "{at}: this chapter was deleted; download the local draft before leaving."
+msgstr "{at}: este capítulo foi excluído; baixe o rascunho local antes de sair."
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
@@ -248,8 +248,8 @@ msgid "<0/>New manuscript"
 msgstr "<0/>Novo manuscrito"
 
 #: src/ui/Home.tsx
-msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr "<0>Um manuscrito.</0> Comece um ou use uma nota que você já tenha. Ele permanece um registro Markdown comum nesta coleção."
+msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown file in this collection."
+msgstr "<0>Um manuscrito.</0> Comece um ou use uma nota existente. Ele continua sendo um arquivo Markdown comum nesta coleção."
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
@@ -286,6 +286,10 @@ msgstr "Aceitar"
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
 msgstr "Aceito"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Actual size"
+msgstr "Tamanho real"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
@@ -422,9 +426,17 @@ msgstr "Alterado em outro lugar"
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "As alterações são salvas nos metadados iniciais do manuscrito enquanto você digita, e a prévia acompanha as mudanças."
 
+#: src/workspace/workspace.ts
+msgid "Chapter could not be loaded: {problem}"
+msgstr "Não foi possível carregar o capítulo: {problem}"
+
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
 msgstr "Título do capítulo"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Chapters"
+msgstr "Capítulos"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
@@ -667,6 +679,10 @@ msgstr "Copiado"
 msgid "Copy key"
 msgstr "Copiar chave"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Could not check manuscript problems"
+msgstr "Não foi possível verificar os problemas do manuscrito"
+
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
 msgstr "Não foi possível conectar outra coleção."
@@ -814,10 +830,6 @@ msgstr "Somente editor"
 msgid "Editor preferences"
 msgstr "Preferências do editor"
 
-#: src/workspace/workspace.ts
-msgid "Embedded record could not be loaded: {problem}"
-msgstr "Não foi possível carregar o registro incorporado: {problem}"
-
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
 msgstr "Incorporar {value} aqui faria com que ele fosse incluído dentro de si mesmo."
@@ -945,6 +957,10 @@ msgstr "localizar todos os capítulos"
 msgid "Find and replace"
 msgstr "Localizar e substituir"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Find in chapter"
+msgstr "Buscar no capítulo"
+
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "Localizar em Fontes"
@@ -956,6 +972,10 @@ msgstr "Localizar ou executar um comando"
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
 msgstr "Ajustar · {zoomLabel}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Fit to width"
+msgstr "Ajustar à largura"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1462,6 +1482,15 @@ msgstr "Próximo problema"
 msgid "No annotations on this source."
 msgstr "Não há anotações nesta fonte."
 
+#. placeholder {0}: this.target
+#: src/editor/chapter-cards.ts
+msgid "No chapter matches ![[{0}]]"
+msgstr "Nenhum capítulo corresponde a ![[{0}]]"
+
+#: src/i18n/diagnostics.ts
+msgid "No chapter matches ![[{value}]]."
+msgstr "Nenhum capítulo corresponde a ![[{value}]]."
+
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
@@ -1483,6 +1512,10 @@ msgstr "Nenhum arquivo da coleção corresponde ao modelo {value}."
 msgid "No manuscript matches “{filter}”."
 msgstr "Nenhum manuscrito corresponde a “{filter}”."
 
+#: src/ui/WorkspaceView.tsx
+msgid "No manuscript problems"
+msgstr "Nenhum problema no manuscrito"
+
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "Nenhuma nota corresponde a “{query}”."
@@ -1494,15 +1527,6 @@ msgstr "Nenhum comentário aberto"
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
 msgstr "Não há outras notas nesta coleção."
-
-#. placeholder {0}: this.target
-#: src/editor/chapter-cards.ts
-msgid "No record matches ![[{0}]]"
-msgstr "Nenhum registro corresponde a ![[{0}]]"
-
-#: src/i18n/diagnostics.ts
-msgid "No record matches the embed ![[{value}]]."
-msgstr "Nenhum registro corresponde à incorporação ![[{value}]]."
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
@@ -1621,8 +1645,8 @@ msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open
 msgstr "Na lista de manuscritos, use as setas ou J e K e depois Enter para abrir."
 
 #: src/ui/CommentsPanel.tsx
-msgid "On the whole record"
-msgstr "Sobre o registro inteiro"
+msgid "On the whole chapter"
+msgstr "No capítulo inteiro"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
@@ -1796,10 +1820,6 @@ msgstr "Prévia"
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
 msgstr "Somente prévia"
-
-#: src/preview/Preview.tsx
-msgid "Preview unavailable: {failure}. You can keep writing."
-msgstr "Pré-visualização indisponível: {failure}. Você pode continuar escrevendo."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
@@ -2416,8 +2436,8 @@ msgid "Table"
 msgstr "Tabela"
 
 #: src/workspace/workspace.ts
-msgid "That record is not open."
-msgstr "Esse registro não está aberto."
+msgid "That chapter is not open."
+msgstr "Esse capítulo não está aberto."
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
@@ -2473,6 +2493,11 @@ msgstr "Não foi possível carregar o idioma. O idioma atual não foi alterado. 
 msgid "The line being typed is checked once typing pauses"
 msgstr "A linha digitada é verificada quando você pausa a digitação"
 
+#: src/ui/OutlinePanel.tsx
+#: src/workspace/workspace.ts
+msgid "The manuscript is still opening."
+msgstr "O manuscrito ainda está sendo aberto."
+
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
 msgstr "O manuscrito continuou mudando enquanto as dependências de exportação eram carregadas. Pause a edição e tente novamente."
@@ -2485,6 +2510,10 @@ msgstr "O manuscrito foi fechado."
 #: src/ui/CommentsPanel.tsx
 msgid "The person record that claims your account is not valid."
 msgstr "O registro de pessoa associado à sua conta não é válido."
+
+#: src/preview/Preview.tsx
+msgid "The preview could not be loaded. You can keep writing."
+msgstr "Não foi possível carregar a prévia. Você pode continuar escrevendo."
 
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
@@ -2499,8 +2528,8 @@ msgid "The style’s own (usually en-US)"
 msgstr "O próprio idioma do estilo (geralmente en-US)"
 
 #: src/workspace/workspace.ts
-msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr "O texto sugerido não está mais no registro; edite-o manualmente e depois resolva a sugestão."
+msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
+msgstr "O texto sugerido não está mais no capítulo; edite-o manualmente e depois resolva a sugestão."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
@@ -2530,6 +2559,14 @@ msgstr "Isso altera o idioma da interface neste navegador, não o idioma do manu
 msgid "This chapter changed elsewhere while you were editing it."
 msgstr "Este capítulo foi alterado noutro local enquanto o editava."
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter was deleted elsewhere. Your local text is still available here."
+msgstr "Este capítulo foi excluído em outro lugar. Seu texto local continua disponível aqui."
+
+#: src/ui/CompareDialog.tsx
+msgid "This chapter was deleted. Download the local draft to keep it."
+msgstr "Este capítulo foi excluído. Baixe o rascunho local para guardá-lo."
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "Esta coleção não aceita arquivos do Writer."
@@ -2553,14 +2590,6 @@ msgstr "Não foi possível abrir este manuscrito"
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "Este trecho não está mais no texto"
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr "Este registro foi excluído em outro lugar. Seu texto local ainda está disponível aqui."
-
-#: src/ui/CompareDialog.tsx
-msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr "Este registro foi excluído. Baixe o rascunho local para preservá-lo; não é possível restaurá-lo em um registro excluído."
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

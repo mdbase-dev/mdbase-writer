@@ -260,7 +260,7 @@ export function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: {
           {recordTitle(pending.record)}
         </span>
       </p>
-      {quote ? <blockquote className="thread-quote">{plainPassage(quote)}</blockquote> : <p className="thread-quote muted small">{draft ? (suggest ? t`Insert at the cursor` : t`At the cursor`) : t`On the whole record`}</p>}
+      {quote ? <blockquote className="thread-quote">{plainPassage(quote)}</blockquote> : <p className="thread-quote muted small">{draft ? (suggest ? t`Insert at the cursor` : t`At the cursor`) : t`On the whole chapter`}</p>}
       {suggest && (
         <label className="composer-field">
           <span className="small"><Trans>Replace with</Trans></span>

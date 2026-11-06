@@ -61,7 +61,7 @@ try {
       await audit(page, `new-manuscript-${width}`);
       await escapeTo(page, page.getByRole("dialog", { name: "New manuscript", exact: true }), create);
 
-      await page.locator(".manuscript-row", { hasText: "Small Agents, Large Effects" }).click();
+      await page.locator(".manuscripts > li", { hasText: "Small Agents, Large Effects" }).locator("[data-path]").click();
       await page.waitForFunction(() => {
         const snap = window.writer?.workspace?.getSnapshot();
         return snap?.artifact && !snap.compiling && Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snap.artifactRevision;
@@ -82,16 +82,24 @@ try {
       await page.getByRole("button", { name: "Close the lower panel", exact: true }).click();
       if (width < 900) await page.getByRole("navigation", { name: "View", exact: true }).getByRole("button", { name: /Write/ }).click();
       const settings = page.getByRole("button", { name: "Settings", exact: true });
-      await settings.click();
+      if (width < 900) {
+        await page.getByRole("button", { name: "More", exact: true }).click();
+        await page.getByRole("menuitem", { name: "Settings", exact: true }).click();
+      } else await settings.click();
       await audit(page, `settings-${width}`);
-      await escapeTo(page, page.getByRole("dialog", { name: "Manuscript settings", exact: true }), settings);
+      await escapeTo(page, page.getByRole("dialog", { name: "Manuscript settings", exact: true }), page.locator(".cm-content"));
 
       const more = page.getByRole("button", { name: "More", exact: true });
       for (const name of ["Keyboard shortcuts", "Commands"]) {
-        await more.click();
-        await page.getByRole("menuitem", { name: new RegExp(`^${name}`) }).click();
+        if (width < 900) await page.keyboard.press(name === "Commands" ? "Control+k" : "Control+/");
+        else {
+          await more.click();
+          await page.getByRole("menuitem", { name: new RegExp(`^${name}`) }).click();
+        }
+        const dialog = page.getByRole("dialog", { name: name === "Commands" ? "Writer commands" : name, exact: true });
+        await dialog.waitFor();
         await audit(page, `${name.toLowerCase().replaceAll(" ", "-")}-${width}`);
-        await escapeTo(page, page.getByRole("dialog", { name: name === "Commands" ? "Writer commands" : name, exact: true }), more);
+        await escapeTo(page, dialog, width < 900 ? page.locator(".cm-content") : more);
       }
       await page.evaluate(() => {
         const { workspace } = window.writer;

@@ -77,11 +77,11 @@ interface PopoverProps {
 
 export function Popover({ open, ...props }: PopoverProps) {
   const { host, present } = useOverlay(open, ".popover", "translateY(-3px)");
-  return <div ref={host} className="overlay-host">{present && <OpenPopover {...props} />}</div>;
+  return <div ref={host} className="overlay-host">{present && <OpenPopover {...props} open={open} />}</div>;
 }
 
-function OpenPopover({ id, trigger, width, label, align = "start", focus, onClose, children }: Omit<PopoverProps, "open">) {
+function OpenPopover({ open, id, trigger, width, label, align = "start", focus, onClose, children }: PopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
-  useMenuPopover(ref, trigger, onClose, { width, align, focus });
+  useMenuPopover(ref, trigger, onClose, { width, align, focus, busy: !open });
   return <div ref={ref} id={id} className="mdbase-menu popover" popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={(event) => moveMenuFocus(event, ref.current)}>{children}</div>;
 }

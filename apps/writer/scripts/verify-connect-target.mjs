@@ -3,9 +3,8 @@
 //   node scripts/verify-connect-target.mjs [lab|staging|production] [dist]
 //   node scripts/verify-connect-target.mjs <lab|staging|production> --origin https://staging.mdbase-writer.pages.dev
 //
-// Without a target it checks the build environment selected by
-// VITE_MDBASE_ENV/MDBASE_ENV (as `pnpm build` does), and skips only an
-// unselected demo/test fixture build, which vite.config.ts alone permits.
+// Without a target it requires the build environment selected by
+// VITE_MDBASE_ENV/MDBASE_ENV, as `pnpm build` does.
 //
 // The first form scans every built JavaScript file; the second fetches the
 // served page and the scripts it loads. Both refuse unless the SDK's packaged
@@ -19,8 +18,17 @@ import { writerDeployments } from "./deployment-environment.mjs";
 import { writerSdkTarget } from "./writer-sdk.mjs";
 
 const connectLiteral = /https:\/\/connect(?:-[a-z0-9]+)?\.mdbase\.dev(?![a-z0-9.-])/gu;
+const appLiteral = /https:\/\/(?:(?:editor|reader|writer)(?:-[a-z0-9]+)?\.mdbase\.dev|(?:[a-z0-9]+\.)?mdbase-(?:editor|reader|writer)\.pages\.dev)(?![a-z0-9.-])/gu;
 // The SDK's compiled release trust, e.g. environment:`staging`,cpOrigin:`https://…`.
 const packagedTrust = /environment:\s*["'`]([a-z]+)["'`]\s*,\s*cpOrigin:\s*["'`]([^"'`]+)["'`]/gu;
+
+const quoted = (value) => `["'\x60]${value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}["'\x60]`;
+const originEntries = Object.entries(writerDeployments).map(([environment, deployment]) =>
+  `["']?${environment}["']?\\s*:\\s*${quoted(deployment.origin)}`);
+const originDeclaration = new RegExp(`\\{\\s*${originEntries.join("\\s*,\\s*")}\\s*\\}`, "gu");
+const installationDeclaration = new RegExp(`installation_origins["']?\\s*:\\s*\\{\\s*${Object.entries(writerDeployments).map(([environment, deployment]) =>
+  `["']?${environment}["']?\\s*:\\s*\\{\\s*["']app-runtime["']\\s*:\\s*\\[\\s*${quoted(deployment.origin)}\\s*\\]\\s*\\}`,
+).join("\\s*,\\s*")}\\s*\\}`, "gu");
 
 /** Connect origins and packaged SDK release trusts found in bundle sources. */
 export function connectTargetsIn(sources) {
@@ -48,6 +56,10 @@ export function assertConnectTarget(target, sources) {
   }
   const foreign = origins.filter((origin) => origin !== expected);
   if (foreign.length > 0) throw new Error(`${target} Writer bundle references Connect ${foreign.join(", ")}; only ${expected} is allowed.`);
+  const allowedApps = new Set([deployment.origin, deployment.editorUrl, deployment.readerUrl]);
+  const destinations = sources.map(source => source.replace(installationDeclaration, "").replace(originDeclaration, ""));
+  const foreignApps = [...new Set(destinations.flatMap(source => [...source.matchAll(appLiteral)].map(([origin]) => origin)))].filter(origin => !allowedApps.has(origin));
+  if (foreignApps.length > 0) throw new Error(`${target} Writer bundle references foreign apps ${foreignApps.join(", ")}.`);
   return { target, connectOrigin: expected, trusts: trusts.length };
 }
 
@@ -80,8 +92,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const args = process.argv.slice(2);
   const target = Object.hasOwn(writerDeployments, args[0] ?? "") ? args.shift() : writerSdkTarget(process.env);
   if (target === undefined) {
-    console.log("No Writer build environment selected (demo/test fixture build); Connect target not checked.");
-    process.exit(0);
+    throw new Error("Select VITE_MDBASE_ENV (lab, staging or production) before verifying a Writer build.");
   }
   const rest = args;
   const originIndex = rest.indexOf("--origin");

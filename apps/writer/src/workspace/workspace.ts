@@ -275,14 +275,16 @@ export class ManuscriptWorkspace {
   }
 
   private async loadIndex(generation: number): Promise<void> {
+    const { recordPaths, filePaths } = this.current;
     try {
       const index = await this.backend.index();
       if (generation !== this.metadataGeneration || this.disposed) return;
+      if (recordPaths !== this.current.recordPaths || filePaths !== this.current.filePaths) return;
       if (!index.ok) throw new Error(index.message);
       this.update({ ...(index.value.recordPaths !== this.current.recordPaths ? { recordPaths: index.value.recordPaths } : {}), ...(index.value.filePaths !== this.current.filePaths ? { filePaths: index.value.filePaths } : {}), indexLoad: READY });
       this.sendCollection();
       for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);
-    } catch (error) { if (generation === this.metadataGeneration) this.update({ indexLoad: { phase: "failed", problem: errorMessage(error) } }); }
+    } catch (error) { if (generation === this.metadataGeneration && recordPaths === this.current.recordPaths && filePaths === this.current.filePaths) this.update({ indexLoad: { phase: "failed", problem: errorMessage(error) } }); }
   }
 
   private async loadLibrary(generation: number): Promise<void> {
@@ -654,7 +656,7 @@ export class ManuscriptWorkspace {
       for (const embed of translated.includes) {
         const target = resolveLinkTarget(embed.target, path, recordPaths);
         const problem = target && this.current.recordProblems.get(target);
-        if (problem) diagnostics.push({ record: path, from: embed.from, to: embed.to, severity: "error" as const, origin: "writer" as const, message: t`Embedded record could not be loaded: ${problem}` });
+        if (problem) diagnostics.push({ record: path, from: embed.from, to: embed.to, severity: "error" as const, origin: "writer" as const, message: t`Chapter could not be loaded: ${problem}` });
       }
     }
     return diagnostics;
@@ -753,6 +755,19 @@ export class ManuscriptWorkspace {
   async addChapter(title: string, intent?: string): Promise<Result<string>> {
     const name = title.trim();
     if (!name) return fail(t`A chapter needs a title.`);
+    if (!this.leases.has(this.main)) return fail(t`The manuscript is still opening.`);
+    this.loadMetadata();
+    if (this.current.indexLoad.phase === "loading") {
+      await new Promise<void>(resolve => {
+        const stop = this.subscribe(() => {
+          if (!this.disposed && this.current.indexLoad.phase === "loading") return;
+          stop();
+          resolve();
+        });
+      });
+    }
+    if (this.disposed) return fail(t`The manuscript was closed.`);
+    if (this.current.indexLoad.phase !== "ready") return fail(this.current.indexLoad.problem ?? t`Collection metadata is still loading.`);
     const first = this.chapterPaths().find((p): p is string => Boolean(p));
     const folder = first?.includes("/") ? first.slice(0, first.lastIndexOf("/")) : "chapters";
     const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`, intent);
@@ -915,9 +930,9 @@ export class ManuscriptWorkspace {
    */
   async acceptSuggestion(record: string, suggestion: CommentRecord): Promise<Result<CommentRecord>> {
     const body = this.current.records.get(record)?.snapshot.body;
-    if (body === undefined || !suggestion.target || !suggestion.suggestion) return fail(t`That record is not open.`);
+    if (body === undefined || !suggestion.target || !suggestion.suggestion) return fail(t`That chapter is not open.`);
     const next = applySuggestion(body, suggestion.target, suggestion.suggestion.replacement);
-    if (next === null) return fail(t`The suggested text is no longer in the record; edit it by hand, then resolve the suggestion.`);
+    if (next === null) return fail(t`The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion.`);
     this.setBody(record, next);
     return this.changeComment(suggestion, { kind: "resolve", outcome: "accepted" });
   }
@@ -935,7 +950,7 @@ export class ManuscriptWorkspace {
     const problems: string[] = [];
     await Promise.all([...this.leases].filter(([at]) => !path || at === path).map(async ([at, { lease }]) => {
       try {
-        if (lease.session.getSnapshot().state === "deleted") { problems.push(t`${at}: this record was deleted; download the local draft before leaving.`); return; }
+        if (lease.session.getSnapshot().state === "deleted") { problems.push(t`${at}: this chapter was deleted; download the local draft before leaving.`); return; }
         const out = await lease.session.flush({ timeoutMs: 15_000 });
         if (!out.ok) problems.push(`${at}: ${out.problem.message ?? out.problem.code}`);
       } catch (error) { problems.push(`${at}: ${errorMessage(error)}`); }
@@ -1090,6 +1105,7 @@ export class ManuscriptWorkspace {
     if (this.disposed) return;
     this.commitSettings();
     this.disposed = true;
+    for (const listener of this.listeners) listener();
     for (const url of this.imageUrls.values()) URL.revokeObjectURL(url);
     this.imageUrls.clear();
     clearTimeout(this.refreshTimer);

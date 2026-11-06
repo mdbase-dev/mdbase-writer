@@ -7,7 +7,7 @@ export function diagnosticMessage(message: string, copy?: DiagnosticCopy): strin
   if (!copy) return message;
   const [value = "", other = ""] = copy.values ?? [];
   switch (copy.code) {
-    case "embed-missing": return t`No record matches the embed ![[${value}]].`;
+    case "embed-missing": return t`No chapter matches ![[${value}]].`;
     case "embed-cycle": return t`Embedding ${value} here would include it inside itself.`;
     case "label-duplicate": return t`The label ${value} is used more than once.`;
     case "label-missing": return t`Nothing is labelled ${value}.`;

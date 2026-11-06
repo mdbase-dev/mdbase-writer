@@ -99,7 +99,7 @@ try {
     const result = { name };
     try {
       await page.goto(`${base}?demo`);
-      await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').waitFor();
+      await page.locator('.home [data-path][data-path="manuscripts/slow-change.md"]').waitFor();
       assert.match(await page.locator(".home").innerText(), /Demo collection · resets on reload/);
       result.dialogIn = await probe(page, ".mdbase-dialog", "new");
       motion(result.dialogIn, reducedMotion === "reduce", 160);
@@ -107,7 +107,7 @@ try {
       motion(result.dialogOut, reducedMotion === "reduce", 120);
       await page.evaluate(() => {
         window.startup = [];
-        document.querySelector('.manuscript-row[data-path="manuscripts/slow-change.md"]').addEventListener("pointerdown", () => {
+        document.querySelector('.home [data-path][data-path="manuscripts/slow-change.md"]').addEventListener("pointerdown", () => {
           const started = performance.now();
           const sample = () => {
             const canvas = document.querySelector(".preview-pages canvas.page");
@@ -118,7 +118,7 @@ try {
           requestAnimationFrame(sample);
         }, { once: true });
       });
-      await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').click();
+      await page.locator('.home [data-path][data-path="manuscripts/slow-change.md"]').click();
       await page.locator(".cm-content").waitFor();
       assert.equal(await page.locator(".demo-identity").innerText(), "Demo");
       assert.match(await page.locator(".demo-identity").getAttribute("title"), /reset on reload/);
@@ -265,7 +265,7 @@ try {
       if (!reduced) assert.ok(Math.abs(result.settingsReopen.interruption.before.opacity - result.settingsReopen.interruption.after.opacity) < 0.02);
       await probe(page, ".settings-sheet", "settings");
       result.paletteIn = await probe(page, ".mdbase-command-backdrop", "palette");
-      assert.deepEqual(await page.locator(".mdbase-command-group").allTextContents(), ["Manuscript", "Format", "Insert", "Comments", "View", "Export", "Help"]);
+      assert.deepEqual(await page.locator(".mdbase-command-group").allTextContents(), ["Chapters", "Manuscript", "Format", "Insert", "Comments", "View", "Export", "Help"]);
       motion(result.paletteIn, reduced, 160);
       result.paletteOut = await probe(page, ".mdbase-command-backdrop", "escape");
       motion(result.paletteOut, reduced, 120);
@@ -357,7 +357,7 @@ try {
     assert.equal(await page.getByText("Preparing the preview. You can keep writing.", { exact: true }).count(), 1);
     assert.equal(await page.getByText("Typesetting…", { exact: true }).count(), 0);
     await page.locator(".cm-content").fill("A temporary demo paragraph.");
-    await page.locator(".bar .mdbase-save-notice.is-saved").waitFor({ state: "visible" });
+    await page.locator(".bar .mdbase-save-notice.is-saved:visible").waitFor();
     assert.equal(await page.locator(".bar .demo-identity").innerText(), "Demo");
     await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].every((record) => record.snapshot.state === "saved"));
     release();

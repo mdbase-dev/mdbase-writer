@@ -74,13 +74,13 @@ msgstr "{0, plural, other {{name} 내보내기 완료 · 문제 #개: {firstProb
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr "{0, plural, other {레코드 #개 기준; 인용, 코드 및 수식은 단어 수에 포함되지 않음}}"
+msgid "{0, plural, one {In # chapter; citations, code and math are not counted} other {In # chapters; citations, code and math are not counted}}"
+msgstr "{0, plural, other {#개 장에서 인용, 코드, 수식은 제외합니다}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr "{0, plural, other {복구된 로컬 초안 #개를 검토하세요. 로컬 초안을 복원하거나 컬렉션 버전을 사용하기 전까지 해당 레코드 편집이 일시 중지됩니다.}}"
+msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that chapter until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those chapters until you restore the local drafts or use the collection versions.}}"
+msgstr "{0, plural, other {복구된 로컬 초안 #개를 검토하세요. 로컬 초안을 복원하거나 컬렉션 버전을 사용하기 전까지 해당 장 편집이 일시 중지됩니다.}}"
 
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
@@ -131,8 +131,8 @@ msgid "{0}backed up {1}"
 msgstr "{0}{1} 백업됨"
 
 #: src/workspace/workspace.ts
-msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr "{at}: 이 레코드는 삭제되었습니다. 나가기 전에 로컬 초안을 다운로드하세요."
+msgid "{at}: this chapter was deleted; download the local draft before leaving."
+msgstr "{at}: 이 장이 삭제되었습니다. 나가기 전에 로컬 초안을 다운로드하세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
@@ -248,8 +248,8 @@ msgid "<0/>New manuscript"
 msgstr "<0/>새 원고"
 
 #: src/ui/Home.tsx
-msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr "<0>원고를 작성하세요.</0> 새 원고를 시작하거나 기존 노트를 사용하세요. 원고는 이 컬렉션의 일반 Markdown 레코드로 유지됩니다."
+msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown file in this collection."
+msgstr "<0>원고.</0> 새로 시작하거나 기존 노트를 사용하세요. 이 컬렉션의 일반 Markdown 파일로 유지됩니다."
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
@@ -286,6 +286,10 @@ msgstr "수락"
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
 msgstr "수락됨"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Actual size"
+msgstr "실제 크기"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
@@ -422,9 +426,17 @@ msgstr "다른 곳에서 변경됨"
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "입력하는 대로 변경 사항이 원고의 프런트매터에 저장되고 미리보기에 반영됩니다."
 
+#: src/workspace/workspace.ts
+msgid "Chapter could not be loaded: {problem}"
+msgstr "장을 불러올 수 없습니다: {problem}"
+
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
 msgstr "장 제목"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Chapters"
+msgstr "장"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
@@ -667,6 +679,10 @@ msgstr "복사됨"
 msgid "Copy key"
 msgstr "키 복사"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Could not check manuscript problems"
+msgstr "원고의 문제를 확인할 수 없습니다"
+
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
 msgstr "다른 컬렉션에 연결하지 못했습니다."
@@ -814,10 +830,6 @@ msgstr "편집기만"
 msgid "Editor preferences"
 msgstr "편집기 환경설정"
 
-#: src/workspace/workspace.ts
-msgid "Embedded record could not be loaded: {problem}"
-msgstr "삽입된 레코드를 불러오지 못했습니다: {problem}"
-
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
 msgstr "여기에 {value}을(를) 삽입하면 자기 자신 안에 포함하게 됩니다."
@@ -945,6 +957,10 @@ msgstr "모든 장 찾기"
 msgid "Find and replace"
 msgstr "찾기 및 바꾸기"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Find in chapter"
+msgstr "장 내 검색"
+
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "출처에서 찾기"
@@ -956,6 +972,10 @@ msgstr "명령 찾기 또는 실행"
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
 msgstr "맞춤 · {zoomLabel}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Fit to width"
+msgstr "너비에 맞추기"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1462,6 +1482,15 @@ msgstr "다음 문제"
 msgid "No annotations on this source."
 msgstr "이 출처에 주석이 없습니다."
 
+#. placeholder {0}: this.target
+#: src/editor/chapter-cards.ts
+msgid "No chapter matches ![[{0}]]"
+msgstr "![[{0}]]에 해당하는 장이 없습니다"
+
+#: src/i18n/diagnostics.ts
+msgid "No chapter matches ![[{value}]]."
+msgstr "![[{value}]]에 해당하는 장이 없습니다."
+
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
@@ -1483,6 +1512,10 @@ msgstr "컬렉션에 템플릿 {value}에 해당하는 파일이 없습니다."
 msgid "No manuscript matches “{filter}”."
 msgstr "“{filter}”와(과) 일치하는 원고가 없습니다."
 
+#: src/ui/WorkspaceView.tsx
+msgid "No manuscript problems"
+msgstr "원고에 문제가 없습니다"
+
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "“{query}”와(과) 일치하는 메모가 없습니다."
@@ -1494,15 +1527,6 @@ msgstr "미해결 댓글 없음"
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
 msgstr "이 컬렉션에 다른 메모가 없습니다."
-
-#. placeholder {0}: this.target
-#: src/editor/chapter-cards.ts
-msgid "No record matches ![[{0}]]"
-msgstr "![[{0}]]와(과) 일치하는 레코드가 없습니다."
-
-#: src/i18n/diagnostics.ts
-msgid "No record matches the embed ![[{value}]]."
-msgstr "삽입 대상 ![[{value}]]에 해당하는 레코드가 없습니다."
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
@@ -1621,8 +1645,8 @@ msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open
 msgstr "원고 목록에서 화살표 키 또는 J와 K를 사용하고 Enter로 여세요."
 
 #: src/ui/CommentsPanel.tsx
-msgid "On the whole record"
-msgstr "레코드 전체에"
+msgid "On the whole chapter"
+msgstr "장 전체에 대해"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
@@ -1796,10 +1820,6 @@ msgstr "미리보기"
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
 msgstr "미리보기만"
-
-#: src/preview/Preview.tsx
-msgid "Preview unavailable: {failure}. You can keep writing."
-msgstr "미리 보기를 사용할 수 없습니다: {failure}. 계속 작성할 수 있습니다."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
@@ -2416,8 +2436,8 @@ msgid "Table"
 msgstr "표"
 
 #: src/workspace/workspace.ts
-msgid "That record is not open."
-msgstr "해당 레코드가 열려 있지 않습니다."
+msgid "That chapter is not open."
+msgstr "해당 장이 열려 있지 않습니다."
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
@@ -2473,6 +2493,11 @@ msgstr "언어를 불러오지 못했습니다. 현재 언어는 변경되지 �
 msgid "The line being typed is checked once typing pauses"
 msgstr "입력을 멈추면 작성 중인 줄을 검사합니다."
 
+#: src/ui/OutlinePanel.tsx
+#: src/workspace/workspace.ts
+msgid "The manuscript is still opening."
+msgstr "아직 원고를 여는 중입니다."
+
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
 msgstr "내보내기에 필요한 항목을 불러오는 동안 원고가 계속 변경되었습니다. 편집을 멈춘 후 다시 시도하세요."
@@ -2485,6 +2510,10 @@ msgstr "원고가 닫혔습니다."
 #: src/ui/CommentsPanel.tsx
 msgid "The person record that claims your account is not valid."
 msgstr "계정 사용자라고 주장하는 사람 레코드가 유효하지 않습니다."
+
+#: src/preview/Preview.tsx
+msgid "The preview could not be loaded. You can keep writing."
+msgstr "미리보기를 불러올 수 없습니다. 계속 작성할 수 있습니다."
 
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
@@ -2499,8 +2528,8 @@ msgid "The style’s own (usually en-US)"
 msgstr "스타일 자체의 언어(보통 en-US)"
 
 #: src/workspace/workspace.ts
-msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr "제안된 텍스트가 더 이상 레코드에 없습니다. 직접 수정한 다음 제안을 해결하세요."
+msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
+msgstr "제안된 텍스트가 더 이상 장에 없습니다. 직접 편집한 다음 제안을 해결하세요."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
@@ -2530,6 +2559,14 @@ msgstr "이 설정은 이 브라우저의 인터페이스 언어를 변경하며
 msgid "This chapter changed elsewhere while you were editing it."
 msgstr "편집 중에 이 장이 다른 곳에서 변경되었습니다."
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter was deleted elsewhere. Your local text is still available here."
+msgstr "이 장이 다른 곳에서 삭제되었습니다. 로컬 텍스트는 여기에서 계속 사용할 수 있습니다."
+
+#: src/ui/CompareDialog.tsx
+msgid "This chapter was deleted. Download the local draft to keep it."
+msgstr "이 장이 삭제되었습니다. 로컬 초안을 다운로드하여 보관하세요."
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "이 컬렉션은 Writer에서 파일을 받지 않습니다."
@@ -2553,14 +2590,6 @@ msgstr "이 원고를 열지 못했습니다."
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "이 본문 구간은 더 이상 텍스트에 없습니다."
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr "다른 곳에서 이 레코드가 삭제되었습니다. 로컬 텍스트는 여기에서 계속 사용할 수 있습니다."
-
-#: src/ui/CompareDialog.tsx
-msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr "이 레코드가 삭제되었습니다. 보존하려면 로컬 초안을 다운로드하세요. 삭제된 레코드에는 복원할 수 없습니다."
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

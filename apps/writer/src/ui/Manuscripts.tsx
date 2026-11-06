@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 // Existing manuscript navigation/workspace shared by legacy, sample and SDK
 // backends. This reads only the app's manuscript route; SDK owns collection URL.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Dialog } from "./overlays.js";
 import type { WriterBackend } from "../backend/types.js";
 import { useWriterFeedbackContext } from "../FeedbackRoot.js";
@@ -12,6 +12,9 @@ import { ManuscriptWorkspace } from "../workspace/workspace.js";
 import { Home } from "./Home.js";
 import { WorkspaceView } from "./WorkspaceView.js";
 import { localNamespace, recentManuscripts, recordOpened } from "./recent.js";
+
+const noSubscription = () => () => {};
+const noSnapshot = () => null;
 
 function useManuscriptParam(mayLeave: () => Promise<boolean>): [string | null, (path: string | null, force?: boolean) => void] {
   const [value, setValue] = useState(() => new URL(location.href).searchParams.get("manuscript"));
@@ -69,6 +72,15 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
     return () => {active = false; if (owned) void owned.dispose();};
   }, [backend, path]);
   const current = view?.backend === backend && view.workspace?.main === path ? view.workspace : null;
+  const snapshot = useSyncExternalStore(current?.subscribe ?? noSubscription, current?.getSnapshot ?? noSnapshot);
+  const [presented, setPresented] = useState<ManuscriptWorkspace | null>(null);
+  useEffect(() => {
+    if (!current) return;
+    const deadline = setTimeout(() => setPresented(current), 400);
+    return () => clearTimeout(deadline);
+  }, [current]);
+  const preparing = snapshot?.phase === "loading" || snapshot?.phase === "ready" && snapshot.indexLoad.phase === "ready" && current?.readingOrder().some(record => !snapshot.records.has(record) && !snapshot.recordProblems.has(record));
+  if (current && presented !== current && !preparing) setPresented(current);
   useWriterFeedbackContext(path ? "manuscript" : "manuscripts", backend.collectionName);
   useLayoutEffect(() => {currentWorkspace.current = current;}, [current]);
   useEffect(() => {
@@ -78,7 +90,7 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
   }, [backend, current]);
   const since = useMemo(() => path ? recentManuscripts(localNamespace(backend)).find(entry => entry.path === path)?.at : undefined, [backend, path]);
   useEffect(() => {if (path) recordOpened(localNamespace(backend), path);}, [backend, path]);
-  if (!path || !current) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} returnPath={lastPath.current} opening={Boolean(path)} />;
+  if (!path || !current || presented !== current) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} returnPath={lastPath.current} opening={Boolean(path)} />;
   return <>
     <WorkspaceView key={current.main} workspace={current} since={since} onClose={force => setPath(null, force)} />
     <Dialog open={Boolean(navigation)} onClose={() => {navigation?.finish(false); setNavigation(null);}} title={t`Some changes are not saved`}>

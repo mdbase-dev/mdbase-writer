@@ -84,7 +84,7 @@ async function continuePosition(page, width, reduced) {
     await page.waitForTimeout(190);
     const frames = await page.evaluate(() => { window.paneRunning = false; return window.paneFrames; });
     assert.ok(frames.every(frame => frame.opacity > 0));
-    assert.ok(frames.filter(frame => frame.running).every(frame => frame.bitmaps === bitmaps), "Preview redraw interrupted pane motion");
+    assert.equal(await page.locator(".preview-pane").evaluate(element => getComputedStyle(element).opacity === "1" && element.getAnimations().length === 0), true, "Pane moves must leave the preview undimmed");
     if (!reduced) assert.ok(new Set(frames.map(frame => frame.opacity)).size >= 3, `10k-word pane move is not visibly animated: ${JSON.stringify(frames)}`);
     else assert.ok(frames.every(frame => frame.transform === "none"));
     await page.keyboard.press("Control+Backslash");
@@ -107,7 +107,7 @@ async function continuePosition(page, width, reduced) {
   if (width === 390) await page.locator(".pane-tabs button").first().click();
   await page.getByRole("tablist", { name: "Sidebar", exact: true }).getByRole("tab", { name: /^Sources/ }).click();
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-  await page.locator('.manuscript-row[data-path="manuscripts/patient-observation.md"]').click();
+  await page.locator('.home [data-path][data-path="manuscripts/patient-observation.md"]').click();
   await page.locator(".cm-content").waitFor();
   await page.reload();
   await page.locator(".workspace").waitFor();
@@ -263,14 +263,14 @@ try {
     page.on("pageerror", error => errors.push(error.message));
     try {
       await page.goto(`${base}?demo`);
-      await page.locator(".manuscript-row").first().waitFor();
+      await page.locator(".home [data-path]").first().waitFor();
       assert.equal(await page.locator(".continue-card").count(), 0, "Continue must not invent open history");
-      await pressFill(page, page.locator(".manuscript-row").first());
+      await pressFill(page, page.locator(".home [data-path]").first());
       await pressFill(page, page.locator(".home-header .mdbase-button.is-primary").first());
       assert.equal(await page.locator(".topbar .interface-language").count(), 0);
       if (width === 390) await touchTargets(page, ".topbar button:visible, .home button:visible, .home input:visible");
       await page.keyboard.press("j");
-      assert.ok(await page.locator(".manuscript-row").first().evaluate(element => element === document.activeElement));
+      assert.ok(await page.locator(".home [data-path]").first().evaluate(element => element === document.activeElement));
       await page.evaluate(() => {
         window.routeFrames = [];
         const sample = () => {
@@ -311,8 +311,8 @@ try {
       await page.getByRole("button", { name: /^2 Earthworms/ }).click();
       await typeInEditor(page, " CHAPTER_HANDOFF ");
       await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-      await page.locator(".manuscript-row").first().waitFor();
-      assert.ok(await page.locator('.manuscript-row[data-path="manuscripts/patient-observation.md"]').evaluate(element => element === document.activeElement), "Back must restore originating row");
+      await page.locator(".home [data-path]").first().waitFor();
+      assert.ok(await page.locator('.home [data-path][data-path="manuscripts/patient-observation.md"]').evaluate(element => element === document.activeElement), "Back must restore originating row");
       await page.keyboard.press("Enter");
       await page.getByRole("textbox", { name: "Markdown for chapters/worms.md", exact: true }).waitFor();
       assert.ok(await page.locator(".editor").evaluate(element => Number(getComputedStyle(element).opacity) > 0));
@@ -363,7 +363,7 @@ try {
       await page.locator(".settings-sheet").waitFor({ state: "detached" });
       await typeInEditor(page, " SETTINGS_RETURN ");
       await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-      await page.locator(".manuscript-row").first().waitFor();
+      await page.locator(".home [data-path]").first().waitFor();
       await command(page, "New manuscript");
       const create = page.getByRole("dialog", { name: "New manuscript", exact: true });
       await create.waitFor();
@@ -385,9 +385,9 @@ try {
       await page.screenshot({ path: `out/polish-r4/${name}.png` });
       await continuePosition(page, width, reducedMotion === "reduce");
       await page.goto(`${base}?demo`);
-      await page.locator(".manuscript-row").first().waitFor();
+      await page.locator(".home [data-path]").first().waitFor();
       await page.evaluate(async () => { window.nativeFixture = await (await import("/scripts/browser-a11y-fixture.tsx")).mountNative(); });
-      await page.locator('.manuscript-row[data-path="writing/main.md"]').waitFor();
+      await page.locator('.home [data-path][data-path="writing/main.md"]').waitFor();
       for (const state of ["signed_out", "needs_setup"]) {
         await page.evaluate(state => {
           window.nativeFixture.controls.setSetupPlan({ status: "setup", canApply: true, digest: "round-four-semantics", summary: "Add the types Writer needs.", changes: ["manuscript", "source", "comment"].map(name => ({ kind: "create", target: `_types/${name}.md`, message: `Add the ${name} type` })), conflicts: [], adoptable: {}, packs: [], staged: [], records: [] });
@@ -429,7 +429,7 @@ try {
       const apple = platform === "MacIntel";
       const mod = apple ? "Meta" : "Control";
       await page.goto(`${base}?demo`);
-      await page.locator(".manuscript-row").first().click();
+      await page.locator(".home [data-path]").first().click();
       await page.locator(".cm-content").focus();
       await page.keyboard.press(`${mod}+/`);
       const help = page.locator(".shortcuts-dialog");

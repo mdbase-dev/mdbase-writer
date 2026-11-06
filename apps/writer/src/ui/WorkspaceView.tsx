@@ -9,6 +9,7 @@ import { annotationSourcePath, blockQuotation, sourceAnnotation } from "@mdbase-
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { memo, useCallback, useContext, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 
 import type { BlockPosition, SourceMark, WriterDiagnostic } from "../compile/protocol.js";
 import type { ChapterCards } from "../editor/chapter-cards.js";
@@ -207,6 +208,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
   const [activeComment, setActiveComment] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
+  const [problemAnnouncement, setProblemAnnouncement] = useState<{ message: string; sequence: number } | null>(null);
   const [editorStates] = useState(() => new Map<string, RetainedEditor>());
   const [position] = useState(() => recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.position);
   const savePosition = useCallback((position: WritingPosition) => recordOpened(workspace.namespace, workspace.main, undefined, undefined, position.path === workspace.main ? undefined : position.path, position), [workspace]);
@@ -222,16 +224,21 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null);
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const grid = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => { if (grid.current) grid.current.dataset["ready"] = "true"; }); });
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const motionLayout = useRef({ view: layout.view, sidebar: layout.sidebar, active });
   useLayoutEffect(() => {
     const previous = motionLayout.current;
     motionLayout.current = { view: layout.view, sidebar: layout.sidebar, active };
+    if (!grid.current?.dataset["ready"]) return;
     const paneChanged = previous.view !== layout.view || previous.sidebar !== layout.sidebar;
     if (!paneChanged && previous.active === active) return;
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     if (media.matches) return;
     grid.current?.getBoundingClientRect();
-    const animations = [...(grid.current?.querySelectorAll<HTMLElement>(paneChanged ? ".write, .preview-pane" : ".editor") ?? [])].map(element => element.animate(
+    const animations = [...(grid.current?.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor") ?? [])].map(element => element.animate(
       paneChanged ? [{ opacity: .7, transform: "translateX(6px)" }, { opacity: 1, transform: "none" }] : [{ opacity: .8 }, { opacity: 1 }],
       { duration: paneChanged ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)" },
     ));
@@ -257,6 +264,13 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     setLayout(current => ({ ...current, view }));
     requestAnimationFrame(() => { if (view === "preview") grid.current?.querySelector<HTMLElement>(".preview")?.focus(); else editor.current?.focus(); });
   }, [setLayout]);
+  const findInChapter = useCallback(() => {
+    flushSync(() => {
+      setPane("write");
+      if (!narrow && layout.view === "preview") setLayout(current => ({ ...current, view: "write" }));
+    });
+    requestAnimationFrame(() => editor.current?.search());
+  }, [narrow, layout.view, setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => {
     // The lower panel never repeats the upper: the two swap.
     setLayout((l) => ({ ...l, tab, lowerTab: l.lowerTab === tab ? l.tab : l.lowerTab }));
@@ -275,8 +289,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     const chapters = workspace.chapterPaths();
     const last = recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.chapter;
     const initialChapter = last && (last === workspace.main || chapters.includes(last)) ? last : chapters.find(chapter => chapter !== null) ?? workspace.main;
-    motionLayout.current.active = initialChapter;
-    setActive(initialChapter);
+    const availableChapter = snap.records.has(initialChapter) ? initialChapter : workspace.main;
+    motionLayout.current.active = availableChapter;
+    setActive(availableChapter);
   }, [workspace, snap.phase, snap.indexLoad.phase]);
   useLayoutEffect(() => {
     if (narrow && pane === "write") editor.current?.focus();
@@ -434,6 +449,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   // Stable handlers, so the editor and preview only render when what they show changes.
   const onEditorChange = useCallback((text: string) => {
+    openedChapter.current = true;
     workspace.setBody(active, text);
     setTyping(true);
     clearTimeout(typingTimer.current);
@@ -642,7 +658,15 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     [diagnostics, order],
   );
   const stepProblem = useCallback((direction: 1 | -1) => {
-    if (!bodyProblems.length) return;
+    if (!bodyProblems.length) {
+      if (!diagnostics.length) {
+        const message = snap.previewProblem || !snap.result || snap.compiling
+          ? translate`Could not check manuscript problems`
+          : translate`No manuscript problems`;
+        setProblemAnnouncement(previous => ({ message, sequence: (previous?.sequence ?? 0) + 1 }));
+      }
+      return;
+    }
     const here = cursor ?? { record: active, offset: -1 };
     const rank = (record: string, offset: number) => order.indexOf(record) * 1e9 + offset;
     const at = rank(here.record, here.offset);
@@ -651,7 +675,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         ? bodyProblems.find((d) => rank(d.record, d.from) > at) ?? bodyProblems[0]
         : [...bodyProblems].reverse().find((d) => rank(d.record, d.from) < at) ?? bodyProblems[bodyProblems.length - 1];
     if (next) jump(next.record, next.from);
-  }, [bodyProblems, cursor, active, jump, order]);
+  }, [bodyProblems, diagnostics, cursor, active, jump, order, snap.previewProblem, snap.result, snap.compiling]);
 
   const submitComment = useCallback(async (text: string, replacement?: string) => {
     if (!pendingComment) return { ok: true as const, value: null };
@@ -727,6 +751,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const downloadDrafts = () => download(zip(workspace.localDrafts()), "application/zip", `${fileStem} (local drafts).zip`);
   const requestClose = async () => {
     if (savingBeforeLeave) return;
+    editor.current?.rememberPosition();
     setSavingBeforeLeave(true);
     const saved = await workspace.retrySave();
     setSavingBeforeLeave(false);
@@ -742,9 +767,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     theirFields: recovered ? compared.frontmatter : workspace.canonicalFields(compared.remote?.frontmatter ?? {}, compared.remote?.types ?? []),
   } : null;
   const closeSettings = useCallback(() => {
-    setSettingsOpen(false);
-    setSettingsFocus(null);
-  }, []);
+    flushSync(() => { setSettingsOpen(false); setSettingsFocus(null); });
+    if (narrow && pane !== "write") document.querySelector<HTMLButtonElement>(".bar .more-trigger")?.focus();
+    else editor.current?.focus();
+  }, [narrow, pane]);
   // A finished export's note goes after a few seconds; a problem stays until dismissed.
   useEffect(() => {
     if (notice?.tone !== "ok") return;
@@ -757,8 +783,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const shortcuts = useRef<(e: KeyboardEvent) => void>(() => {});
   useLayoutEffect(() => {
     shortcuts.current = (e: KeyboardEvent) => {
-    if (e.target instanceof Element && e.target.closest("dialog[open]")) return;
-    if (document.querySelector("dialog[open]") && e.key !== "F8") return;
+    if (e.target instanceof Element && e.target.closest("dialog[open]:not(.settings-sheet), .settings-sheet:modal")) return;
+    if (document.querySelector("dialog[open]:not([inert]):not(.settings-sheet), .settings-sheet:modal") && e.key !== "F8") return;
     const mod = isMod(e);
     let handled = true;
     if (mod && !e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, sidebar: !l.sidebar }));
@@ -898,6 +924,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const timings = snap.result?.timings;
   const { columns, areas } = gridFor(layout);
   const commands: Command[] = [
+    ...order.map(path => ({ id: `chapter-${path}`, group: translate`Chapters`, label: recordTitle(snap.records.get(path), path), keywords: path, run: () => { setActive(path); setPane("write"); } })),
+    { id: "find-chapter", group: translate`Manuscript`, label: translate`Find in chapter`, shortcut: "mod+f", run: findInChapter },
     { id: "save", group: translate`Manuscript`, label: translate`Save now`, shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
     { id: "local-drafts", group: translate`Manuscript`, label: translate`Download local drafts`, keywords: translate`backup unsaved recovery`, run: downloadDrafts },
     { id: "settings", group: translate`Manuscript`, label: translate`Manuscript settings`, shortcut: "mod+,", run: () => setSettingsOpen(true) },
@@ -917,6 +945,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "comments", group: translate`Comments`, label: translate`Show comments`, shortcut: "mod+shift+m", run: showComments },
     { id: "next-comment", group: translate`Comments`, label: translate`Next comment`, shortcut: "F7", run: () => stepComment(1) },
     { id: "previous-comment", group: translate`Comments`, label: translate`Previous comment`, shortcut: "shift+F7", run: () => stepComment(-1) },
+    { id: "zoom-fit", group: translate`View`, label: translate`Fit to width`, run: () => setLayout(current => ({ ...current, zoom: "fit" })) },
+    { id: "zoom-actual", group: translate`View`, label: translate`Actual size`, run: () => setLayout(current => ({ ...current, zoom: 1 })) },
+    { id: "zoom-in", group: translate`View`, label: translate`Zoom in`, run: () => setLayout(current => ({ ...current, zoom: nextZoom(previewView?.scale ?? 1, 1) })) },
+    { id: "zoom-out", group: translate`View`, label: translate`Zoom out`, run: () => setLayout(current => ({ ...current, zoom: nextZoom(previewView?.scale ?? 1, -1) })) },
     { id: "lower-panel", group: translate`View`, label: layout.lowerTab ? translate`Close the lower panel` : translate`Split sidebar`, keywords: translate`split stack outline comments sources`, run: toggleLower },
     { id: "sidebar", group: translate`View`, label: layout.sidebar ? translate`Hide the sidebar` : translate`Show the sidebar`, shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
     { id: "live-preview", group: translate`View`, label: layout.livePreview ? translate`Show Markdown as written` : translate`Read as the manuscript`, keywords: translate`source markup raw live preview chips`, run: toggleLivePreview },
@@ -940,6 +972,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       className={`workspace pane-${pane} view-${layout.view}${layout.sidebar ? "" : " no-sidebar"}`}
       style={{ "--grid-columns": columns, "--grid-areas": areas } as React.CSSProperties}
     >
+      <div className="visually-hidden problem-announcement" aria-live="polite" aria-atomic="true">{problemAnnouncement && <span key={problemAnnouncement.sequence}>{problemAnnouncement.message}</span>}</div>
       <InTopbar>
         <div className="bar mdbase-settle-host">
           <button type="button" className="bar-back" onClick={() => void requestClose()} aria-disabled={savingBeforeLeave || undefined} aria-label={translate`Manuscripts`} title={translate`All manuscripts`}>
@@ -949,13 +982,15 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <span className="bar-divider" aria-hidden="true" />
           <h1 id="manuscript-title" className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</h1>
           {workspace.kind === "demo" && <span className="demo-identity" title={translate`Demo manuscripts reset on reload.`}><Trans>Demo</Trans></span>}
-          <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />
-          {localPending && <span className="sync-status muted small">{connection ? connectionNoticeLabels[connection] : translate`Saving to collection…`}</span>}
+          <div className="save-slot">
+            <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />
+            <SaveNotice tone={saveNotice.tone} label={saveNotice.shortLabel ?? saveNotice.label} className="is-short" />
+            {localPending && <span className="sync-status muted small">{connection ? connectionNoticeLabels[connection] : translate`Saving to collection…`}</span>}
+            <span className="bar-words" title={icuPlural(order.length, { one: "In # chapter; citations, code and math are not counted", other: "In # chapters; citations, code and math are not counted" })}>
+              {countLabel(stats.words, "word")}
+            </span>
+          </div>
           <CollectionSaveWarning />
-          {saveNotice.shortLabel && <SaveNotice tone={saveNotice.tone} label={saveNotice.shortLabel} className="is-short" />}
-          <span className="bar-words" title={icuPlural(order.length, { one: "In # record; citations, code and math are not counted", other: "In # records; citations, code and math are not counted" })}>
-            {countLabel(stats.words, "word")}
-          </span>
           <ProblemsButton
             pending={snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready"}
             checking={heldProblems > 0}
@@ -987,7 +1022,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             </div>
           </div>
           <InsertMenu open={insertOpen} setOpen={setInsertOpen} commands={inserts} disabled={!activeView || activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)} />
-          <button type="button" className="mdbase-button" aria-label={translate`Settings`} aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={translate`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
+          <button type="button" className="mdbase-button keyboard-only" aria-label={translate`Settings`} aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={translate`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
             <GearIcon />
             <span className="button-label"><Trans>Settings</Trans></span>
             {diagnostics.some((d) => d.field) && <span className="count tone-warning">{diagnostics.filter((d) => d.field).length}</span>}
@@ -1006,6 +1041,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             setOpen={setMoreOpen}
             onCommands={() => setPaletteOpen(true)}
             onShortcuts={() => setShortcutsOpen(true)}
+            onSettings={openSettings}
+            onFind={findInChapter}
             onExport={runExport}
             canExport={snap.phase === "ready" && !(notice?.tone === "busy" || Boolean(pendingExport))}
             {...(themeChoice ? { theme: themeChoice.theme, onTheme: themeChoice.setTheme } : {})}
@@ -1079,7 +1116,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         })}
         {snap.draftProblem && <div className="banner" role="alert"><span>{snap.draftProblem}</span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
         {snap.recoveredDrafts.size > 0 && <div className="banner" role="alert">
-          <span><Plural value={snap.recoveredDrafts.size} one="Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version." other="Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions." /></span>
+          <span><Plural value={snap.recoveredDrafts.size} one="Review # recovered local draft. Editing is paused in that chapter until you restore the local draft or use the collection version." other="Review # recovered local drafts. Editing is paused in those chapters until you restore the local drafts or use the collection versions." /></span>
           {[...snap.recoveredDrafts.keys()].map((path) => <button key={path} type="button" className="mdbase-button" onClick={() => setComparisonPath(path)}>{translate`Review ${recordTitle(snap.records.get(path), path)}`}</button>)}
         </div>}
         {activeView?.snapshot.state === "conflict" && (
@@ -1089,7 +1126,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           </div>
         )}
-        {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span><Trans>This record was deleted elsewhere. Your local text is still available here.</Trans></span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
+        {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span><Trans>This chapter was deleted elsewhere. Your local text is still available here.</Trans></span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
         {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
           <div className="banner" role="alert">
             <span>{translate`Not saved: ${activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.`}</span>
@@ -1247,6 +1284,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         filePaths={snap.filePaths}
         problems={diagnostics}
         open={settingsOpen}
+        modal={narrow}
         onClose={closeSettings}
         focus={settingsFocus}
         livePreview={layout.livePreview}
@@ -1397,7 +1435,6 @@ function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { dia
       type="button"
       className={`bar-problems tone-${errors ? "danger" : "warning"}`}
       aria-pressed={open}
-      aria-label={countLabel(diagnostics.length, "problem")}
       onClick={() => setOpen(!open)}
       title={open ? translate`Hide the problems under the editor (F8 goes to the next one)` : translate`List the problems under the editor (F8 goes to the next one)`}
     >
@@ -1459,7 +1496,6 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
       type="button"
       role="menuitem"
       className="menu-item"
-      aria-label={label}
       disabled={!can[value] || busy}
       onClick={() => {
         setOpen(false);
@@ -1513,7 +1549,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
 }
 
 /** Commands, keyboard shortcuts and the theme, out of the bar's way; on a phone, export too. */
-function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; onExport(format: ExportFormat): void; canExport: boolean; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
+function MoreMenu({ open, setOpen, onCommands, onShortcuts, onSettings, onFind, onExport, canExport, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; onSettings(): void; onFind(): void; onExport(format: ExportFormat): void; canExport: boolean; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
   useLingui();
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
@@ -1527,7 +1563,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
       <button
         ref={trigger}
         type="button"
-        className="mdbase-icon-button"
+        className="mdbase-icon-button more-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
@@ -1549,6 +1585,10 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
             <span><Trans>Keyboard shortcuts</Trans></span>
             <kbd>?</kbd>
           </button>
+          <div role="group" aria-label={translate`Manuscript`} className="menu-group phone-only">
+            <button type="button" role="menuitem" className="menu-item" onClick={run(onSettings)}><Trans>Settings</Trans></button>
+            <button type="button" role="menuitem" className="menu-item" onClick={run(onFind)}><Trans>Find in chapter</Trans></button>
+          </div>
           <div role="group" aria-label={translate`Export`} className="menu-group phone-only">
             <span className="menu-label" aria-hidden="true"><Trans>Export</Trans></span>
             {(["pdf", "docx", "bundle"] as const).map((format) => (
