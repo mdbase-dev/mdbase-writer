@@ -8,7 +8,10 @@ app's authorization or Desktop's 24-hour release gap.
 
 `ci.yml` checks PRs and main. `deploy-writer.yml` publishes only by dispatch on
 **main**, with `target=staging|production` and exact 40-hex `source_sha`. Source must
-be a clean main ancestor, not the current head. Moving main during a run is safe.
+be a clean main ancestor, not the current head. Workflow-owned admission and
+pre-upload checks independently require successful main push CI on that exact SHA;
+a PR check, another commit or an older successful run before a failed rerun cannot
+substitute. Moving main during a run is safe.
 Ops selects the newest exact-commit green main source, skips already-live
 production, stages and smokes it, then publishes and smokes production. Server
 compatibility refusals quietly wait for a later poll. An app failure holds Writer

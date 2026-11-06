@@ -40,6 +40,7 @@ jobs:
       - env:
           TARGET: ${{ inputs.target }}
           SOURCE_SHA: ${{ inputs.source_sha }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           case "$TARGET" in staging|production) ;; *) exit 1 ;; esac
@@ -65,6 +66,7 @@ jobs:
         env:
           TARGET: ${{ inputs.target }}
           SOURCE_SHA: ${{ inputs.source_sha }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/publisher/refs.mjs
       - id: hashes
         env:
@@ -103,6 +105,8 @@ jobs:
           persist-credentials: false
       - name: Workflow-owned ancestry check before candidate checkout or execution
         working-directory: publisher
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/publisher/refs.mjs
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -185,6 +189,8 @@ jobs:
         timeout-minutes: 3
       - name: Workflow-owned ancestry check before candidate data is read
         timeout-minutes: 1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/publisher/refs.mjs
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -262,6 +268,7 @@ jobs:
         if: steps.compatibility.outputs.ready == 'true'
         timeout-minutes: 7
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
