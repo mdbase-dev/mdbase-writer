@@ -207,6 +207,10 @@ async function roundFive(page, width, reduced) {
     assert.equal(await page.locator(".bar-words").isVisible(), true);
     await page.getByRole("button", { name: "More", exact: true }).click();
     assert.equal(await page.getByRole("menuitem", { name: /Commands|Keyboard shortcuts/ }).count(), 0);
+    const firstItem = page.getByRole("menu", { name: "More", exact: true }).getByRole("menuitem").first();
+    await firstItem.evaluate(element => { if (document.activeElement !== element) throw new Error("Touch More did not focus its first visible item"); });
+    await page.keyboard.press("ArrowDown");
+    assert.equal(await page.evaluate(() => document.activeElement?.matches('[role="menuitem"]') && getComputedStyle(document.activeElement).display !== "none"), true);
     await page.keyboard.press("Escape");
     await page.locator(".pane-tabs button").first().click();
   }
@@ -230,8 +234,8 @@ async function roundFive(page, width, reduced) {
   const height = await page.locator(".outline > .sidebar-panel").evaluate(element => element.getBoundingClientRect().height);
   await resize.press("ArrowUp");
   assert.equal(await resize.getAttribute("aria-valuenow"), "45");
+  await page.locator(".outline").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
   assert.ok(await page.locator(".outline > .sidebar-panel").evaluate(element => element.getBoundingClientRect().height) < height);
-  await page.waitForTimeout(190);
   const box = await resize.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
@@ -260,6 +264,7 @@ try {
     try {
       await page.goto(`${base}?demo`);
       await page.locator(".manuscript-row").first().waitFor();
+      assert.equal(await page.locator(".continue-card").count(), 0, "Continue must not invent open history");
       await pressFill(page, page.locator(".manuscript-row").first());
       await pressFill(page, page.locator(".home-header .mdbase-button.is-primary").first());
       assert.equal(await page.locator(".topbar .interface-language").count(), 0);
@@ -339,11 +344,12 @@ try {
       const savedNotice = page.locator(".bar .mdbase-save-notice.is-saved").first();
       await savedNotice.waitFor({ state: "attached" });
       assert.equal(await savedNotice.isVisible(), width !== 390, "Phone keeps the existing quiet confirmed-save state");
+      assert.equal(await page.locator('.bar-problems.is-clear,.bar-problems[title="No manuscript problems"]').count(), 0);
       if (reducedMotion === "no-preference") assert.equal(await savedNotice.evaluate(element => getComputedStyle(element).animationDuration), "0.4s");
       await page.keyboard.press("Control+/");
       const help = page.getByRole("dialog", { name: "Keyboard shortcuts", exact: true });
       await help.waitFor();
-      assert.match(await help.innerText(), /press Tab to move/);
+      assert.equal(await help.locator(".shortcuts > div").filter({ hasText: "Move to the next control" }).innerText(), "Tab\nMove to the next control");
       assert.match(await help.innerText(), /Find a source/);
       await page.keyboard.press("Escape");
       await help.waitFor({ state: "hidden" });
@@ -414,6 +420,56 @@ try {
     }
   }
   assert.ok(results.every(result => result.ok), "Round four polish matrix failed");
+  for (const platform of ["MacIntel", "Win32", "Linux x86_64"]) {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await context.addInitScript(platform => Object.defineProperty(navigator, "platform", { value: platform }), platform);
+    await context.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
+    const page = await context.newPage();
+    try {
+      const apple = platform === "MacIntel";
+      const mod = apple ? "Meta" : "Control";
+      await page.goto(`${base}?demo`);
+      await page.locator(".manuscript-row").first().click();
+      await page.locator(".cm-content").focus();
+      await page.keyboard.press(`${mod}+/`);
+      const help = page.locator(".shortcuts-dialog");
+      await help.waitFor();
+      const keys = label => help.locator(".shortcuts > div").evaluateAll((rows, label) => rows.filter(row => row.querySelector("dd").textContent === label).map(row => row.querySelector("kbd").textContent), label);
+      assert.deepEqual(await keys("Go to line"), [apple ? "⌘⌥G" : "Ctrl+Alt+G"]);
+      assert.deepEqual(await keys("Undo"), [apple ? "⌘Z" : "Ctrl+Z"]);
+      assert.deepEqual(await keys("Redo"), apple ? ["⌘⇧Z"] : platform.startsWith("Linux") ? ["Ctrl+Y", "Ctrl+Shift+Z"] : ["Ctrl+Y"]);
+      assert.deepEqual(await keys("Show completions"), ["Ctrl-Space"]);
+      assert.equal(await help.getByText("Move to the next control", { exact: true }).count(), 1);
+      assert.equal(await help.getByText("In the editor, press Tab to move to the next control.", { exact: true }).count(), 0);
+      await page.keyboard.press("Escape");
+      await help.waitFor({ state: "hidden" });
+      await page.keyboard.press(`${mod}+Alt+g`);
+      const line = page.locator('.cm-goto-line input[name="line"]');
+      await line.waitFor();
+      await page.keyboard.press(`${mod}+a`);
+      await page.keyboard.type("3");
+      await page.keyboard.press("Enter");
+      const state = () => page.evaluate(async () => (await import("/scripts/browser-a11y-fixture.tsx")).editorSnapshot());
+      const before = await state();
+      assert.equal(before.text.slice(0, before.head).split("\n").length, 3);
+      await page.keyboard.type("KEYBOARD_REDO");
+      assert.notEqual((await state()).text, before.text);
+      await page.keyboard.press(`${mod}+z`);
+      assert.equal((await state()).text, before.text);
+      for (const key of [apple ? "Meta+Shift+z" : "Control+y", ...(platform.startsWith("Linux") ? ["Control+Shift+z"] : [])]) {
+        await page.keyboard.press(key);
+        assert.ok((await state()).text.includes("KEYBOARD_REDO"), `${key} did not redo`);
+        await page.keyboard.press(`${mod}+z`);
+        assert.equal((await state()).text, before.text);
+      }
+      await page.keyboard.type("@");
+      await page.keyboard.press("Escape");
+      await page.keyboard.press("Control+Space");
+      await page.locator(".cm-tooltip-autocomplete").waitFor();
+      assert.ok(await page.getByRole("option").count() > 0);
+      console.log(`ok platform keyboard reference and commands ${platform}`);
+    } finally { await context.close(); }
+  }
 } finally {
   await browser.close();
 }

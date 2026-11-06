@@ -112,7 +112,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
 
   const recordIndex = useMemo(() => pathIndex(recordPaths ?? []), [recordPaths]);
   const byPath = useMemo(() => new Map((manuscripts ?? []).map((m) => [m.path, m])), [manuscripts]);
-  const continuing = useMemo(() => recent.map((r) => byPath.get(r.path)).find((m): m is ManuscriptSummary => Boolean(m)) ?? byRecentlyEdited(manuscripts ?? [])[0], [recent, byPath, manuscripts]);
+  const continuing = useMemo(() => recent.map((r) => byPath.get(r.path)).find((m): m is ManuscriptSummary => Boolean(m)), [recent, byPath]);
   const countPaths = useMemo(() => continuing ? new Set([...visiblePaths, continuing.path]) : visiblePaths, [visiblePaths, continuing]);
 
   // Bodies are only read for visible rows, at most four concurrent manuscript traversals.

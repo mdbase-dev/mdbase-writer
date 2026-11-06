@@ -68,7 +68,7 @@ import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activit
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { plural as countLabel, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
-import { ConnectionNoticeContext } from "./connection-notice.js";
+import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
@@ -385,7 +385,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const connection = useContext(ConnectionNoticeContext);
   const locallySaved = !snap.pendingSettings && !snap.draftProblem && [...snap.records.values()].every(record => !record.snapshot.dirty || record.localSaved);
   const localPending = locallySaved && snap.recoveredDrafts.size === 0 && (overall === "unsaved" || overall === "saving");
-  const saveNotice = localPending ? { tone: "pending" as const, label: translate`Saved on this device`, shortLabel: translate`Saved on this device` } : workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, connection);
+  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, connection, locallySaved);
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -950,7 +950,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <h1 id="manuscript-title" className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</h1>
           {workspace.kind === "demo" && <span className="demo-identity" title={translate`Demo manuscripts reset on reload.`}><Trans>Demo</Trans></span>}
           <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />
-          {localPending && <span className="sync-status muted small">{connection === "offline" ? translate`Offline · sync pending` : translate`Saving to collection…`}</span>}
+          {localPending && <span className="sync-status muted small">{connection ? connectionNoticeLabels[connection] : translate`Saving to collection…`}</span>}
           <CollectionSaveWarning />
           {saveNotice.shortLabel && <SaveNotice tone={saveNotice.tone} label={saveNotice.shortLabel} className="is-short" />}
           <span className="bar-words" title={icuPlural(order.length, { one: "In # record; citations, code and math are not counted", other: "In # records; citations, code and math are not counted" })}>
@@ -1385,7 +1385,7 @@ function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { dia
     if (!pending && !checking) return null;
     const label = pending ? translate`Dependencies not checked` : translate`Checking…`;
     return (
-      <span className={`bar-problems ${checking && !pending ? "is-checking" : "is-clear"}`} title={pending ? translate`Collection dependencies have not been checked yet` : checking ? translate`The line being typed is checked once typing pauses` : translate`No manuscript problems`}>
+      <span className={`bar-problems ${checking && !pending ? "is-checking" : ""}`} title={pending ? translate`Collection dependencies have not been checked yet` : translate`The line being typed is checked once typing pauses`}>
         <span className="spinner" aria-hidden="true" />
         <span className="button-label">{label}</span>
       </span>
@@ -1537,7 +1537,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
       >
         <MoreIcon />
       </button>
-      <Popover open={open} id={id} trigger={trigger} width={240} label={translate`More`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+      <Popover open={open} id={id} trigger={trigger} width={240} label={translate`More`} align="end" focus={matchMedia("(pointer: coarse)").matches ? `[role="menuitem"]:not(.keyboard-only):not(:disabled)` : `[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>

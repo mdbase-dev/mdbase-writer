@@ -1094,10 +1094,6 @@ msgstr "在 {0}{1}{2}{3}{4}{5} 中"
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "在高亮内容 <0>{0}</0>{1}"
 
-#: src/ui/Shortcuts.tsx
-msgid "In the editor, press Tab to move to the next control."
-msgstr "在编辑器中按 Tab 键可移至下一个控件。"
-
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
 msgstr "整篇手稿中的字数；引文、代码和数学公式不计入"
@@ -1487,10 +1483,6 @@ msgstr "集合中没有与模板 {value} 匹配的文件。"
 msgid "No manuscript matches “{filter}”."
 msgstr "没有匹配“{filter}”的手稿。"
 
-#: src/ui/WorkspaceView.tsx
-msgid "No manuscript problems"
-msgstr "文稿没有问题"
-
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "没有匹配“{query}”的笔记。"
@@ -1615,10 +1607,6 @@ msgstr "离线 · 已存于此设备，等待同步"
 #: src/ui/records.ts
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "离线 · 已保存到此设备，等待同步"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Offline · sync pending"
-msgstr "离线 · 等待同步"
 
 #: src/ui/records.ts
 msgid "On device · pending sync"
@@ -2067,7 +2055,7 @@ msgstr "立即保存"
 msgid "Saved"
 msgstr "已保存"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/records.ts
 msgid "Saved on this device"
 msgstr "已保存到此设备"
 

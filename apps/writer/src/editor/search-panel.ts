@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { closeSearchPanel, findNext, findPrevious, getSearchQuery, replaceAll, replaceNext, SearchQuery, setSearchQuery } from "@codemirror/search";
-import type { EditorView, Panel } from "@codemirror/view";
+import { runScopeHandlers, type EditorView, type Panel } from "@codemirror/view";
 
 export function searchPanel(view: EditorView): Panel {
   const dom = document.createElement("div");
@@ -62,8 +62,9 @@ export function searchPanel(view: EditorView): Panel {
   find.oninput = change;
   replacement.oninput = change;
   dom.onkeydown = event => {
-    if (event.key === "Escape") { event.preventDefault(); closeSearchPanel(view); view.focus(); }
+    if (runScopeHandlers(view, event, "search-panel")) event.preventDefault();
     else if (event.key === "Enter" && event.target === find) { event.preventDefault(); (event.shiftKey ? findPrevious : findNext)(view); }
+    else if (event.key === "Enter" && event.target === replacement) { event.preventDefault(); replaceNext(view); }
   };
   sync();
   return { dom, top: true, update: sync, mount() { find.select(); } };

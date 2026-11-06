@@ -1094,10 +1094,6 @@ msgstr "{0}{1}{2}{3}{4}{5} 内"
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "ハイライト内 <0>{0}</0>{1}"
 
-#: src/ui/Shortcuts.tsx
-msgid "In the editor, press Tab to move to the next control."
-msgstr "エディターで Tab を押すと、次のコントロールに移動します。"
-
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
 msgstr "原稿全体（引用、コード、数式は含みません）"
@@ -1487,10 +1483,6 @@ msgstr "コレクション内にテンプレート{value}に一致するファ�
 msgid "No manuscript matches “{filter}”."
 msgstr "「{filter}」に一致する原稿はありません。"
 
-#: src/ui/WorkspaceView.tsx
-msgid "No manuscript problems"
-msgstr "原稿に問題はありません"
-
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "「{query}」に一致するノートはありません。"
@@ -1615,10 +1607,6 @@ msgstr "オフライン · この端末に保存、同期待ち"
 #: src/ui/records.ts
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "オフライン · この端末に保存済み、同期待ち"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Offline · sync pending"
-msgstr "オフライン · 同期待ち"
 
 #: src/ui/records.ts
 msgid "On device · pending sync"
@@ -2067,7 +2055,7 @@ msgstr "今すぐ保存"
 msgid "Saved"
 msgstr "保存済み"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/records.ts
 msgid "Saved on this device"
 msgstr "このデバイスに保存済み"
 

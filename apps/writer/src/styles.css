@@ -155,8 +155,6 @@ label > .mdbase-select { width: 100%; }
 button.bar-problems { cursor: pointer; }
 .bar-problems.tone-danger { color: var(--danger); border-color: color-mix(in oklch, var(--danger) 35%, transparent); background: color-mix(in oklch, var(--danger) 8%, transparent); }
 .bar-problems.tone-warning { color: color-mix(in oklch, var(--warning) 70%, var(--ink)); border-color: color-mix(in oklch, var(--warning) 45%, transparent); background: color-mix(in oklch, var(--warning) 10%, transparent); }
-.bar-problems.is-clear { color: var(--muted); }
-.bar-problems.is-clear .icon { color: var(--connected); }
 .demo-identity { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .overlay-host { display: contents; }
 .overlay-host .mdbase-dialog[open], .overlay-host .mdbase-command-palette, .overlay-host .popover { animation: none; }
@@ -277,7 +275,6 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
   grid-template-areas: var(--grid-areas);
   min-height: 0;
 }
-.is-resizing .workspace, .workspace:has(.sidebar-resizer:focus) { transition: none; }
 .view-write .preview-pane, .view-preview .write, .view-write .divider, .view-preview .divider { opacity: 0; visibility: hidden; overflow: clip; transition-delay: 0s, 0s, 160ms; }
 .pane-tabs { display: none; }
 .tone-pending .dot { background: var(--warning); }
@@ -758,7 +755,7 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .preview-meta .preview-setting { min-width: 0; }
   .preview-meta .preview-setting:first-of-type { flex: 1; }
   /* "No problems" is the Write tab's missing badge here. */
-  .bar-back span, .bar-divider, .bar-layout, .bar-problems.is-clear { display: none; }
+  .bar-back span, .bar-divider, .bar-layout { display: none; }
   /* Unsettled save and connection feedback wraps below the phone toolbar. */
   .bar .mdbase-save-notice.is-long { display: none; }
   /* Export is rarely what a phone is for; it moves into the More menu. */

@@ -1094,10 +1094,6 @@ msgstr "In {0}{1}{2}{3}{4}{5}"
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "In highlights <0>{0}</0>{1}"
 
-#: src/ui/Shortcuts.tsx
-msgid "In the editor, press Tab to move to the next control."
-msgstr "In the editor, press Tab to move to the next control."
-
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
 msgstr "In the whole manuscript; citations, code and math are not counted"
@@ -1487,10 +1483,6 @@ msgstr "No file in the collection matches the template {value}."
 msgid "No manuscript matches “{filter}”."
 msgstr "No manuscript matches “{filter}”."
 
-#: src/ui/WorkspaceView.tsx
-msgid "No manuscript problems"
-msgstr "No manuscript problems"
-
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "No note matches “{query}”."
@@ -1615,10 +1607,6 @@ msgstr "Offline · on device, pending sync"
 #: src/ui/records.ts
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "Offline · saved on this device; waiting for sync"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Offline · sync pending"
-msgstr "Offline · sync pending"
 
 #: src/ui/records.ts
 msgid "On device · pending sync"
@@ -2067,7 +2055,7 @@ msgstr "Save now"
 msgid "Saved"
 msgstr "Saved"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/records.ts
 msgid "Saved on this device"
 msgstr "Saved on this device"
 

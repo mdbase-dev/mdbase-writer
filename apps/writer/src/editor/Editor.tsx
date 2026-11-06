@@ -323,7 +323,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     const v = view.current;
     if (!v) return;
     const current = v.state.doc.toString();
-    const incoming = Text.of(text.split(/\r\n?|\n/)).toString();
+    const incoming = text.replace(/\r\n?/g, "\n");
     if (current === incoming) {
       emitted.current = [];
       return;

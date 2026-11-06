@@ -5,6 +5,13 @@ import { App } from "../src/App.js";
 import { AppI18nProvider } from "../src/i18n/provider.js";
 import { createTestApp } from "@mdbase-dev/sdk/testing";
 import manifest from "../src/generated/mdbase-app.json";
+import { EditorView } from "@codemirror/view";
+
+export function editorSnapshot() {
+  const view = EditorView.findFromDOM(document.querySelector<HTMLElement>(".cm-editor")!)!;
+  const { from, to, head } = view.state.selection.main;
+  return { from, to, head, text: view.state.doc.toString(), selected: view.state.sliceDoc(from, to) };
+}
 
 export function mountSignIn() {
   document.getElementById("root")!.hidden = true;
@@ -35,6 +42,18 @@ export async function mountNative(body = "# Original manuscript\n\nConfirmed nat
   host.style.height = "100%";
   document.body.append(host);
   const root = createRoot(host);
-  root.render(<AppI18nProvider><App sdk={fixture.mdbase} /></AppI18nProvider>);
-  return { ...fixture, close: async () => { root.unmount(); host.remove(); await fixture.close(); } };
+  let status: ReturnType<typeof fixture.mdbase.getSnapshot> | null = null;
+  const listeners = new Set<() => void>();
+  const sdk = { ...fixture.mdbase, getSnapshot: () => status ?? fixture.mdbase.getSnapshot(), subscribe(listener: () => void) {
+    listeners.add(listener);
+    const stop = fixture.mdbase.subscribe(listener);
+    return () => { listeners.delete(listener); stop(); };
+  } };
+  root.render(<AppI18nProvider><App sdk={sdk} /></AppI18nProvider>);
+  return { ...fixture, setSyncHealth(health: "unreachable" | null) {
+    const snapshot = fixture.mdbase.getSnapshot();
+    if (!snapshot.sync) throw new Error("Sync status requires a ready native fixture");
+    status = health ? { ...snapshot, sync: { ...snapshot.sync, health } } : null;
+    listeners.forEach(listener => listener());
+  }, close: async () => { root.unmount(); host.remove(); await fixture.close(); } };
 }

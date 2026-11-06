@@ -1,5 +1,9 @@
 # Unreleased
 
+- Focus Find before accepting search text, keep match-navigation and Replace Enter working in its fields, and open CRLF chapters without an invalid selection.
+- Restore writing focus after pointer dismissal of commands or shortcut help. Focus the first visible More action on touch screens and show the correct platform-specific editor shortcuts.
+- Offer Continue writing only from actual open history. Acknowledge saved-on-device drafts only after local storage commits, keep Reconnecting visible while typing, and keep Preview links keyboard reachable.
+
 - Keep collection, source and annotation discovery steady after a save instead of briefly flashing loading banners. Initial loading and genuine refresh failures remain visible.
 
 - Keep Find on one row, with labelled search options and replacement controls available without stock editor chrome.

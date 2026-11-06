@@ -25,8 +25,14 @@ try {
       await page.locator(".cm-content").waitFor();
       await page.keyboard.type("CRLF_OPEN");
       assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().records.get("writing/main.md").snapshot.body), "# Original manuscript\n\nCRLF_OPEN");
+      await page.keyboard.type("\n[Paper](https://example.com/paper)\n");
       if (width === 390) await page.getByRole("button", { name: "Preview", exact: true }).click();
       await page.waitForFunction(() => document.querySelector(".preview-pages canvas.page")?.dataset.version, null, { timeout: 60000 });
+      await page.locator('.preview .text-layer a[href="https://example.com/paper"]').waitFor({ state: "attached" });
+      assert.equal(await page.locator(".preview .text-layer[tabindex]").count(), 0);
+      await page.locator(".preview").focus();
+      await page.keyboard.press("Tab");
+      assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("href")), "https://example.com/paper");
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Preview-selected page overflow");
       if (width === 390) await page.getByRole("button", { name: "Write", exact: true }).click();
       assert.equal(await page.getByRole("main").count(), 1);
@@ -39,7 +45,14 @@ try {
         assert.equal(targets.length, 4);
         assert.ok(targets.every(target => target.width >= 44 && target.height >= 44), JSON.stringify(targets));
       }
-      await page.evaluate(() => window.nativeFixture.replica().setOnline(false));
+      await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].every(record => record.snapshot.state === "saved"));
+      await page.evaluate(() => window.nativeFixture.setSyncHealth("unreachable"));
+      await page.waitForFunction(() => document.querySelector('.bar .mdbase-save-notice.is-long')?.textContent === "Reconnecting");
+      await page.locator(".cm-content").focus();
+      await page.keyboard.press("Control+End");
+      await page.keyboard.type("R");
+      assert.equal(await page.locator(".sync-status").innerText(), "Reconnecting", "Typing hid the connection problem");
+      await page.evaluate(() => { window.nativeFixture.replica().setOnline(false); window.nativeFixture.setSyncHealth(null); });
       await context.setOffline(true);
       await page.locator(".cm-content").focus();
       await page.keyboard.press("Control+End");
@@ -52,7 +65,7 @@ try {
       assert.equal(committed.local, true);
       assert.equal(committed.stored, true);
       assert.match(committed.notice, /Saved on this device/);
-      assert.match(committed.remote, /sync pending|Saving to collection/);
+      assert.equal(committed.remote, "Offline");
       await page.locator(".cm-content").fill("Offline draft retained on this device.\n");
       await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot.state === "saved_on_device");
       const notice = page.locator(`.bar .mdbase-save-notice.${width === 390 ? "is-short" : "is-long"}`);
@@ -94,6 +107,9 @@ try {
       await page.keyboard.type("X");
       assert.ok(await page.evaluate(() => Boolean(window.writer.workspace.getSnapshot().draftProblem)));
       assert.doesNotMatch(await page.locator(".bar .mdbase-save-notice.is-long").innerText(), /^Saved/);
+      await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot.state === "saved_on_device");
+      assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).localSaved), false);
+      assert.doesNotMatch(await page.locator(".bar .mdbase-save-notice.is-long").innerText(), /saved on this device/i);
       await page.evaluate(() => { Storage.prototype.setItem = window.restoreStorage; });
       assert.deepEqual(errors, []);
       await page.screenshot({ path: `out/polish-r2/${name}-merged.png` });

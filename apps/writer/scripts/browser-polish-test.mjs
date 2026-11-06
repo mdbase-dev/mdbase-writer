@@ -137,11 +137,11 @@ try {
       }
       if (width === 390) await page.getByRole("button", { name: "Preview", exact: true }).click();
       await page.waitForFunction(() => document.querySelector(".preview-pages canvas.page")?.dataset.version);
-      assert.equal(await page.locator(".preview .text-layer[tabindex='0'],.preview .text-layer [tabindex='0']").count(), 0);
-      assert.ok(await page.locator(".preview .text-layer a").evaluateAll(elements => elements.every(element => element.tabIndex === -1)));
+      assert.equal(await page.locator(".preview .text-layer[tabindex]").count(), 0);
+      assert.ok(await page.locator(".preview .text-layer a[href]").evaluateAll(elements => elements.every(element => element.tabIndex === 0)));
       await page.locator(".preview").focus();
       await page.keyboard.press("Tab");
-      assert.equal(await page.evaluate(() => Boolean(document.activeElement?.closest(".text-layer"))), false);
+      assert.equal(await page.evaluate(() => document.activeElement?.matches(".text-layer")), false);
       result.startup = await page.evaluate(() => ({ editorMs: window.startup.find((frame) => frame.editor)?.elapsed, canvasMs: window.startup.find((frame) => frame.canvas)?.elapsed, drawnMs: window.startup.find((frame) => frame.drawn)?.elapsed }));
       result.preview = await page.locator(".preview").evaluate((element) => ({ width: element.clientWidth, scrollWidth: element.scrollWidth, pages: [...element.querySelectorAll(".preview-page")].map((page) => page.getBoundingClientRect().width) }));
       assert.ok(result.preview.scrollWidth <= result.preview.width + 1, "Fit preview overflows");
@@ -164,6 +164,18 @@ try {
       await page.keyboard.type("Darwin");
       assert.equal(await page.getByRole("textbox", { name: "Find", exact: true }).inputValue(), "Darwin");
       assert.deepEqual(await page.evaluate(() => [...window.writer.workspace.getSnapshot().records.values()].map(record => record.snapshot.body)), beforeFind, "Find text entered the manuscript");
+      const editorState = () => page.evaluate(async () => (await import("/scripts/browser-a11y-fixture.tsx")).editorSnapshot());
+      await page.keyboard.press("Enter");
+      let match = await editorState();
+      assert.equal(match.selected.toLowerCase(), "darwin");
+      for (const key of ["F3", "Control+g", "Shift+F3", "Control+Shift+g"]) {
+        await page.getByRole("textbox", { name: "Find", exact: true }).focus();
+        await page.keyboard.press(key);
+        const next = await editorState();
+        assert.equal(next.selected.toLowerCase(), "darwin");
+        assert.notEqual(next.from, match.from, `${key} did not navigate from the Find field`);
+        match = next;
+      }
       result.findHeight = await page.locator(".cm-search").evaluate((element) => element.getBoundingClientRect().height);
       assert.ok(result.findHeight < 160, `Find panel is ${result.findHeight}px tall`);
       assert.equal(await page.locator(".cm-search .cm-button, .cm-search .cm-textfield").count(), 0);
@@ -175,8 +187,11 @@ try {
       assert.equal(await page.getByRole("button", { name: "Regular expression", exact: true }).getAttribute("aria-pressed"), "true");
       await page.getByRole("button", { name: "Regular expression", exact: true }).press("Space");
       await page.locator('.cm-search button[name="next"]').click();
-      await page.getByRole("textbox", { name: "Replace", exact: true }).fill("Darwin test");
-      await page.locator('.cm-search button[name="replace"]').click();
+      await page.getByRole("textbox", { name: "Replace", exact: true }).focus();
+      await page.keyboard.type("Darwin test");
+      const replacing = await editorState();
+      await page.keyboard.press("Enter");
+      assert.equal((await editorState()).text, replacing.text.slice(0, replacing.from) + "Darwin test" + replacing.text.slice(replacing.to), "Replace Enter did not replace the selected match");
       await page.screenshot({ path: `${output}/${name}-find.png` });
       await page.keyboard.press("Escape");
       await page.keyboard.press("Control+z");
@@ -197,7 +212,7 @@ try {
           return [...context.getImageData(0, 0, 1, 1).data];
         };
         const luminance = (color) => color.slice(0, 3).map((channel) => channel / 255).map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
-        return [...document.querySelectorAll(".heading-count,.heading-words,.tab-count,.bar-problems.is-clear,.cm-attr")].filter((element) => element.getBoundingClientRect().width).map((element) => {
+        return [...document.querySelectorAll(".heading-count,.heading-words,.tab-count,.cm-attr")].filter((element) => element.getBoundingClientRect().width).map((element) => {
           let background = element;
           while (background && rgb(getComputedStyle(background).backgroundColor)[3] < 255) background = background.parentElement;
           const foreground = luminance(rgb(getComputedStyle(element).color));

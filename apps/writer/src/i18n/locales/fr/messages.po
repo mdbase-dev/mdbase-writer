@@ -1094,10 +1094,6 @@ msgstr "Dans {0}{1}{2}{3}{4}{5}"
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "Dans les surlignages <0>{0}</0>{1}"
 
-#: src/ui/Shortcuts.tsx
-msgid "In the editor, press Tab to move to the next control."
-msgstr "Dans l’éditeur, appuyez sur Tab pour passer au contrôle suivant."
-
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
 msgstr "Dans l’ensemble du manuscrit ; les citations, le code et les formules ne sont pas comptés"
@@ -1487,10 +1483,6 @@ msgstr "Aucun fichier de la collection ne correspond au modèle {value}."
 msgid "No manuscript matches “{filter}”."
 msgstr "Aucun manuscrit ne correspond à « {filter} »."
 
-#: src/ui/WorkspaceView.tsx
-msgid "No manuscript problems"
-msgstr "Aucun problème dans le manuscrit"
-
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "Aucune note ne correspond à « {query} »."
@@ -1615,10 +1607,6 @@ msgstr "Hors ligne · sur cet appareil, synchronisation en attente"
 #: src/ui/records.ts
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "Hors ligne · enregistré sur cet appareil ; synchronisation en attente"
-
-#: src/ui/WorkspaceView.tsx
-msgid "Offline · sync pending"
-msgstr "Hors ligne · synchronisation en attente"
 
 #: src/ui/records.ts
 msgid "On device · pending sync"
@@ -2067,7 +2055,7 @@ msgstr "Enregistrer maintenant"
 msgid "Saved"
 msgstr "Enregistré"
 
-#: src/ui/WorkspaceView.tsx
+#: src/ui/records.ts
 msgid "Saved on this device"
 msgstr "Enregistré sur cet appareil"
 

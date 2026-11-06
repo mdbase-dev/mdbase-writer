@@ -31,6 +31,7 @@ semantics evidence were checked before changing the corresponding behavior.
   not a Writer fork. Its only consumer is this Writer lockfile. Remove
   `patches/@mdbase-dev__ui@0.1.0-beta.147.patch` and its pnpm registration when a
   separately planned shared-UI update includes destination-owned palette focus,
+  pointer-dismissal focus restoration, backdrop default-focus prevention,
   the page main landmark and setup heading fixes. This PR does not repin it.
 - The only new persisted field is optional `chapter` in the existing
   browser-local recent manuscript entry. It is checked against the book's
@@ -150,7 +151,8 @@ This section supersedes the earlier incoming-only and grid-interpolation choices
 - Find uses CodeMirror's supported panel boundary: one row, labelled controls,
   and anchored options/replacements. Native search queries, flags and keyboard
   commands remain authoritative. Preview keeps selectable semantic text but
-  removes text-layer and link tab stops; the Preview region is focusable.
+  removes text-layer container tab stops; the Preview region and safe links
+  remain keyboard reachable.
 - A successful synchronous draft-store write says Saved on this device while
   collection sync stays separate and quieter. Failed storage and unreviewed
   recovery never get this acknowledgement. Existing hold, conflict and remote
@@ -272,3 +274,53 @@ SIGTERM (143). After restarting the owned server, all three constituent
 matrices completed against the same final source.
 The owned port-5320 development server was stopped after validation; browser
 contexts and the production editing server were closed by their harnesses.
+
+## Review corrections to round five
+
+The review of PR #55 at `890ad780d` identified regressions despite the initial
+green gates. Those earlier receipts do not establish coverage for these paths:
+Find was populated programmatically, pointer dismissal was not exercised, and
+the storage-failure check ran before the SDK settled to its local-only state.
+The corrections retain the conventional UI and existing mutation paths.
+
+| Review item | Correction and regression gate |
+| --- | --- |
+| Find initially owns typing | Select Find in its panel mount hook. The main polish matrix types immediately after Ctrl+F, checks the query, and checks that every manuscript body is unchanged. |
+| CRLF first-open crash | Build the CodeMirror document before calculating its body offset, normalize incoming text too, and clamp restored positions to that document. Unit cases cover CRLF, CR and LF plus oversized saved positions; the native browser matrix opens a CRLF chapter and checks the exact body after typing. |
+| Pointer palette dismissal | Restore from the whole dialog, including its dismiss button. The interaction matrix clicks outside and immediately types into the manuscript. |
+| Dialog backdrop default focus | Prevent the backdrop mousedown default action before closing. The same immediate-typing gate covers shortcut help, including normal and reduced-motion exit paths. |
+| Find field commands | Run CodeMirror's search-panel scope first and handle Replace Enter. The main matrix drives F3, Ctrl+G and their reverse variants from Find and asserts different selected matches; Replace Enter asserts the exact changed body. |
+| Touch More focus | Focus the first enabled item that is not keyboard-only on coarse pointers. The touch matrix asserts active-element identity and visible ArrowDown navigation. |
+| Shortcut reference | Correct Go to line, platform-specific history keys and Ctrl-Space. Browser platform fixtures check the reference and run Go to line, Undo, Redo and explicit completion on macOS, Windows and Linux key maps. |
+| Continue history | Remove the modification-time fallback. Fresh browser contexts have no Continue row; existing Continue gates still restore the exact position. A unit fixture with missing mtimes opens only the entry in actual history. |
+| Truthful local acknowledgement | Pass the synchronous local-save result to the shared notice helper. Unit cases cover committed and failed drafts across pending/local-only states; the native matrix blocks storage and waits for settled SDK state before rejecting a saved-on-device claim. |
+| Connection while typing | Use the connection notice label whenever present. The native UI fixture supplies an unreachable SDK status, types, and asserts Reconnecting in the sync row. This is a status-presentation fixture, not a live reconnect qualification. |
+| Preview link ruling | Only text-layer containers leave the tab order. The native matrix compiles an actual Markdown link, Tabs from Preview to it, and checks the destination; sanitization unit tests preserve safe links without explicit tab indices. |
+| Cleanup | Remove the unreachable healthy Problems title and `is-clear` styles, the unused resizing transition override and the duplicate static Tab paragraph. The shortcut entry remains the single Tab reference. |
+
+These browser checks use the local development server on port 5320 with `?demo`,
+the same polish path as CI. Touch and platform identities are emulated in
+Chromium; they are not real-device, native macOS/Windows, live service or
+production authorization evidence. No subagents or Impeccable skill were used.
+
+### Review correction validation
+
+| Command | Result |
+| --- | --- |
+| `rpnpm run check` | Catalogue/source guards and typechecks pass; 66 core and 355 app Vitest tests, 85 app Node tests and 227 root Node tests pass. Four core and two conditional app Node skips remain. |
+| `rpnpm run build:production` | Pass; only production Connect is targeted. |
+| `rpnpm --filter @mdbase-writer/app run build:staging` | Pass; only staging Connect is targeted. |
+| `rpnpm --pull apps/writer/dist --filter @mdbase-writer/app run build:editing-test` | Pass with explicit `VITE_MDBASE_ENV=lab`; only LAB Connect is targeted. |
+| Local production `test:browser:editing` | Real canvas, retained editing, cursor movement and undo/redo pass. |
+| Three local polish scripts | All 24 desktop/phone, light/dark, normal/Reduce matrix cases pass, plus empty/reset recovery and three platform-specific keyboard fixtures. |
+| Local Find panel test | All three widths, 1280/390/320 px, pass with real initial search typing. |
+| Local `test:browser:a11y` | All 29 accessibility/focus checks pass. |
+| Local `test:browser:reliability` | All 24 scenarios pass. |
+| Local `test:browser:i18n` | Ten locales and the existing negotiation, retention and failure checks pass. |
+
+There is still no configured lint command. The earlier resizer assertion sampled
+the start of its existing grid transition; it now awaits that actual animation
+before requiring a smaller physical panel. The assertion and keyboard input
+remain intact. Provisional failures and runs interrupted by source hot reload
+are not counted as passes. The owned development server and browser processes
+are stopped after the final receipts.

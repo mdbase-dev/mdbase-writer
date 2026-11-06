@@ -31,15 +31,18 @@ export const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
 };
 
 /** A recovered checkpoint is not an acknowledged save until it is reviewed. */
-export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecoveredDrafts: boolean, connection: ConnectionNotice | null = null): { tone: SaveTone; label: string; shortLabel: string | undefined } {
+export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecoveredDrafts: boolean, connection: ConnectionNotice | null = null, locallySaved = false): { tone: SaveTone; label: string; shortLabel: string | undefined } {
   if (hasRecoveredDrafts) return { tone: "attention", label: t`Review local drafts`, shortLabel: t`Review drafts` };
   if (STATE_TONE[state] === "attention") return { tone: "attention", label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
-  if (state === "saved_on_device" || connection === "saved_on_device") return {
+  if (state === "recovery") return { tone: STATE_TONE[state], label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
+  if (locallySaved && (state === "unsaved" || state === "saving")) return { tone: "pending", label: t`Saved on this device`, shortLabel: t`Saved on this device` };
+  if (locallySaved && (state === "saved_on_device" || connection === "saved_on_device")) return {
     tone: "pending",
     label: connection === "offline" ? t`Offline · saved on this device; waiting for sync` : STATE_LABEL.saved_on_device,
     shortLabel: connection === "offline" ? t`Offline · on device, pending sync` : STATE_SHORT_LABEL.saved_on_device,
   };
-  if (connection) return { tone: "pending", label: connectionNoticeLabels[connection], shortLabel: connectionNoticeLabels[connection] };
+  if (connection && connection !== "saved_on_device") return { tone: "pending", label: connectionNoticeLabels[connection], shortLabel: connectionNoticeLabels[connection] };
+  if (state === "saved_on_device" || connection === "saved_on_device") return { tone: "pending", label: STATE_LABEL.unsaved, shortLabel: STATE_SHORT_LABEL.unsaved };
   return { tone: STATE_TONE[state], label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
 }
 
