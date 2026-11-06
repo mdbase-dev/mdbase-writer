@@ -43,6 +43,11 @@ it("keeps connection trouble in the single notice while a local checkpoint settl
   }
 });
 
+it("does not infer a local checkpoint just because the workspace has no dirty records", () => {
+  expect(workspaceSaveNotice("saved", false, "offline", true).label).toBe("Offline");
+  expect(workspaceSaveNotice("saved", false, "reconnecting", true).label).toBe("Reconnecting");
+});
+
 it("only acknowledges a committed local draft, including settled SDK local-only states", () => {
   for (const state of ["unsaved", "saving", "saved_on_device"] as const) {
     for (const connection of [null, "offline", "reconnecting", "saved_on_device"] as const) {

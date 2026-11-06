@@ -36,6 +36,9 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
 - New focus retry unit: **35/36 passed before** (no retry on focus); new
   canonical-connection unit: **6/7 passed before** (Offline was hidden by the
   local-checkpoint label). Both exercise the existing mechanisms, not a retry loop.
+- A further status regression was **7/8 before**: a clean workspace's vacuous
+  all-records-clean flag must not imply a committed local checkpoint. Combined
+  local/connection wording now requires an actual pending record state.
 - LAB picker helper unit: **0/1 before** with collection checkboxes.
 - Existing R2 now reads the single canonical notice instead of the deleted
   long/short/companion nodes. It still checks real local checkpoint bytes,

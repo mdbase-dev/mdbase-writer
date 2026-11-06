@@ -36,10 +36,11 @@ export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecovere
   if (STATE_TONE[state] === "attention") return { tone: "attention", label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
   if (connection === "sync_delayed") return { tone: "attention", label: connectionNoticeLabels.sync_delayed, shortLabel: t`Not on server` };
   if (state === "recovery") return { tone: STATE_TONE[state], label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
-  if (locallySaved && connection === "offline") return {
+  const localPending = locallySaved && (state === "unsaved" || state === "saving" || state === "saved_on_device");
+  if (localPending && connection === "offline") return {
     tone: "pending", label: t`Offline · saved on this device; waiting for sync`, shortLabel: t`Offline · on device, pending sync`,
   };
-  if (locallySaved && connection === "reconnecting") return {
+  if (localPending && connection === "reconnecting") return {
     tone: "pending", label: `${connectionNoticeLabels.reconnecting} · ${STATE_LABEL.saved_on_device}`, shortLabel: `${connectionNoticeLabels.reconnecting} · ${STATE_SHORT_LABEL.saved_on_device}`,
   };
   if (locallySaved && (state === "unsaved" || state === "saving")) return { tone: "pending", label: t`Saved on this device`, shortLabel: t`Saved on this device` };
