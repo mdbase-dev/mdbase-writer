@@ -103,6 +103,36 @@ supervisor completes the privacy-bounded deployment report in ops after each
 attempt. These checks establish publication and sign-in readiness, not signed-in
 account/device/file-operation acceptance.
 
+## Manual production rollback drill
+
+The dispatch-only boolean `drill` defaults to **false**. A direct human dispatch
+on main may set it for production only, first attempt only. Workflow calls have
+no entry point; ops `app-cd` sends only source/target, and its App bot cannot opt
+in. Every ordinary ancestry, exact CI, SDK, trust, compatibility, artifact,
+hosting and admission check remains in force.
+
+Before upload, workflow-owned code requires the requested full SHA to equal the
+canonical Pages production commit, the saved previous UUID to remain active and
+the unique served entry marker to match. Unknown/missing/mismatching evidence
+refuses the drill. This republishes the source already live, not a changed app.
+After real upload and hosting verification, it confirms a distinct new UUID is
+canonical. After normal fresh-browser smoke succeeds, workflow-owned code reads
+this run's verified receipt and deliberately fails the smoke job, retaining the
+fixed `production-rollback-drill` evidence. The unchanged production-recovery job
+then follows its normal path; the workflow must stay failed.
+
+A completed live proof needs the distinct uploaded UUID, the deliberate-fault
+artifact, and `rollback.json` with `restored: true`, `ok: true` and the saved
+previous UUID. It proves live Pages rollback permission/API behavior and recovery
+of that deployment's saved alias/transitive bytes over the normal stable window.
+It does **not** prove recovery of a different source, a broken/cancelled upload,
+failed build, arbitrary application state, signed-in operations or server/R2
+rollback. It runs **outside ops `app-cd`**, so it does not prove ops recovery
+report handling, app-stop creation/wakeup or held-app non-redispatch. Evaluate
+ops handling separately against the retained exact-run recovery evidence. Source
+and CI tests alone are not a live rollback proof. Only the supervisor runs this
+drill and reconciles its retained receipts/report; this change does not run it.
+
 ## Supervisor setup (not performed by source)
 
 For `writer-production` and `writer-staging`, retain the protected environments

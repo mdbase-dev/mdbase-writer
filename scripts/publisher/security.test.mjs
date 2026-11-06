@@ -85,6 +85,26 @@ it('protected jobs only execute workflow-owned helpers, with ancestry checks bef
  assert.doesNotMatch(recovery.if,/publish.result == 'success'/);
  assert.equal(recovery.steps.find(s=>s.run?.includes('rollback.mjs')).run.match(/rollback\.mjs (\w+)/)[1],'recover');
 });
+it('manual drill is default-off, cannot enter from ops bots or workflow_call, and fails only after upload and normal smoke',async()=>{
+ const workflow=parse(await readFile(root+'.github/workflows/deploy-writer.yml','utf8')),{jobs}=workflow;
+ assert.equal(workflow.on.workflow_call,undefined);
+ assert.deepEqual(workflow.on.workflow_dispatch.inputs.drill,{description:'Deliberately fail smoke after uploading the already-live production source (manual only).',type:'boolean',default:false});
+ const admission=jobs.admit.steps.find(s=>s.run?.includes('drill.mjs admit'));
+ assert.equal(admission.env.DRILL,"${{ inputs.drill && 'true' || 'false' }}");
+ assert.ok(admission.run.indexOf('refs.mjs')<admission.run.indexOf('drill.mjs admit'));
+ const upload=jobs.publish.steps.findIndex(s=>s.id==='upload'),check=jobs.publish.steps.findIndex(s=>s.run?.includes('drill.mjs before-upload'));
+ assert.ok(check>0 && check<upload);
+ assert.equal(jobs.publish.steps[check].if,"inputs.drill && steps.compatibility.outputs.ready == 'true'");
+ const steps=jobs.smoke.steps,normal=steps.findIndex(s=>s.run?.includes('smoke.mjs')),fault=steps.findIndex(s=>s.run?.includes('drill.mjs fail'));
+ assert.ok(fault>normal);
+ assert.equal(steps[fault].if,"inputs.drill && inputs.target == 'production' && github.event_name == 'workflow_dispatch'");
+ assert.equal(steps[fault]['continue-on-error'],undefined);
+ assert.ok(steps.slice(normal+1,fault).some(s=>s.run?.includes('writer-receipt-production-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT')));
+ assert.ok(steps.some(s=>s.if==='always() && inputs.drill' && s.with?.path==='${{ runner.temp }}/writer-drill.json'));
+ const drill=await readFile(root+'scripts/publisher/drill.mjs','utf8');
+ assert.match(drill,/!env.GITHUB_ACTOR.endsWith\('\[bot\]'\)/);
+ assert.doesNotMatch(jobs['production-recovery'].if,/drill/);
+});
 for(const kind of ['publisher','smoke']) it(`accepts the committed ${kind} lock and installs only with scripts disabled`,async()=>{
  const base=await mkdtemp(join(tmpdir(),'editor-tool-test-'));
  try {
