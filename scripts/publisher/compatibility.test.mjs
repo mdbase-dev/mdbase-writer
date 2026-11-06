@@ -8,7 +8,7 @@ it('requires producer ancestry in both live revisions and sends GitHub token onl
   calls.push(url);
   assert.equal(!!options.headers.Authorization,url.startsWith('https://api.github.com/'));
   if(url.endsWith('/health'))return Response.json({ok:true,environment:'production',revision:cp});
-  if(url.endsWith('/ready'))return Response.json({status:'ok',provider:{revision:provider}});
+  if(url.endsWith('/ready'))return Response.json({status:'ready',provider:{revision:provider}});
   assert.ok(url.includes(producer+'...'));
   return Response.json({status:'ahead'});
  };

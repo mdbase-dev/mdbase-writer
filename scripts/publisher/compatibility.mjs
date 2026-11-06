@@ -10,7 +10,7 @@ export async function compatible(producer,{fetchImpl=fetch,token=process.env.GIT
  };
  try {
   const cp=await json('https://connect.mdbase.dev/health'),provider=await json('https://sync.mdbase.dev/ready');
-  if(cp.ok!==true || cp.environment!=='production' || provider.status!=='ok')return false;
+  if(cp.ok!==true || cp.environment!=='production' || provider.status!=='ready')return false;
   for(const revision of [cp.revision,provider.provider?.revision]) {
    if(!/^[a-f0-9]{40}$/.test(revision??''))return false;
    const proof=await json(`https://api.github.com/repos/mdbase-dev/mdbase-connect/compare/${producer}...${revision}?per_page=1`);
