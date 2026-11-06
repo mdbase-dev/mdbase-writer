@@ -41,7 +41,7 @@ async function command(page, query) {
 }
 
 async function pressFill(page, locator) {
-  await page.waitForFunction(() => !document.querySelector(".sync-status"));
+  await page.waitForFunction(() => document.querySelector(".bar .mdbase-save-notice.is-saved"));
   await locator.hover();
   await page.waitForTimeout(130);
   const before = await locator.evaluate(element => getComputedStyle(element).backgroundColor);
@@ -316,7 +316,7 @@ try {
       await semantics(page);
       await page.keyboard.press("Enter");
       await typeInEditor(page, " CITATION_CONTINUATION ");
-      await page.waitForFunction(() => !document.querySelector(".sync-status"));
+      await page.waitForFunction(() => document.querySelector(".bar .mdbase-save-notice.is-saved"));
       if (width === 390) await page.locator(".pane-tabs button").first().click();
       await page.getByRole("tab", { name: "Outline", exact: true }).click();
       await page.getByRole("button", { name: /^2 Earthworms/ }).click();
