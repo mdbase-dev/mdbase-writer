@@ -469,6 +469,10 @@ msgid "Choose collection"
 msgstr "Scegli raccolta"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Choose export format"
+msgstr "Scegli formato di esportazione"
+
+#: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "Citazione"
 
@@ -531,6 +535,10 @@ msgstr "Fai clic per adattare alla larghezza"
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr "Chiudi (Esc)"
+
+#: src/editor/search-panel.ts
+msgid "Close Find"
+msgstr "Chiudi ricerca"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
@@ -688,6 +696,10 @@ msgid "Cross-reference"
 msgstr "Riferimento incrociato"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Cycle editor and preview"
+msgstr "Alterna editor e anteprima"
+
+#: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
 msgstr "Scuro"
@@ -714,8 +726,12 @@ msgid "Deleted elsewhere"
 msgstr "Eliminato altrove"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Demo · resets on reload"
-msgstr "Demo · si reimposta al ricaricamento"
+msgid "Demo"
+msgstr "Dimostrazione"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload."
+msgstr "I manoscritti demo vengono ripristinati al ricaricamento."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
@@ -736,6 +752,10 @@ msgstr "Scollegato: il testo è cambiato"
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
 msgstr "Ignora"
+
+#: src/ui/Shortcuts.tsx
+msgid "Dismiss the current menu or dialog"
+msgstr "Chiudi il menu o la finestra corrente"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -777,6 +797,7 @@ msgstr "Trascina, oppure premi Alt-↑/↓, per riordinare"
 msgid "edited {0}"
 msgstr "modificato {0}"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "Editor"
@@ -891,6 +912,10 @@ msgstr "Le figure devono essere immagini PNG, JPEG, GIF, SVG o WebP."
 msgid "Filter collections"
 msgstr "Filtra le raccolte"
 
+#: src/editor/search-panel.ts
+msgid "Find"
+msgstr "Trova"
+
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
 msgstr "Trova un manoscritto"
@@ -915,6 +940,10 @@ msgstr "Trova una fonte per questo brano e citala dopo il testo"
 #: src/ui/WorkspaceView.tsx
 msgid "find all chapters"
 msgstr "trova tutti i capitoli"
+
+#: src/ui/Shortcuts.tsx
+msgid "Find and replace"
+msgstr "Trova e sostituisci"
 
 #: src/editor/fixes.ts
 msgid "Find in Sources"
@@ -976,11 +1005,16 @@ msgstr "Dalla raccolta"
 msgid "Give the manuscript a title; it can be changed later."
 msgstr "Dai un titolo al manoscritto; potrai cambiarlo in seguito."
 
+#: src/ui/Shortcuts.tsx
+msgid "Go to line"
+msgstr "Vai alla riga"
+
 #: src/ui/WorkspaceView.tsx
 msgid "grid columns rows"
 msgstr "colonne righe griglia"
 
 #: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "Aiuto"
@@ -1101,6 +1135,10 @@ msgstr "Inserisci [@{0}] alla posizione del cursore (Invio)"
 msgid "Insert {0}"
 msgstr "Inserisci {0}"
 
+#: src/ui/Shortcuts.tsx
+msgid "Insert a blank line"
+msgstr "Inserisci una riga vuota"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "Inserisci una citazione, una nota a piè di pagina, un riferimento incrociato, una figura, una tabella o un'equazione (oppure digita / nel testo)"
@@ -1153,6 +1191,10 @@ msgstr "mantenuto invariato"
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "Scorciatoie da tastiera"
+
+#: src/ui/Shortcuts.tsx
+msgid "Keyboard shortcuts outside text fields"
+msgstr "Scorciatoie fuori dai campi di testo"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -1273,6 +1315,10 @@ msgstr "Manoscritti"
 msgid "Markdown for {path}"
 msgstr "Markdown di {path}"
 
+#: src/editor/search-panel.ts
+msgid "Match case"
+msgstr "Distingui maiuscole e minuscole"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Matching sources"
 msgstr "Fonti corrispondenti"
@@ -1343,6 +1389,18 @@ msgstr "Altro"
 msgid "Move author {0} up"
 msgstr "Sposta in alto l'autore {0}"
 
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter down"
+msgstr "Sposta il capitolo selezionato in basso"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter up"
+msgstr "Sposta il capitolo selezionato in alto"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move to the next control"
+msgstr "Passa al controllo successivo"
+
 #: src/ui/Settings.tsx
 msgid "Move up"
 msgstr "Sposta in alto"
@@ -1394,6 +1452,11 @@ msgstr "Citazione successiva"
 #: src/ui/WorkspaceView.tsx
 msgid "Next comment"
 msgstr "Commento successivo"
+
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Next match"
+msgstr "Corrispondenza successiva"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Next problem"
@@ -1553,6 +1616,10 @@ msgstr "Offline · sul dispositivo, sincronizzazione in attesa"
 msgid "Offline · saved on this device; waiting for sync"
 msgstr "Offline · salvato su questo dispositivo; sincronizzazione in attesa"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Offline · sync pending"
+msgstr "Offline · sincronizzazione in attesa"
+
 #: src/ui/records.ts
 msgid "On device · pending sync"
 msgstr "Sul dispositivo · sincronizzazione in attesa"
@@ -1657,6 +1724,10 @@ msgstr "Apertura della raccolta"
 msgid "Opening…"
 msgstr "Apertura…"
 
+#: src/editor/search-panel.ts
+msgid "Options"
+msgstr "Opzioni"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Or type <0>/</0> in the text to pick one there."
 msgstr "Oppure digita <0>/</0> nel testo per sceglierne uno lì."
@@ -1669,6 +1740,7 @@ msgstr "o usa una nota esistente"
 msgid "Other notes"
 msgstr "Altre note"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
 msgstr "Struttura"
@@ -1749,6 +1821,15 @@ msgstr "Citazione precedente"
 msgid "Previous comment"
 msgstr "Commento precedente"
 
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Previous match"
+msgstr "Corrispondenza precedente"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Previous problem"
+msgstr "Problema precedente"
+
 #: src/ui/ConnectGate.tsx
 msgid "Previously connected"
 msgstr "Collegata in precedenza"
@@ -1797,6 +1878,10 @@ msgstr "Riconnessione in corso"
 msgid "Recovering save…"
 msgstr "Recupero del salvataggio…"
 
+#: src/ui/Shortcuts.tsx
+msgid "Redo"
+msgstr "Ripristina"
+
 #: src/ui/WorkspaceView.tsx
 msgid "refer section figure table label"
 msgstr "riferimento sezione figura tabella etichetta"
@@ -1804,6 +1889,10 @@ msgstr "riferimento sezione figura tabella etichetta"
 #: src/editor/live-preview.ts
 msgid "Refer to this with @{id}"
 msgstr "Rimanda a questo elemento con @{id}"
+
+#: src/editor/search-panel.ts
+msgid "Regular expression"
+msgstr "Espressione regolare"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reject"
@@ -1827,10 +1916,15 @@ msgstr "Rimuovi"
 msgid "Remove author {0}"
 msgstr "Rimuovi l'autore {0}"
 
+#: src/ui/Shortcuts.tsx
+msgid "Rename the focused chapter"
+msgstr "Rinomina il capitolo selezionato"
+
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "Riapri"
 
+#: src/editor/search-panel.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "Sostituisci"
@@ -1840,6 +1934,10 @@ msgstr "Sostituisci"
 #: src/ui/comments.ts
 msgid "Replace {0} with {1}"
 msgstr "Sostituisci {0} con {1}"
+
+#: src/editor/search-panel.ts
+msgid "Replace all"
+msgstr "Sostituisci tutto"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace with"
@@ -1853,6 +1951,10 @@ msgstr "Sostituisci con «{0}»"
 #: src/ui/CommentsPanel.tsx
 msgid "Reply"
 msgstr "Rispondi"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Resize sidebar panels"
+msgstr "Ridimensiona i pannelli laterali"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the editor and preview"
@@ -1965,10 +2067,18 @@ msgstr "Salva ora"
 msgid "Saved"
 msgstr "Salvato"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Saved on this device"
+msgstr "Salvato su questo dispositivo"
+
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
 msgid "Saved on this device; waiting for sync"
 msgstr "Salvato su questo dispositivo; in attesa di sincronizzazione"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Saving to collection…"
+msgstr "Salvataggio nella raccolta…"
 
 #: src/ui/records.ts
 msgid "Saving…"
@@ -1979,6 +2089,9 @@ msgid "Search by author, title, year or key"
 msgstr "Cerca per autore, titolo, anno o chiave"
 
 #: src/ui/ManuscriptSearch.tsx
+msgid "Search outline"
+msgstr "Cerca nella struttura"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "Cerca nel manoscritto"
@@ -1991,6 +2104,10 @@ msgstr "Sezione"
 #: src/ui/CommentsPanel.tsx
 msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
 msgstr "Seleziona un brano e premi <0>{MOD_LABEL}-{ALT_LABEL}-M</0> per commentarlo, oppure <1>{MOD_LABEL}-{ALT_LABEL}-S</1> per suggerire una modifica."
+
+#: src/ui/Shortcuts.tsx
+msgid "Select next occurrence"
+msgstr "Seleziona l’occorrenza successiva"
 
 #: src/editor/selection-bar.tsx
 msgid "Selection"
@@ -2081,6 +2198,10 @@ msgstr "Mostra tutte le {0} note senza un tipo"
 #: src/ui/WorkspaceView.tsx
 msgid "Show comments"
 msgstr "Mostra i commenti"
+
+#: src/ui/Shortcuts.tsx
+msgid "Show completions"
+msgstr "Mostra completamenti"
 
 #: src/preview/Preview.tsx
 msgid "Show in Sources"
@@ -2499,6 +2620,10 @@ msgstr "Modelli Typst nella raccolta"
 msgid "Unclosed $$ math block."
 msgstr "Blocco matematico $$ non chiuso."
 
+#: src/ui/Shortcuts.tsx
+msgid "Undo"
+msgstr "Annulla"
+
 #: src/editor/insight.ts
 msgid "Unknown"
 msgstr "Sconosciuto"
@@ -2576,6 +2701,10 @@ msgstr "In attesa di mdbase Connect…"
 #: src/ui/CommentsPanel.tsx
 msgid "Whole text"
 msgstr "Testo intero"
+
+#: src/editor/search-panel.ts
+msgid "Whole words"
+msgstr "Parole intere"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"

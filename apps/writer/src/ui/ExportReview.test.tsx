@@ -7,8 +7,12 @@ import { ExportReview, type PendingExport } from "./ExportReview.js";
 
 const originalShow = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showModal");
 const originalClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "close");
+const originalPopover = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showPopover");
+const originalHide = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "hidePopover");
 beforeAll(() => {
   Object.defineProperties(HTMLDialogElement.prototype, {
+    showPopover: { configurable: true, value() {} },
+    hidePopover: { configurable: true, value() {} },
     showModal: { configurable: true, value(this: HTMLDialogElement) { this.open = true; } },
     close: { configurable: true, value(this: HTMLDialogElement) {
       if (!this.open) return;
@@ -19,7 +23,7 @@ beforeAll(() => {
   });
 });
 afterAll(() => {
-  for (const [name, descriptor] of [["showModal", originalShow], ["close", originalClose]] as const) {
+  for (const [name, descriptor] of [["showModal", originalShow], ["close", originalClose], ["showPopover", originalPopover], ["hidePopover", originalHide]] as const) {
     if (descriptor) Object.defineProperty(HTMLDialogElement.prototype, name, descriptor);
     else Reflect.deleteProperty(HTMLDialogElement.prototype, name);
   }

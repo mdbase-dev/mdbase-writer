@@ -39,6 +39,18 @@ try {
       }
       await page.evaluate(() => window.nativeFixture.replica().setOnline(false));
       await context.setOffline(true);
+      await page.locator(".cm-content").focus();
+      await page.keyboard.press("Control+End");
+      await page.keyboard.type("L");
+      const committed = await page.evaluate(() => {
+        const workspace = window.writer.workspace;
+        const record = workspace.getSnapshot().records.get(workspace.main);
+        return { local: record.localSaved, stored: Object.keys(localStorage).filter(key => key.startsWith("mdbase-writer:draft:")).some(key => JSON.parse(localStorage.getItem(key)).body === record.snapshot.body), notice: document.querySelector(".bar .mdbase-save-notice.is-long").textContent, remote: document.querySelector(".sync-status")?.textContent };
+      });
+      assert.equal(committed.local, true);
+      assert.equal(committed.stored, true);
+      assert.match(committed.notice, /Saved on this device/);
+      assert.match(committed.remote, /sync pending|Saving to collection/);
       await page.locator(".cm-content").fill("Offline draft retained on this device.\n");
       await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot.state === "saved_on_device");
       const notice = page.locator(`.bar .mdbase-save-notice.${width === 390 ? "is-short" : "is-long"}`);
@@ -65,10 +77,22 @@ try {
       const comparison = page.getByRole("dialog", { name: "Compare conflicting versions" });
       await comparison.waitFor();
       assert.match(await comparison.innerText(), /Collection concurrent edit/);
+      const highlights = await comparison.locator("mark").evaluateAll(elements => elements.map(element => ({ background: getComputedStyle(element).backgroundColor, surrounding: getComputedStyle(element.parentElement).backgroundColor, border: getComputedStyle(element).borderLeftWidth })));
+      assert.ok(highlights.length > 0 && highlights.every(mark => mark.background !== "rgba(0, 0, 0, 0)" && mark.background !== mark.surrounding && parseFloat(mark.border) > 0), JSON.stringify(highlights));
       await comparison.getByRole("textbox", { name: /Merged Markdown/ }).fill("Deliberately merged native draft\n");
       await comparison.getByRole("button", { name: "Save merged version", exact: true }).click();
       await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot; return snapshot.state === "saved" && snapshot.body === "Deliberately merged native draft\n"; });
       assert.equal(await page.evaluate(async () => (await window.nativeFixture.client().get({ path: "writing/main.md" }, { body: true })).body), "Deliberately merged native draft\n");
+      await page.evaluate(() => {
+        window.nativeFixture.replica().setOnline(false);
+        window.restoreStorage = Storage.prototype.setItem;
+        Storage.prototype.setItem = function(key, value) { if (key.startsWith("mdbase-writer:draft:")) throw new DOMException("Fixture blocked storage", "QuotaExceededError"); window.restoreStorage.call(this, key, value); };
+      });
+      await page.locator(".cm-content").focus();
+      await page.keyboard.type("X");
+      assert.ok(await page.evaluate(() => Boolean(window.writer.workspace.getSnapshot().draftProblem)));
+      assert.doesNotMatch(await page.locator(".bar .mdbase-save-notice.is-long").innerText(), /^Saved/);
+      await page.evaluate(() => { Storage.prototype.setItem = window.restoreStorage; });
       assert.deepEqual(errors, []);
       await page.screenshot({ path: `out/polish-r2/${name}-merged.png` });
       results.push({ name, ok: true });

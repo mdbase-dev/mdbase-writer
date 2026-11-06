@@ -346,7 +346,8 @@ try {
     assert.equal(await page.getByRole("alert").filter({ hasText: "Preview unavailable" }).count(), 1);
     assert.equal((await page.locator(".preview-pane").innerText()).match(/You can keep writing\./g)?.length, 1);
     assert.doesNotMatch(await page.locator(".preview-pane").innerText(), /\.\. You can keep writing/);
-    assert.equal(await page.locator('.bar-problems[title="No manuscript problems"]').count(), 1);
+    assert.equal(await page.locator("button.bar-problems").count(), 0);
+    assert.deepEqual(await page.evaluate(() => window.writer.workspace.getSnapshot().result?.diagnostics ?? []), []);
     const chapter = "chapters/worms.md";
     await page.waitForFunction((chapter) => window.writer.workspace.getSnapshot().records.has(chapter), chapter);
     await page.locator(`.record-row[data-path="${chapter}"]`).click();

@@ -29,7 +29,7 @@ async function probe(page, selector, action, reverse) {
     };
     const measure = () => {
       const element = document.querySelector(selector);
-      if (!element || (element instanceof HTMLDialogElement && !element.open)) return null;
+      if (!element || getComputedStyle(element).display === "none") return null;
       const style = getComputedStyle(element);
       return { left: element.getBoundingClientRect().left, height: element.getBoundingClientRect().height, opacity: Number(style.opacity), transform: style.transform, columns: style.gridTemplateColumns, rows: style.gridTemplateRows, inert: element.inert, hidden: element.ariaHidden };
     };
@@ -54,7 +54,10 @@ async function probe(page, selector, action, reverse) {
           interruption = { before, after: measure() };
           reversed = true;
         }
-        if (elapsed < 350) requestAnimationFrame(sample);
+        const element = document.querySelector(selector);
+        const running = element?.getAnimations().some(animation => animation.playState === "running" || animation.pending);
+        const closing = element && (element.inert || element.ariaHidden === "true");
+        if (elapsed < 350 || elapsed < 2000 && (running || closing)) requestAnimationFrame(sample);
         else resolve();
       };
       requestAnimationFrame(sample);
@@ -98,8 +101,10 @@ try {
       await page.goto(`${base}?demo`);
       await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').waitFor();
       assert.match(await page.locator(".home").innerText(), /Demo collection · resets on reload/);
-      motion(await probe(page, ".mdbase-dialog", "new"), reducedMotion === "reduce", 160);
-      motion(await probe(page, ".mdbase-dialog", "dialog-close"), reducedMotion === "reduce", 120);
+      result.dialogIn = await probe(page, ".mdbase-dialog", "new");
+      motion(result.dialogIn, reducedMotion === "reduce", 160);
+      result.dialogOut = await probe(page, ".mdbase-dialog", "dialog-close");
+      motion(result.dialogOut, reducedMotion === "reduce", 120);
       await page.evaluate(() => {
         window.startup = [];
         document.querySelector('.manuscript-row[data-path="manuscripts/slow-change.md"]').addEventListener("pointerdown", () => {
@@ -115,7 +120,8 @@ try {
       });
       await page.locator('.manuscript-row[data-path="manuscripts/slow-change.md"]').click();
       await page.locator(".cm-content").waitFor();
-      assert.match(await page.locator(".demo-identity").innerText(), /resets on reload/);
+      assert.equal(await page.locator(".demo-identity").innerText(), "Demo");
+      assert.match(await page.locator(".demo-identity").getAttribute("title"), /reset on reload/);
       if (width === 1440) {
         await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return snapshot.phase === "ready" && snapshot.indexLoad.phase === "ready" && snapshot.libraryLoad.phase === "ready" && snapshot.annotationsLoad.phase === "ready"; });
         assert.ok(await page.locator(".bar-title").evaluate(element => element.getBoundingClientRect().width >= 240), "Settled manuscript title is too narrow");
@@ -125,12 +131,17 @@ try {
           await page.setViewportSize({ width: middleWidth, height: 900 });
           assert.ok(await page.locator('.bar button[aria-label="More"]').evaluate(element => element.getBoundingClientRect().right <= innerWidth), `Toolbar overflow at ${middleWidth}px`);
           assert.equal(await page.locator('.bar .mdbase-save-notice.is-long').innerText(), "Saved");
-          assert.match(await page.locator(".demo-identity").innerText(), /resets on reload/);
+          assert.equal(await page.locator(".demo-identity").innerText(), "Demo");
         }
         await page.setViewportSize({ width, height: 900 });
       }
       if (width === 390) await page.getByRole("button", { name: "Preview", exact: true }).click();
       await page.waitForFunction(() => document.querySelector(".preview-pages canvas.page")?.dataset.version);
+      assert.equal(await page.locator(".preview .text-layer[tabindex='0'],.preview .text-layer [tabindex='0']").count(), 0);
+      assert.ok(await page.locator(".preview .text-layer a").evaluateAll(elements => elements.every(element => element.tabIndex === -1)));
+      await page.locator(".preview").focus();
+      await page.keyboard.press("Tab");
+      assert.equal(await page.evaluate(() => Boolean(document.activeElement?.closest(".text-layer"))), false);
       result.startup = await page.evaluate(() => ({ editorMs: window.startup.find((frame) => frame.editor)?.elapsed, canvasMs: window.startup.find((frame) => frame.canvas)?.elapsed, drawnMs: window.startup.find((frame) => frame.drawn)?.elapsed }));
       result.preview = await page.locator(".preview").evaluate((element) => ({ width: element.clientWidth, scrollWidth: element.scrollWidth, pages: [...element.querySelectorAll(".preview-page")].map((page) => page.getBoundingClientRect().width) }));
       assert.ok(result.preview.scrollWidth <= result.preview.width + 1, "Fit preview overflows");
@@ -151,7 +162,14 @@ try {
       await page.keyboard.press("Control+f");
       result.findHeight = await page.locator(".cm-search").evaluate((element) => element.getBoundingClientRect().height);
       assert.ok(result.findHeight < 160, `Find panel is ${result.findHeight}px tall`);
-      assert.match(await page.locator(".cm-search").innerText(), /Regular expression/);
+      assert.equal(await page.locator(".cm-search .cm-button, .cm-search .cm-textfield").count(), 0);
+      assert.ok(result.findHeight < 62, `Find must stay one row: ${result.findHeight}`);
+      assert.equal(await page.locator('.writer-find > button[name="close"]').evaluate(element => getComputedStyle(element).position), "static");
+      assert.ok(await page.locator(".writer-find").evaluate(element => element.querySelector("summary").getBoundingClientRect().right <= element.querySelector('[name="close"]').getBoundingClientRect().left), "Find options overlap Close");
+      await page.locator(".writer-find summary").click();
+      await page.getByRole("button", { name: "Regular expression", exact: true }).press("Space");
+      assert.equal(await page.getByRole("button", { name: "Regular expression", exact: true }).getAttribute("aria-pressed"), "true");
+      await page.getByRole("button", { name: "Regular expression", exact: true }).press("Space");
       await page.getByRole("textbox", { name: "Find", exact: true }).fill("Darwin");
       await page.locator('.cm-search button[name="next"]').click();
       await page.getByRole("textbox", { name: "Replace", exact: true }).fill("Darwin test");
@@ -176,7 +194,7 @@ try {
           return [...context.getImageData(0, 0, 1, 1).data];
         };
         const luminance = (color) => color.slice(0, 3).map((channel) => channel / 255).map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
-        return [...document.querySelectorAll(".heading-count,.heading-words,.tab-count,.bar-problems.is-clear")].filter((element) => element.getBoundingClientRect().width).map((element) => {
+        return [...document.querySelectorAll(".heading-count,.heading-words,.tab-count,.bar-problems.is-clear,.cm-attr")].filter((element) => element.getBoundingClientRect().width).map((element) => {
           let background = element;
           while (background && rgb(getComputedStyle(background).backgroundColor)[3] < 255) background = background.parentElement;
           const foreground = luminance(rgb(getComputedStyle(element).color));
@@ -185,7 +203,7 @@ try {
         });
       });
       assert.ok(result.contrast.length > 0);
-      assert.ok(result.contrast.every((entry) => entry.ratio >= 4.5), JSON.stringify(result.contrast));
+      assert.ok(result.contrast.every((entry) => entry.ratio >= (entry.selector.includes("cm-attr") ? 3 : 4.5)), JSON.stringify(result.contrast));
       const reduced = reducedMotion === "reduce";
       result.lowerIn = await probe(page, ".sidebar-lower", "lower");
       motion(result.lowerIn, reduced, 160);
@@ -246,17 +264,18 @@ try {
       result.menuReversal = await probe(page, ".popover", "insert", "insert");
       if (!reduced) assert.ok(Math.abs(result.menuReversal.interruption.before.opacity - result.menuReversal.interruption.after.opacity) < 0.02);
       if (width === 1440) {
-        result.sidebarOut = await probe(page, ".workspace", "sidebar");
-        motion(result.sidebarOut, reduced, 120, "columns");
-        result.sidebarIn = await probe(page, ".workspace", "sidebar");
-        motion(result.sidebarIn, reduced, 160, "columns");
+        result.sidebarOut = await probe(page, ".write", "sidebar");
+        motion(result.sidebarOut, reduced, 160);
+        result.sidebarIn = await probe(page, ".write", "sidebar");
+        motion(result.sidebarIn, reduced, 160);
+        assert.ok(await page.locator(".workspace").evaluate(element => !getComputedStyle(element).transitionProperty.includes("grid-template-columns")), "Layout must not interpolate columns");
       } else {
         result.sidebarIn = await probe(page, ".outline", "phone-sidebar");
         motion(result.sidebarIn, reduced, 160);
         result.sidebarOut = await probe(page, ".outline", "phone-sidebar");
         motion(result.sidebarOut, reduced, 120);
       }
-      const sidebarSelector = width === 1440 ? ".workspace" : ".outline";
+      const sidebarSelector = width === 1440 ? ".write" : ".outline";
       const sidebarAction = width === 1440 ? "sidebar" : "phone-sidebar";
       result.sidebarReversal = await probe(page, sidebarSelector, sidebarAction, sidebarAction);
       await probe(page, sidebarSelector, sidebarAction);
@@ -265,7 +284,8 @@ try {
       if (!reduced) {
         for (const reversal of [result.sidebarReversal, result.sidebarReopen]) {
           const { before, after } = reversal.interruption;
-          assert.ok(Math.abs(width === 1440 ? parseFloat(before.columns) - parseFloat(after.columns) : before.opacity - after.opacity) < (width === 1440 ? 1 : 0.02));
+          if (width === 390) assert.ok(Math.abs(before.opacity - after.opacity) < 0.02);
+          else assert.ok(reversal.frames.every(frame => frame.opacity > 0), "Final-layout pane motion must never blank the editor");
           assert.ok(reversal.animations.length > 0);
         }
         result.preferenceChange = await page.evaluate(async () => {
@@ -320,7 +340,7 @@ try {
     assert.equal(await page.getByText("Typesetting…", { exact: true }).count(), 0);
     await page.locator(".cm-content").fill("A temporary demo paragraph.");
     await page.locator(".bar .mdbase-save-notice.is-saved").waitFor({ state: "visible" });
-    assert.equal(await page.locator(".bar .demo-identity").innerText(), "Demo · resets on reload");
+    assert.equal(await page.locator(".bar .demo-identity").innerText(), "Demo");
     await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].every((record) => record.snapshot.state === "saved"));
     release();
     await page.reload();

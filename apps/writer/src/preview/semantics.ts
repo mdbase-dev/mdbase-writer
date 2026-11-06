@@ -9,7 +9,9 @@ export function semanticLayer(html: string): DocumentFragment {
       if (/^on/i.test(attribute.name) || ["src", "srcdoc"].includes(attribute.name)) element.removeAttribute(attribute.name);
       if (attribute.name === "href" && !/^(https?:|mailto:|#)/i.test(attribute.value)) element.removeAttribute("href");
     }
+    if (element.hasAttribute("tabindex")) element.removeAttribute("tabindex");
     if (element instanceof HTMLAnchorElement) {
+      element.tabIndex = -1;
       element.rel = "noopener noreferrer";
       element.target = "_blank";
       if (!element.textContent?.trim() && !element.getAttribute("aria-label")) {

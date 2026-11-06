@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import CSL from "citeproc";
 
 import { ManuscriptAssembler, PathIndex, Citeproc, parseCiteItem, type CitationRequest, type CiteItem } from "../src/index.js";
 import { loadLibrary, loadStyles, locales } from "./helpers.js";
@@ -75,6 +76,26 @@ describe("citeproc library updates", () => {
 });
 
 describe("citeproc performance", () => {
+  it("top-level macro lookup matches recursive lookup for every bundled style, including repeated macro expansion", () => {
+    type Node = { name: string; attrs: { name?: string }; children: (Node | string)[] };
+    const xml = (CSL as unknown as { XmlJSON: { prototype: { getNodesByName(node: Node, name: string, attribute?: string, result?: Node[]): Node[] } } }).XmlJSON.prototype;
+    const lookup = xml.getNodesByName;
+    const requests = renumber([[item(KEYS[0]!)], [item(KEYS[1]!, "12")], [item(KEYS[0]!, "13")]], true);
+    for (const style of styles.values()) {
+      const optimized = new Citeproc(style, locales, library).process(requests);
+      try {
+        xml.getNodesByName = function recursive(node, name, attribute, result = []) {
+          if (!node?.children) return result;
+          if (node.name === name && (!attribute || node.attrs.name === attribute)) result.push(node);
+          for (const child of node.children) if (typeof child === "object") recursive(child, name, attribute, result);
+          return result;
+        };
+        const reference = new Citeproc(style, locales, library).process(requests);
+        expect(optimized.strings).toEqual(reference.strings);
+        expect(optimized.bibliography).toEqual(reference.bibliography);
+      } finally { xml.getNodesByName = lookup; }
+    }
+  }, 60_000);
   it("updates one cluster in a 1,000-cluster note-style document quickly", () => {
     const cp = new Citeproc(styles.get("chicago-notes-bibliography") ?? "", locales, library);
     const clusters = Array.from({ length: 1000 }, (_, i) => [item(KEYS[i % KEYS.length] ?? "badiouBeing07", String((i % 90) + 1))]);

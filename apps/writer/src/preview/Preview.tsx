@@ -156,6 +156,10 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
   /** Draws every visible page that is behind the current document version. */
   const drawVisible = () => {
     drawing.current = drawing.current.then(async () => {
+      const pane = scroller.current?.closest(".preview-pane");
+      while (pane?.getAnimations().some(animation => animation.playState === "running" || animation.pending)) {
+        await Promise.all(pane.getAnimations().map(animation => animation.finished.catch(() => {})));
+      }
       const s = session.current;
       const host = pagesHost.current;
       if (!s || !host) return;
@@ -364,7 +368,7 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
 
   const failure = (problem ?? renderProblem)?.trim().replace(/[.!?]+$/, "");
   return (
-    <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} aria-label={plural(pages.length, { one: "Typeset preview, # page", other: "Typeset preview, # pages" })} onScroll={reportView}>
+    <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} tabIndex={0} aria-label={plural(pages.length, { one: "Typeset preview, # page", other: "Typeset preview, # pages" })} onScroll={reportView}>
       {failure && <div className="banner" role="alert"><span>{t`Preview unavailable: ${failure}. You can keep writing.`}</span><button type="button" className="mdbase-button" onClick={problem ? onRetry : () => setRetry((value) => value + 1)}>{problem ? t`Retry preview` : t`Retry rendering`}</button></div>}
       {!artifact && !failure && <p className="preview-empty"><Trans>Preparing the preview. You can keep writing.</Trans></p>}
       {stale && artifact && <p className="muted small" role="status"><Trans>Showing the last successful preview; it may not match your latest text.</Trans></p>}
@@ -373,7 +377,7 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
         {pages.map((p, i) => (
           <div key={i} className="preview-page" style={{ aspectRatio: `${p.width} / ${p.height}`, ...(zoom === "fit" ? {} : { width: `${Math.round(p.width * PX_PER_PT * zoom)}px` }) }}>
             <canvas data-page={i} className="page" aria-hidden="true" />
-            <div className="text-layer" data-page={i} role="region" aria-label={t`Page ${i + 1}`} tabIndex={0} />
+            <div className="text-layer" data-page={i} role="region" aria-label={t`Page ${i + 1}`} />
           </div>
         ))}
         <div ref={marker} className="preview-cursor" aria-hidden="true" hidden />

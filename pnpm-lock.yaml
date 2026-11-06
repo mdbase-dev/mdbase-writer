@@ -5,7 +5,8 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@mdbase-dev/ui@0.1.0-beta.147': e10535ddaeeb89191adead755be385ef674c9437145d65a6cd623c5aedde13ae
+  '@mdbase-dev/ui@0.1.0-beta.147': 61dc3606ceae06155b9e5c1982d04de6dfae70ffaaef5d3f68707e2c7a65480b
+  citeproc: f7e3d4ceb169ed26f620629251d1c4f625551c8e9355526267e43a91fc27a73e
 
 importers:
 
@@ -79,7 +80,7 @@ importers:
         version: '@mdbase-dev/sdk@file:vendor/sdk-dev-eaa4e697-staging.tgz'
       '@mdbase-dev/ui':
         specifier: 0.1.0-beta.147
-        version: 0.1.0-beta.147(patch_hash=e10535ddaeeb89191adead755be385ef674c9437145d65a6cd623c5aedde13ae)(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 0.1.0-beta.147(patch_hash=61dc3606ceae06155b9e5c1982d04de6dfae70ffaaef5d3f68707e2c7a65480b)(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@mdbase-writer/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -164,7 +165,7 @@ importers:
         version: 1.7.2
       citeproc:
         specifier: 2.4.63
-        version: 2.4.63
+        version: 2.4.63(patch_hash=f7e3d4ceb169ed26f620629251d1c4f625551c8e9355526267e43a91fc27a73e)
       yaml:
         specifier: ^2.9.0
         version: 2.9.1
@@ -2363,7 +2364,7 @@ snapshots:
       '@noble/curves': 2.4.0
       '@noble/hashes': 2.4.0
 
-  '@mdbase-dev/ui@0.1.0-beta.147(patch_hash=e10535ddaeeb89191adead755be385ef674c9437145d65a6cd623c5aedde13ae)(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@mdbase-dev/ui@0.1.0-beta.147(patch_hash=61dc3606ceae06155b9e5c1982d04de6dfae70ffaaef5d3f68707e2c7a65480b)(@codemirror/view@6.43.13)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.147(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@file:vendor/sdk-4370800f-production-beta156.tgz)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@fontsource-variable/atkinson-hyperlegible-next': 5.3.0
       '@fontsource/azeret-mono': 5.3.0
@@ -2681,7 +2682,7 @@ snapshots:
     dependencies:
       readdirp: 5.1.1
 
-  citeproc@2.4.63: {}
+  citeproc@2.4.63(patch_hash=f7e3d4ceb169ed26f620629251d1c4f625551c8e9355526267e43a91fc27a73e): {}
 
   cli-cursor@5.0.0:
     dependencies:

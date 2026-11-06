@@ -416,6 +416,8 @@ await step("a thesis follows embedded chapter records", async () => {
   const rows = await page.locator(".record-name").allTextContents();
   assert.deepEqual(rows, ["Patient Observation", "Coral reefs", "Earthworms"]);
   await page.locator(".outline-manuscript").click();
+  await page.keyboard.press("Control+Home");
+  await page.keyboard.press("ArrowDown");
   // The manuscript's embeds are drawn as chapter cards.
   await waitFor(() => [...document.querySelectorAll(".cm-chapter-title")].map((e) => e.textContent).join("|") === "Coral reefs|Earthworms", null);
   await page.screenshot({ path: "out/e2e-thesis.png" });
@@ -452,8 +454,8 @@ const orderIs = (order) => waitFor((o) => JSON.stringify(window.writer.workspace
 
 await step("search finds text across the manuscript's records and goes to it", async () => {
   await page.keyboard.press("ControlOrMeta+Shift+F");
-  const field = page.getByRole("searchbox", { name: "Search the manuscript" });
-  await waitFor(() => document.activeElement?.getAttribute("aria-label") === "Search the manuscript", null, 5_000);
+  const field = page.getByRole("searchbox", { name: "Search outline" });
+  await waitFor(() => document.activeElement?.getAttribute("aria-label") === "Search outline", null, 5_000);
   await field.fill("darwin");
   await page.locator(".search-group").nth(1).waitFor({ timeout: 5_000 });
   const records = await page.locator(".search-group .sidebar-heading").allTextContents();
@@ -462,7 +464,7 @@ await step("search finds text across the manuscript's records and goes to it", a
   // Enter steps from the field, which keeps focus; a click goes to a match and into the editor.
   await field.press("Enter");
   await page.locator('.search-hit[aria-current="true"]').waitFor();
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Search the manuscript");
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Search outline");
   await page.locator(".search-group", { hasText: "Earthworms" }).locator(".search-hit").first().click();
   await page.locator(".pane-title", { hasText: "Earthworms" }).waitFor({ timeout: 5_000 });
   await waitFor(() => window.getSelection()?.toString().toLowerCase() === "darwin", null, 5_000);

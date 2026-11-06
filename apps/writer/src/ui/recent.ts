@@ -8,6 +8,15 @@ export interface RecentEntry {
   /** When it was last opened (ISO 8601). */
   readonly at: string;
   readonly chapter?: string;
+  readonly position?: WritingPosition;
+}
+
+export interface WritingPosition {
+  readonly path: string;
+  readonly anchor: number;
+  readonly head: number;
+  readonly top: number;
+  readonly offset: number;
 }
 
 const RECENT_KEPT = 8;
@@ -22,19 +31,25 @@ export function recentManuscripts(namespace: string, store: Pick<Storage, "getIt
   try {
     const value: unknown = JSON.parse(store?.getItem(recentKey(namespace)) ?? "[]");
     if (!Array.isArray(value)) return [];
-    return value.filter((e): e is RecentEntry => Boolean(e) && typeof e === "object" && typeof (e as RecentEntry).path === "string" && typeof (e as RecentEntry).at === "string");
+    return value.flatMap((entry: Partial<RecentEntry> | null) => {
+      if (!entry || typeof entry.path !== "string" || typeof entry.at !== "string") return [];
+      const position = entry.position;
+      const validPosition = position && typeof position.path === "string" && [position.anchor, position.head, position.top].every(number => Number.isSafeInteger(number) && number >= 0) && Number.isFinite(position.offset);
+      return [{ path: entry.path, at: entry.at, ...(typeof entry.chapter === "string" ? { chapter: entry.chapter } : {}), ...(validPosition ? { position } : {}) }];
+    });
   } catch {
     return [];
   }
 }
 
 /** Notes that `path` was opened now; it moves to the front of the list. */
-export function recordOpened(namespace: string, path: string, store: Pick<Storage, "getItem" | "setItem"> | undefined = storage(), now = new Date(), chapter?: string): void {
+export function recordOpened(namespace: string, path: string, store: Pick<Storage, "getItem" | "setItem"> | undefined = storage(), now = new Date(), chapter?: string, position?: WritingPosition): void {
   try {
     const previous = recentManuscripts(namespace, store);
-    const lastChapter = chapter ?? previous.find(entry => entry.path === path)?.chapter;
+    const lastChapter = position ? position.path : chapter ?? previous.find(entry => entry.path === path)?.chapter;
+    const lastPosition = position ?? previous.find(entry => entry.path === path)?.position;
     const rest = previous.filter((e) => e.path !== path);
-    store?.setItem(recentKey(namespace), JSON.stringify([{ path, at: now.toISOString(), ...(lastChapter ? { chapter: lastChapter } : {}) }, ...rest].slice(0, RECENT_KEPT)));
+    store?.setItem(recentKey(namespace), JSON.stringify([{ path, at: now.toISOString(), ...(lastChapter ? { chapter: lastChapter } : {}), ...(lastPosition ? { position: lastPosition } : {}) }, ...rest].slice(0, RECENT_KEPT)));
   } catch {
     // Storage may be unavailable; the home screen then has no "continue" card.
   }

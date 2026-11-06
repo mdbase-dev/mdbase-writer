@@ -22,6 +22,22 @@ describe("what the home screen remembers", () => {
     expect(recentManuscripts("demo", store).map((e) => e.path)).toEqual(["a.md", "b.md"]);
     expect(recentManuscripts("other", store)).toEqual([]);
   });
+  it("keeps a writing position in the existing entry and clears a stale chapter on returning to the main record", () => {
+    const store = memory();
+    recordOpened("demo", "book.md", store, undefined, "chapters/second.md");
+    const position = { path: "book.md", anchor: 12, head: 24, top: 10, offset: -3.5 };
+    recordOpened("demo", "book.md", store, undefined, undefined, position);
+    recordOpened("demo", "book.md", store);
+    expect(recentManuscripts("demo", store)[0]).toMatchObject({ chapter: "book.md", position });
+    expect(store.length).toBe(1);
+  });
+  it("discards malformed optional positions without losing the recent manuscript", () => {
+    const store = memory();
+    for (const position of [null, {}, { path: "book.md", anchor: -1, head: 2, top: 0, offset: 0 }, { path: "book.md", anchor: 0, head: 2, top: 0, offset: "bad" }]) {
+      store.setItem("mdbase-writer:recent:demo", JSON.stringify([{ path: "book.md", at: "today", position }]));
+      expect(recentManuscripts("demo", store)).toEqual([{ path: "book.md", at: "today" }]);
+    }
+  });
   it("keeps a word goal per manuscript and removes it when cleared", () => {
     const store = memory();
     setWordGoal("demo", "a.md", 8000, store);

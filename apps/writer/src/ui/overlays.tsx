@@ -6,11 +6,12 @@ import { useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode,
 export function useOverlay(open: boolean, selector: string, offset: string) {
   const host = useRef<HTMLDivElement>(null);
   const animation = useRef<Animation | null>(null);
+  const backdrop = useRef<Animation | null>(null);
   const [present, setPresent] = useState(open);
   if (open && !present) setPresent(true);
 
   useLayoutEffect(() => {
-    if (!present) { animation.current?.cancel(); animation.current = null; return; }
+    if (!present) { animation.current?.cancel(); animation.current = null; backdrop.current?.cancel(); backdrop.current = null; return; }
     const element = host.current?.querySelector<HTMLElement>(selector);
     if (!element) return;
     element.inert = !open;
@@ -19,7 +20,7 @@ export function useOverlay(open: boolean, selector: string, offset: string) {
     let active = true;
     const finish = () => {
       if (!open) setPresent(false);
-      else if (reduced.matches) { animation.current?.cancel(); animation.current = null; }
+      else if (reduced.matches) { animation.current?.cancel(); animation.current = null; backdrop.current?.cancel(); backdrop.current = null; }
     };
     const changed = () => { if (reduced.matches) finish(); };
     if (reduced.matches) finish();
@@ -31,28 +32,35 @@ export function useOverlay(open: boolean, selector: string, offset: string) {
       animation.current?.cancel();
       const next = element.animate([from, { opacity: open ? "1" : "0", transform: open ? "none" : offset }], {
         duration: open ? 160 : 120,
-        easing: "cubic-bezier(.22,1,.36,1)",
+        easing: open ? "cubic-bezier(.22,1,.36,1)" : "cubic-bezier(.4,0,1,1)",
         fill: "both",
       });
       animation.current = next;
+      if (element.matches(".mdbase-dialog")) {
+        const opacity = backdrop.current ? getComputedStyle(element, "::backdrop").opacity : open ? "0" : "1";
+        backdrop.current?.cancel();
+        backdrop.current = element.animate([{ opacity }, { opacity: open ? "1" : "0" }], {
+          duration: open ? 160 : 120, easing: open ? "cubic-bezier(.22,1,.36,1)" : "cubic-bezier(.4,0,1,1)", fill: "both", pseudoElement: "::backdrop",
+        });
+      }
       void next.finished.then(() => { if (active) finish(); }, () => {});
     }
     reduced.addEventListener("change", changed);
     return () => { active = false; reduced.removeEventListener("change", changed); };
   }, [open, present, selector, offset]);
 
-  useLayoutEffect(() => () => { animation.current?.cancel(); animation.current = null; }, []);
+  useLayoutEffect(() => () => { animation.current?.cancel(); animation.current = null; backdrop.current?.cancel(); backdrop.current = null; }, []);
   return { host, present: open || present };
 }
 
 export function Dialog(props: ComponentProps<typeof SharedDialog>) {
   const { host, present } = useOverlay(props.open, ".mdbase-dialog", "translateY(-3px)");
-  return <div ref={host} className="overlay-host"><SharedDialog {...props} open={present} /></div>;
+  return <div ref={host} className="overlay-host"><SharedDialog {...props} present={present} /></div>;
 }
 
 export function CommandPalette(props: ComponentProps<typeof SharedCommandPalette>) {
   const { host, present } = useOverlay(props.open, ".mdbase-command-backdrop", "none");
-  return <div ref={host} className="overlay-host"><SharedCommandPalette {...props} open={present} /></div>;
+  return <div ref={host} className="overlay-host"><SharedCommandPalette {...props} present={present} /></div>;
 }
 
 interface PopoverProps {

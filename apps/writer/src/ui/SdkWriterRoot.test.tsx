@@ -70,7 +70,7 @@ it("opens the manuscript list with the shared collection switcher in the top bar
     types: manifest.requirements.contracts.map((contract, index) => ({name: names[index] ?? "unknown", path: `_types/${names[index]}.md`, implements: [{contract: contract.id, version: contract.version, fields: new Map([["title", "title"], ["template", "template"], ["csl", "csl"]])}]}))};
   vi.spyOn(h.client(), "describe").mockResolvedValue(catalog);
   const {container} = render(<App sdk={h.mdbase} />);
-  await screen.findByText("Original manuscript");
+  await screen.findByRole("heading", { name: "Original manuscript", level: 2 });
   const trigger = await screen.findByRole("button", {name: "Switch collection, current: Writing"});
   expect(container.querySelector(".topbar-slot")?.contains(trigger)).toBe(true);
   fireEvent.click(trigger);
