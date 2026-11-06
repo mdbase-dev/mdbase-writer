@@ -68,13 +68,13 @@ import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activit
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { plural as countLabel, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
-import { ConnectionNoticeContext } from "./connection-notice.js";
+import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar, ThemeChoice } from "./topbar.js";
 import { signalFailure, signalResult } from "./mark.js";
-import { recentManuscripts, recordOpened } from "./recent.js";
+import { recentManuscripts, recordOpened, type WritingPosition } from "./recent.js";
 import { Shortcuts } from "./Shortcuts.js";
 
 /** Which part a phone shows. */
@@ -123,9 +123,6 @@ const THEME_NAME: Record<ThemePreference, string> = { get system() { return tran
 const VIEW_ORDER: readonly View[] = ["both", "write", "preview"];
 const SIDEBAR_TABS: readonly SidebarTab[] = ["outline", "sources", "comments"];
 const TAB_NAME: Record<SidebarTab, string> = { get outline() { return translate`Outline`; }, get sources() { return translate`Sources`; }, get comments() { return translate`Comments`; } };
-/** The sidebar tab each manuscript was left on, for this page's lifetime; a manuscript opens on its outline. */
-const rememberedTabs = new Map<string, SidebarTab>();
-
 /** Whether the window is laid out for a phone (one pane at a time). */
 function useNarrow(): boolean {
   const [narrow, setNarrow] = useState(() => typeof matchMedia === "function" && matchMedia("(max-width: 900px)").matches);
@@ -184,7 +181,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [active, setActive] = useState(workspace.main);
   const openedChapter = useRef(false);
   const [pane, setPane] = useState<Pane>("write");
-  const [layout, setLayoutState] = useState<Layout>(() => ({ ...loadLayout(), tab: rememberedTabs.get(workspace.main) ?? "outline" }));
+  const [layout, setLayoutState] = useState<Layout>(loadLayout);
   const lower = useOverlay(layout.lowerTab !== null, ".sidebar-lower", "translateY(-3px)");
   const lastLowerTab = useRef<SidebarTab>(layout.lowerTab ?? "comments");
   if (layout.lowerTab) lastLowerTab.current = layout.lowerTab;
@@ -211,6 +208,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [activeComment, setActiveComment] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
   const [editorStates] = useState(() => new Map<string, RetainedEditor>());
+  const [position] = useState(() => recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.position);
+  const savePosition = useCallback((position: WritingPosition) => recordOpened(workspace.namespace, workspace.main, undefined, undefined, position.path === workspace.main ? undefined : position.path, position), [workspace]);
   const [comparisonPath, setComparisonPath] = useState<string | null>(null);
   const [leaveProblem, setLeaveProblem] = useState<string | null>(null);
   const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
@@ -223,6 +222,23 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null);
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const grid = useRef<HTMLDivElement>(null);
+  const motionLayout = useRef({ view: layout.view, sidebar: layout.sidebar, active });
+  useLayoutEffect(() => {
+    const previous = motionLayout.current;
+    motionLayout.current = { view: layout.view, sidebar: layout.sidebar, active };
+    const paneChanged = previous.view !== layout.view || previous.sidebar !== layout.sidebar;
+    if (!paneChanged && previous.active === active) return;
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    if (media.matches) return;
+    grid.current?.getBoundingClientRect();
+    const animations = [...(grid.current?.querySelectorAll<HTMLElement>(paneChanged ? ".write, .preview-pane" : ".editor") ?? [])].map(element => element.animate(
+      paneChanged ? [{ opacity: .7, transform: "translateX(6px)" }, { opacity: 1, transform: "none" }] : [{ opacity: .8 }, { opacity: 1 }],
+      { duration: paneChanged ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)" },
+    ));
+    const cancel = () => { animations.forEach(animation => animation.cancel()); };
+    media.addEventListener("change", cancel);
+    return () => { cancel(); media.removeEventListener("change", cancel); };
+  }, [layout.view, layout.sidebar, active]);
   // Where the cursor is now (the cursor state above trails it slightly), and
   // whether typing has paused, for holding back problems on the line being typed.
   const [liveCursor, setLiveCursor] = useState<{ record: string; offset: number } | null>(null);
@@ -239,10 +255,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
   const setView = useCallback((view: View) => {
     setLayout(current => ({ ...current, view }));
-    if (view !== "preview") requestAnimationFrame(() => editor.current?.focus());
+    requestAnimationFrame(() => { if (view === "preview") grid.current?.querySelector<HTMLElement>(".preview")?.focus(); else editor.current?.focus(); });
   }, [setLayout]);
   const setSidebarTab = useCallback((tab: SidebarTab) => {
-    rememberedTabs.set(workspace.main, tab);
     // The lower panel never repeats the upper: the two swap.
     setLayout((l) => ({ ...l, tab, lowerTab: l.lowerTab === tab ? l.tab : l.lowerTab }));
   }, [setLayout, workspace.main]);
@@ -259,7 +274,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     if (workspace.hasUnsavedChanges()) return;
     const chapters = workspace.chapterPaths();
     const last = recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.chapter;
-    setActive(last && chapters.includes(last) ? last : chapters.find(chapter => chapter !== null) ?? workspace.main);
+    const initialChapter = last && (last === workspace.main || chapters.includes(last)) ? last : chapters.find(chapter => chapter !== null) ?? workspace.main;
+    motionLayout.current.active = initialChapter;
+    setActive(initialChapter);
   }, [workspace, snap.phase, snap.indexLoad.phase]);
   useLayoutEffect(() => {
     if (narrow && pane === "write") editor.current?.focus();
@@ -366,7 +383,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   if (snap.pendingSettings) states.push("unsaved");
   const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => s === "saved_on_device") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
   const connection = useContext(ConnectionNoticeContext);
-  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, connection);
+  const locallySaved = !snap.pendingSettings && !snap.draftProblem && [...snap.records.values()].every(record => !record.snapshot.dirty || record.localSaved);
+  const localPending = locallySaved && snap.recoveredDrafts.size === 0 && (overall === "unsaved" || overall === "saving");
+  const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, connection, locallySaved);
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -416,7 +435,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   // Stable handlers, so the editor and preview only render when what they show changes.
   const onEditorChange = useCallback((text: string) => {
     workspace.setBody(active, text);
-    if (active !== workspace.main) recordOpened(workspace.namespace, workspace.main, undefined, undefined, active);
     setTyping(true);
     clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(() => setTyping(false), SETTLE_MS);
@@ -604,7 +622,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     }
   }, [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
   const inserts = useMemo<readonly InsertCommand[]>(() => insertionSpecs.map((spec) => ({ ...spec, run: () => runInsertion(spec.id) })), [insertionSpecs, runInsertion, interfaceLocale]);
-  const paletteInserts: Command[] = insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: translate`Insert`, label: spec.label, detail: spec.syntax, keywords: spec.keywords, run: () => runInsertion(spec.id) }));
+  const paletteInserts: Command[] = insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: translate`Insert`, label: spec.label, detail: spec.syntax, keywords: spec.keywords, ...(spec.id === "footnote" ? { shortcut: "mod+alt+f" } : {}), run: () => runInsertion(spec.id) }));
   const [insertOpen, setInsertOpen] = useState(false);
   const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);
   const changeComment = async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change));
@@ -886,6 +904,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "search", group: translate`Manuscript`, label: translate`Search the manuscript`, shortcut: "mod+shift+f", keywords: translate`find all chapters`, run: showSearch },
     { id: "sources", group: translate`Manuscript`, label: translate`Find a source`, shortcut: "mod+shift+e", run: () => showSources() },
     { id: "next-problem", group: translate`Manuscript`, label: translate`Next problem`, shortcut: "F8", run: () => stepProblem(1) },
+    { id: "previous-problem", group: translate`Manuscript`, label: translate`Previous problem`, shortcut: "shift+F8", run: () => stepProblem(-1) },
     { id: "manuscripts", group: translate`Manuscript`, label: translate`All manuscripts`, keywords: translate`back home close`, run: () => void requestClose() },
     { id: "problems", group: translate`Manuscript`, label: problemsOpen ? translate`Hide problems` : translate`Show problems`, keywords: translate`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
     { id: "bold", group: translate`Format`, label: translate`Bold`, shortcut: "mod+b", run: () => editor.current?.format("bold") },
@@ -901,6 +920,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "lower-panel", group: translate`View`, label: layout.lowerTab ? translate`Close the lower panel` : translate`Split sidebar`, keywords: translate`split stack outline comments sources`, run: toggleLower },
     { id: "sidebar", group: translate`View`, label: layout.sidebar ? translate`Hide the sidebar` : translate`Show the sidebar`, shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
     { id: "live-preview", group: translate`View`, label: layout.livePreview ? translate`Show Markdown as written` : translate`Read as the manuscript`, keywords: translate`source markup raw live preview chips`, run: toggleLivePreview },
+    { id: "cycle-view", group: translate`View`, label: translate`Cycle editor and preview`, shortcut: "mod+shift+\\", run: () => setView(VIEW_ORDER[(VIEW_ORDER.indexOf(layout.view) + 1) % VIEW_ORDER.length]!) },
     ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: translate`View`, label: VIEW_NAME[view], run: () => setView(view) })),
     ...(themeChoice
       ? themePreferences.filter((t) => t !== themeChoice.theme).map((t) => ({ id: `theme-${t}`, group: translate`View`, label: translate`${THEME_NAME[t]} theme`, keywords: translate`appearance dark light`, run: () => themeChoice.setTheme(t) }))
@@ -908,6 +928,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     ...(snap.phase === "ready" ? [{ id: "export-pdf", group: translate`Export`, label: translate`Export PDF`, run: () => runExport("pdf") }] : []),
     { id: "export-docx", group: translate`Export`, label: translate`Export Word (DOCX)`, run: () => runExport("docx") },
     { id: "export-bundle", group: translate`Export`, label: translate`Export Pandoc bundle (zip)`, run: () => runExport("bundle") },
+    { id: "export-menu", group: translate`Export`, label: translate`Choose export format`, shortcut: "mod+shift+s", run: () => setExportOpen(true) },
     { id: "shortcuts", group: translate`Help`, label: translate`Keyboard shortcuts`, shortcut: "mod+/", run: () => setShortcutsOpen(true) },
   ];
 
@@ -927,8 +948,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           </button>
           <span className="bar-divider" aria-hidden="true" />
           <h1 id="manuscript-title" className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</h1>
-          {workspace.kind === "demo" && <span className="demo-identity"><Trans>Demo · resets on reload</Trans></span>}
+          {workspace.kind === "demo" && <span className="demo-identity" title={translate`Demo manuscripts reset on reload.`}><Trans>Demo</Trans></span>}
           <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />
+          {localPending && <span className="sync-status muted small">{connection ? connectionNoticeLabels[connection] : translate`Saving to collection…`}</span>}
           <CollectionSaveWarning />
           {saveNotice.shortLabel && <SaveNotice tone={saveNotice.tone} label={saveNotice.shortLabel} className="is-short" />}
           <span className="bar-words" title={icuPlural(order.length, { one: "In # record; citations, code and math are not counted", other: "In # records; citations, code and math are not counted" })}>
@@ -991,7 +1013,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>
       </InTopbar>
 
-      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} aria-label={translate`Manuscript sidebar`} inert={narrow ? pane !== "outline" : !layout.sidebar} aria-hidden={(narrow ? pane !== "outline" : !layout.sidebar) || undefined}>
+      <aside className={`outline${layout.lowerTab ? " has-lower" : ""}`} style={{ "--sidebar-split": `${layout.sidebarSplit}fr`, "--sidebar-lower": `${1 - layout.sidebarSplit}fr` } as React.CSSProperties} aria-label={translate`Manuscript sidebar`} inert={narrow ? pane !== "outline" : !layout.sidebar} aria-hidden={(narrow ? pane !== "outline" : !layout.sidebar) || undefined}>
         <SidebarTabs
           tab={layout.tab}
           onTab={setSidebarTab}
@@ -1006,10 +1028,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           {/* Sources stays mounted (hidden) so its search, expanded source and scroll last across tab switches. */}
           {(!lower.present || lowerTab !== "sources") && <div hidden={layout.tab !== "sources"}>{sourcesPanel}</div>}
         </div>
+        {layout.lowerTab && <LowerResizer split={layout.sidebarSplit} onChange={sidebarSplit => setLayout(layout => ({ ...layout, sidebarSplit }))} />}
         <div ref={lower.host} className="lower-host">{lower.present && (
           <div className="sidebar-lower">
             <div className="sidebar-lower-tabs">
-              <div className="sidebar-tab-list" role="tablist" aria-label={translate`Lower panel`} onKeyDown={(event) => moveSidebarTab(event, SIDEBAR_TABS.filter((tab) => tab !== layout.tab), lowerTab, setLowerTab, "lower-sidebar-tab")}>
+              <div className="sidebar-tab-list" style={{ "--tab-count": 2, "--tab-index": SIDEBAR_TABS.filter(tab => tab !== layout.tab).indexOf(lowerTab) } as React.CSSProperties} role="tablist" aria-label={translate`Lower panel`} onKeyDown={(event) => moveSidebarTab(event, SIDEBAR_TABS.filter((tab) => tab !== layout.tab), lowerTab, setLowerTab, "lower-sidebar-tab")}>
                 {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
                   <button key={t} id={`lower-sidebar-tab-${t}`} type="button" role="tab" aria-selected={lowerTab === t} aria-controls={`lower-sidebar-${t}`} tabIndex={lowerTab === t ? 0 : -1} onClick={() => setLowerTab(t)}>{TAB_NAME[t]}</button>
                 ))}
@@ -1078,6 +1101,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <Editor
             key={active}
             states={editorStates}
+            position={position}
+            onPosition={savePosition}
             path={active}
             text={activeView.snapshot.body}
             readOnly={activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)}
@@ -1295,7 +1320,7 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
   const tabs = SIDEBAR_TABS;
   return (
     <div className="sidebar-tabs">
-      <div className="sidebar-tab-list" role="tablist" aria-label={translate`Sidebar`} onKeyDown={(event) => moveSidebarTab(event, tabs, tab, onTab, "sidebar-tab")}>
+      <div className="sidebar-tab-list" style={{ "--tab-count": 3, "--tab-index": tabs.indexOf(tab) } as React.CSSProperties} role="tablist" aria-label={translate`Sidebar`} onKeyDown={(event) => moveSidebarTab(event, tabs, tab, onTab, "sidebar-tab")}>
         {tabs.map((t) => (
           <button
             key={t}
@@ -1357,11 +1382,12 @@ function InlineComposer({ editor, at, children }: { editor: React.RefObject<Edit
 function ProblemsButton({ diagnostics, pending, checking, open, setOpen }: { diagnostics: readonly WriterDiagnostic[]; pending: boolean; checking: boolean; open: boolean; setOpen(open: boolean): void }) {
   useLingui();
   if (!diagnostics.length) {
-    const label = pending ? translate`Dependencies not checked` : checking ? translate`Checking…` : translate`No manuscript problems`;
+    if (!pending && !checking) return null;
+    const label = pending ? translate`Dependencies not checked` : translate`Checking…`;
     return (
-      <span className={`bar-problems ${checking && !pending ? "is-checking" : "is-clear"}`} title={pending ? translate`Collection dependencies have not been checked yet` : checking ? translate`The line being typed is checked once typing pauses` : translate`No manuscript problems`}>
-        {pending || checking ? <span className="spinner" aria-hidden="true" /> : <CheckIcon />}
-        <span className={pending || checking ? "button-label" : "visually-hidden"}>{label}</span>
+      <span className={`bar-problems ${checking && !pending ? "is-checking" : ""}`} title={pending ? translate`Collection dependencies have not been checked yet` : translate`The line being typed is checked once typing pauses`}>
+        <span className="spinner" aria-hidden="true" />
+        <span className="button-label">{label}</span>
       </span>
     );
   }
@@ -1511,15 +1537,15 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onExport, canExport,
       >
         <MoreIcon />
       </button>
-      <Popover open={open} id={id} trigger={trigger} width={240} label={translate`More`} align="end" focus={`[role="menuitem"]`} onClose={(refocus) => {
+      <Popover open={open} id={id} trigger={trigger} width={240} label={translate`More`} align="end" focus={matchMedia("(pointer: coarse)").matches ? `[role="menuitem"]:not(.keyboard-only):not(:disabled)` : `[role="menuitem"]:not(:disabled)`} onClose={(refocus) => {
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
-          <button type="button" role="menuitem" className="menu-item is-row" onClick={run(onCommands)}>
+          <button type="button" role="menuitem" className="menu-item is-row keyboard-only" onClick={run(onCommands)}>
             <span><Trans>Commands</Trans></span>
             <kbd><Trans>{MOD_LABEL} K</Trans></kbd>
           </button>
-          <button type="button" role="menuitem" className="menu-item is-row" onClick={run(onShortcuts)}>
+          <button type="button" role="menuitem" className="menu-item is-row keyboard-only" onClick={run(onShortcuts)}>
             <span><Trans>Keyboard shortcuts</Trans></span>
             <kbd>?</kbd>
           </button>
@@ -1585,14 +1611,30 @@ function Divider({ split, grid, onChange }: { split: number; grid: React.RefObje
   );
 }
 
-/** Follows a primary-button drag from a resize handle, reporting the pointer's x. */
-function dragResize(e: React.PointerEvent<HTMLElement>, onMove: (clientX: number) => void): void {
+function LowerResizer({ split, onChange }: { split: number; onChange(split: number): void }) {
+  return <div className="lower-resizer" role="separator" aria-orientation="horizontal" aria-label={translate`Resize sidebar panels`} aria-valuemin={20} aria-valuemax={80} aria-valuenow={Math.round(split * 100)} tabIndex={0}
+    onDoubleClick={() => onChange(.5)}
+    onKeyDown={event => {
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") onChange(clampSplit(split + (event.key === "ArrowUp" ? -.05 : .05)));
+      else if (event.key === "Home" || event.key === "End") onChange(event.key === "Home" ? .2 : .8);
+      else return;
+      event.preventDefault();
+    }}
+    onPointerDown={event => {
+      const parent = event.currentTarget.parentElement!;
+      const tabs = parent.querySelector(".sidebar-tabs")!.getBoundingClientRect();
+      const height = parent.getBoundingClientRect().bottom - tabs.bottom - 7;
+      dragResize(event, clientY => onChange(clampSplit((clientY - tabs.bottom) / height)), true);
+    }} />;
+}
+
+function dragResize(e: React.PointerEvent<HTMLElement>, onMove: (client: number) => void, vertical = false): void {
   if (e.button !== 0) return;
   e.preventDefault();
   const el = e.currentTarget;
   el.setPointerCapture(e.pointerId);
   document.body.classList.add("is-resizing");
-  const move = (ev: PointerEvent) => onMove(ev.clientX);
+  const move = (ev: PointerEvent) => onMove(vertical ? ev.clientY : ev.clientX);
   const up = () => {
     el.removeEventListener("pointermove", move);
     el.removeEventListener("pointerup", up);

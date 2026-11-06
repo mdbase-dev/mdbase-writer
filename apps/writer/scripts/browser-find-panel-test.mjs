@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import {mkdir} from "node:fs/promises";
 import {chromium} from "playwright";
-const base = process.argv[2] ?? "http://127.0.0.1:48332/";
+const base = process.argv[2] ?? "http://127.0.0.1:5320/";
 const origin = new URL(base).origin;
 assert.ok(["127.0.0.1", "localhost", "[::1]"].includes(new URL(base).hostname));
 await mkdir("out", {recursive: true});
@@ -22,34 +22,30 @@ try {
       await page.keyboard.press("Control+f");
     }
     await panel.waitFor();
-    const geometry = await panel.locator("label").evaluateAll(labels => labels.map(label => {
-      const input = label.querySelector("input");
-      const text = [...label.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
-      const range = document.createRange();
-      range.selectNodeContents(text);
-      const box = input.getBoundingClientRect(), caption = range.getBoundingClientRect(), target = label.getBoundingClientRect();
-      return {text: label.innerText, width: box.width, gap: caption.left - box.right, center: Math.abs((caption.top + caption.bottom - box.top - box.bottom) / 2), targetHeight: target.height};
-    }));
-    assert.equal(geometry.length, 3);
-    for (const option of geometry) {
-      assert.ok(option.width <= 24, `${width}px stretched checkbox: ${JSON.stringify(option)}`);
-      assert.ok(option.gap >= 0 && option.gap <= 12, `${width}px separated label: ${JSON.stringify(option)}`);
-      assert.ok(option.center <= 6, `${width}px separate rows: ${JSON.stringify(option)}`);
-      if (width < 900) assert.ok(option.targetHeight >= 44, `${width}px small touch label: ${JSON.stringify(option)}`);
-    }
-    for (const name of ["match case", "regexp", "by word"]) {
-      const checkbox = panel.getByRole("checkbox", {name, exact: true});
-      const before = await checkbox.isChecked();
-      await panel.locator("label").filter({hasText: name}).click();
-      assert.equal(await checkbox.isChecked(), !before);
-      await checkbox.focus();
+    await page.keyboard.type("Darwin");
+    assert.equal(await panel.getByRole("textbox", {name: "Find", exact: true}).inputValue(), "Darwin");
+    assert.ok(await panel.evaluate(element => element.getBoundingClientRect().height < 62));
+    assert.equal(await panel.locator(".cm-button,.cm-textfield").count(), 0);
+    assert.equal(await panel.locator('button[name="close"]').evaluate(element => getComputedStyle(element).position), "static");
+    assert.ok(await panel.evaluate(element => element.querySelector("summary").getBoundingClientRect().right <= element.querySelector('[name="close"]').getBoundingClientRect().left));
+    await panel.locator("summary").click();
+    for (const name of ["Match case", "Regular expression", "Whole words"]) {
+      const option = panel.getByRole("button", {name, exact: true});
+      const before = await option.getAttribute("aria-pressed");
+      await option.click();
+      assert.notEqual(await option.getAttribute("aria-pressed"), before);
+      await option.focus();
       await page.keyboard.press("Space");
-      assert.equal(await checkbox.isChecked(), before);
+      assert.equal(await option.getAttribute("aria-pressed"), before);
     }
+    const options = await panel.locator(".find-options").boundingBox();
+    assert.ok(options.x >= 0 && options.x + options.width <= width + 1);
+    await panel.locator("summary").click();
     const bounds = await panel.boundingBox();
     assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= width + 1);
     await page.screenshot({path: `out/find-panel-${width}.png`});
-    console.log(`PASS ${width}px adjacent labels, label/keyboard toggles and panel fits`);
+    console.log(`PASS ${width}px single-row Find, named pointer/keyboard toggles and anchored options fit`);
+    await page.keyboard.press("Escape");
   }
 } catch (error) {
   await page.screenshot({path: "out/find-panel-failure.png"});

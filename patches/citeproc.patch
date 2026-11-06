@@ -1,0 +1,19 @@
+diff --git a/citeproc_commonjs.js b/citeproc_commonjs.js
+index 42f0b50109fd0d3aec77b124ab6bb4c590286fb3..8e88ac8ee5032aa95eea4bcf91f74f0070de8133 100644
+--- a/citeproc_commonjs.js
++++ b/citeproc_commonjs.js
+@@ -1803,6 +1803,14 @@ CSL.XmlJSON.prototype.getNodesByName = function (myjson,name,nameattrval,ret) {
+     if (!myjson || !myjson.children) {
+         return ret;
+     }
++    if (myjson.name === "style" && name === "macro") {
++        for (var child of myjson.children) {
++            if (child && child.name === "macro" && (!nameattrval || child.attrs.name === nameattrval)) {
++                ret.push(child);
++            }
++        }
++        return ret;
++    }
+     if (name === myjson.name) {
+         if (nameattrval) {
+             if (nameattrval === myjson.attrs.name) {

@@ -10,7 +10,7 @@ import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@co
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
 import { englishCodeMirrorPhrases, loadCodeMirrorPhrases } from "@mdbase-dev/i18n/codemirror";
 import { isLocale } from "@mdbase-dev/i18n";
-import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
+import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Text, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -26,6 +26,8 @@ import { writerLanguage } from "./language.js";
 import { livePreview as livePreviewExtension, refreshLivePreview } from "./live-preview.js";
 import { slashCommands, type InsertCommand } from "./slash.js";
 import { nextFootnoteId, type Snippet } from "./snippets.js";
+import type { WritingPosition } from "../ui/recent.js";
+import { searchPanel } from "./search-panel.js";
 
 const remote = Annotation.define<boolean>();
 // WorkspaceView keys editors by chapter. Keep resolved phrases outside that
@@ -61,6 +63,8 @@ export interface RetainedEditor {
 export interface EditorProps {
   /** Scoped to one workspace, retaining history and selection between chapters. */
   states?: Map<string, RetainedEditor>;
+  position?: WritingPosition | undefined;
+  onPosition?(position: WritingPosition): void;
   path: string;
   text: string;
   readOnly: boolean;
@@ -94,7 +98,7 @@ export interface EditorProps {
   onSelectionAction?(action: SelectionAction, selected: string): void;
 }
 
-export const Editor = memo(function Editor({ states, path, text, readOnly, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
+export const Editor = memo(function Editor({ states, position, onPosition, path, text, readOnly, livePreview = true, onImageFiles, diagnostics, completion, inserts, insight, onChange, onReady, onCursor, onFollow, chapters, onFindSource, anchors, activeComment = null, onAnchor, anchorCard, onSelectionAction }: EditorProps) {
   const { i18n } = useLingui();
   const locale = isLocale(i18n.locale) ? i18n.locale : "en";
   const language = useRef(new Compartment());
@@ -157,7 +161,7 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
           closeBrackets(),
           highlightActiveLine(),
           highlightSelectionMatches(),
-          search({ top: true }),
+          search({ top: true, createPanel: searchPanel }),
           lintGutter(),
           autocompletion({ override: [slashCommands(() => latest.current.inserts ?? []), writerCompletions(() => latest.current.completion)] }),
           mdbasePopupTheme,
@@ -187,14 +191,16 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
           }),
         ];
     const retained = states?.get(path);
+    const doc = Text.of(text.split(/\r\n?|\n/));
     const state = retained
       ? retained.state.update({ effects: StateEffect.reconfigure.of(extensions) }).state
-      : EditorState.create({ doc: text, extensions });
+      : EditorState.create({ doc, extensions, selection: position?.path === path ? { anchor: Math.min(doc.length, position.anchor), head: Math.min(doc.length, position.head) } : { anchor: Math.min(doc.length, /^(?:\s*\n)*(?:#{1,6}[^\n]*\n(?:[ \t]*\n)*)?/.exec(doc.toString())?.[0].length ?? 0) } });
     // CodeMirror restores against its measured viewport; assigning scrollTop in
     // an animation frame is clamped while long documents are still virtualised.
-    const v = new EditorView({ parent: host.current, state, ...(retained ? { scrollTo: retained.scroll } : {}) });
+    const restored = position?.path === path ? position : undefined;
+    const v = new EditorView({ parent: host.current, state, ...(retained ? { scrollTo: retained.scroll } : restored ? { scrollTo: EditorView.scrollIntoView(Math.min(doc.length, restored.top), { y: "start", yMargin: restored.offset }) } : {}) });
     let measured = false;
-    v.requestMeasure({ read: () => undefined, write: () => { measured = true; } });
+    v.requestMeasure({ read: () => { measured = true; } });
     view.current = v;
     latest.current.onCursor?.(v.state.selection.main.head);
     shownDiagnostics.current = "";
@@ -263,10 +269,22 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
         v.focus();
       },
     });
+    const savePosition = () => {
+      if (!measured) return;
+      const edge = v.scrollDOM.getBoundingClientRect();
+      const top = v.posAtCoords({ x: edge.left, y: edge.top + v.defaultLineHeight / 2 });
+      if (top === null) return;
+      const coordinates = v.coordsAtPos(top);
+      if (!coordinates) return;
+      onPosition?.({ path, anchor: v.state.selection.main.anchor, head: v.state.selection.main.head, top, offset: coordinates.top - edge.top });
+    };
+    window.addEventListener("pagehide", savePosition);
     return () => {
       // React's development setup/cleanup/setup must not replace the retained
       // scroll target with zero before CodeMirror has had a layout pass.
-      states?.set(path, { state: v.state, scroll: retained && !measured ? retained.scroll : v.scrollSnapshot() });
+      if (measured || retained) states?.set(path, { state: v.state, scroll: retained && !measured ? retained.scroll : v.scrollSnapshot() });
+      savePosition();
+      window.removeEventListener("pagehide", savePosition);
       v.destroy();
       view.current = null;
     };
@@ -305,25 +323,26 @@ export const Editor = memo(function Editor({ states, path, text, readOnly, liveP
     const v = view.current;
     if (!v) return;
     const current = v.state.doc.toString();
-    if (current === text) {
+    const incoming = text.replace(/\r\n?/g, "\n");
+    if (current === incoming) {
       emitted.current = [];
       return;
     }
-    const echo = emitted.current.indexOf(text);
+    const echo = emitted.current.indexOf(incoming);
     if (echo >= 0) {
       emitted.current = emitted.current.slice(echo + 1);
       return;
     }
     emitted.current = [];
     let from = 0;
-    while (from < current.length && from < text.length && current[from] === text[from]) from++;
+    while (from < current.length && from < incoming.length && current[from] === incoming[from]) from++;
     let endA = current.length;
-    let endB = text.length;
-    while (endA > from && endB > from && current[endA - 1] === text[endB - 1]) {
+    let endB = incoming.length;
+    while (endA > from && endB > from && current[endA - 1] === incoming[endB - 1]) {
       endA--;
       endB--;
     }
-    v.dispatch({ changes: { from, to: endA, insert: text.slice(from, endB) }, annotations: [remote.of(true), Transaction.addToHistory.of(false)] });
+    v.dispatch({ changes: { from, to: endA, insert: incoming.slice(from, endB) }, annotations: [remote.of(true), Transaction.addToHistory.of(false)] });
   }, [text]);
 
   useEffect(() => {

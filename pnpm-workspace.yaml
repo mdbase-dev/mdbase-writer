@@ -15,3 +15,4 @@ onlyBuiltDependencies:
 
 patchedDependencies:
   '@mdbase-dev/ui@0.1.0-beta.147': patches/@mdbase-dev__ui@0.1.0-beta.147.patch
+  citeproc: patches/citeproc.patch

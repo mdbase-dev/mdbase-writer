@@ -2,38 +2,186 @@ diff --git a/css/collections.css b/css/collections.css
 index 02b9c582c2f804854d7316971c9d6ed20443d93c..417b5cdd42dea063469071f427cb6bf64f7e2177 100644
 --- a/css/collections.css
 +++ b/css/collections.css
-@@ -616,7 +616,7 @@
-   gap: 4px;
- }
-
+@@ -619 +619 @@
 -.mdbase-collections-setup-section h3 {
 +.mdbase-collections-setup-section h2 {
-   margin: 0;
-   color: var(--_text-soft);
-   font-size: var(--_font-size-caption);
+diff --git a/dist/CommandPalette.d.ts b/dist/CommandPalette.d.ts
+index 5b89ba1a6a0bb9cf1d6d90166f8d1e1ba2327ca1..c2509ed07befce3ac5fa2a1249158da154047cf5 100644
+--- a/dist/CommandPalette.d.ts
++++ b/dist/CommandPalette.d.ts
+@@ -29,6 +29,7 @@ export declare function matchingCommands(commands: readonly Command[], query: st
+  */
+ export declare function CommandPalette({ open, commands, onClose, label, placeholder, showAll, groupLabel }: {
+     readonly open: boolean;
++    readonly present?: boolean;
+     readonly commands: readonly Command[];
+     readonly onClose: () => void;
+     readonly label?: string | undefined;
 diff --git a/dist/CommandPalette.js b/dist/CommandPalette.js
-index bcfea34790878f2f3a54be5dbc0e0e0e34f3a214..6e44cd93e0f9d1d2f70760fe5a387aa1a6f03be5 100644
+index bcfea34790878f2f3a54be5dbc0e0e0e34f3a214..03aa8095a02b0152062eea2ee7b9a04594fbcdcb 100644
 --- a/dist/CommandPalette.js
 +++ b/dist/CommandPalette.js
-@@ -92,13 +92,15 @@ function OpenCommandPalette({
+@@ -1,7 +1,7 @@
+ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+ import { i18n as _i18n } from "@lingui/core";
+ import { useLocaleRevision } from "./i18n.js";
+-import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
++import { Fragment, useEffect, useLayoutEffect, useId, useMemo, useRef, useState } from "react";
+ export function isApplePlatform() {
+   return typeof navigator !== "undefined" && /Mac|iPhone|iPad/u.test(navigator.platform || navigator.userAgent);
+ }
+@@ -52,6 +52,7 @@ export function matchingCommands(commands, query, showAll = []) {
+  */
+ export function CommandPalette({
+   open,
++  present = open,
+   commands,
+   onClose,
+   label = _i18n._(
+@@ -70,7 +71,8 @@ export function CommandPalette({
+   groupLabel
+ }) {
+   useLocaleRevision();
+-  return open ? _jsx(OpenCommandPalette, {
++  return present ? _jsx(OpenCommandPalette, {
++    open,
+     commands: commands,
+     onClose: onClose,
+     label: label,
+@@ -80,6 +82,7 @@ export function CommandPalette({
+   }) : null;
+ }
+ function OpenCommandPalette({
++  open,
+   commands,
+   onClose,
+   label,
+@@ -92,20 +95,29 @@ function OpenCommandPalette({
    const [active, setActive] = useState(0);
    const inputRef = useRef(null);
    const paletteRef = useRef(null);
-+  const activated = useRef(false);
++  const previous = useRef(null);
    const matches = useMemo(() => matchingCommands(commands, query, showAll), [commands, query, showAll]);
-   useEffect(() => {
-     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-     globalThis.setTimeout(() => inputRef.current?.focus(), 0);
+-  useEffect(() => {
+-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+-    globalThis.setTimeout(() => inputRef.current?.focus(), 0);
 -    return () => previous?.focus();
-+    return () => { if (!activated.current || document.activeElement === document.body) previous?.focus(); };
-   }, []);
+-  }, []);
++  const restore = () => {
++    if (paletteRef.current?.closest("dialog")?.contains(document.activeElement) || document.activeElement === document.body) previous.current?.focus();
++  };
++  useLayoutEffect(() => {
++    if (!open) return;
++    setQuery("");
++    setActive(0);
++    previous.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
++    inputRef.current?.focus();
++    return restore;
++  }, [open]);
    const run = (command, alternate = false) => {
-+    activated.current = true;
++    restore();
      onClose();
      (alternate && command.alternate ? command.alternate.run : command.run)();
    };
+   const hintId = useId();
+   return _jsxs("dialog", {
+     className: "mdbase-command-backdrop",
+-    open: true,
++    open,
++    inert: !open,
+     children: [_jsx("button", {
+       className: "mdbase-command-dismiss",
+       type: "button",
+@@ -128,6 +140,7 @@ function OpenCommandPalette({
+       onKeyDown: event => {
+         if (event.key === "Escape") {
+           event.preventDefault();
++          restore();
+           onClose();
+         } else if (event.key === "Tab") {
+           trapFocus(event, paletteRef.current);
+diff --git a/dist/Dialog.d.ts b/dist/Dialog.d.ts
+index 16ad0cc9e6ba112f4e42018433a0ea3e7565b524..c8b498286ccbd9fef21c4ec3177574c8218c452e 100644
+--- a/dist/Dialog.d.ts
++++ b/dist/Dialog.d.ts
+@@ -5,6 +5,7 @@ import { type JSX, type ReactNode } from "react";
+  */
+ export declare function Dialog({ open, onClose, title, className, closeDisabled, children }: {
+     readonly open: boolean;
++    readonly present?: boolean;
+     readonly onClose: () => void;
+     readonly title: string;
+     readonly className?: string | undefined;
+diff --git a/dist/Dialog.js b/dist/Dialog.js
+index c5fd302474e8ca3bd7186b3c67e888d51f735b7c..1e7fcd8708ddd0b170debe6bb660d0562d7663bf 100644
+--- a/dist/Dialog.js
++++ b/dist/Dialog.js
+@@ -8,6 +8,7 @@ import { useLayoutEffect, useRef } from "react";
+  */
+ export function Dialog({
+   open,
++  present = open,
+   onClose,
+   title,
+   className,
+@@ -17,18 +18,32 @@ export function Dialog({
+   useLocaleRevision();
+   const ref = useRef(null);
+   useLayoutEffect(() => {
++    if (!open) return;
+     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+     return () => {
+       ref.current?.close();
+       previous?.focus();
+     };
+-  }, []);
++  }, [open]);
+   // A layout effect, so the dialog is open before fields inside it ask to be focused.
+   useLayoutEffect(() => {
+     const dialog = ref.current;
+     if (!dialog) return;
+-    if (open && !dialog.open) dialog.showModal();else if (!open && dialog.open) dialog.close();
+-  }, [open]);
++    if (open) {
++      dialog.inert = false;
++      if (dialog.hasAttribute('popover')) dialog.hidePopover();
++      dialog.removeAttribute('popover');
++      if (!dialog.open) dialog.showModal();
++    } else if (present) {
++      dialog.inert = true;
++      if (dialog.open) dialog.close();
++      dialog.setAttribute('popover', 'manual');
++      dialog.showPopover();
++    } else {
++      if (dialog.hasAttribute('popover')) dialog.hidePopover();
++      if (dialog.open) dialog.close();
++    }
++  }, [open, present]);
+   return _jsx("dialog", {
+     ref: ref,
+     className: ["mdbase-dialog", className].filter(Boolean).join(" "),
+@@ -36,15 +51,15 @@ export function Dialog({
+     onKeyDown: event => event.stopPropagation(),
+     onCancel: event => {
+       event.preventDefault();
+-      if (!closeDisabled) onClose();
++      if (open && !closeDisabled) onClose();
+     },
+     onClose: () => {
+-      if (!closeDisabled) onClose();
++      if (open && !ref.current?.open && !closeDisabled) onClose();
+     },
+     onMouseDown: event => {
+-      if (!closeDisabled && event.target === event.currentTarget) onClose();
++      if (!closeDisabled && event.target === event.currentTarget) { event.preventDefault(); onClose(); }
+     },
+-    children: open && _jsxs("div", {
++    children: present && _jsxs("div", {
+       className: "mdbase-dialog-body",
+       children: [_jsxs("header", {
+         className: "mdbase-dialog-header",
 diff --git a/dist/collections/CollectionGate.js b/dist/collections/CollectionGate.js
-index 989230686789b006a4ecc7a07d31310c33416d74..ac685fae1075946b1114ac93c74fb483699f65b8 100644
+index 989230686789b006a4ecc7a07d31310c33416d74..fc220fe35a502bae91d5d1f26fedc17beac4b38a 100644
 --- a/dist/collections/CollectionGate.js
 +++ b/dist/collections/CollectionGate.js
 @@ -158,7 +158,7 @@ function GateScreen({
@@ -45,7 +193,7 @@ index 989230686789b006a4ecc7a07d31310c33416d74..ac685fae1075946b1114ac93c74fb483
      ref: root,
      className: "mdbase-collections mdbase-collections-gate",
      "data-layout": layout,
-@@ -182,7 +182,7 @@ function GateScreen({
+@@ -182,10 +182,10 @@ function GateScreen({
          children: headingText
        }), opening ? _jsx(OpeningScreen, {
          app: options.app,
@@ -53,7 +201,11 @@ index 989230686789b006a4ecc7a07d31310c33416d74..ac685fae1075946b1114ac93c74fb483
 +        layout: "panel",
          title: headingText,
          detail: lead ?? undefined
-       }) : lead && _jsx("p", {
+-      }) : lead && _jsx("p", {
++      }) : lead && view.kind !== "needs_setup" && _jsx("p", {
+         className: "mdbase-collections-lead",
+         children: lead
+       }), _jsx(GateBody, {
 diff --git a/dist/collections/SetupReview.js b/dist/collections/SetupReview.js
 index e22bb3aa78c3694731df6238a5d4cd4265f2f8c6..a4bef8823f523262666d3d0b72a3b72d6ea8ba20 100644
 --- a/dist/collections/SetupReview.js

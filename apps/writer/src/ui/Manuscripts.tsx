@@ -78,8 +78,7 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
   }, [backend, current]);
   const since = useMemo(() => path ? recentManuscripts(localNamespace(backend)).find(entry => entry.path === path)?.at : undefined, [backend, path]);
   useEffect(() => {if (path) recordOpened(localNamespace(backend), path);}, [backend, path]);
-  if (!path) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} returnPath={lastPath.current} />;
-  if (!current) return null;
+  if (!path || !current) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} returnPath={lastPath.current} opening={Boolean(path)} />;
   return <>
     <WorkspaceView key={current.main} workspace={current} since={since} onClose={force => setPath(null, force)} />
     <Dialog open={Boolean(navigation)} onClose={() => {navigation?.finish(false); setNavigation(null);}} title={t`Some changes are not saved`}>

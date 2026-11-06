@@ -469,6 +469,10 @@ msgid "Choose collection"
 msgstr "コレクションを選択"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Choose export format"
+msgstr "書き出し形式を選択"
+
+#: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "引用"
 
@@ -531,6 +535,10 @@ msgstr "幅に合わせる"
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr "閉じる（Escape）"
+
+#: src/editor/search-panel.ts
+msgid "Close Find"
+msgstr "検索を閉じる"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
@@ -688,6 +696,10 @@ msgid "Cross-reference"
 msgstr "相互参照"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Cycle editor and preview"
+msgstr "エディターとプレビューを切り替え"
+
+#: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
 msgstr "ダーク"
@@ -714,8 +726,12 @@ msgid "Deleted elsewhere"
 msgstr "別の場所で削除されました"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Demo · resets on reload"
-msgstr "デモ · 再読み込みでリセット"
+msgid "Demo"
+msgstr "デモ"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload."
+msgstr "デモ原稿は再読み込みするとリセットされます。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
@@ -736,6 +752,10 @@ msgstr "切り離されました：テキストが変更されています"
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
 msgstr "閉じる"
+
+#: src/ui/Shortcuts.tsx
+msgid "Dismiss the current menu or dialog"
+msgstr "現在のメニューまたはダイアログを閉じる"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -777,6 +797,7 @@ msgstr "ドラッグまたはAlt-↑/↓で並べ替え"
 msgid "edited {0}"
 msgstr "{0}に編集"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "エディター"
@@ -891,6 +912,10 @@ msgstr "図には PNG、JPEG、GIF、SVG、WebP 形式の画像を指定して�
 msgid "Filter collections"
 msgstr "コレクションを絞り込む"
 
+#: src/editor/search-panel.ts
+msgid "Find"
+msgstr "検索"
+
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
 msgstr "原稿を検索"
@@ -915,6 +940,10 @@ msgstr "この箇所の出典を検索し、その後に引用を挿入"
 #: src/ui/WorkspaceView.tsx
 msgid "find all chapters"
 msgstr "すべての章を検索"
+
+#: src/ui/Shortcuts.tsx
+msgid "Find and replace"
+msgstr "検索と置換"
 
 #: src/editor/fixes.ts
 msgid "Find in Sources"
@@ -976,11 +1005,16 @@ msgstr "コレクションから"
 msgid "Give the manuscript a title; it can be changed later."
 msgstr "原稿にタイトルを付けてください。後から変更できます。"
 
+#: src/ui/Shortcuts.tsx
+msgid "Go to line"
+msgstr "指定行へ移動"
+
 #: src/ui/WorkspaceView.tsx
 msgid "grid columns rows"
 msgstr "グリッド、列、行"
 
 #: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "ヘルプ"
@@ -1060,10 +1094,6 @@ msgstr "{0}{1}{2}{3}{4}{5} 内"
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "ハイライト内 <0>{0}</0>{1}"
 
-#: src/ui/Shortcuts.tsx
-msgid "In the editor, press Tab to move to the next control."
-msgstr "エディターで Tab を押すと、次のコントロールに移動します。"
-
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
 msgstr "原稿全体（引用、コード、数式は含みません）"
@@ -1100,6 +1130,10 @@ msgstr "カーソル位置に [@{0}] を挿入（Enter）"
 #: src/ui/comments.ts
 msgid "Insert {0}"
 msgstr "{0}を挿入"
+
+#: src/ui/Shortcuts.tsx
+msgid "Insert a blank line"
+msgstr "空行を挿入"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
@@ -1153,6 +1187,10 @@ msgstr "そのまま保持"
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "キーボードショートカット"
+
+#: src/ui/Shortcuts.tsx
+msgid "Keyboard shortcuts outside text fields"
+msgstr "テキスト欄の外で使うショートカット"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -1273,6 +1311,10 @@ msgstr "原稿"
 msgid "Markdown for {path}"
 msgstr "{path}のMarkdown"
 
+#: src/editor/search-panel.ts
+msgid "Match case"
+msgstr "大文字と小文字を区別"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Matching sources"
 msgstr "一致する出典"
@@ -1343,6 +1385,18 @@ msgstr "その他"
 msgid "Move author {0} up"
 msgstr "著者{0}を上へ移動"
 
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter down"
+msgstr "選択中の章を下に移動"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter up"
+msgstr "選択中の章を上に移動"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move to the next control"
+msgstr "次の操作項目へ移動"
+
 #: src/ui/Settings.tsx
 msgid "Move up"
 msgstr "上へ移動"
@@ -1395,6 +1449,11 @@ msgstr "次の引用"
 msgid "Next comment"
 msgstr "次のコメント"
 
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Next match"
+msgstr "次の一致"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Next problem"
 msgstr "次の問題"
@@ -1423,10 +1482,6 @@ msgstr "コレクション内にテンプレート{value}に一致するファ�
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
 msgstr "「{filter}」に一致する原稿はありません。"
-
-#: src/ui/WorkspaceView.tsx
-msgid "No manuscript problems"
-msgstr "原稿に問題はありません"
 
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
@@ -1657,6 +1712,10 @@ msgstr "コレクションを開いています"
 msgid "Opening…"
 msgstr "開いています…"
 
+#: src/editor/search-panel.ts
+msgid "Options"
+msgstr "オプション"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Or type <0>/</0> in the text to pick one there."
 msgstr "または本文で<0>/</0>と入力して、そこで選択できます。"
@@ -1669,6 +1728,7 @@ msgstr "またはすでにあるノートを使用"
 msgid "Other notes"
 msgstr "その他のノート"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
 msgstr "アウトライン"
@@ -1749,6 +1809,15 @@ msgstr "前の引用"
 msgid "Previous comment"
 msgstr "前のコメント"
 
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Previous match"
+msgstr "前の一致"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Previous problem"
+msgstr "前の問題"
+
 #: src/ui/ConnectGate.tsx
 msgid "Previously connected"
 msgstr "以前に接続したコレクション"
@@ -1797,6 +1866,10 @@ msgstr "再接続中"
 msgid "Recovering save…"
 msgstr "保存内容を復元しています…"
 
+#: src/ui/Shortcuts.tsx
+msgid "Redo"
+msgstr "やり直す"
+
 #: src/ui/WorkspaceView.tsx
 msgid "refer section figure table label"
 msgstr "参照 セクション 図 表 ラベル"
@@ -1804,6 +1877,10 @@ msgstr "参照 セクション 図 表 ラベル"
 #: src/editor/live-preview.ts
 msgid "Refer to this with @{id}"
 msgstr "@{id}で参照"
+
+#: src/editor/search-panel.ts
+msgid "Regular expression"
+msgstr "正規表現"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reject"
@@ -1827,10 +1904,15 @@ msgstr "削除"
 msgid "Remove author {0}"
 msgstr "著者{0}を削除"
 
+#: src/ui/Shortcuts.tsx
+msgid "Rename the focused chapter"
+msgstr "選択中の章の名前を変更"
+
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "再度開く"
 
+#: src/editor/search-panel.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "置換"
@@ -1840,6 +1922,10 @@ msgstr "置換"
 #: src/ui/comments.ts
 msgid "Replace {0} with {1}"
 msgstr "{0}を{1}に置換"
+
+#: src/editor/search-panel.ts
+msgid "Replace all"
+msgstr "すべて置換"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace with"
@@ -1853,6 +1939,10 @@ msgstr "「{0}」に置換"
 #: src/ui/CommentsPanel.tsx
 msgid "Reply"
 msgstr "返信"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Resize sidebar panels"
+msgstr "サイドバーのパネルサイズを変更"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the editor and preview"
@@ -1965,10 +2055,18 @@ msgstr "今すぐ保存"
 msgid "Saved"
 msgstr "保存済み"
 
+#: src/ui/records.ts
+msgid "Saved on this device"
+msgstr "このデバイスに保存済み"
+
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
 msgid "Saved on this device; waiting for sync"
 msgstr "このデバイスに保存済みです。同期を待っています。"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Saving to collection…"
+msgstr "コレクションに保存中…"
 
 #: src/ui/records.ts
 msgid "Saving…"
@@ -1979,6 +2077,9 @@ msgid "Search by author, title, year or key"
 msgstr "著者名、タイトル、年、キーで検索"
 
 #: src/ui/ManuscriptSearch.tsx
+msgid "Search outline"
+msgstr "アウトラインを検索"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "原稿を検索"
@@ -1991,6 +2092,10 @@ msgstr "セクション"
 #: src/ui/CommentsPanel.tsx
 msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
 msgstr "テキストを選択し、<0>{MOD_LABEL}-{ALT_LABEL}-M</0>を押してコメントするか、<1>{MOD_LABEL}-{ALT_LABEL}-S</1>を押して編集を提案してください。"
+
+#: src/ui/Shortcuts.tsx
+msgid "Select next occurrence"
+msgstr "次の出現箇所を選択"
 
 #: src/editor/selection-bar.tsx
 msgid "Selection"
@@ -2081,6 +2186,10 @@ msgstr "タイプのないノート{0}件をすべて表示"
 #: src/ui/WorkspaceView.tsx
 msgid "Show comments"
 msgstr "コメントを表示"
+
+#: src/ui/Shortcuts.tsx
+msgid "Show completions"
+msgstr "補完候補を表示"
 
 #: src/preview/Preview.tsx
 msgid "Show in Sources"
@@ -2499,6 +2608,10 @@ msgstr "コレクション内の Typst テンプレート"
 msgid "Unclosed $$ math block."
 msgstr "$$数式ブロックが閉じられていません。"
 
+#: src/ui/Shortcuts.tsx
+msgid "Undo"
+msgstr "元に戻す"
+
 #: src/editor/insight.ts
 msgid "Unknown"
 msgstr "不明"
@@ -2576,6 +2689,10 @@ msgstr "mdbase connect を待っています…"
 #: src/ui/CommentsPanel.tsx
 msgid "Whole text"
 msgstr "テキスト全体"
+
+#: src/editor/search-panel.ts
+msgid "Whole words"
+msgstr "単語全体"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"

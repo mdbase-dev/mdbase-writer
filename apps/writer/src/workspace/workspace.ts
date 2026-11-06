@@ -58,6 +58,7 @@ export type SessionSnapshot = RecordSessionSnapshot;
 export interface RecordView {
   readonly path: string;
   readonly snapshot: SessionSnapshot;
+  readonly localSaved?: boolean;
 }
 
 export type LoadState = { readonly phase: "loading" | "ready" | "failed"; readonly problem?: string };
@@ -499,12 +500,12 @@ export class ManuscriptWorkspace {
 
   private onSession(path: string, raw: SessionSnapshot): void {
     if (this.disposed) return;
-    this.persistDraft(path, raw);
+    const localSaved = this.persistDraft(path, raw);
     const annotationFields = this.annotationFields(path, raw);
     const annotation = raw.state !== "deleted" && annotationFields["source"] && !this.current.annotationPaths.has(path) ? { annotationPaths: new Set([...this.current.annotationPaths, path]) } : {};
     const snapshot = { ...raw, frontmatter: manuscriptFrontmatter(raw.frontmatter, { ...annotationFields, ...this.fieldsFor(raw.record.types) }) };
     const records = new Map(this.current.records);
-    records.set(path, { path, snapshot });
+    records.set(path, { path, snapshot, localSaved });
     // Forward only content changes; save-state transitions don't need a compile.
     const key = `${snapshot.body}\u0000${JSON.stringify(snapshot.frontmatter)}\u0000${snapshot.state === "deleted"}`;
     if (this.sent.get(path) === key) {
@@ -526,6 +527,7 @@ export class ManuscriptWorkspace {
   }
 
   private openEmbeds(path: string, body: string): void {
+    if (!body.includes("![[")) return;
     const candidates = this.current.recordIndex;
     for (const embed of this.translated(path, body).includes) {
       const target = resolveLinkTarget(embed.target, path, candidates);
@@ -551,7 +553,7 @@ export class ManuscriptWorkspace {
       const view = this.current.records.get(path);
       if (path !== this.main && this.isQuotation(path)) return;
       order.push(path);
-      if (!view) return;
+      if (!view || !view.snapshot.body.includes("![[")) return;
       for (const embed of this.translated(path, view.snapshot.body).includes) {
         const target = resolveLinkTarget(embed.target, path, candidates);
         if (target) visit(target);
@@ -562,13 +564,15 @@ export class ManuscriptWorkspace {
     return this.lastOrder;
   }
 
-  private persistDraft(path: string, raw: SessionSnapshot): void {
-    if (this.current.recoveredDrafts.has(path)) return;
+  private persistDraft(path: string, raw: SessionSnapshot): boolean {
+    if (this.current.recoveredDrafts.has(path)) return false;
     const staged = this.stagedSettings.get(path);
     if (staged || raw.dirty || raw.state === "conflict" || raw.state === "error" || raw.state === "deleted" && raw.body !== raw.record.body) {
       const stored = this.drafts.write(path, { version: 1, body: raw.body, frontmatter: { ...raw.frontmatter, ...staged }, baseBody: raw.record.body ?? "", baseFrontmatter: raw.record.frontmatter, revision: raw.record.revision, updated: new Date().toISOString() });
       if (!stored) this.update({ draftProblem: t`Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails.` });
+      return stored;
     } else this.drafts.remove(path);
+    return false;
   }
 
   private onResult(result: CompileResult): void {
@@ -637,6 +641,7 @@ export class ManuscriptWorkspace {
   dependencyDiagnostics(): WriterDiagnostic[] {
     const diagnostics: WriterDiagnostic[] = [];
     if (this.current.indexLoad.phase !== "ready") return diagnostics;
+    if (!this.current.assetProblems.size && !this.current.recordProblems.size) return diagnostics;
     const candidates = this.current.fileIndex;
     const recordPaths = this.current.recordIndex;
     for (const [path, view] of this.current.records) {

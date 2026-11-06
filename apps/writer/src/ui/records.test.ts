@@ -17,14 +17,26 @@ it("keeps every unsettled save state visible on phones", () => {
     expect(notice.shortLabel).toBeTruthy();
     expect(notice.tone).not.toBe("saved");
   }
-  expect(workspaceSaveNotice("saved_on_device", false).label).toBe("Saved on this device; waiting for sync");
+  expect(workspaceSaveNotice("saved_on_device", false).label).toBe("Saving…");
+  expect(workspaceSaveNotice("saved_on_device", false, null, true).label).toBe("Saved on this device; waiting for sync");
 });
 
 it("never announces remote success while offline or holding local-only changes", () => {
   expect(workspaceSaveNotice("saved", false, "offline")).toEqual({ tone: "pending", label: "Offline", shortLabel: "Offline" });
-  expect(workspaceSaveNotice("saved_on_device", false, "offline")).toEqual({ tone: "pending", label: "Offline · saved on this device; waiting for sync", shortLabel: "Offline · on device, pending sync" });
-  expect(workspaceSaveNotice("saved_on_device", false, "reconnecting").shortLabel).toBe("On device · pending sync");
+  expect(workspaceSaveNotice("saved_on_device", false, "offline", true)).toEqual({ tone: "pending", label: "Offline · saved on this device; waiting for sync", shortLabel: "Offline · on device, pending sync" });
+  expect(workspaceSaveNotice("saved_on_device", false, "reconnecting", true).shortLabel).toBe("On device · pending sync");
   expect(workspaceSaveNotice("saved", false, "saved_on_device").tone).toBe("pending");
   expect(workspaceSaveNotice("error", false, "offline")).toEqual(workspaceSaveNotice("error", false));
   expect(workspaceSaveNotice("conflict", false, "offline")).toEqual(workspaceSaveNotice("conflict", false));
+});
+
+it("only acknowledges a committed local draft, including settled SDK local-only states", () => {
+  for (const state of ["unsaved", "saving", "saved_on_device"] as const) {
+    for (const connection of [null, "offline", "reconnecting", "saved_on_device"] as const) {
+      expect(workspaceSaveNotice(state, false, connection, false).label).not.toMatch(/saved on this device/i);
+      expect(workspaceSaveNotice(state, false, connection, true).label).toMatch(/saved on this device/i);
+    }
+  }
+  expect(workspaceSaveNotice("recovery", false, null, true).label).toBe("Recovering save…");
+  expect(workspaceSaveNotice("saving", true, null, true).label).toBe("Review local drafts");
 });

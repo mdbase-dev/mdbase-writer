@@ -16,3 +16,10 @@ it("preserves named links and still strips unsafe hrefs and active content", () 
   expect(layer.querySelectorAll("[href]")).toHaveLength(1);
   expect(layer.querySelector("script")).toBeNull();
 });
+
+it("keeps safe links in the tab order but removes text-layer tab stops", () => {
+  const layer = semanticLayer('<div tabindex="0"><a tabindex="-1" href="https://example.com">Paper</a><span tabindex="0">Text</span></div>');
+  expect(layer.querySelector("a")?.tabIndex).toBe(0);
+  expect(layer.querySelectorAll("[tabindex]")).toHaveLength(0);
+  expect(layer.querySelector("span")?.tabIndex).toBe(-1);
+});

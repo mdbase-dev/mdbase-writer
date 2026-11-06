@@ -15,7 +15,7 @@ it.each([true, false])("ignores obsolete join-lines preference %s and preserves 
 });
 
 describe("gridFor", () => {
-  it("keeps the same tracks and areas across views so changes can interpolate", () => {
+  it("keeps pane identities at their final-layout tracks across views", () => {
     const grids = (["write", "both", "preview"] as const).map(view => gridFor({ ...DEFAULT_LAYOUT, view }));
     expect(new Set(grids.map(grid => grid.areas)).size).toBe(1);
     expect(grids.every(grid => (grid.columns.match(/minmax/g) ?? []).length === 2)).toBe(true);
