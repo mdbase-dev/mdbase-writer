@@ -18,7 +18,7 @@ import { equationSnippet, figureSnippet, tableSnippet } from "../editor/snippets
 import type { InsertCommand } from "../editor/slash.js";
 import type { SelectionAction } from "../editor/selection-bar.js";
 import { authorYear } from "../editor/library-search.js";
-import { MOD_LABEL, referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget } from "../editor/insight.js";
+import { referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
 import { formatNumber } from "../i18n/presentation.js";
@@ -980,7 +980,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       ref={grid}
       aria-labelledby="manuscript-title"
       className={`workspace pane-${pane} view-${layout.view}${layout.sidebar ? "" : " no-sidebar"}`}
-      style={{ "--grid-columns": columns, "--grid-areas": areas } as React.CSSProperties}
+      style={{ gridTemplateColumns: narrow ? undefined : columns, gridTemplateAreas: narrow ? undefined : areas }}
     >
       <div className="visually-hidden problem-announcement" aria-live="polite" aria-atomic="true">{problemAnnouncement && <span key={problemAnnouncement.sequence}>{problemAnnouncement.message}</span>}</div>
       <InTopbar>
@@ -1381,7 +1381,7 @@ function SidebarTabs({ tab, onTab, sources, comments, commentsTitle, split, onSp
             aria-controls={`sidebar-${t}`}
             tabIndex={tab === t ? 0 : -1}
             onClick={() => onTab(t)}
-            title={t === "sources" ? translate`Find a source (${MOD_LABEL}-Shift-E)` : t === "comments" ? translate`${commentsTitle} (${MOD_LABEL}-Shift-M)` : translate`Outline, and search the manuscript (${MOD_LABEL}-Shift-F)`}
+            title={t === "sources" ? translate`Find a source (${shortcutLabel("mod+shift+e")})` : t === "comments" ? translate`${commentsTitle} (${shortcutLabel("mod+shift+m")})` : translate`Outline, and search the manuscript (${shortcutLabel("mod+shift+f")})`}
           >
             {TAB_NAME[t]}
             {t === "sources" && sources > 0 && <span className="tab-count">{sources}</span>}
@@ -1542,7 +1542,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           aria-controls={open ? id : undefined}
           aria-label={translate`Export formats`}
           onClick={() => setOpen(!open)}
-          title={translate`Export formats (${MOD_LABEL}-Shift-S)`}
+          title={translate`Export formats (${shortcutLabel("mod+shift+s")})`}
         >
           <ChevronDown className="chevron" />
         </button>
@@ -1591,7 +1591,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onSettings, onFind, 
         }}>
           <button type="button" role="menuitem" className="menu-item is-row keyboard-only" onClick={run(onCommands)}>
             <span><Trans>Commands</Trans></span>
-            <kbd><Trans>{MOD_LABEL} K</Trans></kbd>
+            <kbd>{shortcutLabel("mod+k")}</kbd>
           </button>
           <button type="button" role="menuitem" className="menu-item is-row keyboard-only" onClick={run(onShortcuts)}>
             <span><Trans>Keyboard shortcuts</Trans></span>

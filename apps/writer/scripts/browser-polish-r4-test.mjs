@@ -64,7 +64,10 @@ async function continuePosition(page, width, reduced) {
   await page.keyboard.press("ArrowUp");
   await page.keyboard.type(" POSITION_MARK ");
   await page.keyboard.press("ArrowLeft");
-  await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return [...snapshot.records.values()].every(record => record.snapshot.state === "saved") && !snapshot.compiling && Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snapshot.artifactRevision; }, null, { timeout: 60000 });
+  await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return [...snapshot.records.values()].every(record => record.snapshot.state === "saved") && !snapshot.compiling; }, null, { timeout: 60000 });
+  if (width === 390) await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snapshot.artifactRevision; }, null, { timeout: 60000 });
+  if (width === 390) await page.getByRole("button", { name: "Write", exact: true }).click();
   const visible = () => page.locator(".cm-scroller").evaluate(element => {
     const top = element.getBoundingClientRect().top;
     const line = [...element.querySelectorAll(".cm-line")].find(line => line.textContent && line.getBoundingClientRect().bottom > top);
@@ -445,11 +448,13 @@ try {
       assert.deepEqual(await keys("Go to line"), [apple ? "⌘⌥G" : "Ctrl+Alt+G"]);
       assert.deepEqual(await keys("Undo"), [apple ? "⌘Z" : "Ctrl+Z"]);
       assert.deepEqual(await keys("Redo"), apple ? ["⌘⇧Z"] : platform.startsWith("Linux") ? ["Ctrl+Y", "Ctrl+Shift+Z"] : ["Ctrl+Y"]);
-      assert.deepEqual(await keys("Show completions"), ["Ctrl-Space"]);
+      assert.deepEqual(await keys("Show completions"), [apple ? "⌃Space" : "Ctrl+Space"]);
       assert.equal(await help.getByText("Move to the next control", { exact: true }).count(), 1);
       assert.equal(await help.getByText("In the editor, press Tab to move to the next control.", { exact: true }).count(), 0);
       await page.keyboard.press("Escape");
       await help.waitFor({ state: "hidden" });
+      assert.equal(await page.locator("#sidebar-tab-sources").getAttribute("title"), `Find a source (${apple ? "⌘⇧E" : "Ctrl+Shift+E"})`);
+      assert.equal(await page.getByRole("button", { name: "Export formats", exact: true }).getAttribute("title"), `Export formats (${apple ? "⌘⇧S" : "Ctrl+Shift+S"})`);
       await page.keyboard.press(`${mod}+Alt+g`);
       const line = page.locator('.cm-goto-line input[name="line"]');
       await line.waitFor();

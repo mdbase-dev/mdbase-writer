@@ -26,7 +26,7 @@ function ShortcutEntries({ commands }: { commands: readonly Command[] }) {
     { id: "undo", group: t`Editor`, label: t`Undo`, shortcut: "mod+z" },
     { id: "redo", group: t`Editor`, label: t`Redo`, shortcut: isApplePlatform() ? "mod+shift+z" : "mod+y" },
     ...(/Linux/.test(navigator.platform) ? [{ id: "redo-linux", group: t`Editor`, label: t`Redo`, shortcut: "Ctrl+shift+z" }] : []),
-    { id: "complete", group: t`Editor`, label: t`Show completions`, shortcut: "Ctrl+Space" },
+    { id: "complete", group: t`Editor`, label: t`Show completions`, shortcut: isApplePlatform() ? "⌃Space" : "Ctrl+Space" },
     { id: "tab", group: t`Editor`, label: t`Move to the next control`, shortcut: "Tab" },
     { id: "dismiss", group: t`Help`, label: t`Dismiss the current menu or dialog`, shortcut: "Escape" },
   ];

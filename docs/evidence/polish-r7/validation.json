@@ -1,0 +1,159 @@
+{
+  "capturedAtUtc": "2026-11-06T16:17:33.962Z",
+  "localTimezone": "Australia/Melbourne",
+  "baseHead": "48388f190f540a7cb9fcf09c67dc09bd32c89718",
+  "runtimeSourceSha256": "0b8bb691864afa142695de4a7b810b2c4507fdd29d00c120899e9b162f21fad4",
+  "runtimeSourceDigestMethod": "SHA-256 of sorted tracked apps/writer/src path + NUL + bytes + NUL",
+  "gateScripts": {
+    "browser-polish-test.mjs": "545fe8054e23cd80a3ad05e440e5d2f46c0f7d14fb41fb8cadb2407e58e2b3a4",
+    "browser-polish-r2-test.mjs": "29722722ba2cfdb6f181946659bc3e5c19c4d209fc6fec6b0a47c7e4ff564303",
+    "browser-polish-r4-test.mjs": "2ccf1058eedc8d92c2f1a2708bd68cc7353be738f4dbb70b9decfe53ec58b782",
+    "browser-polish-r6-test.mjs": "3a22c6e4e7193569f82178341fdf5288f10ef299fdfb198ece29b6ea2b7a5fc5",
+    "browser-polish-r6-review-test.mjs": "8074713ca8781ebbb81ed32038887a2b05baf21d3cdeabdf13303cbb4bf928a8",
+    "browser-polish-r7-test.mjs": "7edef265cd6be215ae2b560fd34d006575b253bf6a95ee4ad53436b3c54846eb"
+  },
+  "passCounts": {
+    "r2": {
+      "matrix": 8,
+      "total": 8
+    },
+    "r4": {
+      "matrix": 8,
+      "total": 8,
+      "platform": 3,
+      "platformTotal": 3,
+      "tracedMatrixAlsoPassed": true
+    },
+    "r6": {
+      "matrix": 4,
+      "total": 4,
+      "subsequentScenarios": 5,
+      "allSubsequentPassed": true
+    },
+    "base": {
+      "matrix": 8,
+      "total": 8,
+      "recoveryPassed": true
+    },
+    "review": {
+      "passed": 18,
+      "total": 18
+    },
+    "r7": {
+      "motion": 4,
+      "motionTotal": 4,
+      "phone": 4,
+      "phoneTotal": 4,
+      "unreadThemes": 2,
+      "unreadThemesTotal": 2,
+      "interactionsPassed": true
+    },
+    "unit": {
+      "passed": 598,
+      "existingSkips": 6
+    },
+    "localeModules": 92,
+    "typecheckPassed": true,
+    "builds": {
+      "passed": 4,
+      "total": 4
+    }
+  },
+  "r2Before": {
+    "completedCases": 2,
+    "rawCdpError": {
+      "code": -32000,
+      "message": "Promise was collected"
+    },
+    "playwrightError": "Execution context was destroyed, most likely because of a navigation.",
+    "navigationObservedAtFailure": false
+  },
+  "r4Before": {
+    "tracedLongTasksMs": [
+      57,
+      52
+    ],
+    "intermediateUntracedLongTasksMs": [
+      51,
+      114,
+      80
+    ]
+  },
+  "r4After": [
+    {
+      "theme": "light",
+      "motion": "normal",
+      "maxTaskMs": 29.451,
+      "maxStyleMs": 3.257,
+      "maxLayoutMs": 5.831,
+      "maxRendererCallbackMs": 19.73,
+      "longTasks": 0
+    },
+    {
+      "theme": "light",
+      "motion": "reduced",
+      "maxTaskMs": 38.166,
+      "maxStyleMs": 4.211,
+      "maxLayoutMs": 5.528,
+      "maxRendererCallbackMs": 25.178,
+      "longTasks": 0
+    },
+    {
+      "theme": "dark",
+      "motion": "normal",
+      "maxTaskMs": 29.874,
+      "maxStyleMs": 2.945,
+      "maxLayoutMs": 4.788,
+      "maxRendererCallbackMs": 18.532,
+      "longTasks": 0
+    },
+    {
+      "theme": "dark",
+      "motion": "reduced",
+      "maxTaskMs": 22.514,
+      "maxStyleMs": 2.463,
+      "maxLayoutMs": 3.682,
+      "maxRendererCallbackMs": 14.58,
+      "longTasks": 0
+    }
+  ],
+  "r7After": {
+    "firstInkMs": 1730.9000000357628,
+    "paletteCommands": 35,
+    "transitions": [
+      {
+        "firstFadeMs": 6.599999964237213,
+        "longTasksMs": [],
+        "firstBitmapMutationMs": 211.89999997615814
+      },
+      {
+        "firstFadeMs": 5.300000011920929,
+        "longTasksMs": [],
+        "firstBitmapMutationMs": 201
+      },
+      {
+        "firstFadeMs": 8.199999988079071,
+        "longTasksMs": [],
+        "firstBitmapMutationMs": 198.19999998807907
+      },
+      {
+        "firstFadeMs": 6.800000011920929,
+        "longTasksMs": [],
+        "firstBitmapMutationMs": 199.19999998807907
+      }
+    ],
+    "retainedSemanticNodes": 5
+  },
+  "screenshots": {
+    "unread-light.png": "787a5e7b8b56cd4b302b7996bbd94e65216ae167c47186b68c665e6835ebcd76",
+    "unread-dark.png": "35dbe5b47054402f656a83871a526f26574861c66a99dc5f118e5446cd78a44c"
+  },
+  "unproven": [
+    "W1.2 live reload/write after owner LAB deployment",
+    "W1.4 live revoked access after reload",
+    "W1.5 cancelled consent lacks distinct public SDK outcome",
+    "Controlled production first-ink baseline on original source",
+    "All hardware and load conditions"
+  ],
+  "mergeOrDeployPerformed": false
+}

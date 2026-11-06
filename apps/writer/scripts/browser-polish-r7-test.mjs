@@ -144,6 +144,31 @@ try {
       } finally { await phone.close(); }
     }
   }
+  for (const colorScheme of ["light", "dark"]) {
+    const unread = await browser.newContext({ viewport: { width: 1280, height: 800 }, colorScheme });
+    await unread.route("**/*", route => new URL(route.request().url()).origin === new URL(base).origin ? route.continue() : route.abort());
+    await unread.addInitScript(() => localStorage.setItem("mdbase-writer:recent:demo", JSON.stringify([{ path: "manuscripts/slow-change.md", at: "2026-09-27T00:00:00Z" }])));
+    try {
+      const page = await unread.newPage();
+      await page.goto(`${base}?demo&manuscript=manuscripts/slow-change.md`);
+      await page.locator("#sidebar-tab-comments").click();
+      await page.locator(".thread.is-new").first().waitFor();
+      const threads = await page.locator(".thread.is-new").evaluateAll(elements => elements.map(element => {
+        const probe = document.createElement("span");
+        probe.style.backgroundColor = "var(--selected)";
+        element.append(probe);
+        const selected = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        const style = getComputedStyle(element);
+        return { fill: style.backgroundColor, selected, shadow: style.boxShadow, border: style.borderLeftWidth };
+      }));
+      assert.equal(threads.length, 2);
+      assert.ok(threads.every(thread => thread.fill === thread.selected && thread.shadow === "none" && thread.border === "0px"), JSON.stringify(threads));
+      await page.waitForFunction(() => document.querySelector(".preview canvas[data-version]"), null, { timeout: 60000 });
+      await page.screenshot({ path: `out/polish-r7-unread-${colorScheme}.png` });
+      console.log(`PASS unread thread fill ${colorScheme}`);
+    } finally { await unread.close(); }
+  }
   assert.ok(measurements.transitions.every(transition => transition.maxTaskMs < 50), "Sidebar must not create a long task");
   assert.ok(measurements.transitions.every(transition => transition.firstFadeMs !== null && transition.firstFadeMs < 50), "Sidebar fade must start within one frame plus input delivery");
   assert.ok(measurements.transitions.every(transition => transition.draws.every(draw => draw.time >= 160)), "Preview drawing must wait for the sidebar transition");

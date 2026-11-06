@@ -203,7 +203,8 @@ export const Preview = memo(function Preview({ visible: isVisible, artifact, pro
         // nothing when the page is unchanged and returns the same one.
         const shown = drawnWidth.current.get(index) === cssWidth ? drawnKey.current.get(index) : undefined;
         const result = await s.renderer.renderCanvas({ renderSession: s.session, canvas: ctx, pageOffset: index, backgroundColor: "#ffffff", pixelPerPt, ...(shown ? { cacheKey: shown } : {}) });
-        if (version.current !== v) return; // a newer document arrived; its pass redraws
+        await yieldToInput();
+        if (arrived.current !== waiting || version.current !== v || !root.checkVisibility({ visibilityProperty: true })) return;
         const key = result?.cacheKey;
         if (!shown || key !== shown) {
           // Swap in the finished bitmap in one step so a page never flashes blank.
@@ -214,7 +215,7 @@ export const Preview = memo(function Preview({ visible: isVisible, artifact, pro
         const layer = host.querySelector<HTMLElement>(`.text-layer[data-page="${index}"]`);
         if (layer) {
           layer.style.setProperty("--data-text-width", `${cssWidth / box.width}px`);
-          layer.style.setProperty("--data-text-height", `${canvas.clientHeight / box.height}px`);
+          layer.style.setProperty("--data-text-height", `${cssWidth / box.width}px`);
           if (drawn.current.get(index) !== v && result?.htmlSemantics?.[0]) layer.replaceChildren(semanticLayer(result.htmlSemantics[0]));
         }
         if (key) drawnKey.current.set(index, key);

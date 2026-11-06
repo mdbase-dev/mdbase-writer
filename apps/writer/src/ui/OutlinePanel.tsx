@@ -1,6 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { t, plural as icuPlural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import { shortcutLabel } from "@mdbase-dev/ui/command-palette";
 // The manuscript's outline: the manuscript and its word count, then its
 // chapters (records embedded on lines of their own) in reading order, each
 // with its headings. Chapters are dragged, or moved with Alt-↑/↓, to reorder
@@ -180,7 +181,7 @@ export function OutlinePanel({
                       onClick={() => onOpen(path)}
                       onDoubleClick={openRename}
                       onKeyDown={(e) => { if (e.key === "F2") { e.preventDefault(); openRename(); } else onKeyDown(e); }}
-                      title={[path, direct ? t`Drag, or Alt-↑/↓, to reorder` : null, onRename ? t`Double-click or F2 to rename` : null].filter(Boolean).join(" · ")}
+                      title={[path, direct ? t`Drag, or ${shortcutLabel("alt+↑")} / ${shortcutLabel("alt+↓")}, to reorder` : null, onRename ? t`Double-click or F2 to rename` : null].filter(Boolean).join(" · ")}
                     >
                       <span className="record-number" aria-hidden={!direct}>
                         <span className="record-index">{direct ? index + 1 : ""}</span>

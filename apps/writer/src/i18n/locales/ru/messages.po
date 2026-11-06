@@ -135,33 +135,14 @@ msgstr "{0}резервная копия создана {1}"
 msgid "{at}: this chapter was deleted; download the local draft before leaving."
 msgstr "{at}: эта глава удалена; перед выходом скачайте локальный черновик."
 
+#. placeholder {0}: shortcutLabel("mod+shift+m")
 #: src/ui/WorkspaceView.tsx
-msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr "{commentsTitle} (сочетание клавиш: {MOD_LABEL}-Shift-M)"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} K"
-msgstr "{MOD_LABEL} K"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-B"
-msgstr "{MOD_LABEL}-B"
+msgid "{commentsTitle} ({0})"
+msgstr "{commentsTitle} (сочетание клавиш: {0})"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
 msgstr "Щёлкните, удерживая {MOD_LABEL}, чтобы показать в «Источниках»"
-
-#: src/ui/CommentsPanel.tsx
-msgid "{MOD_LABEL}-Enter"
-msgstr "{MOD_LABEL}-Enter"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-I"
-msgstr "{MOD_LABEL}-I"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-Shift-K"
-msgstr "{MOD_LABEL}-Shift-K"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
@@ -621,9 +602,10 @@ msgstr "Комментарий"
 msgid "Comment on the selection"
 msgstr "Прокомментировать выделенный фрагмент"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
 #: src/editor/selection-bar.tsx
-msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr "Прокомментировать выделенный фрагмент ({MOD_LABEL}-{ALT_LABEL}-M)"
+msgid "Comment on the selection ({0})"
+msgstr "Прокомментировать выделенный фрагмент ({0})"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comment on this text"
@@ -812,9 +794,11 @@ msgstr "Перетащите, чтобы изменить размер; дваж
 msgid "Drag to resize; double-click to split evenly"
 msgstr "Перетащите, чтобы изменить размер; дважды щёлкните, чтобы разделить поровну"
 
+#. placeholder {0}: shortcutLabel("alt+↑")
+#. placeholder {1}: shortcutLabel("alt+↓")
 #: src/ui/OutlinePanel.tsx
-msgid "Drag, or Alt-↑/↓, to reorder"
-msgstr "Перетащите или нажмите Alt-↑/↓, чтобы изменить порядок"
+msgid "Drag, or {0} / {1}, to reorder"
+msgstr "Перетащите или нажмите {0} / {1}, чтобы изменить порядок"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
@@ -888,9 +872,10 @@ msgstr "Не удалось выполнить экспорт."
 msgid "Export formats"
 msgstr "Форматы экспорта"
 
+#. placeholder {0}: shortcutLabel("mod+shift+s")
 #: src/ui/WorkspaceView.tsx
-msgid "Export formats ({MOD_LABEL}-Shift-S)"
-msgstr "Форматы экспорта ({MOD_LABEL}-Shift-S)"
+msgid "Export formats ({0})"
+msgstr "Форматы экспорта ({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Pandoc bundle (zip)"
@@ -950,9 +935,10 @@ msgstr "Найти заметку по названию или папке"
 msgid "Find a source"
 msgstr "Найти источник"
 
+#. placeholder {0}: shortcutLabel("mod+shift+e")
 #: src/ui/WorkspaceView.tsx
-msgid "Find a source ({MOD_LABEL}-Shift-E)"
-msgstr "Найти источник ({MOD_LABEL}-Shift-E)"
+msgid "Find a source ({0})"
+msgstr "Найти источник ({0})"
 
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
@@ -1772,9 +1758,10 @@ msgstr "Другие заметки"
 msgid "Outline"
 msgstr "Структура"
 
+#. placeholder {0}: shortcutLabel("mod+shift+f")
 #: src/ui/WorkspaceView.tsx
-msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr "Структура и поиск по рукописи ({MOD_LABEL}-Shift-F)"
+msgid "Outline, and search the manuscript ({0})"
+msgstr "Структура и поиск по рукописи ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -2125,9 +2112,11 @@ msgstr "Искать в рукописи"
 msgid "Section"
 msgstr "Раздел"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
+#. placeholder {1}: shortcutLabel("mod+alt+s")
 #: src/ui/CommentsPanel.tsx
-msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
-msgstr "Выделите фрагмент и нажмите <0>{MOD_LABEL}-{ALT_LABEL}-M</0>, чтобы оставить комментарий, или <1>{MOD_LABEL}-{ALT_LABEL}-S</1>, чтобы предложить правку."
+msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
+msgstr "Выделите фрагмент и нажмите <0>{0}</0>, чтобы оставить комментарий, или <1>{1}</1>, чтобы предложить правку."
 
 #: src/ui/Shortcuts.tsx
 msgid "Select next occurrence"
@@ -2417,9 +2406,10 @@ msgstr "Предложить правку"
 msgid "Suggest an edit to the selection"
 msgstr "Предложить правку к выделенному фрагменту"
 
+#. placeholder {0}: shortcutLabel("mod+alt+s")
 #: src/editor/selection-bar.tsx
-msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr "Предложить правку к выделенному фрагменту ({MOD_LABEL}-{ALT_LABEL}-S)"
+msgid "Suggest an edit to the selection ({0})"
+msgstr "Предложить правку к выделенному фрагменту ({0})"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"

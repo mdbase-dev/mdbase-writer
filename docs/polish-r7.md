@@ -12,15 +12,15 @@ changed. No deployment or merge is part of this change.
 | W1.2 Reload/write | Repeatable check added; not run against candidate | Council LAB write loss 2/2 → no new live survival rate claimed. `test:lab:reload-write` requires an owned `[test]` manuscript, reloads before writing, waits for the real session acknowledgement, and reads from a new context with no Writer origin storage. It restores the original body in cleanup. |
 | W1.3 Sync truth | Implemented and unit-tested | A local-only save could remain a waiting notice indefinitely → rejected ledger entries immediately, or pending age ≥30,000 ms, say “Changes haven't reached the server”. The existing save slot offers Download local drafts and a polite live region. A timer advances the notice without requiring another SDK snapshot; confirmation clears it. No SDK write, retry or acknowledgement is altered. “Stay online” was absent from Writer's source before this change. |
 | W1.4 Revoked access after reload | Not fixed or live-proven | No before/after revoked-access result is claimed. This remains a shared SDK/problem-descriptor follow-up, not a Writer auth workaround. |
-| W1.5 Cancel / collection hint / Install | Install fixed; other handoffs not fixed | Current deployed LAB Cancel reproduced “Can't continue / Sign-in didn't go through”; Install was also present on that gate. The app now permits installation only under Home/workspace, with removal on gate transitions (unit test). No claim that beta.157 fixes cancellation or preselection. The reload check records preselection and only approves the explicitly named test collection. |
-| W2.1 Sidebar work | Partial; long-task acceptance incomplete | Original dev sample: 63–93 ms long tasks and 45–90 ms setup-to-fade; council 55–107 ms. Final optimized run: zero ≥50 ms tasks over four toggles, first fade 16.9–31.3 ms from the actual key event; first bitmap mutations 209.7–253.4 ms, after the unchanged 160 ms animation. Other optimized runs still recorded 52/54 ms tasks. Last full 10k-word dev matrix passes 2/8 cases: two desktop reduced-motion cases fail at 51/54/66 ms; all four phone cases time out waiting for a rendered revision while Preview is hidden. That full matrix predates the explicit phone-reveal scheduling fix and was not rerun afterward. The one-frame fade goal is not fully proven. Removed the explicit forced layout, closed-sheet rendering and unstable preview retry callback; coalesced drawing behind the existing animation. These build/readiness conditions are not a controlled percentage improvement. |
+| W1.5 Cancel / collection hint / Install | Install fixed; Cancel blocked on missing SDK discriminator | Current deployed LAB Cancel reproduced “Can't continue / Sign-in didn't go through”; Install was also present on that gate. The app now permits installation only under Home/workspace, with removal on gate transitions (unit test). Beta.157 collapses consent denial into general `refused` and loses the server problem at its worker boundary; Writer cannot safely identify cancellation (code trace below). No claim that cancellation or preselection is fixed. The reload check records preselection and only approves the explicitly named test collection. |
+| W2.1 Sidebar work | Implemented; final browser budgets pass | Original dev sample: 63–93 ms long tasks and 45–90 ms setup-to-fade; council 55–107 ms. After the follow-up fixes, all eight R4 viewport cases pass both traced and untraced, plus all three platform cases. The four traced 10k-word desktop maxima are 29.451 / 38.166 / 29.874 / 22.514 ms, with zero ≥50 ms tasks. Final optimized actual-key-to-fade is 5.3–8.2 ms over four toggles; first bitmap mutation is 198.2–211.9 ms, after the unchanged 160 ms animation. These are machine/build-specific measurements, not a controlled percentage improvement. |
 | W2.2 Hidden prose | Implemented and browser-tested | Switching to preview-only previously started WAAPI and CSS fades on the hidden editor → zero animations on hidden Write and Preview containers in the optimized gate. Deleted the desktop/mobile prose hide fade rather than adding another animation. A new artifact while Preview is hidden produces zero canvas mutations. Verified that plain `checkVisibility()` returned true on CSS-hidden Preview; the guard now checks the visibility property explicitly. Preview remains undimmed. |
 | W2.3 Semantic DOM | Implemented and browser-tested | Size-only rendering previously rebuilt each page's semantic children → all five already-rendered page nodes retain identity over four toggles at document revision 1. A sixth previously-undrawn page enters the lazy render range and receives its first semantic node; that is not a replacement. Document-version changes own replacement; size-only draws update geometry. |
-| W2.4 Home warm-up | Implemented; controlled baseline missing | Original dev immediate-open first ink 3,116 ms; optimized immediate-open samples 1,088–2,200 ms (latest 1,088 ms), and an earlier warm Home sample 992 ms. No production baseline at the original source was rebuilt, so these are observations, not a like-for-like speedup claim. The existing compiler preparation request and renderer promise are reused; an unconsumed compiler is terminated when Home unmounts. |
-| W2.5 Motion gate | Added, not passing exhaustively | Existing round-four 10k-word trajectory assertions are unchanged; a <50 ms long-task gate is added around the same sidebar transition. It reports the remaining failures instead of accepting them. The round-seven sample additionally checks event-to-fade, drawing deferral, one redraw/page and rendered semantic identity. |
+| W2.4 Home warm-up | Implemented; controlled baseline missing | Original dev immediate-open first ink 3,116 ms; optimized samples 1,088–2,200 ms, and the final follow-up optimized sample 1,731 ms. No production baseline at the original source was rebuilt, so these are observations, not a like-for-like speedup claim. The existing compiler preparation request and renderer promise are reused; an unconsumed compiler is terminated when Home unmounts. |
+| W2.5 Motion gate | Implemented; final gates pass | The unchanged <50 ms budget caught 52 / 57 ms tasks initially and 51 / 114 / 80 ms in an intermediate untraced run. Fixed the Writer-owned style invalidation, forced geometry read, and combined render/install task; see task attribution below. The final traced matrix has zero long tasks, and the full untraced R4 gate also passes. The third-party render callback still costs 14.580–25.178 ms per page at its observed maxima; it is no longer combined with bitmap installation in one task. Original trajectory, no-hidden-draw, real-rendered-revision and semantic-identity assertions remain. |
 | W3.1 Palette | Implemented | Six existing actions newly exposed: Add chapter, New manuscript, three sidebar tabs and Retry preview. View modes, F8, themes and All manuscripts already existed; they are not credited as additions. Default visible options stay 35 → 35 because the shared palette caps each browse group. Search reaches the additional actions. New manuscript reuses Home's dialog and the existing save-before-leave decision, preserving its destination on retry/explicit leave. |
-| W3.2 Keyboard | Implemented except full tooltip convergence | Ctrl+K and Ctrl+/ now toggle their own overlays; Home ? opens help outside text fields, without intercepting composition. Two Ctrl+F rows → one “Find and replace” row. Palette/sheet and changed layout tooltips use the shared formatter. Older editor/comment and untouched toolbar tooltip strings still contain hyphens; full notation convergence is not claimed. |
-| W4.1 Alignment/chips/colour | Implemented; unread-thread visual sample incomplete | Continue ink x402.39, goal ink x407.99, row ink x393 → x393, x393.01, x393. Reference chip width 127.25 →125.16 px (same text/font), inline padding .20em →.12em. Dark primary OKLCH lightness .73 →.65 using the existing stronger token, not a new colour. Approximate text contrast from the measured colors, converted through Chromium's sRGB canvas: light 6.32 →8.18, dark 8.10 →6.00. The unread thread's inset 2 px stripe is replaced by the existing selected fill; no live unread-thread screenshot/contrast result is claimed. |
+| W3.2 Keyboard | Implemented, including tooltip convergence | Ctrl+K and Ctrl+/ now toggle their own overlays; Home ? opens help outside text fields, without intercepting composition. Two Ctrl+F rows → one “Find and replace” row. Palette, sheet, selection toolbar, comment composer/reply, sidebar, export and outline reorder hints now use the existing shared `shortcutLabel` helper. All three platform checks assert the actual source/export tooltips. Explicit Control+Space stays Control on Apple (`⌃Space`), not Command. Pointer gestures such as Ctrl-click and prose instructions are not keyboard-chord tooltips. No formatter/dependency was added. |
+| W4.1 Alignment/chips/colour | Implemented; unread-thread sample captured in both themes | Continue ink x402.39, goal ink x407.99, row ink x393 → x393, x393.01, x393. Reference chip width 127.25 →125.16 px (same text/font), inline padding .20em →.12em. Dark primary OKLCH lightness .73 →.65 using the existing stronger token, not a new colour. Approximate text contrast from the measured colors, converted through Chromium's sRGB canvas: light 6.32 →8.18, dark 8.10 →6.00. The unread thread's inset 2 px stripe is replaced by the existing selected fill. Two real demo unread threads are captured per theme: light `oklch(0.968 0.004 255)`, dark `oklch(0.235 0.012 255)`, both `box-shadow: none` / left border `0px`. See the fixture and screenshots below; this is local demo proof, not a live-account or independent contrast claim. |
 | W4.2 Home balance | Intentionally unchanged | Existing history remembers one most-recent chapter per manuscript, already represented by Continue. No recent-chapters list or invented history state is added. |
 | W4.3 Touch targets | Implemented and measured | Cite 40×44 →44×44 px on the 390 px touch viewport. Council's Replace summary 20×44 →55×44 px on the current touch viewport, with an explicit 44 px minimum on every viewport. The old 20 px width is council evidence, not a fresh baseline reproduction. |
 
@@ -56,71 +56,146 @@ removes that subscription; normal workspace initialization remains the only
 initialization path when no prepared worker is available. No retry loop or
 separate error state is added.
 
+## Consent cancellation: exact SDK boundary
+
+The visible gate is Writer’s screen, implemented through its existing shared
+`CollectionGate`; it is not dismissed as somebody else’s UI. However, the
+installed, signed beta.157 SDK does not preserve the distinction Writer needs:
+
+- `dist/app-host/installation-sign-in.js:450`–454 converts a 404
+  `installation_pairing_denied` to `fail("refused")`, dropping the server
+  problem. `consentWindow` repeats that conversion at lines 697–702.
+- The same bare `refused` is used for actual authorization failures (including
+  lines 988 and 1014), so suppressing every refusal would hide real failures.
+- `dist/application/worker-protocol.js:73`–74 serializes this class to only
+  `{code: error.reason}`. The public error/snapshot has no separate consent-
+  declined outcome or retained denial problem across that boundary.
+- The descriptor already treats bare `refused` as informational “Sign-in wasn't
+  finished”; a refusal with server details uses failure copy. That does not
+  prove what the undeployed candidate displays after a real consent cancellation.
+
+Needed upstream: a public, serialized user-declined/cancelled outcome (or the
+retained `installation_pairing_denied` problem), distinct from general refusal,
+preserved into the snapshot/descriptor used by `CollectionGate`. No Writer
+string matching, signed-asset patch, or blanket suppression is added.
+
+## Unread-thread visual fixture
+
+The supported demo route uses `?demo&manuscript=manuscripts%2Fslow-change.md`.
+Before loading it in a fresh context, seed the existing
+`mdbase-writer:recent:demo` key with
+`[{"path":"manuscripts/slow-change.md","at":"2026-09-27T00:00:00Z"}]`.
+Open Comments. The two September 28 demo threads receive `.thread.is-new`
+through the real recent-visit comparison, not by forcing classes. The R7 gate
+asserts both threads’ fill token, lack of inset shadow, and zero left border
+in each theme.
+
+![Unread demo threads in light theme](evidence/polish-r7/unread-light.png)
+
+![Unread demo threads in dark theme](evidence/polish-r7/unread-dark.png)
+
+## Follow-up failure diagnoses
+
+- **R2 — test harness lifetime defect, not navigation.** The follow-up reproduced
+  the failure after 0 and 2 completed cases. Raw CDP reported error -32000,
+  `Promise was collected`; Playwright rewrote that to the misleading generic
+  “Execution context was destroyed” error. Navigation/Vite event diagnostics
+  showed no navigation at the failed hold resolution. The test now roots the
+  one pending fixture operation on `window`, waits for its result with a finite
+  60-second bound (the old evaluate had no bound), asserts exactly
+  `{outcome: "confirmed"}`, and removes the root. It does not retry, invent a
+  receipt, or substitute the UI’s Saved label. Final result: **8/8**.
+- **R4 phone — stale test expectation.** The old gate required a new bitmap
+  while Preview was intentionally hidden. It now explicitly opens Preview,
+  waits for the actual rendered revision, and returns to Write before its
+  existing scroll/position assertions. No false rendered marker is written.
+- **R4 desktop — product performance defects.** The long-task failures were
+  real. The inherited grid variables invalidated the entire semantic subtree;
+  the canvas height read forced layout after writes; renderer and bitmap work
+  could consume one task. These are fixed in Writer, not exempted in the gate.
+- **R4 platform — intentional notation update.** The stale `Ctrl-Space`
+  assertion becomes `Ctrl+Space` (`⌃Space` on Apple), with actual Sources and
+  Export tooltip assertions added on macOS, Windows and Linux.
+- **R6 — intentional upstream copy change, stale assertion.** Beta.157 replaces
+  “Delete a synced collection before creating another” with “Open an existing
+  collection, delete one you own if Delete is available, or contact mdbase
+  support to raise your limit”. The assertion now checks that exact actionable
+  guidance. Its no-retry/no-add, visibility, link and recovery assertions remain.
+- The new unread fixture initially compared raw custom-property syntax with a
+  computed color. Optimized CSS represents the same color with different LAB
+  syntax. Both operands now go through computed `backgroundColor`; the exact
+  selected-fill equality, no-shadow and zero-border requirements are unchanged.
+
+## Sidebar task attribution (W2.5)
+
+The budget still rejects **every ≥50 ms main-thread task** in the same observed
+sidebar interval. It has no product/library exception and its original
+trajectory checks are retained. Before the follow-up, the traced 57.260 ms
+failure included 51.849 ms of style recalculation; a separate 52.493 ms task
+combined a 22.461 ms renderer callback with subsequent Writer/browser work.
+After replacing inherited grid variables and the forced height read, a focused
+trace still measured a combined 45.129 ms task, and an untraced matrix caught
+51 / 114 / 80 ms. Adding an input yield between the existing render and bitmap
+installation prevents those two phases sharing one task. No cache, worker,
+framework, state, fallback, timeout increase or budget change was added.
+
+Final 10k-word desktop trace (milliseconds; maxima need not belong to one task):
+
+| Theme / motion | Longest task | Renderer callback | Style recalculation | Layout | ≥50 ms tasks |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Light / normal | 29.451 | 19.730 | 3.257 | 5.831 | 0 |
+| Light / reduced | 38.166 | 25.178 | 4.211 | 5.528 | 0 |
+| Dark / normal | 29.874 | 18.532 | 2.945 | 4.788 | 0 |
+| Dark / reduced | 22.514 | 14.580 | 2.463 | 3.682 | 0 |
+
+The remaining synchronous Typst `renderCanvas`/WASM callback is third-party
+work that Writer cannot preempt through that API. Its observed per-case maximum
+is **14.580–25.178 ms**, within the unchanged budget. Browser style/layout costs
+are included in the total, not deducted. No unavoidable ≥50 ms remainder is
+claimed. This proves the measured cases, not all hardware/load conditions.
+The four raw CDP traces are retained in
+[sidebar-tasks.json.gz](evidence/polish-r7/sidebar-tasks.json.gz).
+
 ## Validation
 
-- `rpnpm test:publisher`: 124/124 passing after adapting exact npm intake.
-- `rpnpm test`: core 67 passing / 4 pre-existing skips; Writer 370 passing;
-  root 126/126 passing; App Node 35 passing / 2 existing skips.
-- `rpnpm typecheck`: passing. No lint script is configured in this repository.
-- Production, staging, LAB and demo-enabled optimized builds pass their existing
-  locale, manifest and exact-environment checks, with explicit `VITE_MDBASE_ENV`.
-- Local browser measurements require load below 20. Motion uses real key events,
-  `requestAnimationFrame`, `getAnimations()` and `PerformanceObserver`; canvas
-  attribute mutations identify bitmap replacement, not just screenshots.
-- The old round-four help gate caught removal of the “Find and replace” wording
-  while deleting its duplicate. The single surviving row keeps that wording;
-  the gate was not weakened.
-- The design detector reports only the existing comment-point insertion marker
-  and prose blockquote border. Neither is a coloured edge on a rounded item.
-- Base polish matrix: 8/8 plus empty/demo-reset recovery pass. Round-six
-  viewport phases: 4/4 complete before the quota-copy assertion fails.
-  Review regression cases: 18/18 pass, including nonmodal desktop Settings
-  shortcuts and Preview-only F8. No lint script is configured.
-- Round-two native status/hold/download/merge: an earlier run completed 8/8.
-  The handoff rerun completed six cases before `Execution context was
-  destroyed, most likely because of a navigation` at hold resolution; a further
-  rerun stopped at the same operation in its first case. A final cold-start
-  LAB-selected dev run again completed six cases before the same failure at
-  line 89. Its log records one initial dependency-optimizer reload, minutes
-  before the failing operation, not a proven explanation for it. This is not a
-  current full-matrix pass. No cause is claimed and the gate is unchanged.
-- Round-seven optimized gate: passes Home help, palette/help toggles, six new
-  searchable actions, Add chapter, guarded New manuscript with retry, hidden
-  preview motion, five rendered semantic node identities, and four motion
-  samples (final 20.0/24.4/31.3/16.9 ms first fade, zero long tasks), plus a
-  hidden preview compile with zero canvas mutations. All four phone
-  light/dark × normal/reduced cases also pass zero hidden bitmaps → actual
-  rendered revision after opening Preview. An initially
-  overbroad new semantic assertion counted first rendering of an undrawn page as
-  replacement; it now checks the nodes that existed at capture and requires an
-  unchanged document revision. The original trajectory gate was not changed.
-- A subsequent optimized phone reveal run exposed an intermittent 60-second
-  light/reduced timeout after opening Preview. Drawing was relying on an
-  observer notification for a visibility-only layout change. The existing
-  derived pane visibility now also schedules drawing explicitly, without new
-  state or another observer. The final rerun passes all four phone combinations.
-- The last full 10k-word round-four dev matrix fails 6/8 cases: light/reduced has
-  66/51 ms tasks and dark/reduced 54 ms. Both desktop normal-motion cases pass.
-  All four phone cases time out after 60 seconds at `continuePosition`'s
-  rendered-revision wait. Preview is hidden there; the corrected visibility
-  guard deliberately leaves its last-rendered revision unchanged until it is
-  shown. A direct phone check measured zero hidden bitmaps and five after
-  opening Preview. No false rendered marker or altered gate is used to obtain
-  a pass. The hidden-preview/gate expectation needs an explicit owner decision.
-  The preceding matrix, before the visibility correction, passed 5/8 with
-  desktop tasks of 53–66 ms. Earlier optimized samples also had isolated
-  52/54 ms tasks. The full round-four matrix was not rerun after the explicit
-  phone-reveal scheduling fix. None is a full performance acceptance pass.
-- The round-six quota fixture still fails its old exact-copy expectation
-  `Delete a synced collection before creating another`. Beta.157 instead says
-  `Synced collection limit reached` and offers existing-collection/deletion/
-  support guidance. The product copy and existing gate are not rewritten to
-  obtain a pass. Live quota recovery and the current-collection Manage access
-  target still need candidate LAB proof.
+All follow-up runs use the final runtime source. Browser gates run locally
+against loopback, with local load below 20 at launch. R7 uses the optimized
+LAB-selected demo build; fixture-importing gates use the LAB-selected dev
+server. No live account or LAB service mutation is involved in these runs.
 
-The optimized local demo is the existing supported `?demo` route, enabled by
-`build:editing-test`; it is not a new account-free sign-in flow. Browser fixture
-suites use the dev server because they import the repository's fixture module.
+| Gate | Before follow-up | Final pass count |
+| --- | --- | --- |
+| R2 native status / hold / download / merge | Handoff stopped after 6 cases; follow-up reproduced after 0 and 2 | 8/8 |
+| R4 focus / trajectory / 10k-word budget | Handoff 2/8; intermediate 7/8 | 8/8, traced and untraced |
+| R4 platform keyboard / tooltip | Stale Ctrl-Space assertion | 3/3 |
+| R6 interaction viewport matrix | 4/4, then quota-copy failure | 4/4; all 5 subsequent scenarios pass |
+| Base polish | Previously 8/8 plus recovery | 8/8 plus empty/demo-reset recovery |
+| R6 review regressions | Previously 18/18 | 18/18 |
+| R7 optimized motion | Prior 4 samples passed | 4/4, zero long tasks; first fade 5.3–8.2 ms |
+| R7 phone hidden → revealed Preview | Prior 4/4 after reveal fix | 4/4 |
+| R7 unread fill | No visual samples | 2/2 themes; actual screenshots captured |
+
+R7 also passes Home help and palette/help toggles, all six newly searchable
+existing actions, Add chapter, New manuscript’s guarded save/retry handoff,
+zero hidden-preview bitmaps after compilation, five retained semantic node
+identities, and at most one redraw/page after the sidebar’s 160 ms motion.
+Final optimized first ink: 1,731 ms. Exact counts, runtime-source and gate-script
+digests, task maxima and screenshot digests are in
+[validation.json](evidence/polish-r7/validation.json).
+
+- `rpnpm check`: locale contracts/source guard (92 modules), typecheck and full
+  tests pass. Core 67 passing / 4 existing skips; Writer 370 passing; App Node
+  35 passing / 2 existing skips; root 126 passing. Total: 598 passing, 6 existing
+  skips. No lint script is configured in this repository.
+- Production, staging, LAB and demo-enabled optimized builds: **4/4**, using
+  explicit `VITE_MDBASE_ENV` and the existing manifest/environment checks.
+- Design detector: only the existing insertion-point marker and prose
+  blockquote border; neither is a stripe on a rounded item.
+- No trajectory, long-task, save acknowledgement, readback, quota recovery,
+  hidden-draw or accessibility condition was removed to obtain these passes.
+
+The optimized local demo is the existing supported `?demo` route enabled by
+`build:editing-test`, not a new account-free sign-in path.
 
 ## LAB boundary and owner follow-up
 
