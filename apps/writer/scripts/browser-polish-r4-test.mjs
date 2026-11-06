@@ -41,7 +41,7 @@ async function command(page, query) {
 }
 
 async function pressFill(page, locator) {
-  await page.waitForFunction(() => document.querySelector(".bar .mdbase-save-notice.is-saved"));
+  await page.waitForFunction(() => document.querySelector(".home") || document.querySelector(".bar .mdbase-save-notice.is-saved"));
   await locator.hover();
   await page.waitForTimeout(130);
   const before = await locator.evaluate(element => getComputedStyle(element).backgroundColor);
