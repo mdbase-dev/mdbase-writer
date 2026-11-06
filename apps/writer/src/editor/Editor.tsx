@@ -323,25 +323,26 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     const v = view.current;
     if (!v) return;
     const current = v.state.doc.toString();
-    if (current === text) {
+    const incoming = Text.of(text.split(/\r\n?|\n/)).toString();
+    if (current === incoming) {
       emitted.current = [];
       return;
     }
-    const echo = emitted.current.indexOf(text);
+    const echo = emitted.current.indexOf(incoming);
     if (echo >= 0) {
       emitted.current = emitted.current.slice(echo + 1);
       return;
     }
     emitted.current = [];
     let from = 0;
-    while (from < current.length && from < text.length && current[from] === text[from]) from++;
+    while (from < current.length && from < incoming.length && current[from] === incoming[from]) from++;
     let endA = current.length;
-    let endB = text.length;
-    while (endA > from && endB > from && current[endA - 1] === text[endB - 1]) {
+    let endB = incoming.length;
+    while (endA > from && endB > from && current[endA - 1] === incoming[endB - 1]) {
       endA--;
       endB--;
     }
-    v.dispatch({ changes: { from, to: endA, insert: text.slice(from, endB) }, annotations: [remote.of(true), Transaction.addToHistory.of(false)] });
+    v.dispatch({ changes: { from, to: endA, insert: incoming.slice(from, endB) }, annotations: [remote.of(true), Transaction.addToHistory.of(false)] });
   }, [text]);
 
   useEffect(() => {
