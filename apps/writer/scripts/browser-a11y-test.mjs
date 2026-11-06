@@ -73,9 +73,9 @@ try {
       }
       await page.waitForFunction(() => {
         const snap = window.writer?.workspace?.getSnapshot();
-        return snap?.artifact && !snap.compiling && Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snap.artifactRevision;
+        const canvas = document.querySelector(".preview canvas[data-version]");
+        return snap?.artifact && !snap.compiling && Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snap.artifactRevision && canvas?.checkVisibility({ visibilityProperty: true });
       }, null, { timeout: 60_000 });
-      assert.ok(await page.locator(".preview canvas[data-version]").first().isVisible());
       if (width < 900) {
         await audit(page, `preview-${width}`);
         await page.getByRole("navigation", { name: "View", exact: true }).getByRole("button", { name: /Sidebar/ }).click();
