@@ -164,8 +164,8 @@ export const Preview = memo(function Preview({ visible: isVisible, artifact, pro
     if (drawScheduled.current) return;
     drawScheduled.current = true;
     drawing.current = drawing.current.then(async () => {
-      const pane = scroller.current?.closest(".workspace")?.querySelector(".write");
-      const animations = pane?.getAnimations().filter(animation => animation.playState === "running") ?? [];
+      const panes = scroller.current?.closest(".workspace")?.querySelectorAll(".write, .outline") ?? [];
+      const animations = [...panes].flatMap(pane => pane.getAnimations()).filter(animation => animation.playState === "running" || animation.pending);
       await Promise.allSettled(animations.map(animation => animation.finished));
       drawScheduled.current = false;
       const s = session.current;

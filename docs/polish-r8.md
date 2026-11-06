@@ -60,6 +60,22 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
   actual sidebar's existing 120 ms exit / 160 ms entry, with the same continuous
   trajectory and Reduce requirements. This changes the target to the intended
   moving surface, not the animation budget or a missing-motion exemption.
+- Final-head CI passed R4's 8/8 matrix but exposed a real preview scheduling
+  regression: its draw queue still waited only for the removed prose animation.
+  The trace shows drawing at 43–70 ms during sidebar motion and one first changed
+  frame at 70.3 ms. Preview now awaits the actual sidebar and pane animations,
+  including pending animations. R7 checks that no bitmap changes while either
+  surface is moving rather than using the obsolete prose animation's fixed
+  160 ms duration (the real sidebar exits in 120 ms and enters in 160 ms).
+  Its first-change and long-task limits remain 50 ms; the first-change sample
+  now requires a change from the initial opacity in both directions.
+  The existing motion effect now starts the actual desktop sidebar animation
+  immediately (120 ms exit / 160 ms entry), instead of waiting for CSS's next
+  style-change cycle. Reversals start at the current opacity; Reduce cancels it.
+  This replaces the CSS opacity transition rather than animating the prose or
+  keeping two competing sidebar fades. Phone pane transitions remain CSS-owned.
+  Focused preview regressions: **0/2 without the scheduler fix, 2/2 with it**
+  (running and pending sidebar animation, unchanged prose, actual canvas draw).
 - Extracted/compiled catalogues remove the unused “Saving to collection…” message
   deleted with the redundant companion status. No untranslated strings are added.
 

@@ -228,23 +228,36 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => { if (grid.current) grid.current.dataset["ready"] = "true"; }); });
     return () => cancelAnimationFrame(frame);
   }, []);
-  const motionLayout = useRef({ view: layout.view, active });
+  const motionLayout = useRef({ view: layout.view, sidebar: layout.sidebar, active });
+  const sidebarAnimation = useRef<Animation | null>(null);
+  useLayoutEffect(() => () => sidebarAnimation.current?.cancel(), []);
   useLayoutEffect(() => {
     const previous = motionLayout.current;
-    motionLayout.current = { view: layout.view, active };
+    motionLayout.current = { view: layout.view, sidebar: layout.sidebar, active };
+    if (narrow) sidebarAnimation.current?.cancel();
     if (!grid.current?.dataset["ready"]) return;
     const paneChanged = previous.view !== layout.view;
-    if (!paneChanged && previous.active === active) return;
+    const sidebarChanged = previous.sidebar !== layout.sidebar;
+    if (!paneChanged && !sidebarChanged && previous.active === active) return;
     const media = matchMedia("(prefers-reduced-motion: reduce)");
-    if (media.matches) return;
-    const animations = [...(paneChanged && layout.view === "preview" ? [] : grid.current?.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor") ?? [])].map(element => element.animate(
+    if (media.matches) { sidebarAnimation.current?.cancel(); return; }
+    if (sidebarChanged && !narrow) {
+      const element = grid.current.querySelector(".outline");
+      const from = element && sidebarAnimation.current ? getComputedStyle(element).opacity : String(Number(previous.sidebar));
+      sidebarAnimation.current?.cancel();
+      sidebarAnimation.current = element?.animate([{ opacity: from }, { opacity: Number(layout.sidebar) }], {
+        duration: layout.sidebar ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)",
+      }) ?? null;
+    }
+    const proseChanged = paneChanged || previous.active !== active;
+    const animations = [...(!proseChanged || (paneChanged && layout.view === "preview") ? [] : grid.current.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor"))].map(element => element.animate(
       paneChanged ? [{ opacity: .7, transform: "translateX(6px)" }, { opacity: 1, transform: "none" }] : [{ opacity: .8 }, { opacity: 1 }],
       { duration: paneChanged ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)" },
     ));
-    const cancel = () => { animations.forEach(animation => animation.cancel()); };
+    const cancel = () => { animations.forEach(animation => animation.cancel()); sidebarAnimation.current?.cancel(); };
     media.addEventListener("change", cancel);
-    return () => { cancel(); media.removeEventListener("change", cancel); };
-  }, [layout.view, active]);
+    return () => { animations.forEach(animation => animation.cancel()); media.removeEventListener("change", cancel); };
+  }, [layout.view, layout.sidebar, active, narrow]);
   // Where the cursor is now (the cursor state above trails it slightly), and
   // whether typing has paused, for holding back problems on the line being typed.
   const [liveCursor, setLiveCursor] = useState<{ record: string; offset: number } | null>(null);
