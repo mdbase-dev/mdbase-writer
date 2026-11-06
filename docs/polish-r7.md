@@ -96,6 +96,31 @@ in each theme.
 
 ## Follow-up failure diagnoses
 
+- **Cold CI accessibility — test ordering defect, not a rendering timeout.**
+  Run `42261688837` failed at the 375 px `renderedRevision` wait, before the
+  gate selected Preview. Replaying the exact development-server CI sequence,
+  including deleting `apps/writer/node_modules/.vite` immediately before
+  startup and retaining the baseline → reliability → i18n → accessibility →
+  polish order, reproduced the same 60,000 ms timeout on `ee16db484`.
+  The local failure occurred without any optimizer reload, separating it from
+  the reload in GitHub's log. Only 1/2 viewport scenarios completed; the phone
+  stopped after its first three audits. Hidden preview painting is intentionally
+  skipped. The corrected gate first waits for the compiled artifact, audits the
+  phone editor while Preview is hidden, reveals Preview, then requires the same
+  matching rendered revision plus a visible painted canvas before auditing it.
+  Desktop still requires painted ink before its editor audit. Both 60-second
+  bounds and every axe/focus assertion are retained.
+- **Cold dependency optimizer — separately fix the actual late dependency.**
+  GitHub's Vite log identifies `@lingui/core`, not a Typst worker dependency, as
+  newly optimized before its reload. Writer's Lingui macros generate this direct
+  runtime import (confirmed in the served `compile/client.ts`), although the
+  authored source imports `@lingui/core/macro`. Include the runtime explicitly in
+  the existing `optimizeDeps.include`; keep Home warm-up and the worker imports.
+  The baseline browser gate now records Vite `full-reload` WebSocket messages
+  from before navigation and rejects any across the demo session, including its
+  compiler and export paths. No cache prewarming, retry loop, workflow timeout
+  change or gate suppression is introduced. The required GitHub check on the
+  final rebased head, not the earlier local receipts, is the acceptance result.
 - **R2 — test harness lifetime defect, not navigation.** The follow-up reproduced
   the failure after 0 and 2 completed cases. Raw CDP reported error -32000,
   `Promise was collected`; Playwright rewrote that to the misleading generic

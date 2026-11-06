@@ -6,5 +6,6 @@
 - Avoid inherited grid-variable invalidation and post-render forced layout; yield between typesetting and bitmap installation so they do not consume one input-blocking task.
 - Make the command palette and shortcut sheet toggle, expose existing chapter, manuscript, sidebar and preview actions, and keep one Find shortcut row.
 - Match palette and shortcut-sheet toggles by logical key on non-QWERTY layouts, and retain Home's warmed compiler until workspace initialization or Home cleanup rather than expiring it after a minute.
+- Prebundle Lingui's macro-generated runtime dependency on a cold development start, reject unexpected Vite reloads in the demo gate, and audit phone preview ink after revealing Preview rather than requiring hidden rendering.
 - Use the shared shortcut notation in editor, comment, sidebar, export and outline tooltips on every platform.
 - Align Continue with manuscript rows, tighten reference chips, use the stronger primary token and unread-comment fill, enlarge Cite and Find targets, and hide installation prompts on collection gates.

@@ -21,6 +21,13 @@ if (process.env.COLD_CACHE) {
   await cdp.send("Network.setBypassServiceWorker", { bypass: true });
 }
 const errors = [];
+const viteReloads = [];
+page.on("websocket", socket => socket.on("framereceived", ({ payload }) => {
+  let message;
+  try { message = JSON.parse(String(payload)); }
+  catch { return; }
+  if (message.type === "full-reload") viteReloads.push(message);
+}));
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => {
   if (m.type() === "error" && !/favicon/.test(m.text())) errors.push(m.text());
@@ -616,6 +623,10 @@ await step("the phone layout switches between write, preview and outline", async
   await page.screenshot({ path: "out/e2e-mobile-outline.png" });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `page scrolls horizontally by ${overflow}px`);
+});
+
+await step("deferred dependencies do not reload the demo session", async () => {
+  assert.deepEqual(viteReloads, []);
 });
 
 await browser.close();

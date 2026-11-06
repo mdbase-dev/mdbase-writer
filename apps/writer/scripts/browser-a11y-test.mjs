@@ -64,14 +64,22 @@ try {
       await page.locator(".manuscripts > li", { hasText: "Small Agents, Large Effects" }).locator("[data-path]").click();
       await page.waitForFunction(() => {
         const snap = window.writer?.workspace?.getSnapshot();
+        return snap?.artifact && !snap.compiling;
+      }, null, { timeout: 60_000 });
+      if (width < 900) {
+        assert.equal(await page.locator(".preview").evaluate(element => element.checkVisibility({ visibilityProperty: true })), false);
+        await audit(page, `editor-${width}`);
+        await page.getByRole("navigation", { name: "View", exact: true }).getByRole("button", { name: /Preview/ }).click();
+      }
+      await page.waitForFunction(() => {
+        const snap = window.writer?.workspace?.getSnapshot();
         return snap?.artifact && !snap.compiling && Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snap.artifactRevision;
       }, null, { timeout: 60_000 });
-      await audit(page, `editor-${width}`);
+      assert.ok(await page.locator(".preview canvas[data-version]").first().isVisible());
       if (width < 900) {
-        await page.getByRole("navigation", { name: "View", exact: true }).getByRole("button", { name: /Preview/ }).click();
         await audit(page, `preview-${width}`);
         await page.getByRole("navigation", { name: "View", exact: true }).getByRole("button", { name: /Sidebar/ }).click();
-      }
+      } else await audit(page, `editor-${width}`);
       for (const name of ["Sources", "Comments"]) {
         await page.getByRole("tab", { name: new RegExp(name) }).click();
         if (name === "Comments") await page.waitForFunction(() => window.writer.workspace.getSnapshot().commentsLoad.phase === "ready");

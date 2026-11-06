@@ -42,6 +42,7 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
       // Deferred compiler/export worker imports are missed by the initial crawl.
       // Discovering these mid-session reloads the page and resets the demo collection.
       include: [
+        "@lingui/core",
         "@mdbase-dev/sdk/testing",
         "@myriaddreamin/typst.ts/compiler",
         "@myriaddreamin/typst.ts/options.init",
