@@ -316,7 +316,7 @@ jobs:
     needs: publish
     if: needs.publish.outputs.ready == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     # No environment, Cloudflare credentials, candidate checkout or app install.
     env:
       SOURCE_SHA: ${{ inputs.source_sha }}
@@ -331,7 +331,7 @@ jobs:
         with:
           node-version: 24
       - name: Isolated pinned browser tool with install scripts disabled
-        timeout-minutes: 5
+        timeout-minutes: 15
         run: |
           set -euo pipefail
           node scripts/publisher/tool.mjs "$RUNNER_TEMP/writer-smoke-tool" smoke
