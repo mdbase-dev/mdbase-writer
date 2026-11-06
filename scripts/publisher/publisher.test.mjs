@@ -131,12 +131,14 @@ it('derives the staging frozen install without changing any other dependency',as
   assert.ok(lock.includes('sha512-staging'));assert.ok(!lock.includes(plan.sdkTrust.production.sri));
   const stagingPath='file:vendor/sdk-staging.tgz',alias='@mdbase-dev/sdk-staging@'+stagingPath;
   assert.equal(parse(lock).importers['apps/writer'].dependencies['@mdbase-dev/sdk'].version,alias);
-  const restored=lock.replaceAll("version: '"+alias+"'",'version: '+stagingPath)
-   .replaceAll("'@mdbase-dev/sdk': '"+alias+"'","'@mdbase-dev/sdk': "+stagingPath)
-   .replaceAll(alias,'@mdbase-dev/sdk@'+stagingPath)
-   .replaceAll('sdk-staging.tgz',plan.sdkTrust.production.path.split('/').at(-1))
-   .replaceAll('sha512-staging',plan.sdkTrust.production.sri);
-  assert.equal(restored,originalLock,'only the SDK file alias, integrity and peer identity change');
+  const version=plan.sdkTrust.production.version;
+  const restored=lock.replace(`specifier: file:../../vendor/sdk-staging.tgz\n        version: '${alias}'`,
+    `specifier: ${version}\n        version: ${version}`)
+   .replaceAll(`'@mdbase-dev/sdk': '${alias}'`,`'@mdbase-dev/sdk': ${version}`)
+   .replaceAll(alias,'@mdbase-dev/sdk@'+version)
+   .replace(`resolution: {integrity: sha512-staging, tarball: ${stagingPath}}\n    name: '@mdbase-dev/sdk-staging'\n    version: ${version}`,
+    `resolution: {integrity: ${plan.sdkTrust.production.sri}}`);
+  assert.equal(restored,originalLock,'only the SDK source, integrity and peer identity change');
   pkg.dependencies['@mdbase-dev/sdk']=originalPackage.dependencies['@mdbase-dev/sdk'];
   assert.deepEqual(pkg,originalPackage);
  }finally{await rm(f.root,{recursive:true,force:true});}

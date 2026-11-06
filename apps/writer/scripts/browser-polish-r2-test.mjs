@@ -16,6 +16,9 @@ try {
     await context.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
     const page = await context.newPage();
     const errors = [];
+    const navigation = [];
+    page.on("framenavigated", frame => { if (frame === page.mainFrame()) navigation.push({ event: "navigation", url: frame.url(), at: Date.now() }); });
+    page.on("console", message => { if (message.text().includes("[vite]")) navigation.push({ event: "vite", message: message.text(), at: Date.now() }); });
     page.on("pageerror", error => errors.push(error.message));
     try {
       await page.goto(`${base}?demo`);
@@ -86,7 +89,16 @@ try {
       const draftDownload = await download;
       await draftDownload.saveAs(`out/polish-r2/${name}-${draftDownload.suggestedFilename()}`);
       await page.screenshot({ path: `out/polish-r2/${name}-hold.png` });
-      await page.evaluate(async () => { const client = window.nativeFixture.client(); const result = await client.save(client.resolveHold(window.nativeHold, "keep_mine")); if (result.outcome !== "confirmed") throw new Error("Fixture hold did not resolve"); });
+      await page.evaluate(() => {
+        const client = window.nativeFixture.client();
+        window.nativeHoldResolution = client.save(client.resolveHold(window.nativeHold, "keep_mine")).then(
+          result => { window.nativeHoldResult = { outcome: result.outcome }; },
+          error => { window.nativeHoldResult = { error: String(error) }; },
+        );
+      });
+      await page.waitForFunction(() => window.nativeHoldResult, null, { timeout: 60000 });
+      assert.deepEqual(await page.evaluate(() => window.nativeHoldResult), { outcome: "confirmed" });
+      await page.evaluate(() => { delete window.nativeHoldResolution; delete window.nativeHoldResult; });
       await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot.state === "saved");
       await page.evaluate(() => { window.writer.workspace.setBody("writing/main.md", "Local concurrent edit\n"); window.nativeFixture.replica().editElsewhere("writing/main.md", { body: "Collection concurrent edit\n" }); });
       await page.getByRole("button", { name: "Compare versions", exact: true }).click();
@@ -117,6 +129,7 @@ try {
       results.push({ name, ok: true });
       console.log(`ok native status, protected hold, download, merge and semantics ${name}`);
     } catch (error) {
+      writeFileSync(`out/polish-r2/${name}-navigation.json`, JSON.stringify(navigation, null, 2));
       await page.screenshot({ path: `out/polish-r2/${name}-failure.png` });
       throw error;
     } finally {

@@ -57,6 +57,30 @@ async function announcement(page, text) {
   await page.waitForFunction(text => [...document.querySelectorAll('[aria-live]')].some(element => element.textContent.includes(text) && !element.closest('[inert], [aria-hidden="true"]')), text);
 }
 try {
+  for (const surface of ["Home", "Workspace"]) {
+    await scenario(`Dvorak logical shortcuts toggle on ${surface}`, async page => {
+      await (surface === "Home" ? home(page) : open(page));
+      const dispatch = (key, code) => page.evaluate(({ key, code }) => {
+        const event = new KeyboardEvent("keydown", { key, code, ctrlKey: true, bubbles: true, cancelable: true });
+        (document.activeElement ?? document.body).dispatchEvent(event);
+        return event.defaultPrevented;
+      }, { key, code });
+      const palette = page.locator(".mdbase-command-palette input");
+      assert.equal(await dispatch("t", "KeyK"), false, "Dvorak Ctrl+T must not open the palette");
+      await palette.waitFor({ state: "hidden" });
+      assert.equal(await dispatch("k", "KeyV"), true, "Dvorak Ctrl+K opens the palette");
+      await palette.waitFor();
+      assert.equal(await dispatch("k", "KeyV"), true, "Dvorak Ctrl+K closes the palette");
+      await palette.waitFor({ state: "hidden" });
+      const shortcuts = page.locator(".shortcuts-dialog[open]");
+      await dispatch("z", "Slash");
+      await shortcuts.waitFor({ state: "hidden" });
+      assert.equal(await dispatch("/", "BracketLeft"), true, "Dvorak Ctrl+/ opens shortcuts");
+      await shortcuts.waitFor();
+      assert.equal(await dispatch("/", "BracketLeft"), true, "Dvorak Ctrl+/ closes shortcuts");
+      await shortcuts.waitFor({ state: "hidden" });
+    });
+  }
   await scenario("1 desktop Settings preserves Ctrl+comma, palette, save and F8", async page => {
     await clean(page);
     await page.locator(".cm-content").click();

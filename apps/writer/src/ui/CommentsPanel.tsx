@@ -11,7 +11,7 @@ import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent, type Re
 
 import { personName, type CommentChange, type People } from "../backend/comments.js";
 import type { Result } from "../backend/types.js";
-import { ALT_LABEL, MOD_LABEL } from "../editor/insight.js";
+import { shortcutLabel } from "@mdbase-dev/ui/command-palette";
 import type { CommentDraft } from "../workspace/workspace.js";
 import { Select } from "@mdbase-dev/ui/select";
 
@@ -171,7 +171,7 @@ export function CommentsPanel({
             <>
               <p><strong><Trans>No open comments</Trans></strong></p>
               <p className="small muted"><Trans>
-                Select a passage and press <kbd>{MOD_LABEL}-{ALT_LABEL}-M</kbd> to comment, or <kbd>{MOD_LABEL}-{ALT_LABEL}-S</kbd> to suggest an edit.
+                Select a passage and press <kbd>{shortcutLabel("mod+alt+m")}</kbd> to comment, or <kbd>{shortcutLabel("mod+alt+s")}</kbd> to suggest an edit.
               </Trans></p>
             </>
           ) : (
@@ -278,7 +278,7 @@ export function Composer({ pending, signer, recordTitle, onSubmit, onCancel }: {
       />
       {error && <p className="small tone-danger" role="alert">{error}</p>}
       <div className="thread-actions">
-        <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || empty} title={t`${MOD_LABEL}-Enter`}>
+        <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || empty} title={shortcutLabel("mod+Enter")}>
           {suggest ? t`Suggest` : t`Comment`}
         </button>
         <button type="button" className="mdbase-button is-small" onClick={onCancel} disabled={busy}><Trans>
@@ -362,7 +362,7 @@ const Thread = memo(function Thread({
         >
           <textarea className="mdbase-field" rows={2} autoFocus value={reply} onChange={(e) => setReply(e.target.value)} placeholder={t`Reply`} aria-label={t`Reply`} />
           <div className="thread-actions">
-            <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || !reply.trim()} title={t`${MOD_LABEL}-Enter`}><Trans>Reply</Trans></button>
+            <button type="submit" className="mdbase-button is-primary is-small" disabled={busy || !reply.trim()} title={shortcutLabel("mod+Enter")}><Trans>Reply</Trans></button>
             <button type="button" className="mdbase-button is-small" onClick={() => setReplying(false)}><Trans>Cancel</Trans></button>
           </div>
         </form>

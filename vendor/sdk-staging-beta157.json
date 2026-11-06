@@ -1,0 +1,46 @@
+{
+  "schema": "tnapp/production-sdk-original/1",
+  "package": "@mdbase-dev/sdk-staging",
+  "version": "0.1.0-beta.157",
+  "artifact": "sdk-staging-beta157.tgz",
+  "sourceCommit": "493d29ca2a3494c5d59677e8b83e309b44a28c31",
+  "environment": "staging",
+  "bytes": 4537508,
+  "sha256": "3efb7888ef59b6449ecff7c717b123dfaf94b3ae6257bcae4f1e7113a82a0d4c",
+  "sri": "sha512-ia47TMEcUfFWIahKWpkqhsuAMRoyZ0so6gJ5IZkJ9N4zz+zV6tL1GDu1SqtosCEj0Cql5qUH+dinqk9WBrYJfQ==",
+  "publication": {
+    "repository": "mdbase-dev/mdbase-connect",
+    "workflow": ".github/workflows/publish-sdk-npm.yml",
+    "ref": "refs/heads/main",
+    "tag": "sdk-v0.1.0-beta.157",
+    "asset": "sdk-staging.tgz",
+    "bundle": "sdk-staging-beta157.tgz.sigstore.json"
+  },
+  "trust": {
+    "package": "@mdbase-dev/sdk-staging",
+    "sha256": "18ae86a26f9c8b2442235c537b8d58dcc059c05e4bb0f175607fd0aeacc3f0ad",
+    "bytes": 853,
+    "cpOrigin": "https://connect-staging.mdbase.dev",
+    "logOrigin": "https://log-staging.mdbase.dev",
+    "sourceCommit": "36abd4b065be9495a7f5ae0808865a1f2279af04",
+    "sourceVersion": "0.1.0-beta.141"
+  },
+  "runtime": {
+    "sha256": "d375ce16a48dec718801704f56ffb6a545247a2793912c2c8e68ceb171ff2537",
+    "bytes": 3797530,
+    "maxBytes": 3797530,
+    "source": {
+      "repository": "mdbase-dev/mdbase-connect",
+      "commit": "3e433313e0a234513478789686a4f4274e4dd76c"
+    }
+  },
+  "packagedTrustModuleSha256": "8821ff673b3d27171e893c5c6108c4fc839d60e7d64fb3a50c395893f4c3f2df",
+  "bundledDependencies": [
+    {
+      "name": "@mdbase-dev/connect-protocol",
+      "member": "package/vendor/mdbase-dev-connect-protocol-0.1.0-beta.145-e6e66bcd172f.tgz",
+      "bytes": 106404,
+      "sha256": "e901144b8d93dc96fcf71d9d8f85dddbf647e9908913be21191c484e9224bb98"
+    }
+  ]
+}

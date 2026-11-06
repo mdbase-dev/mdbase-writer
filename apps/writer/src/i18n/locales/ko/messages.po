@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · {1}행"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0} ({MOD_LABEL}-Shift-\\ 키로 전환)"
+msgid "{0} ({1} cycles)"
+msgstr "{0} ({1}로 전환)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -134,33 +135,14 @@ msgstr "{0}{1} 백업됨"
 msgid "{at}: this chapter was deleted; download the local draft before leaving."
 msgstr "{at}: 이 장이 삭제되었습니다. 나가기 전에 로컬 초안을 다운로드하세요."
 
+#. placeholder {0}: shortcutLabel("mod+shift+m")
 #: src/ui/WorkspaceView.tsx
-msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr "{commentsTitle} (단축키: {MOD_LABEL}-Shift-M)"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} K"
-msgstr "단축키 {MOD_LABEL} K"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-B"
-msgstr "굵게 ({MOD_LABEL}-B)"
+msgid "{commentsTitle} ({0})"
+msgstr "{commentsTitle} (단축키: {0})"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
 msgstr "자료에서 표시하려면 {MOD_LABEL}-클릭"
-
-#: src/ui/CommentsPanel.tsx
-msgid "{MOD_LABEL}-Enter"
-msgstr "실행 ({MOD_LABEL}-Enter)"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-I"
-msgstr "기울임 ({MOD_LABEL}-I)"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-Shift-K"
-msgstr "링크 ({MOD_LABEL}-Shift-K)"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
@@ -299,6 +281,10 @@ msgstr "추가"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "홈 화면에 {appName}을(를) 추가하려면 공유를 탭한 다음 홈 화면에 추가를 선택하세요."
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "장 추가"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "mdbase Reader에서 자료를 추가하고 여기서 <0>[@citekey]</0>로 인용하세요."
@@ -425,6 +411,10 @@ msgstr "다른 곳에서 변경됨"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "입력하는 대로 변경 사항이 원고의 프런트매터에 저장되고 미리보기에 반영됩니다."
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "변경 사항이 서버에 도달하지 않았습니다"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -612,9 +602,10 @@ msgstr "댓글"
 msgid "Comment on the selection"
 msgstr "선택 영역에 댓글 달기"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
 #: src/editor/selection-bar.tsx
-msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr "선택 영역에 댓글 달기({MOD_LABEL}-{ALT_LABEL}-M)"
+msgid "Comment on the selection ({0})"
+msgstr "선택 영역에 댓글 달기({0})"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comment on this text"
@@ -803,9 +794,11 @@ msgstr "드래그하여 크기를 조정하고 두 번 클릭하여 원래 크�
 msgid "Drag to resize; double-click to split evenly"
 msgstr "드래그하여 크기를 조정하고 두 번 클릭하여 같은 크기로 나누기"
 
+#. placeholder {0}: shortcutLabel("alt+↑")
+#. placeholder {1}: shortcutLabel("alt+↓")
 #: src/ui/OutlinePanel.tsx
-msgid "Drag, or Alt-↑/↓, to reorder"
-msgstr "순서를 바꾸려면 드래그하거나 Alt-↑/↓를 누르세요"
+msgid "Drag, or {0} / {1}, to reorder"
+msgstr "순서를 바꾸려면 드래그하거나 {0} / {1}를 누르세요"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
@@ -879,9 +872,10 @@ msgstr "내보내기에 실패했습니다."
 msgid "Export formats"
 msgstr "내보내기 형식"
 
+#. placeholder {0}: shortcutLabel("mod+shift+s")
 #: src/ui/WorkspaceView.tsx
-msgid "Export formats ({MOD_LABEL}-Shift-S)"
-msgstr "내보내기 형식({MOD_LABEL}-Shift-S)"
+msgid "Export formats ({0})"
+msgstr "내보내기 형식({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Pandoc bundle (zip)"
@@ -941,9 +935,10 @@ msgstr "이름 또는 폴더로 메모 찾기"
 msgid "Find a source"
 msgstr "출처 찾기"
 
+#. placeholder {0}: shortcutLabel("mod+shift+e")
 #: src/ui/WorkspaceView.tsx
-msgid "Find a source ({MOD_LABEL}-Shift-E)"
-msgstr "자료 찾기 ({MOD_LABEL}-Shift-E)"
+msgid "Find a source ({0})"
+msgstr "자료 찾기 ({0})"
 
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
@@ -1057,9 +1052,10 @@ msgstr "편집기 아래 문제 목록 숨기기 (F8을 누르면 다음 문제�
 msgid "Hide the sidebar"
 msgstr "사이드바 숨기기"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "사이드바 숨기기 ({MOD_LABEL}-\\)"
+msgid "Hide the sidebar ({0})"
+msgstr "사이드바 숨기기 ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1442,7 @@ msgid "New comment"
 msgstr "새 댓글"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "새 원고"
 
@@ -1573,6 +1570,10 @@ msgstr "불러오지 않아 제외됩니다."
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "나중에"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "서버에 저장되지 않음"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -1757,9 +1758,10 @@ msgstr "기타 노트"
 msgid "Outline"
 msgstr "개요"
 
+#. placeholder {0}: shortcutLabel("mod+shift+f")
 #: src/ui/WorkspaceView.tsx
-msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr "개요 및 원고 검색 ({MOD_LABEL}-Shift-F)"
+msgid "Outline, and search the manuscript ({0})"
+msgstr "개요 및 원고 검색 ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -2011,6 +2013,7 @@ msgid "Retry opening"
 msgstr "열기 다시 시도"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "미리보기 다시 시도"
 
@@ -2109,9 +2112,11 @@ msgstr "원고 검색"
 msgid "Section"
 msgstr "절"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
+#. placeholder {1}: shortcutLabel("mod+alt+s")
 #: src/ui/CommentsPanel.tsx
-msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
-msgstr "본문 구간을 선택하고 <0>{MOD_LABEL}-{ALT_LABEL}-M</0>을 눌러 댓글을 달거나 <1>{MOD_LABEL}-{ALT_LABEL}-S</1>를 눌러 수정을 제안하세요."
+msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
+msgstr "본문 구간을 선택하고 <0>{0}</0>을 눌러 댓글을 달거나 <1>{1}</1>를 눌러 수정을 제안하세요."
 
 #: src/ui/Shortcuts.tsx
 msgid "Select next occurrence"
@@ -2256,9 +2261,10 @@ msgstr "{0}의 제목 표시"
 msgid "Show the sidebar"
 msgstr "사이드바 표시"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "사이드바 표시 ({MOD_LABEL}-\\)"
+msgid "Show the sidebar ({0})"
+msgstr "사이드바 표시 ({0})"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2400,9 +2406,10 @@ msgstr "수정 제안"
 msgid "Suggest an edit to the selection"
 msgstr "선택 영역의 수정 제안"
 
+#. placeholder {0}: shortcutLabel("mod+alt+s")
 #: src/editor/selection-bar.tsx
-msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr "선택 영역의 수정 제안({MOD_LABEL}-{ALT_LABEL}-S)"
+msgid "Suggest an edit to the selection ({0})"
+msgstr "선택 영역의 수정 제안({0})"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
@@ -2596,9 +2603,10 @@ msgstr "이 본문 구간은 더 이상 텍스트에 없습니다."
 msgid "Title"
 msgstr "제목"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "제목, 저자, 초록, 인용 스타일, 레이아웃 및 언어({MOD_LABEL}-,)"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "제목, 저자, 초록, 인용 스타일, 레이아웃 및 언어({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"

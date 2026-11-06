@@ -9,13 +9,13 @@ import { ManuscriptWorkspace } from "../workspace/workspace.js";
 import { describe, expect, it, vi } from "vitest";
 import { annotationContract, ConnectBackend, manuscriptContract, sourceContract, commentContract } from "./connect.js";
 
-vi.mock("../compile/client.js", () => ({ CompileClient: class {
+vi.mock("../compile/client.js", () => { class CompileClient {
   ready = Promise.resolve(0);
   send = vi.fn();
   onResult = () => () => {};
   onFailure = () => () => {};
   terminate() {}
-} }));
+} return { CompileClient, takeCompileClient: () => new CompileClient() }; });
 
 const implementation = (name: string, fields: Record<string, string>) => ({ typeName: name, typeVersion: 1, digest: "test", fields });
 const annotationType = implementation("highlight", { source: "reading", locator: "page" });

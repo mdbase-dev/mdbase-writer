@@ -11,6 +11,12 @@ it("returns to the real save state when recovery has been reviewed", () => {
   expect(workspaceSaveNotice("conflict", false)).toEqual({ tone: "attention", label: "Changed elsewhere", shortLabel: "Conflict" });
 });
 
+it("never calls delayed or refused sync saved, even when the local save settled", () => {
+  for (const state of ["saved", "saved_on_device", "saving"] as const) {
+    expect(workspaceSaveNotice(state, false, "sync_delayed", true)).toEqual({ tone: "attention", label: "Changes haven't reached the server", shortLabel: "Not on server" });
+  }
+});
+
 it("keeps every unsettled save state visible on phones", () => {
   for (const state of ["unsaved", "saving", "conflict", "recovery", "error", "deleted", "saved_on_device"] as const) {
     const notice = workspaceSaveNotice(state, false);

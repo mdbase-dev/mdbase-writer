@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · {1}行目"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0}（{MOD_LABEL}-Shift-\\で切り替え）"
+msgid "{0} ({1} cycles)"
+msgstr "{0}（{1} で切り替え）"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -134,33 +135,14 @@ msgstr "{0}バックアップ：{1}"
 msgid "{at}: this chapter was deleted; download the local draft before leaving."
 msgstr "{at}: この章は削除されました。離れる前にローカルの下書きをダウンロードしてください。"
 
+#. placeholder {0}: shortcutLabel("mod+shift+m")
 #: src/ui/WorkspaceView.tsx
-msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr "{commentsTitle}（{MOD_LABEL}-Shift-M）"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} K"
-msgstr "{MOD_LABEL} K"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-B"
-msgstr "{MOD_LABEL}-B"
+msgid "{commentsTitle} ({0})"
+msgstr "{commentsTitle}（{0}）"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
 msgstr "{MOD_LABEL}-クリックで資料に表示"
-
-#: src/ui/CommentsPanel.tsx
-msgid "{MOD_LABEL}-Enter"
-msgstr "{MOD_LABEL}-Enter"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-I"
-msgstr "{MOD_LABEL}-I"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-Shift-K"
-msgstr "{MOD_LABEL}-Shift-K"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
@@ -299,6 +281,10 @@ msgstr "追加"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "ホーム画面に{appName}を追加：共有をタップし、「ホーム画面に追加」を選択してください。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "章を追加"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "資料はmdbase Readerで追加し、ここでは<0>[@citekey]</0>で引用します。"
@@ -425,6 +411,10 @@ msgstr "別の場所で変更されました"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "入力すると変更内容が原稿のメタデータに保存され、プレビューにも反映されます。"
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "変更がサーバーに届いていません"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -612,9 +602,10 @@ msgstr "コメント"
 msgid "Comment on the selection"
 msgstr "選択範囲にコメント"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
 #: src/editor/selection-bar.tsx
-msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr "選択範囲にコメント（{MOD_LABEL}-{ALT_LABEL}-M）"
+msgid "Comment on the selection ({0})"
+msgstr "選択範囲にコメント（{0}）"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comment on this text"
@@ -803,9 +794,11 @@ msgstr "ドラッグしてサイズを変更、ダブルクリックで元に戻
 msgid "Drag to resize; double-click to split evenly"
 msgstr "ドラッグしてサイズを変更、ダブルクリックで均等に分割します"
 
+#. placeholder {0}: shortcutLabel("alt+↑")
+#. placeholder {1}: shortcutLabel("alt+↓")
 #: src/ui/OutlinePanel.tsx
-msgid "Drag, or Alt-↑/↓, to reorder"
-msgstr "ドラッグまたはAlt-↑/↓で並べ替え"
+msgid "Drag, or {0} / {1}, to reorder"
+msgstr "ドラッグまたは{0} / {1}で並べ替え"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
@@ -879,9 +872,10 @@ msgstr "エクスポートに失敗しました。"
 msgid "Export formats"
 msgstr "エクスポート形式"
 
+#. placeholder {0}: shortcutLabel("mod+shift+s")
 #: src/ui/WorkspaceView.tsx
-msgid "Export formats ({MOD_LABEL}-Shift-S)"
-msgstr "エクスポート形式（{MOD_LABEL}-Shift-S）"
+msgid "Export formats ({0})"
+msgstr "エクスポート形式（{0}）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Pandoc bundle (zip)"
@@ -941,9 +935,10 @@ msgstr "名前またはフォルダーでノートを検索"
 msgid "Find a source"
 msgstr "出典を検索"
 
+#. placeholder {0}: shortcutLabel("mod+shift+e")
 #: src/ui/WorkspaceView.tsx
-msgid "Find a source ({MOD_LABEL}-Shift-E)"
-msgstr "出典を検索（{MOD_LABEL}-Shift-E）"
+msgid "Find a source ({0})"
+msgstr "出典を検索（{0}）"
 
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
@@ -1057,9 +1052,10 @@ msgstr "エディター下の問題一覧を非表示（F8で次の問題へ）"
 msgid "Hide the sidebar"
 msgstr "サイドバーを非表示"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "サイドバーを非表示（{MOD_LABEL}-\\）"
+msgid "Hide the sidebar ({0})"
+msgstr "サイドバーを非表示（{0}）"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1442,7 @@ msgid "New comment"
 msgstr "新しいコメント"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "新しい原稿"
 
@@ -1573,6 +1570,10 @@ msgstr "読み込まれていないため、省略されます。"
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "後で"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "サーバーに未保存"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -1757,9 +1758,10 @@ msgstr "その他のノート"
 msgid "Outline"
 msgstr "アウトライン"
 
+#. placeholder {0}: shortcutLabel("mod+shift+f")
 #: src/ui/WorkspaceView.tsx
-msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr "アウトラインと原稿を検索（{MOD_LABEL}-Shift-F）"
+msgid "Outline, and search the manuscript ({0})"
+msgstr "アウトラインと原稿を検索（{0}）"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -2011,6 +2013,7 @@ msgid "Retry opening"
 msgstr "開く操作を再試行"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "プレビューを再試行"
 
@@ -2109,9 +2112,11 @@ msgstr "原稿を検索"
 msgid "Section"
 msgstr "セクション"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
+#. placeholder {1}: shortcutLabel("mod+alt+s")
 #: src/ui/CommentsPanel.tsx
-msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
-msgstr "テキストを選択し、<0>{MOD_LABEL}-{ALT_LABEL}-M</0>を押してコメントするか、<1>{MOD_LABEL}-{ALT_LABEL}-S</1>を押して編集を提案してください。"
+msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
+msgstr "テキストを選択し、<0>{0}</0>を押してコメントするか、<1>{1}</1>を押して編集を提案してください。"
 
 #: src/ui/Shortcuts.tsx
 msgid "Select next occurrence"
@@ -2256,9 +2261,10 @@ msgstr "{0}の見出しを表示"
 msgid "Show the sidebar"
 msgstr "サイドバーを表示"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "サイドバーを表示（{MOD_LABEL}-\\）"
+msgid "Show the sidebar ({0})"
+msgstr "サイドバーを表示（{0}）"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2400,9 +2406,10 @@ msgstr "編集を提案"
 msgid "Suggest an edit to the selection"
 msgstr "選択範囲への編集を提案"
 
+#. placeholder {0}: shortcutLabel("mod+alt+s")
 #: src/editor/selection-bar.tsx
-msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr "選択範囲への編集を提案（{MOD_LABEL}-{ALT_LABEL}-S）"
+msgid "Suggest an edit to the selection ({0})"
+msgstr "選択範囲への編集を提案（{0}）"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
@@ -2596,9 +2603,10 @@ msgstr "この箇所は本文にありません"
 msgid "Title"
 msgstr "タイトル"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "タイトル、著者、要旨、引用スタイル、レイアウト、言語（{MOD_LABEL}-,）"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "タイトル、著者、要旨、引用スタイル、レイアウト、言語（{0}）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"

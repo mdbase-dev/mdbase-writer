@@ -1,0 +1,139 @@
+{
+  "capturedAtUtc": "2026-11-06T17:23:56.640Z",
+  "reviewedHead": "c08f25b7c23699ecd1e50e23fdf7199c0a1857b8",
+  "runtimeSourceSha256": "3caeb84f6ed9b90edaebdb38eac1e0ff11be3cd35b4474bff5f30e265b1f1a77",
+  "runtimeSourceDigestMethod": "SHA-256 of sorted tracked apps/writer/src path + NUL + bytes + NUL",
+  "reviewGateSha256": "bce44409722709e419b4c303db901c3ac210f9e26de5000b55894473ffdfb764",
+  "styleSha256": "4d9f55acc97718d8ea177444ebf75aa268fc8d6441d1178b0809a81401b605c6",
+  "styleUnchangedFromReviewedHead": true,
+  "regressions": {
+    "dvorakSurfaceCases": {
+      "before": {
+        "passed": 0,
+        "total": 2
+      },
+      "after": {
+        "passed": 2,
+        "total": 2
+      },
+      "surfaces": [
+        "Home",
+        "Workspace"
+      ],
+      "syntheticKeyCodePairs": [
+        [
+          "k",
+          "KeyV"
+        ],
+        [
+          "t",
+          "KeyK"
+        ],
+        [
+          "/",
+          "BracketLeft"
+        ],
+        [
+          "z",
+          "Slash"
+        ]
+      ]
+    },
+    "compilerClientAndWorker": {
+      "before": {
+        "passed": 10,
+        "total": 11
+      },
+      "after": {
+        "passed": 11,
+        "total": 11
+      },
+      "idlePreparationMsTestedWithoutReady": 120000,
+      "initializedReadyAtMs": 59999,
+      "idleMsTestedAfterReady": 60000,
+      "unchangedInitDeadlineMs": 60000,
+      "repeatedInitCannotExtendDeadline": true
+    }
+  },
+  "checks": {
+    "unitAndNodePassed": 599,
+    "preexistingSkipped": 6,
+    "typecheck": "passed",
+    "locales": "passed",
+    "localeSourceModules": 92,
+    "configuredLintScript": false,
+    "builds": {
+      "passed": 4,
+      "total": 4,
+      "environments": [
+        "production",
+        "staging",
+        "lab",
+        "optimized local demo"
+      ]
+    }
+  },
+  "browserPassCounts": {
+    "r2": {
+      "passed": 8,
+      "total": 8
+    },
+    "r4": {
+      "passed": 8,
+      "total": 8,
+      "platformPassed": 3,
+      "platformTotal": 3
+    },
+    "r6": {
+      "passed": 4,
+      "total": 4,
+      "additionalScenariosPassed": 5
+    },
+    "base": {
+      "passed": 8,
+      "total": 8,
+      "recoveryPassed": true
+    },
+    "review": {
+      "passed": 20,
+      "total": 20
+    },
+    "r7": {
+      "motionPassed": 4,
+      "motionTotal": 4,
+      "phonePassed": 4,
+      "phoneTotal": 4,
+      "unreadThemesPassed": 2,
+      "unreadThemesTotal": 2
+    }
+  },
+  "launchLoad1m": {
+    "reviewAndR2Batch": 12.61,
+    "r4": 18.82,
+    "r6": 19.57,
+    "base": 16.44,
+    "optimizedR7": 10.17
+  },
+  "optimizedMotion": {
+    "firstInkMs": 1652.9000000357628,
+    "maxLongTaskMs": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "firstFadeMs": [
+      7.299999952316284,
+      5.399999976158142,
+      7.299999952316284,
+      7.099999964237213
+    ]
+  },
+  "limitations": [
+    "Dvorak events are synthetic key/code mismatches, not a real OS layout switch.",
+    "Compiler lifecycle durations use fake timers; actual prepare/no-ready behavior is separately checked in the worker test.",
+    "Live W1.2/W1.4 checks still await the owner LAB deployment after merge."
+  ],
+  "merged": false,
+  "deployed": false
+}

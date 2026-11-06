@@ -3,6 +3,24 @@ import { t } from "@lingui/core/macro";
 import type { CompileResult, FromWorker, ToWorker } from "./protocol.js";
 
 type PdfOutcome = { bytes?: Uint8Array; error?: string };
+let preparedClient: CompileClient | undefined;
+
+export function warmCompiler(): () => void {
+  const client = preparedClient ??= new CompileClient();
+  const stop = client.onFailure(() => { if (preparedClient === client) preparedClient = undefined; });
+  client.send({ type: "prepare", baseUrl: import.meta.env.BASE_URL });
+  return () => {
+    stop();
+    if (preparedClient === client) { preparedClient = undefined; client.terminate(); }
+  };
+}
+
+export function takeCompileClient(): CompileClient {
+  const client = preparedClient ?? new CompileClient();
+  preparedClient = undefined;
+  return client;
+}
+
 export class CompileClient {
   private readonly worker: Worker;
   private readonly resultListeners = new Set<(result: CompileResult) => void>();
@@ -11,7 +29,7 @@ export class CompileClient {
   private nextPdf = 1;
   private stopped: string | undefined;
   private rejectReady: (error: Error) => void = () => {};
-  private initTimer: ReturnType<typeof setTimeout>;
+  private initTimer: ReturnType<typeof setTimeout> | undefined;
   private compileTimer: ReturnType<typeof setTimeout> | undefined;
   readonly ready: Promise<number>;
 
@@ -21,10 +39,9 @@ export class CompileClient {
     this.ready = new Promise((resolve, reject) => { resolveReady = resolve; this.rejectReady = reject; });
     // The workspace listens for failures; consumers may additionally await readiness.
     void this.ready.catch(() => {});
-    this.initTimer = setTimeout(() => this.fail(t`The preview took too long to load. Retry the preview.`), 60_000);
     this.worker.onmessage = (event: MessageEvent<FromWorker>) => {
       const m = event.data;
-      if (m.type === "ready") { clearTimeout(this.initTimer); resolveReady(m.initMs); }
+      if (m.type === "ready") { clearTimeout(this.initTimer); this.initTimer = undefined; resolveReady(m.initMs); }
       else if (m.type === "result") {
         clearTimeout(this.compileTimer);
         this.compileTimer = undefined;
@@ -48,6 +65,9 @@ export class CompileClient {
   }
   send(message: ToWorker, transfer: Transferable[] = []): void {
     if (this.stopped) return;
+    if (message.type === "init" && this.initTimer === undefined) {
+      this.initTimer = setTimeout(() => this.fail(t`The preview took too long to load. Retry the preview.`), 60_000);
+    }
     if (message.type !== "prepare" && message.type !== "init" && message.type !== "export-pdf" && this.compileTimer === undefined) {
       this.compileTimer = setTimeout(() => this.fail(t`Typesetting took too long. Your editor is still available; retry the preview.`), 60_000);
     }

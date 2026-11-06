@@ -58,16 +58,15 @@ export async function installedMembers(root, ignoredPaths = new Set()) {
 export async function productionPin(repoRoot) {
   const app=join(repoRoot,'apps/writer'),pkg=await json(join(app,'package.json'));
   const spec=pkg.dependencies['@mdbase-dev/sdk'];
-  requireValue(/^file:\.\.\/\.\.\/vendor\/[\w.-]+\.tgz$/.test(spec??''),'SDK must be a committed original archive');
-  const artifact=spec.slice('file:../../vendor/'.length);
+  requireValue(/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(spec??''),'SDK must be an exact npm version');
   const candidates=[];
   for(const name of await readdir(join(repoRoot,'vendor'))) {
     if(!/^sdk-production-[\w.-]+\.json$/.test(name))continue;
     const value=await json(join(repoRoot,'vendor',name));
-    if(value.artifact===artifact)candidates.push(value);
+    if(value.version===spec)candidates.push(value);
   }
   requireValue(candidates.length===1,'one production pin must describe the dependency');
-  const pin=candidates[0],bytes=await regular(repoRoot,'vendor/'+artifact);
+  const pin=candidates[0],bytes=await regular(repoRoot,'vendor/'+pin.artifact);
   requireValue(pin.schema==='tnapp/production-sdk-original/1' && pin.environment==='production' &&
     /^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(pin.version) && /^[a-f0-9]{40}$/.test(pin.sourceCommit),'production pin identity');
   requireValue(pin.sha256===hash(bytes) && pin.bytes===bytes.length && pin.sri==='sha512-'+hash(bytes,'sha512'),'committed SDK archive mismatch');
@@ -127,7 +126,10 @@ export async function loadOriginals({target,repoRoot,hashes,installed=false,fetc
     requireValue(entry?.includes(`    resolution: {integrity: sha512-${hash(bytes,'sha512')}, tarball: file:${path}}\n`),name+' frozen archive integrity mismatch');
     return path;
   };
-  const productionPath=frozenFile(packages.sdk,spec,productionBytes);
+  requireValue(importer?.includes(`'${packages.sdk}':\n        specifier: ${spec}\n        version: ${spec}\n`),'SDK frozen npm importer mismatch');
+  const sdkEntry=lock.split(`\n  '${packages.sdk}@${spec}':\n`)[1]?.split(/\n  [^ ]/)[0];
+  requireValue(sdkEntry?.includes(`    resolution: {integrity: ${pin.sri}}\n`),'SDK frozen npm integrity mismatch');
+  const productionPath='vendor/'+pin.artifact;
   const auth=await authenticate(pin,productionBytes,{fetchImpl});
   let sdkBytes=productionBytes,sdkPath=productionPath,authentication=auth;
   if(target==='staging') {
@@ -200,6 +202,6 @@ export async function loadOriginals({target,repoRoot,hashes,installed=false,fetc
   }
   if(installed)await compareInstalled(repoRoot,archives,{fetchImpl});
   return {environment:target,release,nativeAssets,archives,authentication,lockSha256:hash(lockBytes),protectedHashes:hashes,
-    production:{path:productionPath,sri:pin.sri},trustModuleSha256:hash(module),
+    production:{path:productionPath,sri:pin.sri,version:spec},trustModuleSha256:hash(module),
     appOrigin:target==='staging'?'https://staging.mdbase-writer.pages.dev':'https://writer.mdbase.dev'};
 }

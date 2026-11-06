@@ -261,7 +261,7 @@ try {
   await limit.getByRole("button", { name: "Add a collection…", exact: true }).click();
   const notice = limit.getByRole("alert").filter({ hasText: "Synced collection limit reached" });
   await notice.waitFor();
-  assert.match(await notice.textContent(), /Delete a synced collection before creating another/);
+  assert.match(await notice.textContent(), /Open an existing collection, delete one you own if Delete is available, or contact mdbase support to raise your limit/);
   assert.equal(await limit.getByRole("button", { name: /Try again|Add a collection/ }).count(), 0);
   assert.equal(await notice.evaluate(element => element.parentElement.matches(".mdbase-collections-actions")), true);
   assert.equal(await notice.evaluate(element => { const box = element.getBoundingClientRect(); return box.top >= 0 && box.bottom <= innerHeight; }), true);

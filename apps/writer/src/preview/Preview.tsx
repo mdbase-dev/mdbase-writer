@@ -35,6 +35,10 @@ function renderer(): Promise<Renderer> {
   return rendererPromise;
 }
 
+export function warmPreviewRenderer(): void {
+  void renderer().catch(() => {});
+}
+
 /** A render session that lives as long as the preview (runWithSession scopes it to a callback). */
 async function openSession(): Promise<{ renderer: Renderer; session: RenderSession; close(): void }> {
   const r = await renderer();
@@ -49,6 +53,7 @@ async function openSession(): Promise<{ renderer: Renderer; session: RenderSessi
 }
 
 export interface PreviewProps {
+  visible: boolean;
   artifact?: Uint8Array;
   problem?: string | undefined;
   onRetry(): void;
@@ -90,7 +95,7 @@ const yieldToInput = () => new Promise<void>((resolve) => setTimeout(resolve, 0)
 const NO_MARKS: readonly SourceMark[] = [];
 const pageTop = (canvas: HTMLCanvasElement) => (canvas.parentElement?.offsetTop ?? 0) + canvas.offsetTop;
 
-export const Preview = memo(function Preview({ artifact, problem, onRetry, revision, positions, marks = NO_MARKS, stale, onJump, onSource, follow, zoom, onView, onTitleClick }: PreviewProps) {
+export const Preview = memo(function Preview({ visible: isVisible, artifact, problem, onRetry, revision, positions, marks = NO_MARKS, stale, onJump, onSource, follow, zoom, onView, onTitleClick }: PreviewProps) {
   useLingui();
   const scroller = useRef<HTMLDivElement>(null);
   const pagesHost = useRef<HTMLDivElement>(null);
@@ -107,6 +112,7 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
   /** The renderer's fingerprint of what each page's bitmap shows. */
   const drawnKey = useRef(new Map<number, string>());
   const drawing = useRef<Promise<void>>(Promise.resolve());
+  const drawScheduled = useRef(false);
   /** Counts documents as they arrive; a draw in progress stops when a newer one is waiting. */
   const arrived = useRef(0);
   const marker = useRef<HTMLDivElement>(null);
@@ -155,10 +161,17 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
 
   /** Draws every visible page that is behind the current document version. */
   const drawVisible = () => {
+    if (drawScheduled.current) return;
+    drawScheduled.current = true;
     drawing.current = drawing.current.then(async () => {
+      const pane = scroller.current?.closest(".workspace")?.querySelector(".write");
+      const animations = pane?.getAnimations().filter(animation => animation.playState === "running") ?? [];
+      await Promise.allSettled(animations.map(animation => animation.finished));
+      drawScheduled.current = false;
       const s = session.current;
       const host = pagesHost.current;
-      if (!s || !host) return;
+      const root = scroller.current;
+      if (!s || !host || !root?.checkVisibility({ visibilityProperty: true })) return;
       const v = version.current;
       const waiting = arrived.current;
       // Pages on screen first, then those just above and below it.
@@ -169,18 +182,17 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
       };
       const canvases = [...visible.current].map((index) => ({ index, canvas: host.querySelector<HTMLCanvasElement>(`canvas[data-page="${index}"]`) }));
       canvases.sort((a, b) => Number(onScreen(b.canvas)) - Number(onScreen(a.canvas)) || a.index - b.index);
-      let first = true;
       for (const { index, canvas } of canvases) {
         const box = pagesRef.current[index];
         if (!canvas || !box) continue;
-        const cssWidth = canvas.clientWidth || 600;
+        const cssWidth = canvas.clientWidth;
+        if (cssWidth === 0) continue;
         // Drawn for this document at this size (a zoom or a wider pane needs more pixels).
         if (drawn.current.get(index) === v && drawnWidth.current.get(index) === cssWidth) continue;
         // Each page is a long task: let keystrokes in between, and leave the
         // rest for the newer document if one arrived meanwhile.
-        if (!first) await yieldToInput();
-        first = false;
-        if (arrived.current !== waiting || version.current !== v) return;
+        await yieldToInput();
+        if (arrived.current !== waiting || version.current !== v || !root.checkVisibility({ visibilityProperty: true })) return;
         const pixelPerPt = Math.min(4, Math.max(1, (cssWidth / box.width) * (window.devicePixelRatio || 1)));
         const next = document.createElement("canvas");
         next.width = Math.round(box.width * pixelPerPt);
@@ -191,7 +203,8 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
         // nothing when the page is unchanged and returns the same one.
         const shown = drawnWidth.current.get(index) === cssWidth ? drawnKey.current.get(index) : undefined;
         const result = await s.renderer.renderCanvas({ renderSession: s.session, canvas: ctx, pageOffset: index, backgroundColor: "#ffffff", pixelPerPt, ...(shown ? { cacheKey: shown } : {}) });
-        if (version.current !== v) return; // a newer document arrived; its pass redraws
+        await yieldToInput();
+        if (arrived.current !== waiting || version.current !== v || !root.checkVisibility({ visibilityProperty: true })) return;
         const key = result?.cacheKey;
         if (!shown || key !== shown) {
           // Swap in the finished bitmap in one step so a page never flashes blank.
@@ -202,8 +215,8 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
         const layer = host.querySelector<HTMLElement>(`.text-layer[data-page="${index}"]`);
         if (layer) {
           layer.style.setProperty("--data-text-width", `${cssWidth / box.width}px`);
-          layer.style.setProperty("--data-text-height", `${canvas.clientHeight / box.height}px`);
-          if ((!shown || key !== shown) && result?.htmlSemantics?.[0]) layer.replaceChildren(semanticLayer(result.htmlSemantics[0]));
+          layer.style.setProperty("--data-text-height", `${cssWidth / box.width}px`);
+          if (drawn.current.get(index) !== v && result?.htmlSemantics?.[0]) layer.replaceChildren(semanticLayer(result.htmlSemantics[0]));
         }
         if (key) drawnKey.current.set(index, key);
         else drawnKey.current.delete(index);
@@ -213,6 +226,8 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
       }
       const r = latest.current.revision;
       if (r !== undefined && version.current === v) host.dataset["renderedRevision"] = String(r);
+      reportView();
+      placeMarker();
     }).catch((error: unknown) => { if (pagesHost.current?.isConnected) setRenderProblem(errorMessage(error)); });
   };
 
@@ -290,8 +305,6 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
     const root = scroller.current;
     if (!root) return;
     const observer = new ResizeObserver(() => {
-      reportView();
-      placeMarker();
       drawVisible();
     });
     observer.observe(root);
@@ -301,11 +314,12 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
     // eslint-disable-next-line react-hooks/exhaustive-deps -- drawVisible and reportView read refs only
   }, []);
   useEffect(() => {
+    if (!isVisible) return;
     reportView();
     drawVisible();
     placeMarker();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- as above
-  }, [zoom, pages]);
+  }, [zoom, pages, isVisible]);
 
   // Editor → preview: bring the cursor's block into view, leaving the scroll
   // alone while it is visible so typing does not make the preview jump.

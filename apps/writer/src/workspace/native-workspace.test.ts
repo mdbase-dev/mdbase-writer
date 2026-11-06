@@ -7,11 +7,11 @@ import { ManuscriptWorkspace } from "./workspace.js";
 
 // Only compilation, catalog classification and the unapproved identity endpoint
 // are stand-ins. The workspace/domain boundary and native SDK records are real.
-vi.mock("../compile/client.js", () => ({CompileClient: class {
+vi.mock("../compile/client.js", () => { class CompileClient {
   ready = Promise.resolve(0); send = vi.fn();
   onResult = () => () => {}; onFailure = () => () => {};
   terminate() {}
-}}));
+} return { CompileClient, takeCompileClient: () => new CompileClient() }; });
 vi.mock("../async.js", async importOriginal => {
   const original = await importOriginal<typeof import("../async.js")>();
   return {...original, fetchChecked: vi.fn(async () => new Response(""))};

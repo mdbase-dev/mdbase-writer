@@ -6,14 +6,14 @@ import { NO_PEOPLE } from "../backend/comments.js";
 import { DraftStore, type LocalDraft } from "./drafts.js";
 import { discoveredDiagnostics, ManuscriptWorkspace } from "./workspace.js";
 
-vi.mock("../compile/client.js", () => ({ CompileClient: class {
+vi.mock("../compile/client.js", () => { class CompileClient {
   ready = Promise.resolve(0);
   send = vi.fn();
   onResult = () => () => {};
   onFailure = () => () => {};
   exportPdf = vi.fn(async () => ({ bytes: new Uint8Array([1]) }));
   terminate() {}
-} }));
+} return { CompileClient, takeCompileClient: () => new CompileClient() }; });
 vi.mock("../export/pandoc.js", () => ({ toDocx: vi.fn(async () => ({ id: 1, bytes: new Uint8Array([1]), warnings: [] })) }));
 
 const workspaces: ManuscriptWorkspace[] = [];

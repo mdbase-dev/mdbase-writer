@@ -1,0 +1,46 @@
+{
+  "schema": "tnapp/production-sdk-original/1",
+  "package": "@mdbase-dev/sdk-lab",
+  "version": "0.1.0-beta.157",
+  "artifact": "sdk-lab-beta157.tgz",
+  "sourceCommit": "493d29ca2a3494c5d59677e8b83e309b44a28c31",
+  "environment": "lab",
+  "bytes": 4537675,
+  "sha256": "927cc688a22d0931207d9108b53958e3279f2d2d711342b04ac80c02d8091e26",
+  "sri": "sha512-Q71Vbuk4iQFZknK0GR/2CmUpeNsf0T/XL2GMuv/PVWNxqO+dYTMw1mDpvb8pAtYAMpRyVrnQUf26Vk9HAuSjuQ==",
+  "publication": {
+    "repository": "mdbase-dev/mdbase-connect",
+    "workflow": ".github/workflows/publish-sdk-npm.yml",
+    "ref": "refs/heads/main",
+    "tag": "sdk-v0.1.0-beta.157",
+    "asset": "sdk-lab.tgz",
+    "bundle": "sdk-lab-beta157.tgz.sigstore.json"
+  },
+  "trust": {
+    "package": "@mdbase-dev/sdk-lab",
+    "sha256": "88fe5249be83d7db9999d88d4f62acaca79e8bdcabe2c9f236e2942014de3334",
+    "bytes": 876,
+    "cpOrigin": "https://connect-lab.mdbase.dev",
+    "logOrigin": "https://mdbase-next-log-lab-20261005.callumalpass.workers.dev",
+    "sourceCommit": "8a014fe2abd2d9c6a8b1ed3e77c35cfda3392d3e",
+    "sourceVersion": "0.1.0-beta.129"
+  },
+  "runtime": {
+    "sha256": "d375ce16a48dec718801704f56ffb6a545247a2793912c2c8e68ceb171ff2537",
+    "bytes": 3797530,
+    "maxBytes": 3797530,
+    "source": {
+      "repository": "mdbase-dev/mdbase-connect",
+      "commit": "3e433313e0a234513478789686a4f4274e4dd76c"
+    }
+  },
+  "packagedTrustModuleSha256": "a7db2cc3ba9fd1e78d86093599b608a2e3268408402630d81242450603c98a10",
+  "bundledDependencies": [
+    {
+      "name": "@mdbase-dev/connect-protocol",
+      "member": "package/vendor/mdbase-dev-connect-protocol-0.1.0-beta.145-e6e66bcd172f.tgz",
+      "bytes": 106404,
+      "sha256": "e901144b8d93dc96fcf71d9d8f85dddbf647e9908913be21191c484e9224bb98"
+    }
+  ]
+}

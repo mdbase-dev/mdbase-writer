@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · línea {1}"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0} (cambia con {MOD_LABEL}-Mayús-\\)"
+msgid "{0} ({1} cycles)"
+msgstr "{0} ({1} para alternar)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -134,33 +135,14 @@ msgstr "{0}última copia de seguridad: {1}"
 msgid "{at}: this chapter was deleted; download the local draft before leaving."
 msgstr "{at}: este capítulo se eliminó; descarga el borrador local antes de salir."
 
+#. placeholder {0}: shortcutLabel("mod+shift+m")
 #: src/ui/WorkspaceView.tsx
-msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-msgstr "{commentsTitle} ({MOD_LABEL}-Shift-M)"
-
-#: src/ui/WorkspaceView.tsx
-msgid "{MOD_LABEL} K"
-msgstr "{MOD_LABEL} K"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-B"
-msgstr "{MOD_LABEL}-B"
+msgid "{commentsTitle} ({0})"
+msgstr "{commentsTitle} (atajo: {0})"
 
 #: src/editor/insight.ts
 msgid "{MOD_LABEL}-click to show in Sources"
 msgstr "{MOD_LABEL}-clic para mostrar en Fuentes"
-
-#: src/ui/CommentsPanel.tsx
-msgid "{MOD_LABEL}-Enter"
-msgstr "{MOD_LABEL}-Enter"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-I"
-msgstr "{MOD_LABEL}-I"
-
-#: src/editor/selection-bar.tsx
-msgid "{MOD_LABEL}-Shift-K"
-msgstr "{MOD_LABEL}-Mayús-K"
 
 #: src/ui/records.ts
 msgid "{n, plural, one {# error} other {# errors}}"
@@ -299,6 +281,10 @@ msgstr "Añadir"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "Añade {appName} a la pantalla de inicio: toca Compartir y luego Añadir a la pantalla de inicio."
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "Añadir capítulo"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "Añádelas en mdbase Reader; cítalas aquí con <0>[@citekey]</0>."
@@ -425,6 +411,10 @@ msgstr "Modificado en otro lugar"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "Los cambios se guardan en la cabecera (frontmatter) del manuscrito mientras escribes, y se reflejan en la vista previa."
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "Los cambios no han llegado al servidor"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -612,9 +602,10 @@ msgstr "Comentario"
 msgid "Comment on the selection"
 msgstr "Comentar la selección"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
 #: src/editor/selection-bar.tsx
-msgid "Comment on the selection ({MOD_LABEL}-{ALT_LABEL}-M)"
-msgstr "Comentar la selección ({MOD_LABEL}-{ALT_LABEL}-M)"
+msgid "Comment on the selection ({0})"
+msgstr "Comentar la selección ({0})"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Comment on this text"
@@ -803,9 +794,11 @@ msgstr "Arrastra para cambiar el tamaño; haz doble clic para restablecerlo."
 msgid "Drag to resize; double-click to split evenly"
 msgstr "Arrastra para cambiar el tamaño; haz doble clic para dividirlo en partes iguales."
 
+#. placeholder {0}: shortcutLabel("alt+↑")
+#. placeholder {1}: shortcutLabel("alt+↓")
 #: src/ui/OutlinePanel.tsx
-msgid "Drag, or Alt-↑/↓, to reorder"
-msgstr "Arrastra o usa Alt-↑/↓ para cambiar el orden"
+msgid "Drag, or {0} / {1}, to reorder"
+msgstr "Arrastra o usa {0} / {1} para cambiar el orden"
 
 #. placeholder {0}: relativeTime(m.modified)
 #. placeholder {0}: relativeTime(manuscript.modified)
@@ -879,9 +872,10 @@ msgstr "Error al exportar."
 msgid "Export formats"
 msgstr "Formatos de exportación"
 
+#. placeholder {0}: shortcutLabel("mod+shift+s")
 #: src/ui/WorkspaceView.tsx
-msgid "Export formats ({MOD_LABEL}-Shift-S)"
-msgstr "Formatos de exportación ({MOD_LABEL}-Shift-S)"
+msgid "Export formats ({0})"
+msgstr "Formatos de exportación ({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export Pandoc bundle (zip)"
@@ -941,9 +935,10 @@ msgstr "Buscar una nota por nombre o carpeta"
 msgid "Find a source"
 msgstr "Buscar una fuente"
 
+#. placeholder {0}: shortcutLabel("mod+shift+e")
 #: src/ui/WorkspaceView.tsx
-msgid "Find a source ({MOD_LABEL}-Shift-E)"
-msgstr "Buscar una fuente ({MOD_LABEL}-Shift-E)"
+msgid "Find a source ({0})"
+msgstr "Buscar una fuente ({0})"
 
 #: src/editor/selection-bar.tsx
 msgid "Find a source for this passage and cite it after it"
@@ -1057,9 +1052,10 @@ msgstr "Ocultar los problemas bajo el editor (F8 va al siguiente)"
 msgid "Hide the sidebar"
 msgstr "Ocultar la barra lateral"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "Ocultar la barra lateral ({MOD_LABEL}-\\)"
+msgid "Hide the sidebar ({0})"
+msgstr "Ocultar la barra lateral ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1442,7 @@ msgid "New comment"
 msgstr "Nuevo comentario"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "Nuevo manuscrito"
 
@@ -1573,6 +1570,10 @@ msgstr "No se ha cargado; se omitirá."
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "Ahora no"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "No está en el servidor"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -1757,9 +1758,10 @@ msgstr "Otras notas"
 msgid "Outline"
 msgstr "Esquema"
 
+#. placeholder {0}: shortcutLabel("mod+shift+f")
 #: src/ui/WorkspaceView.tsx
-msgid "Outline, and search the manuscript ({MOD_LABEL}-Shift-F)"
-msgstr "Esquema y búsqueda en el manuscrito ({MOD_LABEL}-Shift-F)"
+msgid "Outline, and search the manuscript ({0})"
+msgstr "Esquema y búsqueda en el manuscrito ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Page (optional)"
@@ -2011,6 +2013,7 @@ msgid "Retry opening"
 msgstr "Reintentar apertura"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "Reintentar vista previa"
 
@@ -2109,9 +2112,11 @@ msgstr "Buscar en el manuscrito"
 msgid "Section"
 msgstr "Sección"
 
+#. placeholder {0}: shortcutLabel("mod+alt+m")
+#. placeholder {1}: shortcutLabel("mod+alt+s")
 #: src/ui/CommentsPanel.tsx
-msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
-msgstr "Selecciona un pasaje y pulsa <0>{MOD_LABEL}-{ALT_LABEL}-M</0> para comentarlo o <1>{MOD_LABEL}-{ALT_LABEL}-S</1> para sugerir una edición."
+msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
+msgstr "Selecciona un pasaje y pulsa <0>{0}</0> para comentarlo o <1>{1}</1> para sugerir una edición."
 
 #: src/ui/Shortcuts.tsx
 msgid "Select next occurrence"
@@ -2256,9 +2261,10 @@ msgstr "Mostrar los encabezados de {0}"
 msgid "Show the sidebar"
 msgstr "Mostrar la barra lateral"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "Mostrar la barra lateral ({MOD_LABEL}-\\)"
+msgid "Show the sidebar ({0})"
+msgstr "Mostrar la barra lateral ({0})"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2400,9 +2406,10 @@ msgstr "Sugerir una edición"
 msgid "Suggest an edit to the selection"
 msgstr "Sugerir una edición para la selección"
 
+#. placeholder {0}: shortcutLabel("mod+alt+s")
 #: src/editor/selection-bar.tsx
-msgid "Suggest an edit to the selection ({MOD_LABEL}-{ALT_LABEL}-S)"
-msgstr "Sugerir una edición para la selección ({MOD_LABEL}-{ALT_LABEL}-S)"
+msgid "Suggest an edit to the selection ({0})"
+msgstr "Sugerir una edición para la selección ({0})"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
@@ -2596,9 +2603,10 @@ msgstr "Este pasaje ya no está en el texto"
 msgid "Title"
 msgstr "Título"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "Título, autores, resumen, estilo de cita, diseño e idioma ({MOD_LABEL}-,)"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "Título, autores, resumen, estilo de cita, diseño e idioma ({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"

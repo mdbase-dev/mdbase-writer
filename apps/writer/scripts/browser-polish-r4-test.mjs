@@ -64,7 +64,10 @@ async function continuePosition(page, width, reduced) {
   await page.keyboard.press("ArrowUp");
   await page.keyboard.type(" POSITION_MARK ");
   await page.keyboard.press("ArrowLeft");
-  await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return [...snapshot.records.values()].every(record => record.snapshot.state === "saved") && !snapshot.compiling && Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snapshot.artifactRevision; }, null, { timeout: 60000 });
+  await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return [...snapshot.records.values()].every(record => record.snapshot.state === "saved") && !snapshot.compiling; }, null, { timeout: 60000 });
+  if (width === 390) await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snapshot.artifactRevision; }, null, { timeout: 60000 });
+  if (width === 390) await page.getByRole("button", { name: "Write", exact: true }).click();
   const visible = () => page.locator(".cm-scroller").evaluate(element => {
     const top = element.getBoundingClientRect().top;
     const line = [...element.querySelectorAll(".cm-line")].find(line => line.textContent && line.getBoundingClientRect().bottom > top);
@@ -75,6 +78,11 @@ async function continuePosition(page, width, reduced) {
   if (width === 1440) {
     await pressFill(page, page.locator(".segmented button").first());
     const bitmaps = await page.locator(".preview canvas").evaluateAll(elements => elements.map(element => element.width).join(","));
+    await page.evaluate(() => {
+      window.paneLongTasks = [];
+      window.paneTaskObserver = new PerformanceObserver(list => window.paneLongTasks.push(...list.getEntries().map(entry => entry.duration)));
+      window.paneTaskObserver.observe({ type: "longtask" });
+    });
     await page.evaluate(() => { window.paneFrames = []; window.paneRunning = true; const sample = () => { const element = document.querySelector(".write"); window.paneFrames.push({ opacity: Number(getComputedStyle(element).opacity), transform: getComputedStyle(element).transform, columns: getComputedStyle(document.querySelector(".workspace")).gridTemplateColumns, running: element.getAnimations().some(animation => animation.playState === "running" || animation.pending), bitmaps: [...document.querySelectorAll(".preview canvas")].map(element => element.width).join(",") }); if (window.paneRunning) requestAnimationFrame(sample); }; requestAnimationFrame(sample); });
     await page.keyboard.press("Control+Backslash");
     if (!reduced) {
@@ -83,6 +91,8 @@ async function continuePosition(page, width, reduced) {
     }
     await page.waitForTimeout(190);
     const frames = await page.evaluate(() => { window.paneRunning = false; return window.paneFrames; });
+    const tasks = await page.evaluate(() => { window.paneTaskObserver.disconnect(); return window.paneLongTasks; });
+    assert.ok(tasks.every(duration => duration < 50), `Sidebar long-task budget exceeded: ${JSON.stringify(tasks)}`);
     assert.ok(frames.every(frame => frame.opacity > 0));
     assert.equal(await page.locator(".preview-pane").evaluate(element => getComputedStyle(element).opacity === "1" && element.getAnimations().length === 0), true, "Pane moves must leave the preview undimmed");
     if (!reduced) assert.ok(new Set(frames.map(frame => frame.opacity)).size >= 3, `10k-word pane move is not visibly animated: ${JSON.stringify(frames)}`);
@@ -438,11 +448,13 @@ try {
       assert.deepEqual(await keys("Go to line"), [apple ? "⌘⌥G" : "Ctrl+Alt+G"]);
       assert.deepEqual(await keys("Undo"), [apple ? "⌘Z" : "Ctrl+Z"]);
       assert.deepEqual(await keys("Redo"), apple ? ["⌘⇧Z"] : platform.startsWith("Linux") ? ["Ctrl+Y", "Ctrl+Shift+Z"] : ["Ctrl+Y"]);
-      assert.deepEqual(await keys("Show completions"), ["Ctrl-Space"]);
+      assert.deepEqual(await keys("Show completions"), [apple ? "⌃Space" : "Ctrl+Space"]);
       assert.equal(await help.getByText("Move to the next control", { exact: true }).count(), 1);
       assert.equal(await help.getByText("In the editor, press Tab to move to the next control.", { exact: true }).count(), 0);
       await page.keyboard.press("Escape");
       await help.waitFor({ state: "hidden" });
+      assert.equal(await page.locator("#sidebar-tab-sources").getAttribute("title"), `Find a source (${apple ? "⌘⇧E" : "Ctrl+Shift+E"})`);
+      assert.equal(await page.getByRole("button", { name: "Export formats", exact: true }).getAttribute("title"), `Export formats (${apple ? "⌘⇧S" : "Ctrl+Shift+S"})`);
       await page.keyboard.press(`${mod}+Alt+g`);
       const line = page.locator('.cm-goto-line input[name="line"]');
       await line.waitFor();

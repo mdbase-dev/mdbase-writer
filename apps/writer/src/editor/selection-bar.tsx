@@ -12,7 +12,7 @@ import { createRoot } from "react-dom/client";
 
 import { BoldIcon, CodeIcon, ItalicIcon, LinkIcon } from "../ui/icons.js";
 import { makeLink, toggleBold, toggleCode, toggleItalic } from "./formatting.js";
-import { ALT_LABEL, MOD_LABEL } from "./insight.js";
+import { shortcutLabel } from "@mdbase-dev/ui/command-palette";
 
 export type SelectionAction = "cite" | "comment" | "suggest";
 
@@ -132,16 +132,16 @@ function Bar({ readOnly, run, act }: { readOnly: boolean; run(command: Command):
     <div role="toolbar" aria-label={t`Selection`} className="cm-selection-bar-row">
       {!readOnly && (
         <>
-          {format(t`Bold`, t`${MOD_LABEL}-B`, BoldIcon, toggleBold)}
-          {format(t`Italic`, t`${MOD_LABEL}-I`, ItalicIcon, toggleItalic)}
+          {format(t`Bold`, shortcutLabel("mod+b"), BoldIcon, toggleBold)}
+          {format(t`Italic`, shortcutLabel("mod+i"), ItalicIcon, toggleItalic)}
           {format(t({ message: "Code", context: "inline code formatting action" }), null, CodeIcon, toggleCode)}
-          {format(t`Link`, t`${MOD_LABEL}-Shift-K`, LinkIcon, makeLink)}
+          {format(t`Link`, shortcutLabel("mod+shift+k"), LinkIcon, makeLink)}
           <span className="cm-selection-divider" aria-hidden="true" />
           {action(t`Cite`, t`Find a source for this passage and cite it after it`, "cite")}
         </>
       )}
-      {action(t`Comment`, t`Comment on the selection (${MOD_LABEL}-${ALT_LABEL}-M)`, "comment")}
-      {!readOnly && action(t`Suggest`, t`Suggest an edit to the selection (${MOD_LABEL}-${ALT_LABEL}-S)`, "suggest")}
+      {action(t`Comment`, t`Comment on the selection (${shortcutLabel("mod+alt+m")})`, "comment")}
+      {!readOnly && action(t`Suggest`, t`Suggest an edit to the selection (${shortcutLabel("mod+alt+s")})`, "suggest")}
     </div>
   );
 }
