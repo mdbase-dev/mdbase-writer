@@ -73,7 +73,8 @@ a, .link { color: var(--accent); }
 .preview-meta .preview-setting:first-of-type { flex: 0 1 auto; }
 .preview-meta .preview-setting:last-of-type { flex: none; }
 .bar .mdbase-save-notice.mdbase-settle { animation-duration: 400ms; }
-.save-slot:not(.has-saved) .mdbase-settle { animation: none; opacity: 1; }
+.save-slot:not(.has-saved) .mdbase-settle { animation: none; }
+.bar:not(:hover):not(:focus-within) .save-slot:not(.has-saved) .mdbase-settle { opacity: 0; }
 .app .mdbase-collections-brand { display: none; }
 .mdbase-command-palette { transform: none; transition: transform 160ms var(--ease-out); }
 @starting-style { .mdbase-command-palette { transform: translateY(-3px); } }

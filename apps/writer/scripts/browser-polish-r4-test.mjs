@@ -83,17 +83,17 @@ async function continuePosition(page, width, reduced) {
       window.paneTaskObserver = new PerformanceObserver(list => window.paneLongTasks.push(...list.getEntries().map(entry => entry.duration)));
       window.paneTaskObserver.observe({ type: "longtask" });
     });
-    await page.evaluate(() => { window.paneFrames = []; window.paneRunning = true; const sample = () => { const element = document.querySelector(".write"); window.paneFrames.push({ opacity: Number(getComputedStyle(element).opacity), transform: getComputedStyle(element).transform, columns: getComputedStyle(document.querySelector(".workspace")).gridTemplateColumns, running: element.getAnimations().some(animation => animation.playState === "running" || animation.pending), bitmaps: [...document.querySelectorAll(".preview canvas")].map(element => element.width).join(",") }); if (window.paneRunning) requestAnimationFrame(sample); }; requestAnimationFrame(sample); });
+    await page.evaluate(() => { window.paneFrames = []; window.paneRunning = true; const sample = () => { const element = document.querySelector(".outline"); window.paneFrames.push({ opacity: Number(getComputedStyle(element).opacity), transform: getComputedStyle(element).transform, proseOpacity: Number(getComputedStyle(document.querySelector(".write")).opacity), columns: getComputedStyle(document.querySelector(".workspace")).gridTemplateColumns, running: element.getAnimations().some(animation => animation.playState === "running" || animation.pending), bitmaps: [...document.querySelectorAll(".preview canvas")].map(element => element.width).join(",") }); if (window.paneRunning) requestAnimationFrame(sample); }; requestAnimationFrame(sample); });
     await page.keyboard.press("Control+Backslash");
     if (!reduced) {
       await page.waitForFunction(() => window.paneFrames.some(frame => frame.opacity < 1));
-      await page.locator(".write").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+      await page.locator(".outline").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
     }
     await page.waitForTimeout(190);
     const frames = await page.evaluate(() => { window.paneRunning = false; return window.paneFrames; });
     const tasks = await page.evaluate(() => { window.paneTaskObserver.disconnect(); return window.paneLongTasks; });
     assert.ok(tasks.every(duration => duration < 50), `Sidebar long-task budget exceeded: ${JSON.stringify(tasks)}`);
-    assert.ok(frames.every(frame => frame.opacity > 0));
+    assert.ok(frames.every(frame => frame.proseOpacity === 1), "Sidebar-only movement must not dim the prose");
     assert.equal(await page.locator(".preview-pane").evaluate(element => getComputedStyle(element).opacity === "1" && element.getAnimations().length === 0), true, "Pane moves must leave the preview undimmed");
     if (!reduced) assert.ok(new Set(frames.map(frame => frame.opacity)).size >= 3, `10k-word pane move is not visibly animated: ${JSON.stringify(frames)}`);
     else assert.ok(frames.every(frame => frame.transform === "none"));
@@ -354,7 +354,9 @@ try {
       await page.mouse.move(0, 0);
       const savedNotice = page.locator(".bar .mdbase-save-notice.is-saved").first();
       await savedNotice.waitFor({ state: "attached" });
-      assert.equal(await savedNotice.isVisible(), width !== 390, "Phone keeps the existing quiet confirmed-save state");
+      assert.equal(await page.locator(".bar .mdbase-save-notice").count(), 1, "Desktop and phone use one canonical status");
+      await savedNotice.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+      assert.equal(await savedNotice.evaluate(element => getComputedStyle(element).opacity), reducedMotion === "reduce" ? "1" : "0", "Confirmed saves settle, or remain static under Reduce, at every width");
       assert.equal(await page.locator('.bar-problems.is-clear,.bar-problems[title="No manuscript problems"]').count(), 0);
       if (reducedMotion === "no-preference") assert.equal(await savedNotice.evaluate(element => getComputedStyle(element).animationDuration), "0.4s");
       await page.keyboard.press("Control+/");

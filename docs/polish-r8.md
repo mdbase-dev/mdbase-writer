@@ -21,8 +21,8 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
 | 5. Revocation across reload | Not done: SDK reason identity is lost | Pinned SDK worker maps `reason === "revoked"` to `"unauthenticated"` before the app receives its problem. Shared gate then legitimately shows authentication copy. Writer cannot distinguish that case from an actual expired authentication; no speculative local persistence or generic-auth relabeling is added. Source report `access_removed` and exact installation-revoke paths are distinct, not contradictory evidence. Needs SDK reason preservation and shared mapping at repin. |
 | 6. Sidebar prose dimming | Fixed | Normal-motion sidebar toggle previously animated `.write` from opacity .7 and translateX(6px). Now 0 prose animations and computed opacity 1; Reduce also 0. Actual view/chapter transitions remain; the existing R7 first-sidebar-frame test now samples `.outline`, while the new gate explicitly prohibits prose fading. |
 | 7. Tabs/count collision | Fixed | At a real 271 px sidebar with Sources 9 / Comments 2, final text gaps are 20.06 / 20.08 px (minimum asserted 12 px). Tracks fit their content. Active underline follows each actual button's width rather than the obsolete equal-third pseudo-element; keyboard selection and visible active indication are asserted. Lower-panel selector and behavior remain unchanged. |
-| 8. Flat primary hover | Fixed | Removed Writer's redundant primary rest override, which made rest equal hover. Shared tokens now produce light OKLCH L .47 → .41 and dark .65 → .73. Regression waits for the actual CSS transition and compares the final shared strong-accent color, not a different color serialization during the first frame. |
-| 9. Settle on initial load | Fixed | Initial `mdbase-settle` animation count 1 → 0; a real editor change and completed save still produces 1. Shared `saveToneSignal` supplies the transition; only presentation state is added, not a new saved/durability state. |
+| 8. Flat primary hover | Fixed | Removed Writer's redundant primary rest override, which made rest equal hover. Shared tokens now produce light OKLCH L .47 → .41 and dark .73 → .65. Regression waits for the actual CSS transition and compares the final shared strong-accent color, not a different color serialization during the first frame. |
+| 9. Settle on initial load | Fixed | Initial `mdbase-settle` animation count 1 → 0; a real editor change and completed save still produces 1. Initial status is already quiet (opacity 0) without animating a nonexistent confirmation; hover/focus reveals it, and a real save settles back to 0. A strengthened quiet-state regression was 13/14 before the final CSS correction. Shared `saveToneSignal` supplies the transition; only presentation state is added, not a new saved/durability state. |
 | 10. Tall reference | Fixed | Desktop 1 → 2 columns; phone remains 1. DOM/reading order unchanged; groups don't split; no horizontal dialog overflow. Both actual keyboard-opened surfaces are asserted. |
 | 11. Cold preview / consent-to-Home | Dropped first | No compiler/loader redesign or new warm-up path. The council's cold-assembly and live 6–7 s consent figures are not remeasured or claimed improved. Existing compiler readiness/editing gates remain mandatory. |
 
@@ -48,6 +48,14 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
   equal-width pseudo-element. Its timing, motion, interruption and long-task
   budgets are unchanged. R7's sidebar-frame target correction does not relax its
   latency/long-task/hidden-preview assertions; R8 separately guards unchanged prose.
+- Final CI exposed two more obsolete R4 assumptions: its 10k-word sidebar sample
+  still waited for a prose fade, and its phone save check inspected the hidden
+  long-form duplicate. Both were test defects: the sample now follows the actual
+  sidebar while requiring prose opacity 1 in every frame; save confirmation now
+  requires one canonical notice and settled opacity 0 (the existing static opacity 1
+  under Reduce) at every width. No timeout
+  or long-task limit changes. The initial quiet-state refinement is product-owned
+  and separately red-tested, not a workaround for those stale selectors.
 - The original polish gate required the removed prose fade. It now probes the
   actual sidebar's existing 120 ms exit / 160 ms entry, with the same continuous
   trajectory and Reduce requirements. This changes the target to the intended

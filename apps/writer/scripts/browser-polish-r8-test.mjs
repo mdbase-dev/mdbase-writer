@@ -103,11 +103,19 @@ try {
     return tabs;
   });
   await scenario("settle-after-save-only", {}, async (page, host) => {
+    await page.mouse.move(0, 0);
     assert.equal(await host.locator('.save-slot .mdbase-settle').evaluateAll(elements => elements.flatMap(element => element.getAnimations().map(animation => animation.animationName))).then(names => names.filter(name => name === 'mdbase-settle').length), 0, "Opening is not a save");
+    const notice = host.locator('.save-slot .mdbase-settle');
+    assert.equal(await notice.evaluate(element => getComputedStyle(element).opacity), "0", "Opening has no save confirmation to announce visually");
+    await host.locator('.bar-title').hover();
+    assert.equal(await notice.evaluate(element => getComputedStyle(element).opacity), "1", "Hover still reveals the current status");
+    await page.mouse.move(0, 0);
     await host.locator('.cm-content').focus();
     await page.keyboard.press("Control+End");
     await page.keyboard.insertText(" [test] round-eight save");
     await page.waitForFunction(() => [...document.querySelectorAll('#round-eight .save-slot .mdbase-settle')].some(element => element.getAnimations().some(animation => animation.animationName === 'mdbase-settle')));
+    await notice.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+    assert.equal(await notice.evaluate(element => getComputedStyle(element).opacity), "0", "A real save settles back to the quiet state");
     return { mount: 0, saved: 1 };
   });
   for (const width of [1440, 390]) await scenario(`reference-${width}`, { viewport: { width, height: 900 } }, async (page, host) => {
