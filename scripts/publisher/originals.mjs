@@ -91,7 +91,7 @@ export async function compareInstalled(repoRoot,archives,{fetchImpl=fetch}={}) {
       const directory=await mkdtemp(join(tmpdir(),'writer-ui-patch-'));
       try {
         execFileSync('tar',['-xzf','-','--strip-components=1','-C',directory],{input:bytes,stdio:['pipe','pipe','pipe']});
-        execFileSync('git',['apply','--whitespace=nowarn','-'],{cwd:directory,input:patch,stdio:['pipe','pipe','pipe']});
+        execFileSync('git',['apply','--whitespace=nowarn','--unidiff-zero','-'],{cwd:directory,input:patch,stdio:['pipe','pipe','pipe']});
         members=await installedMembers(directory);
       } finally {await rm(directory,{recursive:true,force:true});}
     }
