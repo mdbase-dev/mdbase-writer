@@ -49,7 +49,7 @@
     "@mdbase-dev/connect": "0.1.0-beta.149",
     "@mdbase-dev/connect-protocol": "file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.145-e6e66bcd172f.tgz",
     "@mdbase-dev/i18n": "0.1.0-beta.147",
-    "@mdbase-dev/sdk": "0.1.0-beta.157",
+    "@mdbase-dev/sdk": "0.1.0-beta.158",
     "@mdbase-dev/sdk-lab": "file:../../vendor/sdk-lab-beta157.tgz",
     "@mdbase-dev/sdk-staging": "file:../../vendor/sdk-staging-beta157.tgz",
     "@mdbase-dev/ui": "0.1.0-beta.147",
