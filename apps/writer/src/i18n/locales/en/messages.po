@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · line {1}"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0} ({MOD_LABEL}-Shift-\\ cycles)"
+msgid "{0} ({1} cycles)"
+msgstr "{0} ({1} cycles)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -299,6 +300,10 @@ msgstr "Add"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "Add chapter"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
@@ -425,6 +430,10 @@ msgstr "Changed elsewhere"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "Changes haven't reached the server"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -1057,9 +1066,10 @@ msgstr "Hide the problems under the editor (F8 goes to the next one)"
 msgid "Hide the sidebar"
 msgstr "Hide the sidebar"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "Hide the sidebar ({MOD_LABEL}-\\)"
+msgid "Hide the sidebar ({0})"
+msgstr "Hide the sidebar ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1456,7 @@ msgid "New comment"
 msgstr "New comment"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "New manuscript"
 
@@ -1573,6 +1584,10 @@ msgstr "Not loaded; it will be left out."
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "Not now"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "Not on server"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -2011,6 +2026,7 @@ msgid "Retry opening"
 msgstr "Retry opening"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "Retry preview"
 
@@ -2256,9 +2272,10 @@ msgstr "Show the headings of {0}"
 msgid "Show the sidebar"
 msgstr "Show the sidebar"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "Show the sidebar ({MOD_LABEL}-\\)"
+msgid "Show the sidebar ({0})"
+msgstr "Show the sidebar ({0})"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2596,9 +2613,10 @@ msgstr "This passage is no longer in the text"
 msgid "Title"
 msgstr "Title"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "Title, authors, abstract, citation style, layout and language ({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"

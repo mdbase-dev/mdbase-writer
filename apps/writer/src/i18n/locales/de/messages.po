@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · Zeile {1}"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0} (mit {MOD_LABEL}-Shift-\\ durch die Ansichten wechseln)"
+msgid "{0} ({1} cycles)"
+msgstr "{0} ({1} zum Wechseln)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -299,6 +300,10 @@ msgstr "Hinzufügen"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "Fügen Sie {appName} zum Startbildschirm hinzu: Tippen Sie auf „Teilen“ und dann auf „Zum Startbildschirm hinzufügen“."
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "Kapitel hinzufügen"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "Fügen Sie Quellen in mdbase Reader hinzu; zitieren Sie sie hier mit <0>[@citekey]</0>."
@@ -425,6 +430,10 @@ msgstr "An anderer Stelle geändert"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "Änderungen werden beim Tippen im Metadatenblock des Manuskripts gespeichert; die Vorschau wird entsprechend aktualisiert."
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "Die Änderungen haben den Server nicht erreicht"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -1057,9 +1066,10 @@ msgstr "Probleme unter dem Editor ausblenden (mit F8 zum nächsten springen)"
 msgid "Hide the sidebar"
 msgstr "Seitenleiste ausblenden"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "Seitenleiste ausblenden ({MOD_LABEL}-\\)"
+msgid "Hide the sidebar ({0})"
+msgstr "Seitenleiste ausblenden ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1456,7 @@ msgid "New comment"
 msgstr "Neuer Kommentar"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "Neues Manuskript"
 
@@ -1573,6 +1584,10 @@ msgstr "Nicht geladen; wird daher ausgelassen."
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "Jetzt nicht"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "Nicht auf dem Server"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -2011,6 +2026,7 @@ msgid "Retry opening"
 msgstr "Öffnen erneut versuchen"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "Vorschau erneut laden"
 
@@ -2256,9 +2272,10 @@ msgstr "Überschriften von {0} anzeigen"
 msgid "Show the sidebar"
 msgstr "Seitenleiste anzeigen"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "Seitenleiste anzeigen ({MOD_LABEL}-\\)"
+msgid "Show the sidebar ({0})"
+msgstr "Seitenleiste anzeigen ({0})"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2596,9 +2613,10 @@ msgstr "Diese Textstelle ist nicht mehr im Text vorhanden."
 msgid "Title"
 msgstr "Titel"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "Titel, Autorinnen und Autoren, Zusammenfassung, Zitierstil, Layout und Sprache ({MOD_LABEL}-,)"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "Titel, Autorinnen und Autoren, Zusammenfassung, Zitierstil, Layout und Sprache ({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"

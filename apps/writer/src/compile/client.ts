@@ -3,6 +3,24 @@ import { t } from "@lingui/core/macro";
 import type { CompileResult, FromWorker, ToWorker } from "./protocol.js";
 
 type PdfOutcome = { bytes?: Uint8Array; error?: string };
+let preparedClient: CompileClient | undefined;
+
+export function warmCompiler(): () => void {
+  const client = preparedClient ??= new CompileClient();
+  const stop = client.onFailure(() => { if (preparedClient === client) preparedClient = undefined; });
+  client.send({ type: "prepare", baseUrl: import.meta.env.BASE_URL });
+  return () => {
+    stop();
+    if (preparedClient === client) { preparedClient = undefined; client.terminate(); }
+  };
+}
+
+export function takeCompileClient(): CompileClient {
+  const client = preparedClient ?? new CompileClient();
+  preparedClient = undefined;
+  return client;
+}
+
 export class CompileClient {
   private readonly worker: Worker;
   private readonly resultListeners = new Set<(result: CompileResult) => void>();

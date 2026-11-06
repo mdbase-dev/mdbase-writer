@@ -34,6 +34,7 @@ export const STATE_TONE: Record<SessionSnapshot["state"], SaveTone> = {
 export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecoveredDrafts: boolean, connection: ConnectionNotice | null = null, locallySaved = false): { tone: SaveTone; label: string; shortLabel: string | undefined } {
   if (hasRecoveredDrafts) return { tone: "attention", label: t`Review local drafts`, shortLabel: t`Review drafts` };
   if (STATE_TONE[state] === "attention") return { tone: "attention", label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
+  if (connection === "sync_delayed") return { tone: "attention", label: connectionNoticeLabels.sync_delayed, shortLabel: t`Not on server` };
   if (state === "recovery") return { tone: STATE_TONE[state], label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
   if (locallySaved && (state === "unsaved" || state === "saving")) return { tone: "pending", label: t`Saved on this device`, shortLabel: t`Saved on this device` };
   if (locallySaved && (state === "saved_on_device" || connection === "saved_on_device")) return {

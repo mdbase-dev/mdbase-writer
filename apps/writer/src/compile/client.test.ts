@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { CompileClient } from "./client.js";
+import { CompileClient, takeCompileClient, warmCompiler } from "./client.js";
 
 class FakeWorker {
   static latest: FakeWorker;
@@ -15,6 +15,36 @@ class FakeWorker {
 }
 beforeEach(() => { vi.useFakeTimers(); vi.stubGlobal("Worker", FakeWorker); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+it("transfers the idle compiler to the workspace without terminating it on Home cleanup", () => {
+  const release = warmCompiler();
+  const worker = FakeWorker.latest;
+  expect(worker.posts).toEqual([{ type: "prepare", baseUrl: "/" }]);
+  const client = takeCompileClient();
+  expect(FakeWorker.latest).toBe(worker);
+  release();
+  expect(worker.terminated).toBe(false);
+  client.terminate();
+  expect(worker.terminated).toBe(true);
+});
+it("releases a warm compiler that was never opened", () => {
+  const release = warmCompiler();
+  const worker = FakeWorker.latest;
+  release();
+  expect(worker.terminated).toBe(true);
+  const client = takeCompileClient();
+  expect(FakeWorker.latest).not.toBe(worker);
+  client.terminate();
+});
+it("does not hand an already-failed idle compiler to a workspace", () => {
+  const release = warmCompiler();
+  const worker = FakeWorker.latest;
+  worker.onerror?.({ message: "Idle preparation failed", preventDefault() {} });
+  const client = takeCompileClient();
+  try {
+    expect(worker.terminated).toBe(true);
+    expect(FakeWorker.latest).not.toBe(worker);
+  } finally { release(); client.terminate(); }
+});
 it("prepares independently without starting a compile timeout", async () => {
   const client = new CompileClient();
   client.send({ type: "prepare", baseUrl: "/" });

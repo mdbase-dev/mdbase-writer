@@ -68,7 +68,6 @@ a, .link { color: var(--accent); }
 .home.is-opening { opacity: .6; transition: opacity 100ms cubic-bezier(.4,0,1,1); }
 .mdbase-dialog:popover-open { display: block; }
 .mdbase-dialog { animation: none !important; }
-.write { transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out), visibility 0s; }
 .preview-meta { display: flex; align-items: center; }
 .preview-header > .bar-spacer { display: none; }
 .preview-meta .preview-setting:first-of-type { flex: 0 1 auto; }
@@ -198,12 +197,12 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 
 /* Home */
 /* Picking up where writing stopped: the last manuscript opened, with its goal. */
-.continue-card { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-top: 1.25rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); }
+.continue-card { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; margin-top: 1.25rem; padding: 1rem calc(0.5rem - 1px); border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); }
 .continue-text { display: grid; gap: 0.2rem; min-width: 0; }
 .continue-title { margin: 0; font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 700; line-height: 1.3; }
 .continue-progress { display: block; width: min(100%, 22rem); height: 4px; margin: 0.3rem 0 0.15rem; border-radius: 2px; background: var(--subtle); overflow: hidden; }
 .continue-progress > span { display: block; height: 100%; border-radius: 2px; background: var(--app-writer); }
-.continue-goal { justify-self: start; }
+.continue-goal { justify-self: start; margin-left: -0.4rem; }
 .goal-form { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
 .goal-form .mdbase-field { width: 10rem; }
 .continue-card > .mdbase-button { flex: none; }
@@ -250,7 +249,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .first-run { display: grid; gap: 1.25rem; justify-items: start; margin-top: 1rem; }
 .first-run ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.6rem; max-width: 38rem; color: var(--ink-soft); }
 .first-run strong { color: var(--ink); }
-.mdbase-dialog .mdbase-button.is-primary:not(:disabled) { background: var(--action); border-color: var(--action); }
+.mdbase-button.is-primary:not(:disabled) { background: var(--action); border-color: var(--action); }
 .new-manuscript { display: grid; gap: 0.8rem; grid-template-columns: 1fr 1.3fr; align-items: end; }
 .new-manuscript button { grid-column: 1 / -1; justify-self: start; }
 .adopt-note { display: grid; gap: 0.8rem; justify-items: start; }
@@ -278,7 +277,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
   min-height: 0;
 }
 .view-write .preview-pane { visibility: hidden; overflow: clip; }
-.view-preview .write, .view-write .divider, .view-preview .divider { opacity: 0; visibility: hidden; overflow: clip; transition-delay: 0s, 0s, 160ms; }
+.view-preview .write, .view-write .divider, .view-preview .divider { visibility: hidden; overflow: clip; }
 .pane-tabs { display: none; }
 .tone-pending .dot { background: var(--warning); }
 .tone-danger .dot { background: var(--danger); }
@@ -457,7 +456,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 @media (pointer: coarse), (max-width: 900px) { .source-line .source-meta { line-height: 44px; } }
 .source-uses { color: var(--muted); font-variant-numeric: tabular-nums; }
 .source-uses::before { content: "·"; margin: 0 0.35rem; }
-.cite-button { position: absolute; right: 0; bottom: 0.2rem; height: 24px; padding: 0 0.5rem; margin-right: 0.3rem; border: 1px solid transparent; border-radius: 4px; background: var(--canvas); color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; opacity: 0; transition: opacity var(--motion-quick) var(--ease-out), background var(--motion-quick) ease; }
+.cite-button { position: absolute; right: 0; bottom: 0.2rem; min-width: 44px; height: 24px; padding: 0 0.5rem; margin-right: 0.3rem; border: 1px solid transparent; border-radius: 4px; background: var(--canvas); color: var(--accent); font-size: 12px; font-weight: 700; cursor: pointer; opacity: 0; transition: opacity var(--motion-quick) var(--ease-out), background var(--motion-quick) ease; }
 .cite-button:hover:not(:disabled) { background: var(--color-accent-soft); }
 .cite-button:disabled { color: var(--muted); cursor: default; }
 .source-line:hover .cite-button, .source-line:focus-within .cite-button, .is-here .cite-button { opacity: 1; }
@@ -494,7 +493,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .comments-who { padding: 0 0.1rem; }
 .comments-who .mdbase-select { width: 100%; }
 .thread-new { color: var(--accent); font-weight: 700; }
-.thread.is-new { box-shadow: inset 2px 0 0 color-mix(in oklch, var(--accent) 55%, transparent); }
+.thread.is-new { background: var(--selected); }
 .comment-text code { font-size: 0.9em; padding: 0 3px; border-radius: 3px; background: var(--subtle); }
 .comment-text a { color: var(--accent); }
 .signing { margin: 0; }
@@ -613,7 +612,7 @@ blockquote.thread-quote::after { content: "”"; }
 .editor .cm-panels .cm-panel.writer-find > input { flex: 1; width: 0; min-width: 40px; margin: 0; }
 .editor .cm-panels .cm-panel.writer-find > button { position: static; flex: none; min-width: 28px; margin: 0; font: inherit; }
 .writer-find > details { flex: none; }
-.writer-find summary { cursor: pointer; padding: 6px; border-radius: var(--control-radius); }
+.writer-find summary { cursor: pointer; padding: 6px; min-width: 44px; min-height: 44px; display: flex; align-items: center; border-radius: var(--control-radius); }
 .writer-find summary:hover { background: var(--subtle); }
 .writer-find .find-options { position: absolute; top: 100%; right: 8px; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; width: min(320px, calc(100% - 16px)); padding: 12px; border: 1px solid var(--line-strong); border-radius: var(--control-radius); background: var(--surface); box-shadow: 0 8px 24px #0002; }
 .find-options input { width: 100%; }
@@ -668,7 +667,7 @@ blockquote.thread-quote::after { content: "”"; }
 .cm-lp-chip.is-cite { color: var(--accent); background: color-mix(in oklch, var(--accent) 9%, transparent); }
 .cm-comment .cm-lp-chip.is-cite { color: var(--ink); background: var(--canvas); }
 .editor .cm-lp-quote { border-left: 3px solid var(--line); padding-left: 0.8em; }
-.cm-lp-chip.is-ref { color: var(--ink-soft); background: var(--subtle); }
+.cm-lp-chip.is-ref { color: var(--ink-soft); background: var(--subtle); padding-inline: 0.12em; }
 .cm-lp-chip.is-label { color: var(--muted); background: var(--subtle); font-family: var(--mono); font-size: 0.72em; letter-spacing: -0.01em; vertical-align: 0.1em; }
 .cm-lp-link { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--accent) 45%, transparent); text-underline-offset: 2px; }
 .cm-lp-quiet { color: var(--faint); }
@@ -793,7 +792,7 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .settings-sheet :is(button, input, textarea, select) { scroll-margin-block: 12px; }
   .outline, .write, .preview-pane { grid-area: main; border-right: 0; }
   .workspace { overflow: clip; }
-  .workspace .write { opacity: 0; visibility: hidden; transform: translateX(12px); pointer-events: none; transition-delay: 0s, 0s, 160ms; }
+  .workspace .write { visibility: hidden; pointer-events: none; }
   .workspace .preview-pane { visibility: hidden; pointer-events: none; }
   .workspace .outline { display: grid; z-index: 2; opacity: 0; visibility: hidden; transform: translateX(-12px); background: var(--canvas); pointer-events: none; transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out), visibility 0s 120ms, grid-template-rows var(--lower-duration) var(--ease-out); }
   .workspace.pane-outline .outline { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out), visibility 0s, grid-template-rows var(--lower-duration) var(--ease-out); }

@@ -20,7 +20,7 @@ import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
 import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
-import { CompileClient } from "../compile/client.js";
+import { CompileClient, takeCompileClient } from "../compile/client.js";
 import type { CompileResult, WriterDiagnostic } from "../compile/protocol.js";
 import { toDocx } from "../export/pandoc.js";
 import { zip } from "../export/zip.js";
@@ -116,7 +116,7 @@ export interface CommentDraft {
 }
 
 export class ManuscriptWorkspace {
-  private compile = new CompileClient();
+  private compile = takeCompileClient();
   private previewInitialized = false;
   private compileCleanups: (() => void)[] = [];
   private bindings: readonly ManuscriptBinding[] = [];

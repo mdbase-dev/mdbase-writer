@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · riga {1}"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0} ({MOD_LABEL}-Shift-\\ cambia vista)"
+msgid "{0} ({1} cycles)"
+msgstr "{0} ({1} per alternare)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -299,6 +300,10 @@ msgstr "Aggiungi"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "Aggiungi {appName} alla schermata Home: tocca Condividi, poi Aggiungi alla schermata Home."
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "Aggiungi capitolo"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "Aggiungile in mdbase Reader; qui puoi citarle con <0>[@citekey]</0>."
@@ -425,6 +430,10 @@ msgstr "Modificato altrove"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "Le modifiche vengono salvate nel frontmatter del manoscritto mentre scrivi e l'anteprima si aggiorna."
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "Le modifiche non sono arrivate al server"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -1057,9 +1066,10 @@ msgstr "Nascondi i problemi sotto l'editor (F8 passa al successivo)"
 msgid "Hide the sidebar"
 msgstr "Nascondi la barra laterale"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "Nascondi la barra laterale ({MOD_LABEL}-\\)"
+msgid "Hide the sidebar ({0})"
+msgstr "Nascondi la barra laterale ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1456,7 @@ msgid "New comment"
 msgstr "Nuovo commento"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "Nuovo manoscritto"
 
@@ -1573,6 +1584,10 @@ msgstr "Non caricato; verrà omesso."
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "Non ora"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "Non sul server"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -2011,6 +2026,7 @@ msgid "Retry opening"
 msgstr "Riprova ad aprire"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "Riprova a caricare l'anteprima"
 
@@ -2256,9 +2272,10 @@ msgstr "Mostra i titoli di {0}"
 msgid "Show the sidebar"
 msgstr "Mostra la barra laterale"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "Mostra la barra laterale ({MOD_LABEL}-\\)"
+msgid "Show the sidebar ({0})"
+msgstr "Mostra la barra laterale ({0})"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2596,9 +2613,10 @@ msgstr "Questo brano non è più nel testo"
 msgid "Title"
 msgstr "Titolo"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "Titolo, autori, riassunto, stile delle citazioni, impaginazione e lingua ({MOD_LABEL}-,)"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "Titolo, autori, riassunto, stile delle citazioni, impaginazione e lingua ({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"

@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · {1}행"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0} ({MOD_LABEL}-Shift-\\ 키로 전환)"
+msgid "{0} ({1} cycles)"
+msgstr "{0} ({1}로 전환)"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -299,6 +300,10 @@ msgstr "추가"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "홈 화면에 {appName}을(를) 추가하려면 공유를 탭한 다음 홈 화면에 추가를 선택하세요."
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "장 추가"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "mdbase Reader에서 자료를 추가하고 여기서 <0>[@citekey]</0>로 인용하세요."
@@ -425,6 +430,10 @@ msgstr "다른 곳에서 변경됨"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "입력하는 대로 변경 사항이 원고의 프런트매터에 저장되고 미리보기에 반영됩니다."
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "변경 사항이 서버에 도달하지 않았습니다"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -1057,9 +1066,10 @@ msgstr "편집기 아래 문제 목록 숨기기 (F8을 누르면 다음 문제�
 msgid "Hide the sidebar"
 msgstr "사이드바 숨기기"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "사이드바 숨기기 ({MOD_LABEL}-\\)"
+msgid "Hide the sidebar ({0})"
+msgstr "사이드바 숨기기 ({0})"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1456,7 @@ msgid "New comment"
 msgstr "새 댓글"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "새 원고"
 
@@ -1573,6 +1584,10 @@ msgstr "불러오지 않아 제외됩니다."
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "나중에"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "서버에 저장되지 않음"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -2011,6 +2026,7 @@ msgid "Retry opening"
 msgstr "열기 다시 시도"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "미리보기 다시 시도"
 
@@ -2256,9 +2272,10 @@ msgstr "{0}의 제목 표시"
 msgid "Show the sidebar"
 msgstr "사이드바 표시"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "사이드바 표시 ({MOD_LABEL}-\\)"
+msgid "Show the sidebar ({0})"
+msgstr "사이드바 표시 ({0})"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2596,9 +2613,10 @@ msgstr "이 본문 구간은 더 이상 텍스트에 없습니다."
 msgid "Title"
 msgstr "제목"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "제목, 저자, 초록, 인용 스타일, 레이아웃 및 언어({MOD_LABEL}-,)"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "제목, 저자, 초록, 인용 스타일, 레이아웃 및 언어({0})"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"

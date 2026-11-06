@@ -75,6 +75,11 @@ async function continuePosition(page, width, reduced) {
   if (width === 1440) {
     await pressFill(page, page.locator(".segmented button").first());
     const bitmaps = await page.locator(".preview canvas").evaluateAll(elements => elements.map(element => element.width).join(","));
+    await page.evaluate(() => {
+      window.paneLongTasks = [];
+      window.paneTaskObserver = new PerformanceObserver(list => window.paneLongTasks.push(...list.getEntries().map(entry => entry.duration)));
+      window.paneTaskObserver.observe({ type: "longtask" });
+    });
     await page.evaluate(() => { window.paneFrames = []; window.paneRunning = true; const sample = () => { const element = document.querySelector(".write"); window.paneFrames.push({ opacity: Number(getComputedStyle(element).opacity), transform: getComputedStyle(element).transform, columns: getComputedStyle(document.querySelector(".workspace")).gridTemplateColumns, running: element.getAnimations().some(animation => animation.playState === "running" || animation.pending), bitmaps: [...document.querySelectorAll(".preview canvas")].map(element => element.width).join(",") }); if (window.paneRunning) requestAnimationFrame(sample); }; requestAnimationFrame(sample); });
     await page.keyboard.press("Control+Backslash");
     if (!reduced) {
@@ -83,6 +88,8 @@ async function continuePosition(page, width, reduced) {
     }
     await page.waitForTimeout(190);
     const frames = await page.evaluate(() => { window.paneRunning = false; return window.paneFrames; });
+    const tasks = await page.evaluate(() => { window.paneTaskObserver.disconnect(); return window.paneLongTasks; });
+    assert.ok(tasks.every(duration => duration < 50), `Sidebar long-task budget exceeded: ${JSON.stringify(tasks)}`);
     assert.ok(frames.every(frame => frame.opacity > 0));
     assert.equal(await page.locator(".preview-pane").evaluate(element => getComputedStyle(element).opacity === "1" && element.getAnimations().length === 0), true, "Pane moves must leave the preview undimmed");
     if (!reduced) assert.ok(new Set(frames.map(frame => frame.opacity)).size >= 3, `10k-word pane move is not visibly animated: ${JSON.stringify(frames)}`);

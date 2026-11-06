@@ -63,7 +63,7 @@ import type { CitationSite } from "./SourcesPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
 import { ProblemsStrip } from "./ProblemsStrip.js";
-import type { Command } from "@mdbase-dev/ui/command-palette";
+import { shortcutLabel, type Command } from "@mdbase-dev/ui/command-palette";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
 import { SaveNotice } from "@mdbase-dev/ui/save-notice";
@@ -160,7 +160,7 @@ function useSustained(flag: boolean, delay: number): boolean {
   return flag && observed && held;
 }
 
-export function WorkspaceView({ workspace, since, onClose }: { workspace: ManuscriptWorkspace; /** When this manuscript was last opened here, so what others wrote since can be marked. */ since?: string | undefined; onClose(force?: boolean): void }) {
+export function WorkspaceView({ workspace, since, onClose }: { workspace: ManuscriptWorkspace; /** When this manuscript was last opened here, so what others wrote since can be marked. */ since?: string | undefined; onClose(force?: boolean, create?: boolean): void }) {
   const { i18n } = useLingui();
   const interfaceLocale = i18n.locale;
   const snap = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot);
@@ -213,7 +213,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [position] = useState(() => recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.position);
   const savePosition = useCallback((position: WritingPosition) => recordOpened(workspace.namespace, workspace.main, undefined, undefined, position.path === workspace.main ? undefined : position.path, position), [workspace]);
   const [comparisonPath, setComparisonPath] = useState<string | null>(null);
-  const [leaveProblem, setLeaveProblem] = useState<string | null>(null);
+  const [leaveProblem, setLeaveProblem] = useState<{ message: string; create: boolean } | null>(null);
   const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
   const [pendingExport, setPendingExport] = useState<PendingExport | null>(null);
   const exportJob = useRef<AbortController | null>(null);
@@ -237,8 +237,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     if (!paneChanged && previous.active === active) return;
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     if (media.matches) return;
-    grid.current?.getBoundingClientRect();
-    const animations = [...(grid.current?.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor") ?? [])].map(element => element.animate(
+    const animations = [...(paneChanged && layout.view === "preview" ? [] : grid.current?.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor") ?? [])].map(element => element.animate(
       paneChanged ? [{ opacity: .7, transform: "translateX(6px)" }, { opacity: 1, transform: "none" }] : [{ opacity: .8 }, { opacity: 1 }],
       { duration: paneChanged ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)" },
     ));
@@ -461,6 +460,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   }, [showComments]);
   const onPreviewJump = useCallback((p: BlockPosition) => jump(p.record, p.offset), [jump]);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const retryPreview = useCallback(() => { void workspace.retryPreview(); }, [workspace]);
   const closeShortcuts = useCallback(() => setShortcutsOpen(false), []);
 
   const onEditorReady = useCallback((handle: EditorHandle) => {
@@ -749,14 +749,14 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   };
   const canExport: Record<ExportFormat, boolean> = { pdf: snap.phase === "ready", docx: snap.phase === "ready", bundle: snap.phase === "ready" };
   const downloadDrafts = () => download(zip(workspace.localDrafts()), "application/zip", `${fileStem} (local drafts).zip`);
-  const requestClose = async () => {
+  const requestClose = async (create = false) => {
     if (savingBeforeLeave) return;
     editor.current?.rememberPosition();
     setSavingBeforeLeave(true);
     const saved = await workspace.retrySave();
     setSavingBeforeLeave(false);
-    if (saved.ok) { cancelExport(); onClose(true); }
-    else setLeaveProblem(saved.message);
+    if (saved.ok) { cancelExport(); onClose(true, create); }
+    else setLeaveProblem({ message: saved.message, create });
   };
   const compared = comparisonPath ? snap.records.get(comparisonPath)?.snapshot : undefined;
   const recovered = comparisonPath ? snap.recoveredDrafts.get(comparisonPath) : undefined;
@@ -783,9 +783,17 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const shortcuts = useRef<(e: KeyboardEvent) => void>(() => {});
   useLayoutEffect(() => {
     shortcuts.current = (e: KeyboardEvent) => {
-    if (e.target instanceof Element && e.target.closest("dialog[open]:not(.settings-sheet), .settings-sheet:modal")) return;
-    if (document.querySelector("dialog[open]:not([inert]):not(.settings-sheet), .settings-sheet:modal") && e.key !== "F8") return;
+    if (e.isComposing) return;
     const mod = isMod(e);
+    const blockingDialog = document.querySelector("dialog[open]:not([inert]):not(.settings-sheet), .settings-sheet:modal");
+    if (mod && !e.shiftKey && e.code === "KeyK" && (paletteOpen || !blockingDialog)) {
+      e.preventDefault(); e.stopPropagation(); setPaletteOpen(open => !open); return;
+    }
+    if (mod && e.code === "Slash" && (shortcutsOpen || !blockingDialog)) {
+      e.preventDefault(); e.stopPropagation(); setShortcutsOpen(open => !open); return;
+    }
+    if (e.target instanceof Element && e.target.closest("dialog[open]:not(.settings-sheet), .settings-sheet:modal")) return;
+    if (blockingDialog && e.key !== "F8") return;
     let handled = true;
     if (mod && !e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, sidebar: !l.sidebar }));
     else if (mod && e.shiftKey && e.code === "Backslash") setView(VIEW_ORDER[(VIEW_ORDER.indexOf(layout.view) + 1) % VIEW_ORDER.length] as View);
@@ -799,8 +807,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     else if (mod && e.altKey && e.code === "KeyF") insertFootnote();
     else if (mod && e.shiftKey && e.code === "KeyS") setExportOpen(true);
     else if (mod && !e.shiftKey && e.code === "KeyS") void workspace.retrySave().then(signalResult);
-    else if (mod && !e.shiftKey && e.key.toLowerCase() === "k") setPaletteOpen(true);
-    else if (mod && e.code === "Slash") setShortcutsOpen(true);
     else if (!mod && e.key === "?" && !isTextEntry(e.target)) setShortcutsOpen(true);
     else if (e.key === "F8" && !mod) stepProblem(e.shiftKey ? -1 : 1);
     else handled = false;
@@ -928,12 +934,14 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "find-chapter", group: translate`Manuscript`, label: translate`Find in chapter`, shortcut: "mod+f", run: findInChapter },
     { id: "save", group: translate`Manuscript`, label: translate`Save now`, shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
     { id: "local-drafts", group: translate`Manuscript`, label: translate`Download local drafts`, keywords: translate`backup unsaved recovery`, run: downloadDrafts },
+    { id: "add-chapter", group: translate`Manuscript`, label: translate`Add chapter`, run: () => { setLayout(current => ({ ...current, sidebar: true, tab: "outline" })); setPane("outline"); requestAnimationFrame(() => grid.current?.querySelector<HTMLButtonElement>(".outline .add-chapter")?.click()); } },
     { id: "settings", group: translate`Manuscript`, label: translate`Manuscript settings`, shortcut: "mod+,", run: () => setSettingsOpen(true) },
     { id: "search", group: translate`Manuscript`, label: translate`Search the manuscript`, shortcut: "mod+shift+f", keywords: translate`find all chapters`, run: showSearch },
     { id: "sources", group: translate`Manuscript`, label: translate`Find a source`, shortcut: "mod+shift+e", run: () => showSources() },
     { id: "next-problem", group: translate`Manuscript`, label: translate`Next problem`, shortcut: "F8", run: () => stepProblem(1) },
     { id: "previous-problem", group: translate`Manuscript`, label: translate`Previous problem`, shortcut: "shift+F8", run: () => stepProblem(-1) },
     { id: "manuscripts", group: translate`Manuscript`, label: translate`All manuscripts`, keywords: translate`back home close`, run: () => void requestClose() },
+    { id: "new-manuscript", group: translate`Manuscript`, label: translate`New manuscript`, run: () => void requestClose(true) },
     { id: "problems", group: translate`Manuscript`, label: problemsOpen ? translate`Hide problems` : translate`Show problems`, keywords: translate`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
     { id: "bold", group: translate`Format`, label: translate`Bold`, shortcut: "mod+b", run: () => editor.current?.format("bold") },
     { id: "italic", group: translate`Format`, label: translate`Italic`, shortcut: "mod+i", run: () => editor.current?.format("italic") },
@@ -946,6 +954,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "next-comment", group: translate`Comments`, label: translate`Next comment`, shortcut: "F7", run: () => stepComment(1) },
     { id: "previous-comment", group: translate`Comments`, label: translate`Previous comment`, shortcut: "shift+F7", run: () => stepComment(-1) },
     { id: "zoom-fit", group: translate`View`, label: translate`Fit to width`, run: () => setLayout(current => ({ ...current, zoom: "fit" })) },
+    ...SIDEBAR_TABS.map(tab => ({ id: `tab-${tab}`, group: translate`View`, label: TAB_NAME[tab], run: () => { setLayout(current => ({ ...current, sidebar: true, tab })); setPane("outline"); } })),
+    { id: "retry-preview", group: translate`View`, label: translate`Retry preview`, run: retryPreview },
     { id: "zoom-actual", group: translate`View`, label: translate`Actual size`, run: () => setLayout(current => ({ ...current, zoom: 1 })) },
     { id: "zoom-in", group: translate`View`, label: translate`Zoom in`, run: () => setLayout(current => ({ ...current, zoom: nextZoom(previewView?.scale ?? 1, 1) })) },
     { id: "zoom-out", group: translate`View`, label: translate`Zoom out`, run: () => setLayout(current => ({ ...current, zoom: nextZoom(previewView?.scale ?? 1, -1) })) },
@@ -985,7 +995,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <div className="save-slot">
             <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />
             <SaveNotice tone={saveNotice.tone} label={saveNotice.shortLabel ?? saveNotice.label} className="is-short" />
-            {localPending && <span className="sync-status muted small">{connection ? connectionNoticeLabels[connection] : translate`Saving to collection…`}</span>}
+            {connection === "sync_delayed" ? <button type="button" className="sync-status link small" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button> : localPending && <span className="sync-status muted small">{connection ? connectionNoticeLabels[connection] : translate`Saving to collection…`}</span>}
+            <span className="visually-hidden" role="status" aria-live="polite">{connection === "sync_delayed" ? connectionNoticeLabels.sync_delayed : ""}</span>
             <span className="bar-words" title={icuPlural(order.length, { one: "In # chapter; citations, code and math are not counted", other: "In # chapters; citations, code and math are not counted" })}>
               {countLabel(stats.words, "word")}
             </span>
@@ -1005,7 +1016,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               className="mdbase-icon-button"
               aria-pressed={layout.sidebar}
               onClick={() => setLayout((l) => ({ ...l, sidebar: !l.sidebar }))}
-              title={layout.sidebar ? translate`Hide the sidebar (${MOD_LABEL}-\\)` : translate`Show the sidebar (${MOD_LABEL}-\\)`}
+              title={layout.sidebar ? translate`Hide the sidebar (${shortcutLabel("mod+\\")})` : translate`Show the sidebar (${shortcutLabel("mod+\\")})`}
               aria-label={translate`Sidebar`}
             >
               <SidebarIcon />
@@ -1014,7 +1025,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               {VIEW_ORDER.map((v) => {
                 const Icon = v === "both" ? SplitIcon : v === "write" ? EditorOnly : PageIcon;
                 return (
-                  <button key={v} type="button" aria-pressed={layout.view === v} onClick={() => setView(v)} aria-label={VIEW_NAME[v]} title={translate`${VIEW_NAME[v]} (${MOD_LABEL}-Shift-\\ cycles)`}>
+                  <button key={v} type="button" aria-pressed={layout.view === v} onClick={() => setView(v)} aria-label={VIEW_NAME[v]} title={translate`${VIEW_NAME[v]} (${shortcutLabel("mod+shift+\\")} cycles)`}>
                     <Icon />
                   </button>
                 );
@@ -1022,7 +1033,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             </div>
           </div>
           <InsertMenu open={insertOpen} setOpen={setInsertOpen} commands={inserts} disabled={!activeView || activeView.snapshot.state === "deleted" || snap.recoveredDrafts.has(active)} />
-          <button type="button" className="mdbase-button keyboard-only" aria-label={translate`Settings`} aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={translate`Title, authors, abstract, citation style, layout and language (${MOD_LABEL}-,)`}>
+          <button type="button" className="mdbase-button keyboard-only" aria-label={translate`Settings`} aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))} title={translate`Title, authors, abstract, citation style, layout and language (${shortcutLabel("mod+,")})`}>
             <GearIcon />
             <span className="button-label"><Trans>Settings</Trans></span>
             {diagnostics.some((d) => d.field) && <span className="count tone-warning">{diagnostics.filter((d) => d.field).length}</span>}
@@ -1242,13 +1253,14 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         </div>}
         </div>
         <Preview
+          visible={narrow ? pane === "preview" : layout.view !== "write"}
           {...(snap.artifact ? { artifact: snap.artifact } : {})}
           {...(snap.artifactRevision !== undefined ? { revision: snap.artifactRevision } : {})}
           positions={snap.result?.positions ?? NO_POSITIONS}
           marks={snap.result?.marks ?? NO_MARKS}
           onSource={onPreviewSource}
           problem={snap.previewProblem}
-          onRetry={() => void workspace.retryPreview()}
+          onRetry={retryPreview}
           stale={Boolean(snap.previewProblem || snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready" || snap.result && !snap.result.artifact)}
           onJump={onPreviewJump}
           follow={follow}
@@ -1307,13 +1319,13 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         setComparisonPath(null);
       }} />
       <Dialog open={Boolean(leaveProblem)} onClose={() => setLeaveProblem(null)} title={translate`Some changes are not saved`}>
-        <p className="problem">{leaveProblem}</p>
+        <p className="problem">{leaveProblem?.message}</p>
         <p><Trans>Your local drafts are backed up in this browser when storage is available. Download a copy before leaving if you need an independent backup.</Trans></p>
         <div className="compare-actions">
           <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           <button type="button" className="mdbase-button is-primary" onClick={() => setLeaveProblem(null)}><Trans>Keep writing</Trans></button>
-          <button type="button" className="mdbase-button" onClick={() => void requestClose()} aria-disabled={savingBeforeLeave || undefined}><Trans>Retry saving</Trans></button>
-          <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true); }}><Trans>Leave without saving</Trans></button>
+          <button type="button" className="mdbase-button" onClick={() => void requestClose(leaveProblem?.create)} aria-disabled={savingBeforeLeave || undefined}><Trans>Retry saving</Trans></button>
+          <button type="button" className="mdbase-button" onClick={() => { cancelExport(); onClose(true, leaveProblem?.create); }}><Trans>Leave without saving</Trans></button>
         </div>
       </Dialog>
       <ExportReview pending={pendingExport} onCancel={cancelExport} onExport={(pending) => {

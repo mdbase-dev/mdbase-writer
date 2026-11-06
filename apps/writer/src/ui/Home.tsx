@@ -25,6 +25,8 @@ import { DraftStore } from "../workspace/drafts.js";
 import { localNamespace, recentManuscripts, setWordGoal, wordGoal } from "./recent.js";
 import { ChevronRight, PenIcon } from "./icons.js";
 import { recordTitle } from "./records.js";
+import { warmCompiler } from "../compile/client.js";
+import { warmPreviewRenderer } from "../preview/Preview.js";
 
 /** Manuscripts listed before a search field is worth showing. */
 const SEARCH_FROM = 6;
@@ -35,7 +37,7 @@ const UNTYPED_SHOWN = 20;
 const templateOptions = () => TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const styleOptions = () => STYLES.map((s) => ({ value: s.id, label: styleName(s.id) }));
 
-export function Home({ backend, onOpen, collectionPicker, returnPath, opening = false }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null; opening?: boolean }) {
+export function Home({ backend, onOpen, collectionPicker, returnPath, opening = false, initialCreate = false }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null; opening?: boolean; initialCreate?: boolean }) {
   useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -50,12 +52,13 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
   const [reload, setReload] = useState(0);
   const bodyCache = useRef(new Map<string, Promise<Result<string>>>());
   const rows = useRef<HTMLUListElement>(null);
+  const home = useRef<HTMLElement>(null);
   const restored = useRef(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [limitReads] = useState(() => limitConcurrency(4));
   const [sources, setSources] = useState<number | null>(null);
-  const [dialog, setDialog] = useState(false);
+  const [dialog, setDialog] = useState(initialCreate);
   const [filter, setFilter] = useState("");
   const [limit, setLimit] = useState(50);
   const namespace = localNamespace(backend);
@@ -63,6 +66,13 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
   const remembered = useMemo(() => ({revision: reload, recent: recentManuscripts(namespace),
     drafts: new DraftStore(namespace).list()}), [namespace, reload]);
   const {recent, drafts} = remembered;
+
+  useEffect(() => {
+    if (opening || !window.requestIdleCallback) return;
+    let release: (() => void) | undefined;
+    const idle = window.requestIdleCallback(() => { release = warmCompiler(); warmPreviewRenderer(); });
+    return () => { window.cancelIdleCallback(idle); release?.(); };
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -165,10 +175,12 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
   }, [returnPath, manuscripts]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || document.querySelector("dialog[open]")) return;
+      if (event.isComposing || event.defaultPrevented || !home.current?.checkVisibility() || home.current.inert) return;
       const mod = event.ctrlKey || event.metaKey;
-      if (mod && event.code === "KeyK") { event.preventDefault(); setPaletteOpen(true); }
-      else if (mod && event.code === "Slash") { event.preventDefault(); setShortcutsOpen(true); }
+      if (mod && event.code === "KeyK" && (paletteOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setPaletteOpen(open => !open); }
+      else if (mod && event.code === "Slash" && (shortcutsOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setShortcutsOpen(open => !open); }
+      else if (document.querySelector("dialog[open]")) return;
+      else if (!mod && event.key === "?" && !(event.target instanceof Element && event.target.closest("input, textarea, [contenteditable=true]"))) { event.preventDefault(); setShortcutsOpen(true); }
       else if (!(event.target instanceof Element && event.target.closest("input, textarea, [contenteditable=true]")) && ["ArrowDown", "ArrowUp", "j", "k"].includes(event.key)) {
         const buttons = [...(rows.current?.querySelectorAll<HTMLButtonElement>("[data-path]") ?? [])];
         if (!buttons.length) return;
@@ -178,9 +190,9 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
         buttons[current < 0 ? (backwards ? buttons.length - 1 : 0) : (current + (backwards ? buttons.length - 1 : 1)) % buttons.length]?.focus();
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [paletteOpen, shortcutsOpen]);
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.filter((entry) => entry.isIntersecting).map((entry) => (entry.target as HTMLElement).dataset["path"]).filter((path): path is string => Boolean(path));
@@ -202,7 +214,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
   );
 
   return (
-    <main className={`home${opening ? " is-opening" : ""}`} aria-busy={opening} inert={opening}>
+    <main ref={home} className={`home${opening ? " is-opening" : ""}`} aria-busy={opening} inert={opening}>
       <section>
         <header className="home-header">
           <div>

@@ -64,6 +64,7 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
   });
   const [view, setView] = useState<{backend: WriterBackend; workspace: ManuscriptWorkspace | null} | null>(null);
   const lastPath = useRef<string | null>(path);
+  const [createOnHome, setCreateOnHome] = useState(false);
   useEffect(() => { if (path) lastPath.current = path; }, [path]);
   useEffect(() => {
     const owned = path ? new ManuscriptWorkspace(backend, path) : null;
@@ -90,9 +91,9 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
   }, [backend, current]);
   const since = useMemo(() => path ? recentManuscripts(localNamespace(backend)).find(entry => entry.path === path)?.at : undefined, [backend, path]);
   useEffect(() => {if (path) recordOpened(localNamespace(backend), path);}, [backend, path]);
-  if (!path || !current || presented !== current) return <Home backend={backend} onOpen={setPath} collectionPicker={collectionPicker} returnPath={lastPath.current} opening={Boolean(path)} />;
+  if (!path || !current || presented !== current) return <Home backend={backend} onOpen={path => { setCreateOnHome(false); setPath(path); }} collectionPicker={collectionPicker} returnPath={lastPath.current} opening={Boolean(path)} initialCreate={createOnHome} />;
   return <>
-    <WorkspaceView key={current.main} workspace={current} since={since} onClose={force => setPath(null, force)} />
+    <WorkspaceView key={current.main} workspace={current} since={since} onClose={(force, create = false) => { setCreateOnHome(create); setPath(null, force); }} />
     <Dialog open={Boolean(navigation)} onClose={() => {navigation?.finish(false); setNavigation(null);}} title={t`Some changes are not saved`}>
       <p className="problem">{navigation?.message}</p><p><Trans>Download a local copy before leaving if saving cannot be completed.</Trans></p>
       <div className="compare-actions">

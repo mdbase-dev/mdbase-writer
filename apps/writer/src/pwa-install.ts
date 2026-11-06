@@ -49,6 +49,7 @@ export function setupPwaInstall(appName: string): () => void {
     if (
       disposed ||
       !ready ||
+      !document.querySelector(".home, .workspace") ||
       dismissed ||
       isInstalled() ||
       banner ||
@@ -121,6 +122,11 @@ export function setupPwaInstall(appName: string): () => void {
   window.addEventListener("beforeinstallprompt", beforeInstall);
   window.addEventListener("appinstalled", installed);
   standalone.addEventListener("change", modeChanged);
+  const observer = new MutationObserver(() => {
+    if (!document.querySelector(".home, .workspace")) remove();
+    else show();
+  });
+  observer.observe(document.getElementById("root") ?? document.body, { childList: true, subtree: true });
   const timer = window.setTimeout(() => {
     ready = true;
     show();
@@ -128,6 +134,7 @@ export function setupPwaInstall(appName: string): () => void {
   return () => {
     disposed = true;
     window.clearTimeout(timer);
+    observer.disconnect();
     window.removeEventListener("beforeinstallprompt", beforeInstall);
     window.removeEventListener("appinstalled", installed);
     standalone.removeEventListener("change", modeChanged);

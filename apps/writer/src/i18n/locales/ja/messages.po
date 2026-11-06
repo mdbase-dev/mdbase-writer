@@ -109,9 +109,10 @@ msgid "{0} · line {1}"
 msgstr "{0} · {1}行目"
 
 #. placeholder {0}: VIEW_NAME[v]
+#. placeholder {1}: shortcutLabel("mod+shift+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "{0} ({MOD_LABEL}-Shift-\\ cycles)"
-msgstr "{0}（{MOD_LABEL}-Shift-\\で切り替え）"
+msgid "{0} ({1} cycles)"
+msgstr "{0}（{1} で切り替え）"
 
 #. placeholder {0}: file.name
 #. placeholder {1}: stored.message
@@ -299,6 +300,10 @@ msgstr "追加"
 msgid "Add {appName} to your Home Screen: tap Share, then Add to Home Screen."
 msgstr "ホーム画面に{appName}を追加：共有をタップし、「ホーム画面に追加」を選択してください。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Add chapter"
+msgstr "章を追加"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Add them in mdbase Reader; cite them here with <0>[@citekey]</0>."
 msgstr "資料はmdbase Readerで追加し、ここでは<0>[@citekey]</0>で引用します。"
@@ -425,6 +430,10 @@ msgstr "別の場所で変更されました"
 #: src/ui/Settings.tsx
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "入力すると変更内容が原稿のメタデータに保存され、プレビューにも反映されます。"
+
+#: src/ui/connection-notice.ts
+msgid "Changes haven't reached the server"
+msgstr "変更がサーバーに届いていません"
 
 #: src/workspace/workspace.ts
 msgid "Chapter could not be loaded: {problem}"
@@ -1057,9 +1066,10 @@ msgstr "エディター下の問題一覧を非表示（F8で次の問題へ）"
 msgid "Hide the sidebar"
 msgstr "サイドバーを非表示"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Hide the sidebar ({MOD_LABEL}-\\)"
-msgstr "サイドバーを非表示（{MOD_LABEL}-\\）"
+msgid "Hide the sidebar ({0})"
+msgstr "サイドバーを非表示（{0}）"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Highlights are not set up in this collection."
@@ -1446,6 +1456,7 @@ msgid "New comment"
 msgstr "新しいコメント"
 
 #: src/ui/Home.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "新しい原稿"
 
@@ -1573,6 +1584,10 @@ msgstr "読み込まれていないため、省略されます。"
 #: src/pwa-install.ts
 msgid "Not now"
 msgstr "後で"
+
+#: src/ui/records.ts
+msgid "Not on server"
+msgstr "サーバーに未保存"
 
 #: src/ui/records.ts
 msgid "Not saved"
@@ -2011,6 +2026,7 @@ msgid "Retry opening"
 msgstr "開く操作を再試行"
 
 #: src/preview/Preview.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Retry preview"
 msgstr "プレビューを再試行"
 
@@ -2256,9 +2272,10 @@ msgstr "{0}の見出しを表示"
 msgid "Show the sidebar"
 msgstr "サイドバーを表示"
 
+#. placeholder {0}: shortcutLabel("mod+\\")
 #: src/ui/WorkspaceView.tsx
-msgid "Show the sidebar ({MOD_LABEL}-\\)"
-msgstr "サイドバーを表示（{MOD_LABEL}-\\）"
+msgid "Show the sidebar ({0})"
+msgstr "サイドバーを表示（{0}）"
 
 #: src/editor/comments.ts
 msgid "Show this comment"
@@ -2596,9 +2613,10 @@ msgstr "この箇所は本文にありません"
 msgid "Title"
 msgstr "タイトル"
 
+#. placeholder {0}: shortcutLabel("mod+,")
 #: src/ui/WorkspaceView.tsx
-msgid "Title, authors, abstract, citation style, layout and language ({MOD_LABEL}-,)"
-msgstr "タイトル、著者、要旨、引用スタイル、レイアウト、言語（{MOD_LABEL}-,）"
+msgid "Title, authors, abstract, citation style, layout and language ({0})"
+msgstr "タイトル、著者、要旨、引用スタイル、レイアウト、言語（{0}）"
 
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
