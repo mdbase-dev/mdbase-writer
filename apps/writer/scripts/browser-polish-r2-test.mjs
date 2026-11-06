@@ -57,6 +57,7 @@ try {
       await page.locator(".cm-content").focus();
       await page.keyboard.press("Control+End");
       await page.keyboard.type("L");
+      await page.waitForFunction(() => document.querySelector(".sync-status")?.textContent === "Offline");
       const committed = await page.evaluate(() => {
         const workspace = window.writer.workspace;
         const record = workspace.getSnapshot().records.get(workspace.main);
