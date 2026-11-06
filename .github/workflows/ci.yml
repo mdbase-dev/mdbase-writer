@@ -80,10 +80,7 @@ jobs:
           pnpm --filter @mdbase-writer/app test:browser:reliability || result=1
           pnpm --filter @mdbase-writer/app test:browser:i18n || result=1
           pnpm --filter @mdbase-writer/app test:browser:a11y || result=1
-          # Temporary diagnostics: retain Chromium's original protocol errors,
-          # which Playwright can relabel as a navigation/context-destroyed error.
-          DEBUG=pw:protocol pnpm --filter @mdbase-writer/app test:browser:polish > "$RUNNER_TEMP/writer-polish.log" 2>&1 || result=1
-          grep -E '^ok |Execution context|Promise was collected|^AssertionError|^Error:|browser-polish-r2-test.mjs:|pw:protocol ◀ RECV .*("error":|"method":"Page.frameNavigated"|"method":"Runtime.executionContextsCleared"|"method":"Network.webSocketFrameReceived".*full-reload)' "$RUNNER_TEMP/writer-polish.log" | cut -c1-2000
+          pnpm --filter @mdbase-writer/app test:browser:polish || result=1
           exit "$result"
       - name: Verify private feedback with demo data and intercepted delivery
         run: |

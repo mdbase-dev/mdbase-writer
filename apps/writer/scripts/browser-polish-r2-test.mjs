@@ -8,6 +8,14 @@ const origin = new URL(base).origin;
 assert.ok(["127.0.0.1", "localhost"].includes(new URL(base).hostname));
 mkdirSync("out/polish-r2", { recursive: true });
 const browser = await chromium.launch({ executablePath: process.env.CHROME });
+// Temporary, failure-only diagnostics for the CI-only evaluate error. Avoid
+// DEBUG=pw:protocol: serializing every message changes the timing of the race.
+const protocol = browser._connection.toImpl(browser)._connection;
+const protocolLogger = protocol._protocolLogger;
+protocol._protocolLogger = (direction, message) => {
+  if (direction === "receive" && message.error) console.error("Chromium protocol error:", JSON.stringify(message.error));
+  protocolLogger(direction, message);
+};
 const results = [];
 try {
   for (const width of [1440, 390]) for (const colorScheme of ["light", "dark"]) for (const reducedMotion of ["no-preference", "reduce"]) {
@@ -15,6 +23,11 @@ try {
     const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 }, colorScheme, reducedMotion });
     await context.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
     const page = await context.newPage();
+    const navigation = [];
+    page.on("request", request => { if (request.isNavigationRequest()) navigation.push({ type: "document", url: request.url() }); });
+    page.on("websocket", socket => socket.on("framereceived", event => {
+      if (typeof event.payload === "string" && event.payload.includes("full-reload")) navigation.push({ type: "hmr", payload: event.payload });
+    }));
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     try {
@@ -74,6 +87,8 @@ try {
       results.push({ name, ok: true });
       console.log(`ok native status, protected hold, download, merge and semantics ${name}`);
     } catch (error) {
+      console.error("Failure navigation evidence:", JSON.stringify({ name, navigation }));
+      console.error("Failure document evidence:", await page.evaluate(() => ({ url: location.href, fixture: !!window.nativeFixture, state: window.writer?.workspace?.getSnapshot().records.get(window.writer.workspace.main)?.snapshot.state })).catch(failure => failure.message));
       await page.screenshot({ path: `out/polish-r2/${name}-failure.png` });
       throw error;
     } finally {
