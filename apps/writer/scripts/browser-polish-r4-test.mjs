@@ -138,6 +138,16 @@ async function immediateResume(page, shortcut, overlay, text, reduced) {
 }
 
 async function roundFive(page, width, reduced) {
+  for (const [shortcut, selector, text] of [["Control+k", ".mdbase-command-backdrop", " PALETTE_POINTER "], ["Control+/", ".shortcuts-dialog", " HELP_POINTER "]]) {
+    await page.locator(".cm-content").focus();
+    await page.keyboard.press(shortcut);
+    await page.locator(selector).waitFor();
+    await page.mouse.click(4, 10);
+    await page.keyboard.type(text, { delay: 3 });
+    assert.ok(await page.evaluate(text => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes(text)), text), `Pointer dismissal lost ${text}`);
+    assert.equal(await page.evaluate(() => document.activeElement?.matches(".cm-content")), true);
+    await page.locator(selector).waitFor({ state: "hidden" });
+  }
   await immediateResume(page, "Control+k", ".mdbase-command-backdrop", " PALETTE_ESCAPE ", reduced);
   await page.keyboard.press("Control+k");
   await page.keyboard.type("Settings");

@@ -16,6 +16,22 @@ beforeEach(() => {
 });
 afterEach(async () => { cleanup(); vi.restoreAllMocks(); await runtime.selectLocale("en"); });
 
+it.each(["\r\n", "\r", "\n"])("normalizes %j before computing the first body position and clamping restored selection", newline => {
+  const text = `# Chapter${newline}${newline}`;
+  const props: EditorProps = {
+    path: "chapter.md", text, readOnly: false, livePreview: false, diagnostics: [],
+    completion: { library: [], labels: [], recordPaths: [] },
+    insight: { library: new Map(), references: new Map(), labels: new Map() }, onChange: vi.fn(),
+  };
+  const rendered = render(<Editor {...props} />);
+  const getView = () => EditorView.findFromDOM(rendered.container.querySelector<HTMLElement>(".cm-editor")!)!;
+  expect(getView().state.doc.toString()).toBe("# Chapter\n\n");
+  expect(getView().state.selection.main.head).toBe(getView().state.doc.length);
+  rendered.rerender(<Editor key="restored" {...props} position={{ path: props.path, anchor: text.length + 10, head: text.length + 20, top: text.length + 30, offset: 0 }} />);
+  expect(getView().state.selection.main.anchor).toBe(getView().state.doc.length);
+  expect(getView().state.selection.main.head).toBe(getView().state.doc.length);
+});
+
 it("advertises paused editing and becomes editable after recovery is reviewed", () => {
   const props: EditorProps = {
     states: new Map<string, RetainedEditor>(), path: "main.md", text: "Collection text",

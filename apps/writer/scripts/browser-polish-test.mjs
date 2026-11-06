@@ -159,7 +159,11 @@ try {
       await page.screenshot({ path: `${output}/${name}-preview.png` });
       if (width === 390) await page.getByRole("button", { name: "Write", exact: true }).click();
       await page.locator(".cm-content").click();
+      const beforeFind = await page.evaluate(() => [...window.writer.workspace.getSnapshot().records.values()].map(record => record.snapshot.body));
       await page.keyboard.press("Control+f");
+      await page.keyboard.type("Darwin");
+      assert.equal(await page.getByRole("textbox", { name: "Find", exact: true }).inputValue(), "Darwin");
+      assert.deepEqual(await page.evaluate(() => [...window.writer.workspace.getSnapshot().records.values()].map(record => record.snapshot.body)), beforeFind, "Find text entered the manuscript");
       result.findHeight = await page.locator(".cm-search").evaluate((element) => element.getBoundingClientRect().height);
       assert.ok(result.findHeight < 160, `Find panel is ${result.findHeight}px tall`);
       assert.equal(await page.locator(".cm-search .cm-button, .cm-search .cm-textfield").count(), 0);
@@ -170,7 +174,6 @@ try {
       await page.getByRole("button", { name: "Regular expression", exact: true }).press("Space");
       assert.equal(await page.getByRole("button", { name: "Regular expression", exact: true }).getAttribute("aria-pressed"), "true");
       await page.getByRole("button", { name: "Regular expression", exact: true }).press("Space");
-      await page.getByRole("textbox", { name: "Find", exact: true }).fill("Darwin");
       await page.locator('.cm-search button[name="next"]').click();
       await page.getByRole("textbox", { name: "Replace", exact: true }).fill("Darwin test");
       await page.locator('.cm-search button[name="replace"]').click();

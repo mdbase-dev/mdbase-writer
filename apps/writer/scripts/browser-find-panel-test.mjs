@@ -22,6 +22,8 @@ try {
       await page.keyboard.press("Control+f");
     }
     await panel.waitFor();
+    await page.keyboard.type("Darwin");
+    assert.equal(await panel.getByRole("textbox", {name: "Find", exact: true}).inputValue(), "Darwin");
     assert.ok(await panel.evaluate(element => element.getBoundingClientRect().height < 62));
     assert.equal(await panel.locator(".cm-button,.cm-textfield").count(), 0);
     assert.equal(await panel.locator('button[name="close"]').evaluate(element => getComputedStyle(element).position), "static");
@@ -43,6 +45,7 @@ try {
     assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= width + 1);
     await page.screenshot({path: `out/find-panel-${width}.png`});
     console.log(`PASS ${width}px single-row Find, named pointer/keyboard toggles and anchored options fit`);
+    await page.keyboard.press("Escape");
   }
 } catch (error) {
   await page.screenshot({path: "out/find-panel-failure.png"});

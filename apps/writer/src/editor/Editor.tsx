@@ -10,7 +10,7 @@ import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@co
 import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
 import { englishCodeMirrorPhrases, loadCodeMirrorPhrases } from "@mdbase-dev/i18n/codemirror";
 import { isLocale } from "@mdbase-dev/i18n";
-import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Transaction } from "@codemirror/state";
+import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Text, Transaction } from "@codemirror/state";
 import { drawSelection, EditorView, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -191,13 +191,14 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
           }),
         ];
     const retained = states?.get(path);
+    const doc = Text.of(text.split(/\r\n?|\n/));
     const state = retained
       ? retained.state.update({ effects: StateEffect.reconfigure.of(extensions) }).state
-      : EditorState.create({ doc: text, extensions, selection: position?.path === path ? { anchor: Math.min(text.length, position.anchor), head: Math.min(text.length, position.head) } : { anchor: /^(?:\s*\n)*(?:#{1,6}[^\n]*\n(?:[ \t]*\n)*)?/.exec(text)?.[0].length ?? 0 } });
+      : EditorState.create({ doc, extensions, selection: position?.path === path ? { anchor: Math.min(doc.length, position.anchor), head: Math.min(doc.length, position.head) } : { anchor: Math.min(doc.length, /^(?:\s*\n)*(?:#{1,6}[^\n]*\n(?:[ \t]*\n)*)?/.exec(doc.toString())?.[0].length ?? 0) } });
     // CodeMirror restores against its measured viewport; assigning scrollTop in
     // an animation frame is clamped while long documents are still virtualised.
     const restored = position?.path === path ? position : undefined;
-    const v = new EditorView({ parent: host.current, state, ...(retained ? { scrollTo: retained.scroll } : restored ? { scrollTo: EditorView.scrollIntoView(Math.min(text.length, restored.top), { y: "start", yMargin: restored.offset }) } : {}) });
+    const v = new EditorView({ parent: host.current, state, ...(retained ? { scrollTo: retained.scroll } : restored ? { scrollTo: EditorView.scrollIntoView(Math.min(doc.length, restored.top), { y: "start", yMargin: restored.offset }) } : {}) });
     let measured = false;
     v.requestMeasure({ read: () => { measured = true; } });
     view.current = v;

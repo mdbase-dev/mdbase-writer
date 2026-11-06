@@ -20,9 +20,11 @@ try {
     try {
       await page.goto(`${base}?demo`);
       await page.locator(".manuscript-row").first().waitFor();
-      await page.evaluate(async () => { window.nativeFixture = await (await import("/scripts/browser-a11y-fixture.tsx")).mountNative(); });
+      await page.evaluate(async () => { window.nativeFixture = await (await import("/scripts/browser-a11y-fixture.tsx")).mountNative("# Original manuscript\r\n\r\n"); });
       await page.locator('.manuscript-row[data-path="writing/main.md"]').click();
       await page.locator(".cm-content").waitFor();
+      await page.keyboard.type("CRLF_OPEN");
+      assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().records.get("writing/main.md").snapshot.body), "# Original manuscript\n\nCRLF_OPEN");
       if (width === 390) await page.getByRole("button", { name: "Preview", exact: true }).click();
       await page.waitForFunction(() => document.querySelector(".preview-pages canvas.page")?.dataset.version, null, { timeout: 60000 });
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Preview-selected page overflow");

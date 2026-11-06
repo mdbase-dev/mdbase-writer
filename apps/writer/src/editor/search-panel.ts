@@ -66,5 +66,5 @@ export function searchPanel(view: EditorView): Panel {
     else if (event.key === "Enter" && event.target === find) { event.preventDefault(); (event.shiftKey ? findPrevious : findNext)(view); }
   };
   sync();
-  return { dom, top: true, update: sync };
+  return { dom, top: true, update: sync, mount() { find.select(); } };
 }

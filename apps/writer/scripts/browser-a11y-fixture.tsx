@@ -16,13 +16,13 @@ export function mountSignIn() {
   root.render(<AppI18nProvider><App sdk={sdk} /></AppI18nProvider>);
 }
 
-export async function mountNative() {
+export async function mountNative(body = "# Original manuscript\n\nConfirmed native text.\n") {
   const names = ["manuscript", "source", "comment"];
   const fixture = await createTestApp({
     declaration: { id: "writer.polish", name: "Writer polish", origin: "https://writer.mdbase.dev", environment: "lab", manifest },
     collections: [{ name: "Writing", contracts: manifest.requirements.contracts.map((contract, index) => ({
       id: contract.id, version: contract.version, contractDigest: contract.digest, type: names[index]!, fields: { title: "title", template: "template", csl: "csl" },
-    })), records: [{ path: "writing/main.md", types: ["manuscript"], frontmatter: { title: "Original manuscript" }, body: "# Original manuscript\n\nConfirmed native text.\n" }] }],
+    })), records: [{ path: "writing/main.md", types: ["manuscript"], frontmatter: { title: "Original manuscript" }, body }] }],
     phase: "ready",
   });
   fixture.client().describe = async () => ({

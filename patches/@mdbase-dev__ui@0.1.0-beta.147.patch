@@ -68,7 +68,7 @@ index bcfea34790878f2f3a54be5dbc0e0e0e34f3a214..03aa8095a02b0152062eea2ee7b9a045
 -    return () => previous?.focus();
 -  }, []);
 +  const restore = () => {
-+    if (paletteRef.current?.contains(document.activeElement) || document.activeElement === document.body) previous.current?.focus();
++    if (paletteRef.current?.closest("dialog")?.contains(document.activeElement) || document.activeElement === document.body) previous.current?.focus();
 +  };
 +  useLayoutEffect(() => {
 +    if (!open) return;
@@ -172,7 +172,8 @@ index c5fd302474e8ca3bd7186b3c67e888d51f735b7c..1e7fcd8708ddd0b170debe6bb660d056
 +      if (open && !ref.current?.open && !closeDisabled) onClose();
      },
      onMouseDown: event => {
-       if (!closeDisabled && event.target === event.currentTarget) onClose();
+-      if (!closeDisabled && event.target === event.currentTarget) onClose();
++      if (!closeDisabled && event.target === event.currentTarget) { event.preventDefault(); onClose(); }
      },
 -    children: open && _jsxs("div", {
 +    children: present && _jsxs("div", {
