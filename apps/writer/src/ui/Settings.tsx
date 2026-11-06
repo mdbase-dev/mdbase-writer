@@ -66,7 +66,7 @@ export function Settings({
     if (open && modal) dialog.showModal();
     else if (present) dialog.show();
     if (open && !focus) dialog.querySelector<HTMLElement>("input, textarea, button.mdbase-select")?.focus();
-  }, [open, modal, present]);
+  }, [open, modal, present, Boolean(view)]);
   // Escape closes the sheet wherever focus is, unless something else (a choice list,
   // a menu, the editor's completions, a dialog) took it first.
   const close = useRef(onClose);

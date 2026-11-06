@@ -69,6 +69,67 @@ function fixture() {
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
 
 describe("workspace reliability", () => {
+  it("refuses chapter creation before the main record session is open", async () => {
+    const { backend, open } = fixture();
+    const recordOpen = backend.records.open.bind(backend.records);
+    let finish!: () => void;
+    backend.records.open = (path, ...args) => path === "main.md" ? new Promise(resolve => { finish = () => { void recordOpen(path, ...args).then(resolve); }; }) : recordOpen(path, ...args);
+    backend.createRecord = vi.fn(async path => ok(path));
+    const workspace = open();
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad.phase).toBe("ready"));
+    expect(await workspace.addChapter("Not yet")).toEqual(fail("The manuscript is still opening."));
+    expect(backend.createRecord).not.toHaveBeenCalled();
+    finish();
+    await ready(workspace);
+  });
+
+  it("uses a ready watch index without waiting for the obsolete initial request", async () => {
+    const { backend, authority, open } = fixture();
+    const initial = await backend.index();
+    if (!initial.ok) throw new Error(initial.message);
+    let finish!: (value: typeof initial) => void;
+    let changed!: (delta: CollectionDelta) => void;
+    backend.index = () => new Promise(resolve => { finish = resolve; });
+    backend.onCollectionChange = listener => { changed = listener; return () => {}; };
+    backend.createRecord = vi.fn(async (path, body) => { authority.seed(path, { body }); return ok(path); });
+    const workspace = open();
+    await ready(workspace);
+    const added = workspace.addChapter("Watch ready");
+    changed({ paths: [], index: { ...initial.value, recordPaths: [...initial.value.recordPaths, "chapters/newer.md"] } });
+    await vi.waitFor(() => expect(backend.createRecord).toHaveBeenCalledOnce());
+    expect(await added).toEqual(ok("chapters/watch-ready.md"));
+    finish(initial);
+    await workspace["metadataJobs"].indexLoad;
+    expect(workspace.getSnapshot().recordPaths).toContain("chapters/newer.md");
+    expect(workspace.readingOrder()).toContain("chapters/watch-ready.md");
+  });
+
+  it("refuses a pending chapter when index readiness fails", async () => {
+    const { backend, open } = fixture();
+    let changed!: (delta: CollectionDelta) => void;
+    backend.index = () => new Promise(() => {});
+    backend.onCollectionChange = listener => { changed = listener; return () => {}; };
+    backend.createRecord = vi.fn(async path => ok(path));
+    const workspace = open();
+    await ready(workspace);
+    const added = workspace.addChapter("No index");
+    changed({ paths: [], problem: "Index unavailable" });
+    expect(await added).toEqual(fail("Index unavailable"));
+    expect(backend.createRecord).not.toHaveBeenCalled();
+  });
+
+  it("cancels a pending chapter when the workspace closes before index readiness", async () => {
+    const { backend, open } = fixture();
+    backend.index = () => new Promise(() => {});
+    backend.createRecord = vi.fn(async path => ok(path));
+    const workspace = open();
+    await ready(workspace);
+    const added = workspace.addChapter("Closed workspace");
+    await workspace.dispose();
+    expect(await added).toEqual(fail("The manuscript was closed."));
+    expect(backend.createRecord).not.toHaveBeenCalled();
+  });
+
   it("does not replace a newer collection index with the initial index response", async () => {
     const { backend, open } = fixture();
     const initial = await backend.index();

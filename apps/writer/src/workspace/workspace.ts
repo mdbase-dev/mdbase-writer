@@ -755,8 +755,17 @@ export class ManuscriptWorkspace {
   async addChapter(title: string, intent?: string): Promise<Result<string>> {
     const name = title.trim();
     if (!name) return fail(t`A chapter needs a title.`);
+    if (!this.leases.has(this.main)) return fail(t`The manuscript is still opening.`);
     this.loadMetadata();
-    await this.metadataJobs.indexLoad;
+    if (this.current.indexLoad.phase === "loading") {
+      await new Promise<void>(resolve => {
+        const stop = this.subscribe(() => {
+          if (!this.disposed && this.current.indexLoad.phase === "loading") return;
+          stop();
+          resolve();
+        });
+      });
+    }
     if (this.disposed) return fail(t`The manuscript was closed.`);
     if (this.current.indexLoad.phase !== "ready") return fail(this.current.indexLoad.problem ?? t`Collection metadata is still loading.`);
     const first = this.chapterPaths().find((p): p is string => Boolean(p));
@@ -1096,6 +1105,7 @@ export class ManuscriptWorkspace {
     if (this.disposed) return;
     this.commitSettings();
     this.disposed = true;
+    for (const listener of this.listeners) listener();
     for (const url of this.imageUrls.values()) URL.revokeObjectURL(url);
     this.imageUrls.clear();
     clearTimeout(this.refreshTimer);

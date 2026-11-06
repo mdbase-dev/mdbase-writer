@@ -2493,6 +2493,11 @@ msgstr "The language could not be loaded. Your current language is unchanged. Tr
 msgid "The line being typed is checked once typing pauses"
 msgstr "The line being typed is checked once typing pauses"
 
+#: src/ui/OutlinePanel.tsx
+#: src/workspace/workspace.ts
+msgid "The manuscript is still opening."
+msgstr "The manuscript is still opening."
+
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
 msgstr "The manuscript kept changing while export dependencies were loading. Pause editing and try again."

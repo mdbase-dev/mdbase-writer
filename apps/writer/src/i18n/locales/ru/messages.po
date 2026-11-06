@@ -2493,6 +2493,11 @@ msgstr "Не удалось загрузить язык. Текущий язык
 msgid "The line being typed is checked once typing pauses"
 msgstr "Текущая строка проверяется, как только вы прекращаете печатать"
 
+#: src/ui/OutlinePanel.tsx
+#: src/workspace/workspace.ts
+msgid "The manuscript is still opening."
+msgstr "Рукопись ещё открывается."
+
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
 msgstr "Рукопись продолжала меняться, пока загружались зависимости экспорта. Приостановите редактирование и повторите попытку."

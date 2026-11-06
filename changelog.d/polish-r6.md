@@ -13,4 +13,6 @@
 - Keep newly created chapters in the full reading order and prevent stale index responses from replacing newer collection data.
 - Announce when manuscript problems could not be checked, including from Preview-only view.
 - Keep Continue available outside the first fifty manuscripts, show normal matching rows during search, and retry a busy chapter-title read once.
-- Restore Add a collection when the collection count changes after a quota error.
+- Restore Add a collection when the collection count changes after a quota error recognized by the selected SDK.
+- Keep Add chapter disabled until the manuscript opens, and reject a stale Add action before creating an unlinked chapter.
+- Let a complete collection-watch index unblock chapter creation without waiting for a superseded initial request.

@@ -2493,6 +2493,11 @@ msgstr "No se pudo cargar el idioma. No se ha cambiado el idioma actual. Intént
 msgid "The line being typed is checked once typing pauses"
 msgstr "La línea que estás escribiendo se comprueba cuando haces una pausa"
 
+#: src/ui/OutlinePanel.tsx
+#: src/workspace/workspace.ts
+msgid "The manuscript is still opening."
+msgstr "El manuscrito todavía se está abriendo."
+
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
 msgstr "El manuscrito siguió cambiando mientras se cargaban las dependencias de exportación. Deja de editar e inténtalo de nuevo."

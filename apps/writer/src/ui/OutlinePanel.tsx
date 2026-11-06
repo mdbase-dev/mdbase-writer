@@ -205,7 +205,8 @@ export function OutlinePanel({
       )}
       {window.from > 0 && <button type="button" className="sidebar-more" onClick={window.previous}><Trans>Show previous 50 chapters</Trans></button>}
       {rest.length > window.from + window.size && <button type="button" className="sidebar-more" onClick={window.more}><Trans>Show 50 more chapters · {rest.length}</Trans></button>}
-      <AddChapter onAdd={onAdd} onAdded={onOpen} />
+      <AddChapter disabled={!mainView} onAdd={onAdd} onAdded={onOpen} />
+      {!mainView && <p className="muted small" role="status"><Trans>The manuscript is still opening.</Trans></p>}
       <span className="visually-hidden" role="status">{announcement}</span>
     </div>
   );
@@ -322,7 +323,7 @@ const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump
   );
 });
 
-function AddChapter({ onAdd, onAdded }: { onAdd(title: string, intent: string): Promise<Result<string>>; onAdded(path: string): void }) {
+function AddChapter({ disabled, onAdd, onAdded }: { disabled: boolean; onAdd(title: string, intent: string): Promise<Result<string>>; onAdded(path: string): void }) {
   useLingui();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
@@ -334,7 +335,7 @@ function AddChapter({ onAdd, onAdded }: { onAdd(title: string, intent: string): 
 
   if (!editing) {
     return (
-      <button ref={opener} type="button" className="sidebar-more add-chapter" onClick={() => setEditing(true)}><Trans>
+      <button ref={opener} type="button" className="sidebar-more add-chapter" disabled={disabled} onClick={() => setEditing(true)}><Trans>
         <PlusIcon /> Add chapter
       </Trans></button>
     );

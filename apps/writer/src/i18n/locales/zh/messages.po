@@ -2493,6 +2493,11 @@ msgstr "无法加载语言。当前语言保持不变。请重试。"
 msgid "The line being typed is checked once typing pauses"
 msgstr "暂停输入后，将检查正在编辑的行"
 
+#: src/ui/OutlinePanel.tsx
+#: src/workspace/workspace.ts
+msgid "The manuscript is still opening."
+msgstr "正在打开文稿。"
+
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
 msgstr "加载导出依赖项期间手稿仍在变化。请暂停编辑后重试。"

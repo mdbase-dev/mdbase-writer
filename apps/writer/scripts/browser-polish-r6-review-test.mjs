@@ -242,5 +242,98 @@ try {
     await page.waitForFunction(() => window.writer.workspace.readingOrder().includes("chapters/index-safety.md"));
     assert.ok((await documents(page)).find(([path]) => path === main)[1].includes("chapters/index-safety"));
   });
+  await scenario("13 main-session loading disables mutations and preserves later chapter membership", async page => {
+    await home(page);
+    await page.evaluate(main => {
+      const backend = window.writer.backend, original = backend.records.open.bind(backend.records);
+      backend.records.open = (path, ...args) => path === main ? new Promise(resolve => { window.finishMain = () => { backend.records.open = original; return original(path, ...args).then(resolve); }; }) : original(path, ...args);
+      const create = backend.createRecord.bind(backend);
+      window.createdChapters = 0;
+      backend.createRecord = (...args) => { window.createdChapters++; return create(...args); };
+    }, main);
+    await page.locator(`.home [data-path="${main}"]`).click();
+    await page.locator(".workspace .outline-panel").waitFor();
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().indexLoad.phase === "ready");
+    const add = page.getByRole("button", { name: "Add chapter", exact: true });
+    assert.equal(await add.isDisabled(), true, "Add is enabled before the manuscript session opens");
+    await page.getByText("The manuscript is still opening.", { exact: true }).waitFor();
+    await page.locator(".outline-manuscript").click();
+    await page.keyboard.type("NOT_EDITABLE_YET");
+    await page.keyboard.press("Delete");
+    await page.keyboard.press("Alt+ArrowDown");
+    await page.keyboard.press("F2");
+    await page.keyboard.press("Control+,");
+    assert.equal(await page.locator(".cm-content, .record-row, .record-rename, .settings-sheet[open]").count(), 0);
+    assert.equal(await page.getByRole("button", { name: /Delete chapter|Remove chapter/ }).count(), 0);
+    assert.equal(await page.evaluate(() => window.createdChapters), 0);
+    await page.evaluate(() => window.finishMain());
+    await page.waitForFunction(main => window.writer.workspace.getSnapshot().records.has(main), main);
+    await page.waitForFunction(() => !document.querySelector(".add-chapter")?.disabled);
+    await page.locator(".settings-sheet[open]").waitFor();
+    await page.keyboard.press("Escape");
+    await page.locator(".settings-sheet[open]").waitFor({ state: "hidden" });
+    await page.locator(".outline-manuscript").click();
+    await page.locator(".cm-content").click();
+    await page.keyboard.type(" MAIN_SESSION_READY ");
+    await saved(page);
+    await add.click();
+    await page.keyboard.type("Session safety");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => window.writer.workspace.chapterPaths().includes("chapters/session-safety.md"));
+    await saved(page);
+    await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
+    await page.locator(`.home [data-path="${main}"]`).click();
+    await page.locator('.record-row[data-path="chapters/session-safety.md"]').waitFor();
+    assert.ok(await page.evaluate(main => window.writer.workspace.getSnapshot().records.get(main).snapshot.body.includes(" MAIN_SESSION_READY "), main));
+    assert.ok(await page.evaluate(() => window.writer.workspace.readingOrder().includes("chapters/session-safety.md")));
+  });
+  await scenario("13b a stale Add form reports a missing main session without creating an orphan", async page => {
+    await open(page);
+    await page.getByRole("button", { name: "Add chapter", exact: true }).click();
+    await page.keyboard.type("Stale action safety");
+    await page.evaluate(main => {
+      const workspace = window.writer.workspace;
+      workspace.leases.get(main).lease.release();
+      workspace.leases.delete(main);
+      window.createdChapters = 0;
+      const backend = window.writer.backend, create = backend.createRecord.bind(backend);
+      backend.createRecord = (...args) => { window.createdChapters++; return create(...args); };
+    }, main);
+    await page.keyboard.press("Enter");
+    await page.locator('.add-chapter-form [role="alert"]').filter({ hasText: "The manuscript is still opening." }).waitFor();
+    assert.equal(await page.evaluate(() => window.createdChapters), 0);
+    assert.ok(!(await documents(page)).some(([path]) => path.includes("stale-action-safety")));
+  });
+  await scenario("14 ready watch index unblocks Add before obsolete request completes", async page => {
+    await home(page);
+    await page.evaluate(async () => {
+      const backend = window.writer.backend, original = backend.index.bind(backend), index = await original(), subscribe = backend.onCollectionChange.bind(backend);
+      window.originalPaths = index.value.recordPaths;
+      await backend.createRecord("chapters/watch-only.md", "# Watched chapter\n\nExternal text.\n");
+      await backend.flushChanges();
+      const newer = await original();
+      backend.index = () => new Promise(resolve => { window.finishIndex = () => { backend.index = original; resolve(index); }; });
+      backend.onCollectionChange = listener => {
+        window.deliverIndex = () => listener({ paths: [], index: newer.value });
+        return subscribe(listener);
+      };
+    });
+    await page.locator(`.home [data-path="${main}"]`).click();
+    await page.locator(".cm-content").waitFor();
+    await page.evaluate(() => window.deliverIndex());
+    await page.waitForFunction(() => window.writer.workspace.getSnapshot().indexLoad.phase === "ready");
+    await page.getByRole("button", { name: "Add chapter", exact: true }).click();
+    await page.keyboard.type("Watch index safety");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => window.writer.workspace.chapterPaths().includes("chapters/watch-index-safety.md"), null, { timeout: 3000 });
+    assert.ok(await page.evaluate(() => window.writer.workspace.readingOrder().includes("chapters/watch-index-safety.md")));
+    assert.ok(await page.evaluate(() => window.originalPaths.every(path => window.writer.workspace.getSnapshot().recordPaths.includes(path))));
+    await page.evaluate(async () => { window.finishIndex(); await window.writer.workspace.metadataJobs.indexLoad; });
+    assert.ok(await page.evaluate(() => window.writer.workspace.getSnapshot().recordPaths.includes("chapters/watch-only.md")));
+    await saved(page);
+    await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
+    await page.locator(`.home [data-path="${main}"]`).click();
+    await page.locator('.record-row[data-path="chapters/watch-index-safety.md"]').waitFor();
+  });
 } finally { await browser.close(); }
 assert.equal(failures, 0, `${failures} review regression gates failed`);

@@ -2493,6 +2493,11 @@ msgstr "언어를 불러오지 못했습니다. 현재 언어는 변경되지 �
 msgid "The line being typed is checked once typing pauses"
 msgstr "입력을 멈추면 작성 중인 줄을 검사합니다."
 
+#: src/ui/OutlinePanel.tsx
+#: src/workspace/workspace.ts
+msgid "The manuscript is still opening."
+msgstr "아직 원고를 여는 중입니다."
+
 #: src/workspace/workspace.ts
 msgid "The manuscript kept changing while export dependencies were loading. Pause editing and try again."
 msgstr "내보내기에 필요한 항목을 불러오는 동안 원고가 계속 변경되었습니다. 편집을 멈춘 후 다시 시도하세요."

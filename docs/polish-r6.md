@@ -6,6 +6,90 @@ This change does not modify PR #20 or remove the lower panel.
 
 ## Interaction gates
 
+### PR 59 recheck follow-up
+
+The 400 ms presentation deadline remains. While the main record has no session,
+Add chapter is disabled with “The manuscript is still opening.” The workspace
+method also refuses a stale Add submission before creating any record, and
+the existing form displays that error. Index waiting follows the current
+readiness state, including a newer complete collection-watch snapshot, rather
+than awaiting a superseded initial request. Failure and workspace disposal
+also release the pending action without creating a chapter.
+
+Three real-input gates extend the registered review suite:
+
+- Hold the main record while the index finishes; click the manuscript, type,
+  press Delete, Alt+ArrowDown and F2, and request Settings. There is no editor,
+  rename/reorder target or editable Settings field before the session opens.
+  Add is disabled with its reason. Release the session, close the now-open
+  Settings, type in the main record, create a chapter, await autosave and
+  reopen: its prose, embed, chapterPaths and outline/reading order survive.
+- Open Add and type a title, then deliberately release the main lease in the
+  fixture before Enter. The actual form displays the refusal and createRecord
+  is never called. This is a stale-action safety fixture, not a normal user
+  operation that removes a lease.
+- Hold the initial index, deliver a newer complete index, then type and submit
+  a chapter title. Creation and membership complete before releasing the old
+  response; saved membership remains after reopening. The workspace unit gate
+  additionally delivers readiness while an Add action is already waiting.
+
+All three browser gates fail with the product files restored to e048c27c and
+pass with the fixes. The two primary workspace unit regressions also failed
+on e048c27c. The fixtures now seed actual watch-only records and restore held
+backend methods before reopening, rather than inventing an index that a real
+subsequent watch correctly removes.
+
+Node 22 and Node 24.19.0 checks pass: 67 core tests (4 existing skips), 362
+Writer tests, and 123 root/script tests. LAB, staging and production builds
+pass with their environment/destination checks. The complete polish invocation
+was rerun, but it is not green: its unchanged main motion matrix failed
+“No continuous opacity trajectory” in the desktop dark/non-reduced cell
+(7 other cells passed). A clean-server rerun repeated the assertion in the
+desktop light cell, then stalled and was stopped; no assertion or animation
+was changed to make it pass. The remaining polish components are run
+separately so the first component's failure does not skip their coverage.
+All remaining components pass: the R2 and R4 eight-cell matrices, the R6
+four-cell matrix, and all 18 review scenarios. Baseline/reliability,
+accessibility, localization, intercepted desktop/phone feedback and optimized
+editing/Preview-canvas browser checks also pass. The three new review gates
+additionally pass with the LAB-selected dev server. These are local disposable
+fixtures, not connected LAB-account qualification.
+
+Main-record mutation audit:
+
+- Typing, Delete and insertion actions: the main Editor is not mounted without
+  its RecordView; insert/source controls are disabled without an active view.
+- Reordering: chapterPaths derives from the loaded main body, so there are no
+  chapter drag/Alt+Arrow targets while it is absent. moveChapter also requires
+  that body before writing.
+- Rename: there is no chapter row to invoke F2/double-click during this window,
+  and renameChapter refuses an unopened target. It changes the target title,
+  not a main-record embed/path.
+- Delete: Writer exposes no chapter/record-delete action. Delete on the
+  not-yet-mounted editor cannot write; record deletion belongs to the collection.
+- Settings/frontmatter: Settings renders no fields without the main view. Its
+  existing dialog effect now reruns when that deferred view arrives, so a
+  Settings request made during opening becomes a usable sheet, not an
+  uninitialized overlay. The gate closes it with Escape before writing.
+- Add chapter: the new UI gate and workspace refusal protect the previously
+  unguarded creation-plus-embed operation.
+
+#### Correction to the earlier LAB quota claim
+
+The previous item 9 was not correct end-to-end on LAB. The pinned LAB SDK
+(`sdk-dev-eaa4e697-lab.tgz`) maps account_collection_quota_exceeded to an
+unknown/reload notice, not the quota key that the shared UI uses to replace
+Add and clear the quota notice after a count change. The default development
+fixture uses the newer production SDK, which recognizes that code; its green
+gate did not establish LAB behavior. This follow-up does not edit the pinned
+SDK original or add local error-classification compatibility. The LAB quota
+gate remains a known failure until an appropriate LAB SDK original is updated.
+The LAB-selected real-input quota gate was rerun and fails waiting for the
+quota-specific notice; the same gate passes under the default SDK selection.
+Direct calls to both SDKs' describeError confirm the differing keys. Receipts:
+`/tmp/writer-r59-recheck-lab-quota.log` and
+`/tmp/writer-r59-recheck-sdk-quota.log`.
+
 ### PR 59 review follow-up
 
 The review regressions are registered in
