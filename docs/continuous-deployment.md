@@ -138,6 +138,9 @@ webhook filter, merge order and live-proof checklist.
 
 ## Local checks
 
+CI and the publisher use Node 24, matching the authenticated npm/Sigstore
+rehearsals. Ordinary development also supports Node 22.
+
 ```sh
 rpnpm --node 24.19.0 check
 rpnpm --node 24.19.0 test:publisher
