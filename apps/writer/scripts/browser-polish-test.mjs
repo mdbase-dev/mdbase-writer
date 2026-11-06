@@ -130,7 +130,7 @@ try {
         for (const middleWidth of [901, 1000, 1180, 1280]) {
           await page.setViewportSize({ width: middleWidth, height: 900 });
           assert.ok(await page.locator('.bar button[aria-label="More"]').evaluate(element => element.getBoundingClientRect().right <= innerWidth), `Toolbar overflow at ${middleWidth}px`);
-          assert.equal(await page.locator('.bar .mdbase-save-notice.is-long').innerText(), "Saved");
+          assert.equal(await page.locator('.bar .mdbase-save-notice').innerText(), "Saved");
           assert.equal(await page.locator(".demo-identity").innerText(), "Demo");
         }
         await page.setViewportSize({ width, height: 900 });
@@ -282,9 +282,9 @@ try {
       result.menuReversal = await probe(page, ".popover", "insert", "insert");
       if (!reduced) assert.ok(Math.abs(result.menuReversal.interruption.before.opacity - result.menuReversal.interruption.after.opacity) < 0.02);
       if (width === 1440) {
-        result.sidebarOut = await probe(page, ".write", "sidebar");
-        motion(result.sidebarOut, reduced, 160);
-        result.sidebarIn = await probe(page, ".write", "sidebar");
+        result.sidebarOut = await probe(page, ".outline", "sidebar");
+        motion(result.sidebarOut, reduced, 120);
+        result.sidebarIn = await probe(page, ".outline", "sidebar");
         motion(result.sidebarIn, reduced, 160);
         assert.ok(await page.locator(".workspace").evaluate(element => !getComputedStyle(element).transitionProperty.includes("grid-template-columns")), "Layout must not interpolate columns");
       } else {

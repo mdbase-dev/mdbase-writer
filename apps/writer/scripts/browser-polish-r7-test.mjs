@@ -50,7 +50,7 @@ try {
       document.querySelectorAll('.preview canvas').forEach(canvas => window.drawObserver.observe(canvas, { attributes: true }));
       const sample = () => {
         const elapsed = window.motionStart === undefined ? undefined : performance.now() - window.motionStart;
-        if (elapsed !== undefined) window.motion.frames.push({ time: elapsed, opacity: Number(getComputedStyle(document.querySelector('.write')).opacity) });
+        if (elapsed !== undefined) window.motion.frames.push({ time: elapsed, opacity: Number(getComputedStyle(document.querySelector('.outline')).opacity) });
         if (elapsed === undefined || elapsed < 400) requestAnimationFrame(sample);
       };
       requestAnimationFrame(sample);

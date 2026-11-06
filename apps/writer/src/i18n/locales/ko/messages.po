@@ -2087,10 +2087,6 @@ msgstr "이 기기에 저장됨"
 msgid "Saved on this device; waiting for sync"
 msgstr "이 기기에 저장됨; 동기화 대기 중"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Saving to collection…"
-msgstr "컬렉션에 저장 중…"
-
 #: src/ui/records.ts
 msgid "Saving…"
 msgstr "저장 중…"

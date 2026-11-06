@@ -30,10 +30,17 @@ it("keeps every unsettled save state visible on phones", () => {
 it("never announces remote success while offline or holding local-only changes", () => {
   expect(workspaceSaveNotice("saved", false, "offline")).toEqual({ tone: "pending", label: "Offline", shortLabel: "Offline" });
   expect(workspaceSaveNotice("saved_on_device", false, "offline", true)).toEqual({ tone: "pending", label: "Offline · saved on this device; waiting for sync", shortLabel: "Offline · on device, pending sync" });
-  expect(workspaceSaveNotice("saved_on_device", false, "reconnecting", true).shortLabel).toBe("On device · pending sync");
+  expect(workspaceSaveNotice("saved_on_device", false, "reconnecting", true).shortLabel).toBe("Reconnecting · On device · pending sync");
   expect(workspaceSaveNotice("saved", false, "saved_on_device").tone).toBe("pending");
   expect(workspaceSaveNotice("error", false, "offline")).toEqual(workspaceSaveNotice("error", false));
   expect(workspaceSaveNotice("conflict", false, "offline")).toEqual(workspaceSaveNotice("conflict", false));
+});
+
+it("keeps connection trouble in the single notice while a local checkpoint settles", () => {
+  for (const state of ["unsaved", "saving", "saved_on_device"] as const) {
+    expect(workspaceSaveNotice(state, false, "offline", true).label).toMatch(/Offline.*saved on this device/);
+    expect(workspaceSaveNotice(state, false, "reconnecting", true).label).toMatch(/Reconnecting · Saved on this device; waiting for sync/);
+  }
 });
 
 it("only acknowledges a committed local draft, including settled SDK local-only states", () => {

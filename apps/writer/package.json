@@ -25,7 +25,7 @@
     "test:browser": "node scripts/browser-test.mjs && node scripts/browser-reliability-test.mjs",
     "test:feedback": "node scripts/feedback-browser-test.mjs",
     "test:browser:reliability": "node scripts/browser-reliability-test.mjs",
-    "test:browser:polish": "node scripts/browser-polish-test.mjs && node scripts/browser-polish-r2-test.mjs && node scripts/browser-polish-r4-test.mjs && node scripts/browser-polish-r6-test.mjs && node scripts/browser-polish-r6-review-test.mjs && node scripts/browser-polish-r7-test.mjs",
+    "test:browser:polish": "node scripts/browser-polish-test.mjs && node scripts/browser-polish-r2-test.mjs && node scripts/browser-polish-r4-test.mjs && node scripts/browser-polish-r6-test.mjs && node scripts/browser-polish-r6-review-test.mjs && node scripts/browser-polish-r7-test.mjs && node scripts/browser-polish-r8-test.mjs",
     "test:lab:reload-write": "node scripts/lab-reload-write-test.mjs",
     "test:workspace": "vitest run src/workspace/workspace.test.ts",
     "test:browser:editing": "node scripts/browser-editing-test.mjs",

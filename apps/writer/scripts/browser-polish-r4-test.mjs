@@ -232,10 +232,11 @@ async function roundFive(page, width, reduced) {
   await pressFill(page, page.locator(".record-row").first());
   if (width === 390) assert.equal(await page.locator(".record-row").first().evaluate(element => getComputedStyle(element).alignItems), "center");
   await outline.focus();
-  const indicatorBefore = await tabs.evaluate(element => getComputedStyle(element, "::after").transform);
+  assert.equal(await outline.evaluate(element => getComputedStyle(element).borderBottomColor !== "rgba(0, 0, 0, 0)"), true);
   await page.keyboard.press("ArrowRight");
-  await page.waitForTimeout(190);
-  assert.notEqual(await tabs.evaluate(element => getComputedStyle(element, "::after").transform), indicatorBefore);
+  await tabs.evaluate(async element => { await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished)); });
+  assert.equal(await outline.evaluate(element => getComputedStyle(element).borderBottomColor), "rgba(0, 0, 0, 0)");
+  assert.equal(await tabs.locator('[aria-selected="true"]').evaluate(element => getComputedStyle(element).borderBottomColor !== "rgba(0, 0, 0, 0)"), true);
   await page.keyboard.press("ArrowLeft");
   await page.getByRole("button", { name: "Split sidebar", exact: true }).click();
   const resize = page.getByRole("separator", { name: "Resize sidebar panels", exact: true });
