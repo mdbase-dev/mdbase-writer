@@ -92,14 +92,14 @@ export function ManuscriptSearch({
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           onKeyDown={onFieldKey}
-          placeholder={t`Search the manuscript`}
-          aria-label={t`Search the manuscript`}
-          aria-describedby="manuscript-search-keys"
+          placeholder={t`Search outline`}
+          aria-label={t`Search outline`}
+          aria-describedby={query.trim() ? "manuscript-search-keys" : undefined}
         />
       </div>
-      <span id="manuscript-search-keys" className="visually-hidden"><Trans>Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches.</Trans></span>
       {query.trim() && (
         <div ref={list} className="search-results" onKeyDown={onListKey}>
+          <p id="manuscript-search-keys" className="muted small"><Trans>Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches.</Trans></p>
           <p className="search-summary muted small" role="status">
             {result.total === 0
               ? t`Nothing matches “${query.trim()}”.`

@@ -469,6 +469,10 @@ msgid "Choose collection"
 msgstr "选择集合"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Choose export format"
+msgstr "选择导出格式"
+
+#: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "引文"
 
@@ -531,6 +535,10 @@ msgstr "单击以适应宽度"
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr "关闭（Esc）"
+
+#: src/editor/search-panel.ts
+msgid "Close Find"
+msgstr "关闭查找"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
@@ -688,6 +696,10 @@ msgid "Cross-reference"
 msgstr "交叉引用"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Cycle editor and preview"
+msgstr "切换编辑器和预览"
+
+#: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
 msgstr "深色"
@@ -714,8 +726,12 @@ msgid "Deleted elsewhere"
 msgstr "已在其他位置删除"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Demo · resets on reload"
-msgstr "演示 · 重新加载后重置"
+msgid "Demo"
+msgstr "演示"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload."
+msgstr "演示文稿会在重新加载时重置。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
@@ -736,6 +752,10 @@ msgstr "已分离：文本已更改"
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
 msgstr "关闭"
+
+#: src/ui/Shortcuts.tsx
+msgid "Dismiss the current menu or dialog"
+msgstr "关闭当前菜单或对话框"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -777,6 +797,7 @@ msgstr "拖动，或按 Alt-↑/↓，以重新排序"
 msgid "edited {0}"
 msgstr "编辑时间：{0}"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "编辑器"
@@ -891,6 +912,10 @@ msgstr "插图必须使用 PNG、JPEG、GIF、SVG 或 WebP 图片。"
 msgid "Filter collections"
 msgstr "筛选集合"
 
+#: src/editor/search-panel.ts
+msgid "Find"
+msgstr "查找"
+
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
 msgstr "查找手稿"
@@ -915,6 +940,10 @@ msgstr "查找此段文字的来源并在其后插入引文"
 #: src/ui/WorkspaceView.tsx
 msgid "find all chapters"
 msgstr "查找 全部 章节"
+
+#: src/ui/Shortcuts.tsx
+msgid "Find and replace"
+msgstr "查找和替换"
 
 #: src/editor/fixes.ts
 msgid "Find in Sources"
@@ -976,11 +1005,16 @@ msgstr "来自集合"
 msgid "Give the manuscript a title; it can be changed later."
 msgstr "为手稿命名；之后仍可更改。"
 
+#: src/ui/Shortcuts.tsx
+msgid "Go to line"
+msgstr "转到行"
+
 #: src/ui/WorkspaceView.tsx
 msgid "grid columns rows"
 msgstr "网格 列 行"
 
 #: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "帮助"
@@ -1060,10 +1094,6 @@ msgstr "在 {0}{1}{2}{3}{4}{5} 中"
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "在高亮内容 <0>{0}</0>{1}"
 
-#: src/ui/Shortcuts.tsx
-msgid "In the editor, press Tab to move to the next control."
-msgstr "在编辑器中按 Tab 键可移至下一个控件。"
-
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
 msgstr "整篇手稿中的字数；引文、代码和数学公式不计入"
@@ -1100,6 +1130,10 @@ msgstr "在光标处插入 [@{0}]（Enter）"
 #: src/ui/comments.ts
 msgid "Insert {0}"
 msgstr "插入 {0}"
+
+#: src/ui/Shortcuts.tsx
+msgid "Insert a blank line"
+msgstr "插入空行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
@@ -1153,6 +1187,10 @@ msgstr "保持原样"
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
+
+#: src/ui/Shortcuts.tsx
+msgid "Keyboard shortcuts outside text fields"
+msgstr "文本框外的键盘快捷键"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -1273,6 +1311,10 @@ msgstr "手稿"
 msgid "Markdown for {path}"
 msgstr "{path} 的 Markdown"
 
+#: src/editor/search-panel.ts
+msgid "Match case"
+msgstr "区分大小写"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Matching sources"
 msgstr "匹配的来源"
@@ -1343,6 +1385,18 @@ msgstr "更多"
 msgid "Move author {0} up"
 msgstr "上移作者 {0}"
 
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter down"
+msgstr "向下移动当前章节"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter up"
+msgstr "向上移动当前章节"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move to the next control"
+msgstr "移到下一个控件"
+
 #: src/ui/Settings.tsx
 msgid "Move up"
 msgstr "上移"
@@ -1395,6 +1449,11 @@ msgstr "下一个引文"
 msgid "Next comment"
 msgstr "下一条评论"
 
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Next match"
+msgstr "下一个匹配项"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Next problem"
 msgstr "下一个问题"
@@ -1423,10 +1482,6 @@ msgstr "集合中没有与模板 {value} 匹配的文件。"
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
 msgstr "没有匹配“{filter}”的手稿。"
-
-#: src/ui/WorkspaceView.tsx
-msgid "No manuscript problems"
-msgstr "文稿没有问题"
 
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
@@ -1657,6 +1712,10 @@ msgstr "正在打开你的集合"
 msgid "Opening…"
 msgstr "正在打开…"
 
+#: src/editor/search-panel.ts
+msgid "Options"
+msgstr "选项"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Or type <0>/</0> in the text to pick one there."
 msgstr "也可以在文本中输入 <0>/</0>，然后在此处选择。"
@@ -1669,6 +1728,7 @@ msgstr "或使用已有笔记"
 msgid "Other notes"
 msgstr "其他笔记"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
 msgstr "大纲"
@@ -1749,6 +1809,15 @@ msgstr "上一个引文"
 msgid "Previous comment"
 msgstr "上一条评论"
 
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Previous match"
+msgstr "上一个匹配项"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Previous problem"
+msgstr "上一个问题"
+
 #: src/ui/ConnectGate.tsx
 msgid "Previously connected"
 msgstr "之前已连接"
@@ -1797,6 +1866,10 @@ msgstr "正在重新连接"
 msgid "Recovering save…"
 msgstr "正在恢复保存内容…"
 
+#: src/ui/Shortcuts.tsx
+msgid "Redo"
+msgstr "重做"
+
 #: src/ui/WorkspaceView.tsx
 msgid "refer section figure table label"
 msgstr "引用章节、插图、表格标签"
@@ -1804,6 +1877,10 @@ msgstr "引用章节、插图、表格标签"
 #: src/editor/live-preview.ts
 msgid "Refer to this with @{id}"
 msgstr "使用 @{id} 引用此项"
+
+#: src/editor/search-panel.ts
+msgid "Regular expression"
+msgstr "正则表达式"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reject"
@@ -1827,10 +1904,15 @@ msgstr "移除"
 msgid "Remove author {0}"
 msgstr "移除作者 {0}"
 
+#: src/ui/Shortcuts.tsx
+msgid "Rename the focused chapter"
+msgstr "重命名当前章节"
+
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "重新打开"
 
+#: src/editor/search-panel.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "替换"
@@ -1840,6 +1922,10 @@ msgstr "替换"
 #: src/ui/comments.ts
 msgid "Replace {0} with {1}"
 msgstr "将 {0} 替换为 {1}"
+
+#: src/editor/search-panel.ts
+msgid "Replace all"
+msgstr "全部替换"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace with"
@@ -1853,6 +1939,10 @@ msgstr "替换为“{0}”"
 #: src/ui/CommentsPanel.tsx
 msgid "Reply"
 msgstr "回复"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Resize sidebar panels"
+msgstr "调整侧栏面板大小"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the editor and preview"
@@ -1965,10 +2055,18 @@ msgstr "立即保存"
 msgid "Saved"
 msgstr "已保存"
 
+#: src/ui/records.ts
+msgid "Saved on this device"
+msgstr "已保存到此设备"
+
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
 msgid "Saved on this device; waiting for sync"
 msgstr "已保存到此设备；等待同步"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Saving to collection…"
+msgstr "正在保存到集合…"
 
 #: src/ui/records.ts
 msgid "Saving…"
@@ -1979,6 +2077,9 @@ msgid "Search by author, title, year or key"
 msgstr "按作者、标题、年份或键搜索"
 
 #: src/ui/ManuscriptSearch.tsx
+msgid "Search outline"
+msgstr "搜索大纲"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "搜索手稿"
@@ -1991,6 +2092,10 @@ msgstr "章节"
 #: src/ui/CommentsPanel.tsx
 msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
 msgstr "选择一段文字并按 <0>{MOD_LABEL}-{ALT_LABEL}-M</0> 添加评论，或按 <1>{MOD_LABEL}-{ALT_LABEL}-S</1> 提出编辑建议。"
+
+#: src/ui/Shortcuts.tsx
+msgid "Select next occurrence"
+msgstr "选择下一处出现位置"
 
 #: src/editor/selection-bar.tsx
 msgid "Selection"
@@ -2081,6 +2186,10 @@ msgstr "显示全部 {0} 条无类型笔记"
 #: src/ui/WorkspaceView.tsx
 msgid "Show comments"
 msgstr "显示评论"
+
+#: src/ui/Shortcuts.tsx
+msgid "Show completions"
+msgstr "显示补全建议"
 
 #: src/preview/Preview.tsx
 msgid "Show in Sources"
@@ -2499,6 +2608,10 @@ msgstr "集合中的 Typst 模板"
 msgid "Unclosed $$ math block."
 msgstr "未闭合的 $$ 数学公式块。"
 
+#: src/ui/Shortcuts.tsx
+msgid "Undo"
+msgstr "撤销"
+
 #: src/editor/insight.ts
 msgid "Unknown"
 msgstr "未知"
@@ -2576,6 +2689,10 @@ msgstr "正在等待 mdbase connect…"
 #: src/ui/CommentsPanel.tsx
 msgid "Whole text"
 msgstr "全文"
+
+#: src/editor/search-panel.ts
+msgid "Whole words"
+msgstr "全字匹配"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"

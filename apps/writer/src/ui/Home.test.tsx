@@ -4,6 +4,7 @@ import { render } from "../test/render.js";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { fail, ok, type CollectionIndex, type ManuscriptSummary, type Result, type WriterBackend } from "../backend/types.js";
 import { Home } from "./Home.js";
+import { recordOpened } from "./recent.js";
 
 beforeAll(() => {
   globalThis.matchMedia ??= () => ({ matches: true, media: "", onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => true });
@@ -15,7 +16,23 @@ beforeAll(() => {
   }
   globalThis.IntersectionObserver ??= Observer;
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); localStorage.clear(); });
+
+it("offers Continue only for a manuscript in real open history, not missing modification times", async () => {
+  const manuscripts = [{ path: "a.md", title: "Never opened" }, { path: "z.md", title: "Actually opened" }];
+  const fixture = backend({ recordPaths: manuscripts.map(record => record.path), filePaths: [], notePaths: [] }, ok(manuscripts));
+  const onOpen = vi.fn();
+  const first = render(<Home backend={fixture} onOpen={onOpen} />);
+  await screen.findByText("Never opened");
+  expect(screen.queryByText("Continue writing")).toBeNull();
+  first.unmount();
+  recordOpened("home-test", "z.md");
+  render(<Home backend={fixture} onOpen={onOpen} />);
+  const continuing = await screen.findByRole("button", { name: "Continue" });
+  expect(continuing.closest("section")?.textContent).toContain("Actually opened");
+  fireEvent.click(continuing);
+  expect(onOpen).toHaveBeenCalledWith("z.md");
+});
 
 it("keeps title validation in the description rather than the accessible name", async () => {
   render(<Home backend={backend({ recordPaths: [], filePaths: [], notePaths: [] })} onOpen={vi.fn()} />);

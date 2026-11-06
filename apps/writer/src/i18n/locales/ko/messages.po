@@ -469,6 +469,10 @@ msgid "Choose collection"
 msgstr "컬렉션 선택"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Choose export format"
+msgstr "내보내기 형식 선택"
+
+#: src/ui/WorkspaceView.tsx
 msgid "Citation"
 msgstr "인용"
 
@@ -531,6 +535,10 @@ msgstr "너비에 맞추려면 클릭"
 #: src/ui/Settings.tsx
 msgid "Close (Escape)"
 msgstr "닫기(Escape)"
+
+#: src/editor/search-panel.ts
+msgid "Close Find"
+msgstr "찾기 닫기"
 
 #: src/ui/Settings.tsx
 msgid "Close settings"
@@ -688,6 +696,10 @@ msgid "Cross-reference"
 msgstr "상호 참조"
 
 #: src/ui/WorkspaceView.tsx
+msgid "Cycle editor and preview"
+msgstr "편집기와 미리보기 전환"
+
+#: src/ui/WorkspaceView.tsx
 msgctxt "color theme"
 msgid "Dark"
 msgstr "어두운 테마"
@@ -714,8 +726,12 @@ msgid "Deleted elsewhere"
 msgstr "다른 곳에서 삭제됨"
 
 #: src/ui/WorkspaceView.tsx
-msgid "Demo · resets on reload"
-msgstr "데모 · 새로고침하면 초기화됨"
+msgid "Demo"
+msgstr "데모"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Demo manuscripts reset on reload."
+msgstr "데모 원고는 새로고침하면 초기화됩니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo manuscripts reset on reload. Return to the demo manuscripts to start again."
@@ -736,6 +752,10 @@ msgstr "분리됨: 텍스트가 변경되었습니다"
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
 msgstr "닫기"
+
+#: src/ui/Shortcuts.tsx
+msgid "Dismiss the current menu or dialog"
+msgstr "현재 메뉴 또는 대화상자 닫기"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -777,6 +797,7 @@ msgstr "순서를 바꾸려면 드래그하거나 Alt-↑/↓를 누르세요"
 msgid "edited {0}"
 msgstr "{0} 수정됨"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Editor"
 msgstr "편집기"
@@ -891,6 +912,10 @@ msgstr "그림은 PNG, JPEG, GIF, SVG 또는 WebP 이미지여야 합니다."
 msgid "Filter collections"
 msgstr "컬렉션 필터"
 
+#: src/editor/search-panel.ts
+msgid "Find"
+msgstr "찾기"
+
 #: src/ui/Home.tsx
 msgid "Find a manuscript"
 msgstr "원고 찾기"
@@ -915,6 +940,10 @@ msgstr "이 본문 구간의 출처를 찾아 뒤에 인용"
 #: src/ui/WorkspaceView.tsx
 msgid "find all chapters"
 msgstr "모든 장 찾기"
+
+#: src/ui/Shortcuts.tsx
+msgid "Find and replace"
+msgstr "찾기 및 바꾸기"
 
 #: src/editor/fixes.ts
 msgid "Find in Sources"
@@ -976,11 +1005,16 @@ msgstr "컬렉션에서"
 msgid "Give the manuscript a title; it can be changed later."
 msgstr "원고 제목을 입력하세요. 나중에 변경할 수 있습니다."
 
+#: src/ui/Shortcuts.tsx
+msgid "Go to line"
+msgstr "줄로 이동"
+
 #: src/ui/WorkspaceView.tsx
 msgid "grid columns rows"
 msgstr "격자 열 행"
 
 #: src/ui/Home.tsx
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Help"
 msgstr "도움말"
@@ -1060,10 +1094,6 @@ msgstr "{0}{1}{2}{3}{4}{5}에서"
 msgid "In highlights <0>{0}</0>{1}"
 msgstr "하이라이트 <0>{0}</0>{1}개에서"
 
-#: src/ui/Shortcuts.tsx
-msgid "In the editor, press Tab to move to the next control."
-msgstr "편집기에서 Tab 키를 누르면 다음 컨트롤로 이동합니다."
-
 #: src/ui/OutlinePanel.tsx
 msgid "In the whole manuscript; citations, code and math are not counted"
 msgstr "원고 전체 기준; 인용, 코드 및 수식은 포함되지 않습니다"
@@ -1100,6 +1130,10 @@ msgstr "커서 위치에 [@{0}] 삽입(Enter)"
 #: src/ui/comments.ts
 msgid "Insert {0}"
 msgstr "{0} 삽입"
+
+#: src/ui/Shortcuts.tsx
+msgid "Insert a blank line"
+msgstr "빈 줄 삽입"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
@@ -1153,6 +1187,10 @@ msgstr "그대로 유지됨"
 #: src/ui/WorkspaceView.tsx
 msgid "Keyboard shortcuts"
 msgstr "키보드 단축키"
+
+#: src/ui/Shortcuts.tsx
+msgid "Keyboard shortcuts outside text fields"
+msgstr "텍스트 입력란 밖에서 사용하는 단축키"
 
 #: src/editor/completions.ts
 #: src/editor/insight.ts
@@ -1273,6 +1311,10 @@ msgstr "원고"
 msgid "Markdown for {path}"
 msgstr "{path}의 Markdown"
 
+#: src/editor/search-panel.ts
+msgid "Match case"
+msgstr "대소문자 구분"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Matching sources"
 msgstr "일치하는 출처"
@@ -1343,6 +1385,18 @@ msgstr "더 보기"
 msgid "Move author {0} up"
 msgstr "저자 {0} 위로 이동"
 
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter down"
+msgstr "선택한 장을 아래로 이동"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move the focused chapter up"
+msgstr "선택한 장을 위로 이동"
+
+#: src/ui/Shortcuts.tsx
+msgid "Move to the next control"
+msgstr "다음 컨트롤로 이동"
+
 #: src/ui/Settings.tsx
 msgid "Move up"
 msgstr "위로 이동"
@@ -1395,6 +1449,11 @@ msgstr "다음 인용"
 msgid "Next comment"
 msgstr "다음 댓글"
 
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Next match"
+msgstr "다음 일치 항목"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Next problem"
 msgstr "다음 문제"
@@ -1423,10 +1482,6 @@ msgstr "컬렉션에 템플릿 {value}에 해당하는 파일이 없습니다."
 #: src/ui/Home.tsx
 msgid "No manuscript matches “{filter}”."
 msgstr "“{filter}”와(과) 일치하는 원고가 없습니다."
-
-#: src/ui/WorkspaceView.tsx
-msgid "No manuscript problems"
-msgstr "원고에 문제 없음"
 
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
@@ -1657,6 +1712,10 @@ msgstr "컬렉션 여는 중"
 msgid "Opening…"
 msgstr "여는 중…"
 
+#: src/editor/search-panel.ts
+msgid "Options"
+msgstr "옵션"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Or type <0>/</0> in the text to pick one there."
 msgstr "또는 텍스트에서 <0>/</0>를 입력해 항목을 선택하세요."
@@ -1669,6 +1728,7 @@ msgstr "또는 기존 메모 사용"
 msgid "Other notes"
 msgstr "기타 노트"
 
+#: src/ui/Shortcuts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Outline"
 msgstr "개요"
@@ -1749,6 +1809,15 @@ msgstr "이전 인용"
 msgid "Previous comment"
 msgstr "이전 댓글"
 
+#: src/editor/search-panel.ts
+#: src/ui/Shortcuts.tsx
+msgid "Previous match"
+msgstr "이전 일치 항목"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Previous problem"
+msgstr "이전 문제"
+
 #: src/ui/ConnectGate.tsx
 msgid "Previously connected"
 msgstr "이전에 연결됨"
@@ -1797,6 +1866,10 @@ msgstr "다시 연결 중"
 msgid "Recovering save…"
 msgstr "저장 복구 중…"
 
+#: src/ui/Shortcuts.tsx
+msgid "Redo"
+msgstr "다시 실행"
+
 #: src/ui/WorkspaceView.tsx
 msgid "refer section figure table label"
 msgstr "절, 그림, 표, 레이블 참조"
@@ -1804,6 +1877,10 @@ msgstr "절, 그림, 표, 레이블 참조"
 #: src/editor/live-preview.ts
 msgid "Refer to this with @{id}"
 msgstr "@{id}로 참조"
+
+#: src/editor/search-panel.ts
+msgid "Regular expression"
+msgstr "정규 표현식"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reject"
@@ -1827,10 +1904,15 @@ msgstr "삭제"
 msgid "Remove author {0}"
 msgstr "저자 {0} 삭제"
 
+#: src/ui/Shortcuts.tsx
+msgid "Rename the focused chapter"
+msgstr "선택한 장 이름 바꾸기"
+
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
 msgstr "다시 열기"
 
+#: src/editor/search-panel.ts
 #: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "바꾸기"
@@ -1840,6 +1922,10 @@ msgstr "바꾸기"
 #: src/ui/comments.ts
 msgid "Replace {0} with {1}"
 msgstr "{0}을(를) {1}(으)로 바꾸기"
+
+#: src/editor/search-panel.ts
+msgid "Replace all"
+msgstr "모두 바꾸기"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Replace with"
@@ -1853,6 +1939,10 @@ msgstr "“{0}”(으)로 바꾸기"
 #: src/ui/CommentsPanel.tsx
 msgid "Reply"
 msgstr "답글"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Resize sidebar panels"
+msgstr "사이드바 패널 크기 조절"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize the editor and preview"
@@ -1965,10 +2055,18 @@ msgstr "지금 저장"
 msgid "Saved"
 msgstr "저장됨"
 
+#: src/ui/records.ts
+msgid "Saved on this device"
+msgstr "이 기기에 저장됨"
+
 #: src/ui/connection-notice.ts
 #: src/ui/records.ts
 msgid "Saved on this device; waiting for sync"
 msgstr "이 기기에 저장됨; 동기화 대기 중"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Saving to collection…"
+msgstr "컬렉션에 저장 중…"
 
 #: src/ui/records.ts
 msgid "Saving…"
@@ -1979,6 +2077,9 @@ msgid "Search by author, title, year or key"
 msgstr "저자, 제목, 연도 또는 키로 검색"
 
 #: src/ui/ManuscriptSearch.tsx
+msgid "Search outline"
+msgstr "개요 검색"
+
 #: src/ui/WorkspaceView.tsx
 msgid "Search the manuscript"
 msgstr "원고 검색"
@@ -1991,6 +2092,10 @@ msgstr "절"
 #: src/ui/CommentsPanel.tsx
 msgid "Select a passage and press <0>{MOD_LABEL}-{ALT_LABEL}-M</0> to comment, or <1>{MOD_LABEL}-{ALT_LABEL}-S</1> to suggest an edit."
 msgstr "본문 구간을 선택하고 <0>{MOD_LABEL}-{ALT_LABEL}-M</0>을 눌러 댓글을 달거나 <1>{MOD_LABEL}-{ALT_LABEL}-S</1>를 눌러 수정을 제안하세요."
+
+#: src/ui/Shortcuts.tsx
+msgid "Select next occurrence"
+msgstr "다음 항목 선택"
 
 #: src/editor/selection-bar.tsx
 msgid "Selection"
@@ -2081,6 +2186,10 @@ msgstr "유형이 없는 메모 {0}개 모두 표시"
 #: src/ui/WorkspaceView.tsx
 msgid "Show comments"
 msgstr "댓글 표시"
+
+#: src/ui/Shortcuts.tsx
+msgid "Show completions"
+msgstr "자동 완성 표시"
 
 #: src/preview/Preview.tsx
 msgid "Show in Sources"
@@ -2499,6 +2608,10 @@ msgstr "컬렉션의 Typst 템플릿"
 msgid "Unclosed $$ math block."
 msgstr "닫히지 않은 $$ 수식 블록이 있습니다."
 
+#: src/ui/Shortcuts.tsx
+msgid "Undo"
+msgstr "실행 취소"
+
 #: src/editor/insight.ts
 msgid "Unknown"
 msgstr "알 수 없음"
@@ -2576,6 +2689,10 @@ msgstr "mdbase connect 대기 중…"
 #: src/ui/CommentsPanel.tsx
 msgid "Whole text"
 msgstr "전체 텍스트"
+
+#: src/editor/search-panel.ts
+msgid "Whole words"
+msgstr "단어 단위"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Whose comments"

@@ -34,7 +34,7 @@ const UNTYPED_SHOWN = 20;
 const templateOptions = () => TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const styleOptions = () => STYLES.map((s) => ({ value: s.id, label: styleName(s.id) }));
 
-export function Home({ backend, onOpen, collectionPicker, returnPath }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null }) {
+export function Home({ backend, onOpen, collectionPicker, returnPath, opening = false }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null; opening?: boolean }) {
   useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -200,7 +200,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath }: { backen
   );
 
   return (
-    <main className="home">
+    <main className={`home${opening ? " is-opening" : ""}`} aria-busy={opening} inert={opening}>
       <section>
         <header className="home-header">
           <div>
@@ -267,6 +267,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath }: { backen
           <ContinueCard
             manuscript={continuing}
             words={summaries.get(continuing.path)?.words ?? continuing.words}
+            chapter={recent.find(entry => entry.path === continuing.path)?.chapter}
             goal={wordGoal(namespace, continuing.path)}
             onGoal={(goal) => { setWordGoal(namespace, continuing.path, goal); setReload((v) => v + 1); }}
             onOpen={() => onOpen(continuing.path)}
@@ -533,7 +534,7 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
 }
 
 /** The manuscript opened last: pick up where writing stopped, and see how far it is against a goal. */
-function ContinueCard({ manuscript, words, goal, onGoal, onOpen }: { manuscript: ManuscriptSummary; words: number | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void }) {
+function ContinueCard({ manuscript, words, chapter, goal, onGoal, onOpen }: { manuscript: ManuscriptSummary; words: number | undefined; chapter?: string | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void }) {
   useLingui();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(goal ? String(goal) : "");
@@ -556,7 +557,7 @@ function ContinueCard({ manuscript, words, goal, onGoal, onOpen }: { manuscript:
         <span className="muted small"><Trans>Continue writing</Trans></span>
         <h2 id={`${goalId}-title`} className="continue-title">{manuscript.title}</h2>
         <span className="muted small">
-          {[wordsLabel(words), manuscript.modified ? t`edited ${relativeTime(manuscript.modified)}` : null].filter(Boolean).join(" · ")}
+          {[chapter ? noteName(chapter) : null, wordsLabel(words), manuscript.modified ? t`edited ${relativeTime(manuscript.modified)}` : null].filter(Boolean).join(" · ")}
           {goal && words !== undefined && <><Trans> · {Math.round((words / goal) * 100)}% of {formatNumber(goal)}</Trans></>}
         </span>
         {progress !== null && <span className="continue-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={t`Progress to the word goal`}><span style={{ width: `${progress * 100}%` }} /></span>}

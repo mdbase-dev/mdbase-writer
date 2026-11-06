@@ -6,6 +6,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { loadavg } from "node:os";
 
 const app = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const root = join(app, "dist");
@@ -36,6 +37,12 @@ try {
   const context = await browser.newContext({ viewport: { width: 1500, height: 950 }, serviceWorkers: "block" });
   await context.route("**/*", route => route.request().url().startsWith(`${base}/`) ? route.continue() : route.abort());
   const page = await context.newPage();
+  const blank = await page.evaluate(() => new Promise(resolve => {
+    const frames = []; let last = performance.now();
+    const sample = now => { frames.push(now - last); last = now; if (frames.length < 30) requestAnimationFrame(sample); else resolve(frames.slice(1)); };
+    requestAnimationFrame(sample);
+  }));
+  const load = loadavg();
   await page.addInitScript(() => {
     window.previewProfile = [];
     const OriginalWorker = window.Worker;
@@ -56,9 +63,15 @@ try {
     return snapshot?.artifact && !snapshot.compiling && Number(document.querySelector(".preview-pages")?.dataset.renderedRevision) === snapshot.artifactRevision && document.querySelector(".preview canvas[data-version]");
   }, undefined, { timeout: 60_000 });
   const body = () => page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; });
-  await page.goto(`${base}/?demo&manuscript=manuscripts%2Fpatient-observation.md`);
+  await page.goto(`${base}/?demo`);
+  await page.locator('.manuscript-row[data-path="manuscripts/patient-observation.md"]').waitFor();
+  const opened = await page.evaluate(() => performance.now());
+  await page.locator('.manuscript-row[data-path="manuscripts/patient-observation.md"]').click();
+  await page.locator('.cm-content[contenteditable=true]').waitFor();
+  const editorMs = await page.evaluate(opened => performance.now() - opened, opened);
   await painted();
   const profile = await page.evaluate(() => ({ paintedMs: performance.now(), messages: window.previewProfile, resources: performance.getEntriesByType("resource").map(({ name, startTime, duration, transferSize }) => ({ name: new URL(name).pathname, startTime, duration, transferSize })) }));
+  Object.assign(profile, { build: "production demo-test", load, blank, editorMs, clickToDrawnMs: profile.paintedMs - opened });
   profile.workers = await Promise.all(page.workers().map(worker => worker.evaluate(() => performance.getEntriesByType("resource").map(({ name, startTime, duration, transferSize }) => ({ name: new URL(name).pathname, startTime, duration, transferSize })))));
   await mkdir("out/editing", { recursive: true });
   await writeFile("out/editing/first-preview.json", JSON.stringify(profile, null, 2));
@@ -91,6 +104,30 @@ try {
     await painted();
   }
   assert.deepEqual(errors, [], "Typing with a real canvas must not log React/CodeMirror errors");
+  await page.keyboard.press("Control+a");
+  await page.keyboard.insertText(`# Long profile\n\n${"A sentence with several words. ".repeat(2200)}`);
+  await painted();
+  const cpu = await context.newCDPSession(page);
+  await cpu.send("Profiler.enable");
+  await cpu.send("Profiler.start");
+  const typingLoad = loadavg();
+  await page.evaluate(() => {
+    window.typingFrames = [];
+    document.addEventListener("keydown", event => {
+      if (event.key.length !== 1) return;
+      const started = performance.now();
+      requestAnimationFrame(() => window.typingFrames.push(performance.now() - started));
+    });
+  });
+  const beforeTyping = await body();
+  const profileText = " Profile ordinary typing in a long document. ";
+  await page.keyboard.type(profileText, { delay: 25 });
+  assert.equal(await body(), beforeTyping + profileText, "Profiled typing must retain every character");
+  const typingProfile = await cpu.send("Profiler.stop");
+  const frames = await page.evaluate(() => window.typingFrames);
+  const sorted = [...frames].sort((left, right) => left - right);
+  await writeFile("out/editing/typing-profile.json", JSON.stringify(typingProfile));
+  await writeFile("out/editing/typing.json", JSON.stringify({ words: 11000, load: typingLoad, frames, p50: sorted[Math.floor(sorted.length * .5)], p95: sorted[Math.floor(sorted.length * .95)], max: sorted.at(-1) }, null, 2));
   console.log("ok    production editing, cursor movement and undo/redo with a real Preview canvas");
 } finally {
   await browser?.close();
