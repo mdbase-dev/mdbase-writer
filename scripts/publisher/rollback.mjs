@@ -76,6 +76,8 @@ export async function capturePrevious(options) {
   need(probes.length<=snapshotAssetLimit && seen.size<=snapshotRequestLimit,'previous deployment inventory bound');
   const path=queue.shift();
   if(path==='/'){probes.push(index.probe);continue;}
+  // The wasm route serves versioned R2 objects, which a Pages rollback never changes.
+  if(!required.has(path) && /^\/wasm\/[\w.-]+\.wasm$/.test(path))continue;
   const result=await fingerprint(alias,path,fetchImpl,deadline,true,!required.has(path));
   if(!result)continue;
   probes.push(result.probe);
