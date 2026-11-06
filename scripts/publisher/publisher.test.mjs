@@ -145,7 +145,7 @@ it('rolls production back, verifies the previous id and every transitive asset, 
  const previousId='87654321-1234-4234-8234-123456789abc',previousUrl='https://87654321.mdbase-writer.pages.dev',failedId='12345678-1234-4234-8234-123456789abc';
  let active=previousId,commit=null;const calls=[];
  const source='c'.repeat(40),clock={t:0,now:()=>clock.t,sleep:async ms=>{clock.t+=ms;}},recovery={source,...clock};
- const bodies={'/':'<script type="module" src="/assets/entry.js"></script><link href="/style.css" rel="stylesheet">','/assets/entry.js':'import("./chunk.js");fetch("assets/engine.wasm");fetch("./gone.wasm");new URL("./workers.v1/pool.js",import.meta.url)','/assets/chunk.js':'new URL("worker.js",import.meta.url)','/assets/engine.wasm':'previous wasm','/assets/worker.js':'previous worker','/assets/workers.v1/pool.js':'previous pool','/style.css':'previous style'};
+ const bodies={'/':'<script type="module" src="/assets/entry.js"></script><link href="/style.css" rel="stylesheet">','/assets/entry.js':'import("./chunk.js");fetch("/wasm/pandoc-1.0.0.wasm");fetch("assets/engine.wasm");fetch("./gone.wasm");new URL("./workers.v1/pool.js",import.meta.url)','/assets/chunk.js':'new URL("worker.js",import.meta.url)','/assets/engine.wasm':'previous wasm','/assets/worker.js':'previous worker','/assets/workers.v1/pool.js':'previous pool','/style.css':'previous style'};
  const options={accountId:'a'.repeat(32),apiToken:'test-double',fetchImpl:async(url,init)=>{
   calls.push({url,method:init.method});
   if(url.includes('/rollback')){active=previousId;return Response.json({success:true,result:{id:previousId}});}
@@ -158,6 +158,7 @@ it('rolls production back, verifies the previous id and every transitive asset, 
  const previous=await capturePrevious(options);
  for(const path of ['/assets/entry.js','/assets/chunk.js','/assets/worker.js','/assets/workers.v1/pool.js','/assets/engine.wasm','/style.css'])assert.ok(previous.probes.some(p=>p.path===path),path);
  assert.ok(!previous.probes.some(p=>p.path==='/assets/gone.wasm'),'SPA fallback is not a build asset');
+ assert.ok(!calls.some(c=>c.url.includes('/wasm/pandoc')),'versioned R2 modules stay outside the Pages snapshot');
  const plan={target:'production',origin:'https://writer.mdbase.dev'};
  active=failedId;commit=source;
  const report=await rollback(previous,options,recovery);
