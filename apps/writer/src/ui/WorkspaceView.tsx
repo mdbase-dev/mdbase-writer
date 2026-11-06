@@ -786,10 +786,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     if (e.isComposing) return;
     const mod = isMod(e);
     const blockingDialog = document.querySelector("dialog[open]:not([inert]):not(.settings-sheet), .settings-sheet:modal");
-    if (mod && !e.shiftKey && e.code === "KeyK" && (paletteOpen || !blockingDialog)) {
+    if (mod && !e.shiftKey && e.key.toLowerCase() === "k" && (paletteOpen || !blockingDialog)) {
       e.preventDefault(); e.stopPropagation(); setPaletteOpen(open => !open); return;
     }
-    if (mod && e.code === "Slash" && (shortcutsOpen || !blockingDialog)) {
+    if (mod && e.key === "/" && (shortcutsOpen || !blockingDialog)) {
       e.preventDefault(); e.stopPropagation(); setShortcutsOpen(open => !open); return;
     }
     if (e.target instanceof Element && e.target.closest("dialog[open]:not(.settings-sheet), .settings-sheet:modal")) return;

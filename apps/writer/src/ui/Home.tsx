@@ -177,8 +177,8 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
     const onKey = (event: KeyboardEvent) => {
       if (event.isComposing || event.defaultPrevented || !home.current?.checkVisibility() || home.current.inert) return;
       const mod = event.ctrlKey || event.metaKey;
-      if (mod && event.code === "KeyK" && (paletteOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setPaletteOpen(open => !open); }
-      else if (mod && event.code === "Slash" && (shortcutsOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setShortcutsOpen(open => !open); }
+      if (mod && event.key.toLowerCase() === "k" && (paletteOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setPaletteOpen(open => !open); }
+      else if (mod && event.key === "/" && (shortcutsOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setShortcutsOpen(open => !open); }
       else if (document.querySelector("dialog[open]")) return;
       else if (!mod && event.key === "?" && !(event.target instanceof Element && event.target.closest("input, textarea, [contenteditable=true]"))) { event.preventDefault(); setShortcutsOpen(true); }
       else if (!(event.target instanceof Element && event.target.closest("input, textarea, [contenteditable=true]")) && ["ArrowDown", "ArrowUp", "j", "k"].includes(event.key)) {

@@ -158,7 +158,9 @@ The four raw CDP traces are retained in
 
 ## Validation
 
-All follow-up runs use the final runtime source. Browser gates run locally
+The pre-Sol follow-up runs below use runtime source at `c08f25b7`;
+their digests in `validation.json` remain the historical baseline, not a claim
+about later revisions. Browser gates run locally
 against loopback, with local load below 20 at launch. R7 uses the optimized
 LAB-selected demo build; fixture-importing gates use the LAB-selected dev
 server. No live account or LAB service mutation is involved in these runs.
@@ -196,6 +198,58 @@ digests, task maxima and screenshot digests are in
 
 The optimized local demo is the existing supported `?demo` route enabled by
 `build:editing-test`, not a new account-free sign-in path.
+
+## Sol review follow-up
+
+- **P2, product regression:** restore logical `key.toLowerCase() === "k"`
+  matching while retaining the palette toggle and its composition/modal guards.
+  Home now uses the same logical key, and both touched Ctrl+/ toggle handlers
+  match logical `/` rather than physical `Slash`. The shortcut diff was audited:
+  no other round-seven change converted logical matching to physical matching;
+  pre-existing editor/navigation bindings are unchanged. Dvorak-shaped browser
+  events cover Home and Workspace: Ctrl+K (`code: KeyV`) opens and closes the
+  palette; Ctrl+T (`code: KeyK`) does not open it. Ctrl+/ (`code: BracketLeft`)
+  opens and closes help; Ctrl+Z (`code: Slash`) leaves help closed while allowing
+  the editor's normal Undo handling. Both surface regressions failed before the
+  fix and pass afterward.
+- **P3, product lifecycle bug and incorrect test:** `prepare` deliberately emits
+  no `ready`; the existing worker regression asserts that protocol. Start the
+  existing 60,000 ms initialization deadline at the first `init`, not worker
+  construction. Repeated pending `init` messages cannot extend it. Preparation
+  can stay warm on Home; Home cleanup and actual worker failures still dispose
+  it, and actual initialization/compilation/export remain bounded. No retry loop,
+  new message type, dependency or fallback was added. The corrected client test
+  advances 120,000 ms without inventing a preparation `ready`, transfers that
+  same worker, initializes it, receives readiness 59,999 ms later, then proves
+  that clearing the deadline keeps it alive for another 60,000 ms. The targeted
+  client/worker suite changes from **10/11** to **11/11**; it also proves that a
+  repeated `init` still fails at the original 60,000 ms deadline.
+- The 2 px top/bottom drag insertion marker in `styles.css` is unchanged from
+  the reviewed head. No lower-panel work, merge, deployment or live LAB check is
+  included in this follow-up. Real OS layout switching is not claimed: keyboard
+  coverage uses deliberately mismatched `key`/`code` browser events.
+
+The frozen follow-up runtime and changed browser script are identified by
+SHA-256 in [sol-review.json](evidence/polish-r7/sol-review.json). The historical
+`validation.json` is not overwritten. Final follow-up results:
+
+| Gate | Pass count |
+| --- | --- |
+| Compiler client / worker regressions | 11/11 |
+| R2 | 8/8 |
+| R4 | 8/8 + 3/3 platforms |
+| R6 | 4/4 viewport + all 5 additional scenarios |
+| Base polish | 8/8 + recovery |
+| Review regressions, including Dvorak-shaped events | 20/20 |
+| R7 optimized | 4/4 motion, 4/4 phone reveal, 2/2 unread themes |
+| Full unit / Node suite | 599 passing, 6 existing skips |
+| Production / staging / LAB / optimized demo builds | 4/4 |
+
+`rpnpm check` also passes typecheck and locale/source checks (92 modules). No
+lint script is configured. Browser batches run locally against loopback; launch
+loads are retained in the follow-up receipt. Optimized motion has zero ≥50 ms
+tasks across four toggles, first fade 5.4–7.3 ms, and first ink 1,653 ms. These
+remain machine/build observations, not a controlled performance comparison.
 
 ## LAB boundary and owner follow-up
 
