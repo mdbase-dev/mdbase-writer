@@ -275,14 +275,16 @@ export class ManuscriptWorkspace {
   }
 
   private async loadIndex(generation: number): Promise<void> {
+    const { recordPaths, filePaths } = this.current;
     try {
       const index = await this.backend.index();
       if (generation !== this.metadataGeneration || this.disposed) return;
+      if (recordPaths !== this.current.recordPaths || filePaths !== this.current.filePaths) return;
       if (!index.ok) throw new Error(index.message);
       this.update({ ...(index.value.recordPaths !== this.current.recordPaths ? { recordPaths: index.value.recordPaths } : {}), ...(index.value.filePaths !== this.current.filePaths ? { filePaths: index.value.filePaths } : {}), indexLoad: READY });
       this.sendCollection();
       for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);
-    } catch (error) { if (generation === this.metadataGeneration) this.update({ indexLoad: { phase: "failed", problem: errorMessage(error) } }); }
+    } catch (error) { if (generation === this.metadataGeneration && recordPaths === this.current.recordPaths && filePaths === this.current.filePaths) this.update({ indexLoad: { phase: "failed", problem: errorMessage(error) } }); }
   }
 
   private async loadLibrary(generation: number): Promise<void> {
@@ -753,6 +755,10 @@ export class ManuscriptWorkspace {
   async addChapter(title: string, intent?: string): Promise<Result<string>> {
     const name = title.trim();
     if (!name) return fail(t`A chapter needs a title.`);
+    this.loadMetadata();
+    await this.metadataJobs.indexLoad;
+    if (this.disposed) return fail(t`The manuscript was closed.`);
+    if (this.current.indexLoad.phase !== "ready") return fail(this.current.indexLoad.problem ?? t`Collection metadata is still loading.`);
     const first = this.chapterPaths().find((p): p is string => Boolean(p));
     const folder = first?.includes("/") ? first.slice(0, first.lastIndexOf("/")) : "chapters";
     const created = await this.backend.createRecord(`${folder}/${manuscriptSlug(name)}.md`, `# ${name}\n\n`, intent);

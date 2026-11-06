@@ -74,6 +74,11 @@ export function Manuscripts({backend, collectionPicker}: {backend: WriterBackend
   const current = view?.backend === backend && view.workspace?.main === path ? view.workspace : null;
   const snapshot = useSyncExternalStore(current?.subscribe ?? noSubscription, current?.getSnapshot ?? noSnapshot);
   const [presented, setPresented] = useState<ManuscriptWorkspace | null>(null);
+  useEffect(() => {
+    if (!current) return;
+    const deadline = setTimeout(() => setPresented(current), 400);
+    return () => clearTimeout(deadline);
+  }, [current]);
   const preparing = snapshot?.phase === "loading" || snapshot?.phase === "ready" && snapshot.indexLoad.phase === "ready" && current?.readingOrder().some(record => !snapshot.records.has(record) && !snapshot.recordProblems.has(record));
   if (current && presented !== current && !preparing) setPresented(current);
   useWriterFeedbackContext(path ? "manuscript" : "manuscripts", backend.collectionName);

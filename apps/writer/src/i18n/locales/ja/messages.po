@@ -679,6 +679,10 @@ msgstr "コピーしました"
 msgid "Copy key"
 msgstr "キーをコピー"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Could not check manuscript problems"
+msgstr "原稿の問題を確認できませんでした"
+
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
 msgstr "別のコレクションに接続できませんでした。"

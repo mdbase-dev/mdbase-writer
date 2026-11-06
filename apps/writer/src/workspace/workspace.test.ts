@@ -69,6 +69,43 @@ function fixture() {
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
 
 describe("workspace reliability", () => {
+  it("does not replace a newer collection index with the initial index response", async () => {
+    const { backend, open } = fixture();
+    const initial = await backend.index();
+    let finish!: (value: typeof initial) => void;
+    let changed!: (delta: CollectionDelta) => void;
+    backend.index = () => new Promise(resolve => { finish = resolve; });
+    backend.onCollectionChange = listener => { changed = listener; return () => {}; };
+    const workspace = open();
+    await ready(workspace);
+    if (!initial.ok) throw new Error(initial.message);
+    const newer = { ...initial.value, recordPaths: [...initial.value.recordPaths, "chapters/newer.md"] };
+    changed({ paths: ["chapters/newer.md"], index: newer });
+    finish(initial);
+    await workspace["metadataJobs"].indexLoad;
+    expect(workspace.getSnapshot().recordPaths).toEqual(newer.recordPaths);
+    expect(workspace.getSnapshot().indexLoad.phase).toBe("ready");
+  });
+
+  it("waits for index discovery before creating a chapter and keeps its full reading order", async () => {
+    const { backend, authority, open } = fixture();
+    const initial = await backend.index();
+    let finish!: (value: typeof initial) => void;
+    backend.index = () => new Promise(resolve => { finish = resolve; });
+    backend.createRecord = vi.fn(async (path, body) => { authority.seed(path, { body }); return ok(path); });
+    const workspace = open();
+    await ready(workspace);
+    const added = workspace.addChapter("New chapter");
+    await Promise.resolve();
+    expect(backend.createRecord).not.toHaveBeenCalled();
+    finish(initial);
+    expect(await added).toEqual(ok("chapters/new-chapter.md"));
+    if (!initial.ok) throw new Error(initial.message);
+    expect(workspace.getSnapshot().recordPaths).toEqual([...initial.value.recordPaths, "chapters/new-chapter.md"]);
+    expect(workspace.readingOrder()).toContain("chapters/new-chapter.md");
+    expect(workspace.getSnapshot().records.get("main.md")?.snapshot.body).toContain("![[chapters/new-chapter]]");
+  });
+
   it("retries a failed comment under the same intent", async () => {
     const { backend, open } = fixture();
     const createComment = vi.fn<WriterBackend["createComment"]>(async () => fail("Reply lost"));

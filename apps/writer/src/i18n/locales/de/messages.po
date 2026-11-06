@@ -679,6 +679,10 @@ msgstr "Kopiert"
 msgid "Copy key"
 msgstr "Schlüssel kopieren"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Could not check manuscript problems"
+msgstr "Das Manuskript konnte nicht auf Probleme geprüft werden"
+
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
 msgstr "Eine weitere Sammlung konnte nicht verbunden werden."

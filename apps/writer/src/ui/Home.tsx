@@ -151,6 +151,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
     const sorted = byRecentlyEdited(manuscripts ?? []);
     return words.length ? sorted.filter((m) => words.every((w) => `${m.title} ${m.path}`.toLowerCase().includes(w))) : sorted;
   }, [manuscripts, filter]);
+  const listed = filter.trim() ? shown : shown.filter(manuscript => manuscript.path !== continuing?.path);
   const commands: Command[] = [
     { id: "new", group: t`Manuscripts`, label: t`New manuscript`, run: () => setDialog(true) },
     ...shown.map(manuscript => ({ id: manuscript.path, group: t`Open manuscript`, label: manuscript.title, run: () => onOpen(manuscript.path) })),
@@ -272,17 +273,17 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
         )}
         {manuscripts && manuscripts.length > 0 && (
           <ul className="manuscripts" ref={rows}>
-            {shown.slice(0, limit).map((m) => (
+            {!filter.trim() && continuing && <li key={continuing.path}><ContinueCard
+              backend={backend}
+              manuscript={continuing}
+              words={summaries.get(continuing.path)?.words ?? continuing.words}
+              chapter={recent.find(entry => entry.path === continuing.path)?.chapter}
+              goal={wordGoal(namespace, continuing.path)}
+              onGoal={(goal) => { setWordGoal(namespace, continuing.path, goal); setReload((v) => v + 1); }}
+              onOpen={() => onOpen(continuing.path)}
+            /></li>}
+            {listed.slice(0, limit).map((m) => (
               <li key={m.path}>
-                {m.path === continuing?.path ? <ContinueCard
-                  backend={backend}
-                  manuscript={m}
-                  words={summaries.get(m.path)?.words ?? m.words}
-                  chapter={recent.find(entry => entry.path === m.path)?.chapter}
-                  goal={wordGoal(namespace, m.path)}
-                  onGoal={(goal) => { setWordGoal(namespace, m.path, goal); setReload((v) => v + 1); }}
-                  onOpen={() => onOpen(m.path)}
-                /> : <>
                 <button type="button" className="manuscript-row" data-path={m.path} onClick={() => onOpen(m.path)} title={m.path}>
                   <span className="manuscript-title">{m.title}</span>
                   <span className="manuscript-meta">
@@ -297,12 +298,11 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
                       .join(" · ")}
                   </span>
                 </button>
-                </>}
               </li>
             ))}
           </ul>
         )}
-        {shown.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}><Trans>Show 50 more manuscripts · {shown.length}</Trans></button>}
+        {listed.length > limit && <button type="button" className="sidebar-more" onClick={() => setLimit((n) => n + 50)}><Trans>Show 50 more manuscripts · {shown.length}</Trans></button>}
         {manuscripts && manuscripts.length > 0 && !shown.length && <p className="muted">{t`No manuscript matches “${filter}”.`}</p>}
         {unavailable.length > 0 && <div className="home-unavailable" role="status">
           {unavailable.map((t) => <p key={t.name} className="muted">{t.message}</p>)}
@@ -542,7 +542,16 @@ function ContinueCard({ backend, manuscript, words, chapter, goal, onGoal, onOpe
     setChapterTitle(undefined);
     if (!chapter) return;
     let live = true;
-    void backend.records.open(chapter, { autosave: false }).then(result => {
+    void (async () => {
+      let result = await backend.records.open(chapter, { autosave: false });
+      if (!result.ok && live) {
+        await backend.flushChanges?.();
+        if (!live) return;
+        result = await backend.records.open(chapter, { autosave: false });
+      }
+      return result;
+    })().then(result => {
+      if (!result) return;
       if (!result.ok) return;
       if (live) setChapterTitle(recordTitle({ path: chapter, snapshot: result.value.session.getSnapshot() }, chapter));
       result.value.release();

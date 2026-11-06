@@ -6,6 +6,50 @@ This change does not modify PR #20 or remove the lower panel.
 
 ## Interaction gates
 
+### PR 59 review follow-up
+
+The review regressions are registered in
+`apps/writer/scripts/browser-polish-r6-review-test.mjs`, at the end of the
+complete polish suite. They use keyboard typing for Find (not `.fill()`),
+and compare every loaded document body before and after the search.
+
+| Review item | Regression gate |
+| --- | --- |
+| 1 | Desktop Settings: real Ctrl+S invokes Writer save and prevents the browser action; F8, Ctrl+K, Escape and Ctrl+, remain usable. |
+| 2 | Desktop/phone, Write/Preview: type a Find query with the keyboard, assert the field value and unchanged document bodies; desktop split layout and its saved preference stay unchanged. |
+| 3 | Hold a chapter open indefinitely; the editor is usable within the 2 s runner allowance for the 400 ms hold, and text typed before/after releasing the chapter stays contiguous in the same document. |
+| 4 | Fail the compiler WASM fetch, press F8 and assert “Could not check manuscript problems”, not an empty-problem claim. |
+| 5 | Preview-only F8 announces through one non-inert, non-hidden live region. This is a DOM/accessibility-state gate, not screen-reader speech testing. |
+| 6 | Phone Preview → More → Settings → Escape returns focus to More. |
+| 7 | Refuse title leases during Home mounting; the one retry recovers the real chapter title. |
+| 8 | Put the recent manuscript behind 55 newer rows: Continue still appears once. Typing a query hides the card and shows ordinary matching rows; clearing the query restores it. |
+| 9 | Click Add at quota, then free a slot through the SDK fixture's count update; Add returns without a reload. |
+| 10 | Source assertion rejects the obsolete local-app override comment. No interactive behavior changes in this item. |
+| 11 | Hold the initial index, type in the main document, await autosave, release the index, then type again; both strings stay together in the main document. |
+| 12 | Submit Add chapter with real input while the index is held: creation waits, then preserves existing paths and the new embed/reading-order entry. Unit gates also deliver an old index after a newer watch index and assert the newer snapshot survives. |
+
+The new browser gates were run against `d00de653` before the fixes and
+reproduced the reviewed failures. The title-lease fixture was tightened to
+cover StrictMode mounting, then separately verified red on the old code.
+Both new index unit tests were also red on the old code. The tests wait for
+loaded records, saving, compilation, palette selection and focus state.
+Local runs use `BASE=http://127.0.0.1:5321/` because another checkout owned
+5320 when validation started; CI retains its normal dev server on 5320 with
+`?demo`.
+
+The complete serial polish suite passed, including all 15 review gates.
+An earlier run exposed the old test's assumption that Find changes split
+view to editor-only; its pane-transition setup is now explicit and still
+checks the same opacity/Fit behavior. Another overlapping Chromium run
+reported `Target crashed`; no assertion was relaxed, and the standalone
+round-six gates and subsequent complete serial suite both passed. Both Node
+22 and Node 24.19.0 checks and all LAB/staging/production destination builds
+passed through `rpnpm`. Optimized local editing with a real Preview canvas
+and desktop/phone feedback with intercepted delivery also passed.
+
+No live account, customer collection, deployment or Cloudflare credential is
+used by these tests. The existing owner-run LAB route below is unchanged.
+
 Run the development server at `http://127.0.0.1:5320/` with `pnpm dev`.
 The registered polish suite uses `?demo`; it waits for workspace, focus and
 rendered-revision state rather than assuming a click has settled.

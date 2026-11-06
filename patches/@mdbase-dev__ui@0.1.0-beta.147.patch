@@ -296,3 +296,18 @@ index e22bb3aa78c3694731df6238a5d4cd4265f2f8c6..a4bef8823f523262666d3d0b72a3b72d
          children: ui.copy.setupConflicts
        }), _jsx("ul", {
          className: "mdbase-collections-setup-list",
+diff --git a/dist/collections/use-collection-ui.js b/dist/collections/use-collection-ui.js
+index 28a1e6cefe65bc1e297a0e080af121449588bda4..aaafe31f5525c7aaa1d27baa21439fa2bf4acff6 100644
+--- a/dist/collections/use-collection-ui.js
++++ b/dist/collections/use-collection-ui.js
+@@ -53,6 +53,10 @@ export function useCollectionUi(options) {
+   }), [snapshot, app.name, copy]);
+   const [busy, setBusy] = useState(null);
+   const [error, setError] = useState(null);
++  const collectionCount = view.collections.length;
++  useEffect(() => {
++    setError(previous => previous?.notice.key === "account_collection_quota_exceeded" ? null : previous);
++  }, [collectionCount]);
+   const [signOutPrompt, setSignOutPrompt] = useState(null);
+   const running = useRef(null);
+   const latest = useRef({

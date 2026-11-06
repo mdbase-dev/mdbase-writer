@@ -106,12 +106,16 @@ try {
       await page.keyboard.type(" SETTINGS_RESUMED ");
       await page.locator(".settings-sheet").waitFor({ state: "hidden" });
       await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes("SETTINGS_RESUMED")));
+      const beforeFind = await page.evaluate(() => [...window.writer.workspace.getSnapshot().records].map(([path, record]) => [path, record.snapshot.body]));
       if (width === 390) {
         await page.getByRole("button", { name: "More", exact: true }).click();
         await page.getByRole("menuitem", { name: "Find in chapter", exact: true }).click();
       } else await command(page, "Find in chapter");
       await page.locator(".writer-find").waitFor();
-      await page.locator('.writer-find input[name="search"]').fill("ROUND_SIX");
+      await page.waitForFunction(() => document.activeElement?.matches('.writer-find input[name="search"]'));
+      await page.keyboard.type("ROUND_SIX", { delay: 20 });
+      assert.equal(await page.locator('.writer-find input[name="search"]').inputValue(), "ROUND_SIX");
+      assert.deepEqual(await page.evaluate(() => [...window.writer.workspace.getSnapshot().records].map(([path, record]) => [path, record.snapshot.body])), beforeFind);
       await page.keyboard.press("Enter");
       if (width === 390) for (const box of await page.locator(".writer-find button, .writer-find summary").evaluateAll(elements => elements.filter(element => element.checkVisibility()).map(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })))) assert.ok(box.width >= 43.99 && box.height >= 43.99, JSON.stringify(box));
       await page.keyboard.press("Escape");
@@ -130,6 +134,8 @@ try {
       await page.keyboard.type("CARET_RETURN");
       await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes("EARTHWORMS_RETURN CARET_RETURN")));
       if (width === 1440) {
+        await page.getByRole("button", { name: "Editor only", exact: true }).click();
+        await page.waitForFunction(() => document.querySelector(".workspace")?.classList.contains("view-write") && document.activeElement?.matches(".cm-content"));
         await command(page, "Editor and preview");
         await page.waitForFunction(() => document.querySelector(".preview canvas[data-version]"), null, { timeout: 60000 });
         await page.evaluate(() => {
@@ -195,6 +201,7 @@ try {
       assert.deepEqual(errors, []);
       results.push({ width, colorScheme, first, toolbar, words, passed: true });
     } catch (error) {
+      console.error(error);
       console.error(await page.evaluate(() => ({ active: document.activeElement?.outerHTML, dialogs: [...document.querySelectorAll('dialog[open]')].map(element => ({ html: element.outerHTML.slice(0, 180), inert: element.inert })) })));
       await page.screenshot({ path: `out/polish-r6/${width}-${colorScheme}-failure.png` });
       throw error;
@@ -206,10 +213,10 @@ try {
   await page.evaluate(async () => { window.nativeFixture = await (await import("/scripts/browser-a11y-fixture.tsx")).mountNative("# Clean chapter\n\nNo problems here.\n"); });
   await page.locator('.home [data-path][data-path="writing/main.md"]').click();
   await ready(page);
-  await page.waitForFunction(() => !window.writer.workspace.getSnapshot().compiling);
+  await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot(); return snapshot.result && !snapshot.compiling; });
   await page.evaluate(() => {
     window.problemAnnouncements = [];
-    new MutationObserver(() => { if (document.querySelector(".cm-announced")?.textContent.includes("No manuscript problems")) window.problemAnnouncements.push(document.querySelector(".cm-announced").textContent); }).observe(document.querySelector(".cm-announced"), { subtree: true, childList: true, characterData: true });
+    new MutationObserver(() => { if (document.querySelector(".problem-announcement")?.textContent.includes("No manuscript problems")) window.problemAnnouncements.push(document.querySelector(".problem-announcement").textContent); }).observe(document.querySelector(".problem-announcement"), { subtree: true, childList: true, characterData: true });
   });
   for (const key of ["F8", "Shift+F8"]) {
     const before = await page.evaluate(() => window.problemAnnouncements.length);

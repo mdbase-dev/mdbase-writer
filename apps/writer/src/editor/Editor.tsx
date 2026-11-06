@@ -36,7 +36,6 @@ const remote = Annotation.define<boolean>();
 const phraseCache = new Map([["en", englishCodeMirrorPhrases]]);
 
 export interface EditorHandle {
-  announce(message: string): void;
   focus(): void;
   search(): void;
   rememberPosition(): void;
@@ -208,7 +207,6 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     latest.current.onCursor?.(v.state.selection.main.head);
     shownDiagnostics.current = "";
     onReady?.({
-      announce: message => v.dispatch({ effects: EditorView.announce.of(message) }),
       search: () => { openSearchPanel(v); },
       rememberPosition: () => savePosition(),
       focus() { v.focus(); },

@@ -29,13 +29,14 @@ export async function mountCollectionLimit() {
     collections: [{ name: "Drafts" }],
     phase: "choosing",
   });
-  const snapshot = { ...fixture.mdbase.getSnapshot(), links: { account: "https://connect-lab.mdbase.dev/account", manageAccess: "https://connect-lab.mdbase.dev/account/access" } };
-  const sdk = { ...fixture.mdbase, getSnapshot: () => snapshot, addCollection: async () => { throw { problem: "account_collection_quota_exceeded" }; } };
+  let snapshot = { ...fixture.mdbase.getSnapshot(), links: { account: "https://connect-lab.mdbase.dev/account", manageAccess: "https://connect-lab.mdbase.dev/account/access" } };
+  const listeners = new Set<() => void>();
+  const sdk = { ...fixture.mdbase, getSnapshot: () => snapshot, subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; }, addCollection: async () => { throw { problem: "account_collection_quota_exceeded" }; } };
   document.getElementById("root")!.hidden = true;
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
-  root.render(<AppI18nProvider><App sdk={sdk} /></AppI18nProvider>);
+  root.render(<AppI18nProvider><button type="button" onClick={() => { snapshot = { ...snapshot, collections: [] }; for (const listener of listeners) listener(); }}>Free a collection slot</button><App sdk={sdk} /></AppI18nProvider>);
   return { close: async () => { root.unmount(); host.remove(); await fixture.close(); } };
 }
 

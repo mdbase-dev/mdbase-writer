@@ -679,6 +679,10 @@ msgstr "복사됨"
 msgid "Copy key"
 msgstr "키 복사"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Could not check manuscript problems"
+msgstr "원고의 문제를 확인할 수 없습니다"
+
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
 msgstr "다른 컬렉션에 연결하지 못했습니다."

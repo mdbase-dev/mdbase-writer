@@ -679,6 +679,10 @@ msgstr "已复制"
 msgid "Copy key"
 msgstr "复制密钥"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Could not check manuscript problems"
+msgstr "无法检查稿件问题"
+
 #: src/ui/CollectionPicker.tsx
 msgid "Could not connect another collection."
 msgstr "无法连接其他集合。"
