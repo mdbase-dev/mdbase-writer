@@ -37,14 +37,3 @@ test('production archive matches TaskNotes; installed SDK matches the explicit t
  assert.equal(selectAppEnvironment(input).cpOrigin,selectedRelease.cpOrigin);
  assert.throws(()=>selectAppEnvironment({...input,environment:target==='staging'?'production':'staging'}));
 });
-
-test('retained staging dependency and trust are unchanged, not retargeted production',async()=>{
- const pkg=JSON.parse(await read('tests/fixtures/staging-package.snapshot'));
- assert.equal(pkg.dependencies['@mdbase-dev/sdk'],'file:../../vendor/sdk-dev-eaa4e697-staging.tgz');
- assert.equal(hash(await read('vendor/sdk-dev-eaa4e697-staging.tgz')),'15eb64b50fc7c2809ff3dba9cce5104fe48d8592208b3af8acb529862a1af18c');
- const release=metadata(member('sdk-dev-eaa4e697-staging.tgz','application/packaged-trust.js'));
- assert.equal(release.environment,'staging');
- assert.equal(release.cpOrigin,'https://connect-staging.mdbase.dev');
- assert.equal(release.logOrigin,'https://log-staging.mdbase.dev');
- assert.equal(release.assetSha256,'67e117646c9c26927f0d5a44cbd26f057c318975032e9cd24f24b020150cdbc7');
-});

@@ -9,6 +9,7 @@ import { assertConnectTarget } from "./verify-connect-target.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const { target, deployment } = writerDeploymentFor(process.env);
+if (target !== "lab") throw new Error("Staging and production publish only through ops bin/release app-cd");
 const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 assertReproducibleDeployment(target, git("status", "--porcelain", "--untracked-files=all"), process.env);
 const commit = git("rev-parse", "--short=12", "HEAD");

@@ -125,53 +125,29 @@ This matches the consumer canary and catches deferred worker imports that reload
 Both suites run even when the baseline fails; browser screenshots are uploaded on failure. Demo coverage does not prove real Connect
 collection behaviour.
 
-Use **Actions → Deploy Writer → Run workflow**, branch **main**, target **staging** first.
-Validate staging with a disposable collection, then dispatch **production** and approve the
-production environment. The workflow reruns CI, deploys a fresh checkout through
-`scripts/deploy-pages.mjs`, preserves its clean-tree guard, and verifies the live manifest.
-No laptop login or dirty-tree override is needed. This follows Reader's explicit promotion
-model: staging success is not programmatically bound to a production SHA, so reviewers must
-check the run's commit against the validated staging commit before approving.
+Staging and production follow [Writer continuous deployment](continuous-deployment.md)
+through ops `bin/release`: newest exact-commit green main → staging → fresh-browser
+smoke → production → smoke, with automatic predecessor Pages recovery on production
+failure. There is no per-publish approval, production reviewer, native release branch,
+dirty-tree override or laptop deployment for either target. Main can move during a run.
+The protected environments retain their existing Cloudflare secrets and require the
+raw per-target `WRITER_TRUST_ASSET_SHA256`; see that runbook for the exact settings,
+App grant, retired policies/variables and supervisor-owned live proof.
 
-Repository administrators must configure:
+Keep the existing `mdbase-writer` Pages project, main production channel,
+`writer.mdbase.dev`, `staging.mdbase-writer.pages.dev` and `WRITER_ASSETS` R2 binding.
+Keep normal main protection and the required **Check, production build and Chromium**
+CI job. No settings or secrets are created by source. Separate Cloudflare Git-triggered
+publishing must remain disabled so it cannot bypass the guarded publisher.
 
-- GitHub environments **writer-staging** and **writer-production**, with deployment branches
-  restricted to **main**. Require reviewers for production, prevent self-review, and disable
-  protection-rule bypass where supported. Staging may also require approval.
-- In each environment, secrets **CLOUDFLARE_API_TOKEN** (account-scoped **Cloudflare Pages: Edit**)
-  and **CLOUDFLARE_ACCOUNT_ID**. These are the only deployment credentials; CI uses none.
-- Keep the existing Pages project **mdbase-writer**, production branch **main**, custom domain
-  **writer.mdbase.dev**, and staging branch alias **staging.mdbase-writer.pages.dev**. Disable any
-  separate Cloudflare Git-triggered production deployment if configured, so it cannot bypass
-  the workflow gate.
-- Keep the existing **mdbase-writer-assets** R2 bucket and compiler objects available to the
-  `WRITER_ASSETS` Functions binding. This workflow does not upload or replace compiler assets.
-- Require the CI job **Check, production build and Chromium** in the main branch ruleset
-  (confirm the displayed check name after its first run). `merge_group` supports enabling a
-  merge queue without losing the required check.
+## Deploy locally (LAB only)
 
-Deployment secrets/settings are not created by this change. Enable the required CI check only
-after the first run is green; existing browser regressions must be fixed, not skipped.
-
-## Deploy locally
-
-Local commands remain available for deliberate operator use. Prefer the protected GitHub
-workflow for staging and production.
-
-Deployments are Cloudflare Pages branches of the `mdbase-writer` project. Targets are defined in
-`apps/writer/scripts/deployment-environment.mjs`:
+Only the LAB deployment helper remains. It builds against the LAB SDK/Connect
+origin and allows the in-memory demo; staging/production refuse this route.
 
 ```sh
-pnpm --filter @mdbase-writer/app deploy:lab       # https://lab.mdbase-writer.pages.dev, lab Connect, connector 28487
-pnpm --filter @mdbase-writer/app deploy:staging   # https://staging.mdbase-writer.pages.dev, staging Connect, connector 28486
-pnpm --filter @mdbase-writer/app deploy:prod      # https://writer.mdbase.dev, production Connect, connector 28485
+pnpm --filter @mdbase-writer/app deploy:lab
 ```
-
-Each deploy builds against that environment's SDK original and Connect origin, checks the bundle
-before uploading, and the workflow re-checks the served bundle with
-`node apps/writer/scripts/verify-connect-target.mjs <target> --origin <app origin>`.
-Staging and production refuse to deploy uncommitted changes
-(`MDBASE_WRITER_ALLOW_DIRTY=1` overrides). Only LAB serves the demo collection at `?demo`.
 
 The Typst compiler (28 MB) and Pandoc (58 MB) exceed Pages' 25 MiB file limit. They live in the
 R2 bucket `mdbase-writer-assets`, and `apps/writer/functions/wasm/[name].ts` serves them on the

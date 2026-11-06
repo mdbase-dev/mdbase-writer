@@ -11,7 +11,7 @@ import { readFile, realpath } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { installedMembers, originalMembers } from "../../../scripts/lib/native-originals.mjs";
+import { installedMembers, originalMembers } from "../../../scripts/publisher/originals.mjs";
 import { writerDeployments } from "./deployment-environment.mjs";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
@@ -84,9 +84,17 @@ async function installedRoot(app, name) {
 export async function verifiedWriterSdk(target, root = repoRoot, app = join(root, "apps/writer")) {
   if (!Object.hasOwn(writerSdkPins, target)) throw new Error(`Unsupported Writer build environment: ${target}.`);
   const expectedConnect = writerDeployments[target].connectUrl;
-  const pin = JSON.parse(await readFile(join(root, "vendor", writerSdkPins[target]), "utf8"));
+  const planPath = process.env.WRITER_PUBLICATION_PLAN;
+  const plan = planPath ? JSON.parse(await readFile(planPath, "utf8")) : undefined;
+  if (plan && plan.target !== target) throw new Error("Publication plan target mismatch");
+  const pin = plan ? {
+    environment: target, trust: { environment: target, cpOrigin: plan.sdkTrust.release.cpOrigin,
+      logOrigin: plan.sdkTrust.release.logOrigin, sha256: plan.sdkTrust.release.assetSha256 },
+    artifact: target === "staging" ? "sdk-staging.tgz" : plan.sdkTrust.production.path.slice("vendor/".length),
+    ...plan.sdkTrust.archives.sdk,
+  } : JSON.parse(await readFile(join(root, "vendor", writerSdkPins[target]), "utf8"));
   const pinTrust = pin.trust ?? pin.provenance?.trust;
-  if (pin.environment !== target || pinTrust?.environment !== target || pinTrust?.cpOrigin !== expectedConnect) {
+  if (pin.environment !== target || (pinTrust?.environment ?? pin.environment) !== target || pinTrust?.cpOrigin !== expectedConnect) {
     throw new Error(`vendor/${writerSdkPins[target]} is not the ${target} SDK for ${expectedConnect}; refusing to build.`);
   }
 

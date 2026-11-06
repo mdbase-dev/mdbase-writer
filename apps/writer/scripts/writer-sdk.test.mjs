@@ -44,7 +44,7 @@ test("a staging build refuses when only the production SDK is installed", async 
   assert.equal((await verifiedWriterSdk("production", repoRoot, fixture)).connectOrigin, "https://connect.mdbase.dev");
 });
 
-test("a native release branch that installs its target SDK as @mdbase-dev/sdk uses it directly", async (t) => {
+test("a mechanically derived staging install uses the plain SDK import name", async (t) => {
   const fixture = await mkdtemp(join(tmpdir(), "writer-sdk-"));
   t.after(() => rm(fixture, { recursive: true, force: true }));
   await mkdir(join(fixture, "node_modules", "@mdbase-dev"), { recursive: true });

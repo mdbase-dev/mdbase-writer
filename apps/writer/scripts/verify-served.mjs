@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { verifyServedBytes, assertInventory } from '../../../scripts/lib/native-publish-bytes.mjs';
 import { assertRuntimeOriginals } from '../../../scripts/lib/writer-runtime-originals.mjs';
 import { sourceHostingPolicy, assertHostingMetadata, coveredHostingControls } from '../../../scripts/lib/writer-hosting-policy.mjs';
-import { assertInventoryCoverage } from './native-publisher.mjs';
+import { assertInventoryCoverage } from '../../../scripts/publisher/checks.mjs';
 export const isFetchableAsset=path=>!['_routes.json','_headers','_redirects'].includes(path.split('/').at(-1))&&path!=='_worker.js'&&!path.startsWith('_worker.js/');
 export function servedUrlFor(origin,path){return origin+'/'+(path==='index.html'?'':path.endsWith('.html')?path.slice(0,-5):path);}
 async function probe(transport,url,headers,expectedStatus,expectedBody,remaining) {
@@ -25,7 +25,7 @@ async function probe(transport,url,headers,expectedStatus,expectedBody,remaining
 
 }
 export async function verifyServedAssets({origin,inventory,publication, ...options}) {
- if(!['https://staging.mdbase-writer.pages.dev','https://writer.mdbase.dev'].includes(origin))throw Error('Refusing non-target verification origin');
+ if(!['https://staging.mdbase-writer.pages.dev','https://writer.mdbase.dev',publication?.deployment?.url].filter(Boolean).includes(origin))throw Error('Refusing non-target verification origin');
  assertInventoryCoverage(inventory);
  const worker=inventory.filter(a=>a.path==='_worker.js'||a.path.startsWith('_worker.js/'));
  const staticInventory=inventory.filter(a=>!worker.includes(a));
@@ -34,7 +34,7 @@ export async function verifyServedAssets({origin,inventory,publication, ...optio
  try {
   if(!publication)throw Error('missing trusted source/runtime/deployment inputs');
   const {repoRoot,artifactRoot,plan,deployment,metadata,preflight}=publication;
-  if(plan.origin!==origin)throw Error('source target origin');
+  if(plan.origin!==origin && deployment.url!==origin)throw Error('source target origin');
   policy=await sourceHostingPolicy(repoRoot);
   assertHostingMetadata(policy,metadata,plan,deployment,preflight);
   metadataEvidence={project:{id:metadata.project.id,name:metadata.project.name,production_branch:metadata.project.production_branch},configuration:{compatibility_date:metadata.configuration.compatibility_date,compatibility_flags:[],r2_buckets:{WRITER_ASSETS:{name:metadata.configuration.r2_buckets.WRITER_ASSETS.name}}},deployment:{id:metadata.deployment.id,url:metadata.deployment.url,environment:metadata.deployment.environment,sourceSha:metadata.deployment.sourceSha,pagesBranch:metadata.deployment.pagesBranch}};

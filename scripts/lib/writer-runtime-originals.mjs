@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { originalMembers } from './native-originals.mjs';
+import { originalMembers } from '../publisher/originals.mjs';
 const definitions=[
  {name:'@myriaddreamin/typst-ts-web-compiler',basename:'typst-ts-web-compiler',archive:'runtime-originals/typst.tgz',member:'pkg/typst_ts_web_compiler_bg.wasm',prefix:'typst_ts_web_compiler-'},
  {name:'pandoc-wasm',basename:'pandoc-wasm',archive:'runtime-originals/pandoc.tgz',member:'src/pandoc.wasm',prefix:'pandoc-'},
