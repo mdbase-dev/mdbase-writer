@@ -39,16 +39,16 @@ const painted = (page) => page.waitForFunction(() => {
 const body = (page, path) => page.evaluate((path) => window.writer.workspace.getSnapshot().records.get(path).snapshot.body, path);
 const format = async (page, name) => {
   await page.getByRole("button", { name: "Export formats" }).click();
-  await page.getByRole("menuitem", { name, exact: true }).click();
+  await page.getByRole("menuitem").filter({ has: page.getByText(name, { exact: true }) }).click();
 };
 try {
   await scenario("large lists page and keyboard navigation reveals logical rows; Sources survives tab switches", async (page) => {
     await page.goto(`${base}?demo=large`);
-    await page.locator(".manuscript-row").first().waitFor();
-    assert.equal(await page.locator(".manuscript-row").count(), 50);
+    await page.locator(".home [data-path]").first().waitFor();
+    assert.equal(await page.locator(".home [data-path]").count(), 50);
     await page.getByRole("button", { name: /^Show 50 more manuscripts/ }).click();
-    assert.equal(await page.locator(".manuscript-row").count(), 100);
-    await page.locator('.manuscript-row[data-path="manuscripts/main.md"]').click();
+    assert.equal(await page.locator(".home [data-path]").count(), 100);
+    await page.locator('.home [data-path][data-path="manuscripts/main.md"]').click();
     await painted(page);
     await page.getByRole("tab", { name: /Sources/ }).click();
     const cited = page.getByRole("list", { name: "In this manuscript" });
@@ -95,14 +95,14 @@ try {
 
   await scenario("editing opens before slow collection enumeration and export waits", async (page) => {
     await page.goto(`${base}?demo`);
-    await page.locator(".manuscript-row").first().waitFor();
+    await page.locator(".home [data-path]").first().waitFor();
     await page.evaluate(async () => {
       const backend = window.writer.backend;
       const [index, library] = await Promise.all([backend.index(), backend.library()]);
       backend.index = () => new Promise((resolve) => { window.finishIndex = () => resolve(index); });
       backend.library = () => new Promise((resolve) => { window.finishLibrary = () => resolve(library); });
     });
-    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
+    await page.locator(".manuscripts > li", { hasText: "Patient Observation" }).locator("[data-path]").click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
     await page.locator(".cm-content").waitFor();
     await page.getByText("Dependencies not checked").waitFor();
@@ -124,14 +124,14 @@ try {
 
   await scenario("self-contained preview does not wait for the collection index; exports do", async (page) => {
     await page.goto(`${base}?demo`);
-    await page.locator(".manuscript-row").first().waitFor();
+    await page.locator(".home [data-path]").first().waitFor();
     await page.evaluate(async (path) => {
       const backend = window.writer.backend;
       const index = await backend.index();
       backend.authority.editElsewhere(path, { body: "# Self-contained\n\nA plain paragraph.\n" });
       backend.index = () => new Promise((resolve) => { window.finishIndex = () => resolve(index); });
     }, main);
-    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
+    await page.locator(".manuscripts > li", { hasText: "Patient Observation" }).locator("[data-path]").click();
     await painted(page);
     assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().indexLoad.phase), "loading");
     await page.getByText("Dependencies not checked").waitFor();
@@ -147,12 +147,12 @@ try {
 
   await scenario("preview starts while annotation discovery is held", async (page) => {
     await page.goto(`${base}?demo`);
-    await page.locator(".manuscript-row").first().waitFor();
+    await page.locator(".home [data-path]").first().waitFor();
     await page.evaluate(() => {
       const backend = window.writer.backend, original = backend.annotationPaths.bind(backend);
       backend.annotationPaths = () => new Promise((resolve) => { window.finishAnnotations = () => original().then(resolve); });
     });
-    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
+    await page.locator(".manuscripts > li", { hasText: "Patient Observation" }).locator("[data-path]").click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
     await painted(page);
     assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().annotationsLoad.phase), "loading");
@@ -162,13 +162,13 @@ try {
 
   await scenario("annotation discovery failures leave preview and warned exports available", async (page) => {
     await page.goto(`${base}?demo`);
-    await page.locator(".manuscript-row").first().waitFor();
+    await page.locator(".home [data-path]").first().waitFor();
     await page.evaluate(() => {
       const backend = window.writer.backend, original = backend.annotationPaths.bind(backend);
       let attempts = 0;
       backend.annotationPaths = () => attempts++ === 0 ? Promise.reject(new Error("Temporary annotation discovery failure")) : original();
     });
-    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
+    await page.locator(".manuscripts > li", { hasText: "Patient Observation" }).locator("[data-path]").click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
     await painted(page);
     assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().annotationsLoad.phase), "failed");
@@ -201,7 +201,7 @@ try {
 
   await scenario("Home keeps manuscript errors separate from background sources and retries", async (page) => {
     await page.goto(`${base}?demo`);
-    await page.locator(".manuscript-row").first().waitFor();
+    await page.locator(".home [data-path]").first().waitFor();
     await page.evaluate(() => {
       const backend = window.writer.backend;
       window.originalLibrary = backend.library.bind(backend);
@@ -209,7 +209,7 @@ try {
       window.dispatchEvent(new Event("focus"));
     });
     await page.getByRole("alert").filter({ hasText: "Temporary background source failure" }).waitFor();
-    assert.ok(await page.locator(".manuscript-row").count() > 0);
+    assert.ok(await page.locator(".home [data-path]").count() > 0);
     await page.evaluate(() => { window.writer.backend.library = window.originalLibrary; });
     await page.getByRole("button", { name: "Retry background data" }).click();
     await page.waitForFunction(() => !document.body.textContent.includes("Temporary background source failure"));
@@ -343,7 +343,7 @@ try {
     });
     await open(page);
     await page.getByRole("button", { name: retryName, exact: true }).waitFor();
-    assert.equal(await page.getByRole("alert").filter({ hasText: "Preview unavailable" }).count(), 1);
+    assert.equal(await page.getByRole("alert").filter({ hasText: "The preview could not be loaded. You can keep writing." }).count(), 1);
     assert.equal((await page.locator(".preview-pane").innerText()).match(/You can keep writing\./g)?.length, 1);
     assert.doesNotMatch(await page.locator(".preview-pane").innerText(), /\.\. You can keep writing/);
     assert.equal(await page.locator("button.bar-problems").count(), 0);
@@ -442,7 +442,7 @@ try {
 
   await scenario("leaving a conflict is guarded and merged text is saved", async (page) => {
     await page.goto(`${base}?demo`);
-    await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
+    await page.locator(".manuscripts > li", { hasText: "Patient Observation" }).locator("[data-path]").click();
     await painted(page);
     await page.locator(".outline-manuscript").click();
     await page.evaluate(() => {

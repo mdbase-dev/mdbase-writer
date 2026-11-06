@@ -73,7 +73,7 @@ class CardWidget extends WidgetType {
     meta.className = "cm-chapter-meta";
     meta.textContent = card.path
       ? [card.words !== undefined ? countLabel(card.words, "word") : null, card.problems ? countLabel(card.problems, "problem") : null, card.path].filter(Boolean).join(" · ")
-      : t`No record matches ![[${this.target}]]`;
+      : t`No chapter matches ![[${this.target}]]`;
     text.append(title, meta);
     dom.append(number, text);
     if (card.path) {

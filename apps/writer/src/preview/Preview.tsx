@@ -156,10 +156,6 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
   /** Draws every visible page that is behind the current document version. */
   const drawVisible = () => {
     drawing.current = drawing.current.then(async () => {
-      const pane = scroller.current?.closest(".preview-pane");
-      while (pane?.getAnimations().some(animation => animation.playState === "running" || animation.pending)) {
-        await Promise.all(pane.getAnimations().map(animation => animation.finished.catch(() => {})));
-      }
       const s = session.current;
       const host = pagesHost.current;
       if (!s || !host) return;
@@ -293,17 +289,14 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
   useEffect(() => {
     const root = scroller.current;
     if (!root) return;
-    let timer: ReturnType<typeof setTimeout> | undefined;
     const observer = new ResizeObserver(() => {
       reportView();
       placeMarker();
-      clearTimeout(timer);
-      timer = setTimeout(drawVisible, 120);
+      drawVisible();
     });
     observer.observe(root);
     return () => {
       observer.disconnect();
-      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- drawVisible and reportView read refs only
   }, []);
@@ -367,13 +360,14 @@ export const Preview = memo(function Preview({ artifact, problem, onRetry, revis
   };
 
   const failure = (problem ?? renderProblem)?.trim().replace(/[.!?]+$/, "");
+  useEffect(() => { if (failure) console.error("Writer preview:", failure); }, [failure]);
   return (
     <div ref={scroller} className={`preview${stale ? " is-stale" : ""}${zoom === "fit" ? " is-fit" : ""}`} tabIndex={0} aria-label={plural(pages.length, { one: "Typeset preview, # page", other: "Typeset preview, # pages" })} onScroll={reportView}>
-      {failure && <div className="banner" role="alert"><span>{t`Preview unavailable: ${failure}. You can keep writing.`}</span><button type="button" className="mdbase-button" onClick={problem ? onRetry : () => setRetry((value) => value + 1)}>{problem ? t`Retry preview` : t`Retry rendering`}</button></div>}
-      {!artifact && !failure && <p className="preview-empty"><Trans>Preparing the preview. You can keep writing.</Trans></p>}
+      {failure && <div className="banner" role="alert"><span><Trans>The preview could not be loaded. You can keep writing.</Trans></span><button type="button" className="mdbase-button" onClick={problem ? onRetry : () => setRetry((value) => value + 1)}>{problem ? t`Retry preview` : t`Retry rendering`}</button></div>}
       {stale && artifact && <p className="muted small" role="status"><Trans>Showing the last successful preview; it may not match your latest text.</Trans></p>}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- pointer shortcut; Problems and the outline offer the same navigation */}
       <div className="preview-pages" ref={pagesHost} onClick={onClick} onMouseMove={onMouseMove}>
+        {pages.length === 0 && !failure && <div className="preview-page preview-paper" style={{ aspectRatio: "210 / 297", ...(zoom === "fit" ? {} : { width: `${Math.round(595.276 * PX_PER_PT * zoom)}px` }) }}><p className="preview-empty" role="status"><Trans>Preparing the preview. You can keep writing.</Trans></p></div>}
         {pages.map((p, i) => (
           <div key={i} className="preview-page" style={{ aspectRatio: `${p.width} / ${p.height}`, ...(zoom === "fit" ? {} : { width: `${Math.round(p.width * PX_PER_PT * zoom)}px` }) }}>
             <canvas data-page={i} className="page" aria-hidden="true" />

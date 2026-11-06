@@ -18,7 +18,7 @@ index 5b89ba1a6a0bb9cf1d6d90166f8d1e1ba2327ca1..c2509ed07befce3ac5fa2a1249158da1
      readonly onClose: () => void;
      readonly label?: string | undefined;
 diff --git a/dist/CommandPalette.js b/dist/CommandPalette.js
-index bcfea34790878f2f3a54be5dbc0e0e0e34f3a214..03aa8095a02b0152062eea2ee7b9a04594fbcdcb 100644
+index bcfea34790878f2f3a54be5dbc0e0e0e34f3a214..c6a92a03bd66b4eecce6121080f1fb1d7e014cf5 100644
 --- a/dist/CommandPalette.js
 +++ b/dist/CommandPalette.js
 @@ -1,7 +1,7 @@
@@ -113,7 +113,7 @@ index 16ad0cc9e6ba112f4e42018433a0ea3e7565b524..c8b498286ccbd9fef21c4ec3177574c8
      readonly title: string;
      readonly className?: string | undefined;
 diff --git a/dist/Dialog.js b/dist/Dialog.js
-index c5fd302474e8ca3bd7186b3c67e888d51f735b7c..1e7fcd8708ddd0b170debe6bb660d0562d7663bf 100644
+index c5fd302474e8ca3bd7186b3c67e888d51f735b7c..296f8736003adff40eafe605e10d85b0c3ca188a 100644
 --- a/dist/Dialog.js
 +++ b/dist/Dialog.js
 @@ -8,6 +8,7 @@ import { useLayoutEffect, useRef } from "react";
@@ -180,8 +180,55 @@ index c5fd302474e8ca3bd7186b3c67e888d51f735b7c..1e7fcd8708ddd0b170debe6bb660d056
        className: "mdbase-dialog-body",
        children: [_jsxs("header", {
          className: "mdbase-dialog-header",
+diff --git a/dist/apps.js b/dist/apps.js
+index b4b50856bfa266776c9dc1098c8ed7df8933fadb..e3ce9e48f5cbf7e16edf946ba957abdcb7b8d8cb 100644
+--- a/dist/apps.js
++++ b/dist/apps.js
+@@ -11,7 +11,7 @@ export const mdbaseApps = [{
+       message: "Browse and edit records"
+     });
+   },
+-  url: "https://editor.mdbase.dev/"
++  url: ""
+ }, {
+   id: "reader",
+   name: "Reader",
+@@ -23,7 +23,7 @@ export const mdbaseApps = [{
+       message: "Read and annotate sources"
+     });
+   },
+-  url: "https://reader.mdbase.dev/"
++  url: ""
+ }, {
+   id: "writer",
+   name: "Writer",
+@@ -35,19 +35,20 @@ export const mdbaseApps = [{
+       message: "Write manuscripts that cite your sources"
+     });
+   },
+-  url: "https://writer.mdbase.dev/"
++  url: ""
+ }];
+ /**
+  * Replaces app URLs for a lab or local build, for example from
+- * `import.meta.env.VITE_MDBASE_WRITER_URL`. Unset entries keep production.
++ * `import.meta.env.VITE_MDBASE_WRITER_URL`. Every destination must be explicit.
+  */
+ export function withAppUrls(urls, apps = mdbaseApps) {
+   return apps.map(app => {
+     const url = urls[app.id];
+-    return url ? {
++    if (!url) throw new Error(`Missing URL for mdbase ${app.id}.`);
++    return {
+       ...app,
+       url
+-    } : app;
++    };
+   });
+ }
+ /**
 diff --git a/dist/collections/CollectionGate.js b/dist/collections/CollectionGate.js
-index 989230686789b006a4ecc7a07d31310c33416d74..fc220fe35a502bae91d5d1f26fedc17beac4b38a 100644
+index 989230686789b006a4ecc7a07d31310c33416d74..cbf03c747197a0882b1f3444da01d0f1d4b1a233 100644
 --- a/dist/collections/CollectionGate.js
 +++ b/dist/collections/CollectionGate.js
 @@ -158,7 +158,7 @@ function GateScreen({
@@ -193,7 +240,7 @@ index 989230686789b006a4ecc7a07d31310c33416d74..fc220fe35a502bae91d5d1f26fedc17b
      ref: root,
      className: "mdbase-collections mdbase-collections-gate",
      "data-layout": layout,
-@@ -182,10 +182,10 @@ function GateScreen({
+@@ -182,17 +182,17 @@ function GateScreen({
          children: headingText
        }), opening ? _jsx(OpeningScreen, {
          app: options.app,
@@ -206,6 +253,27 @@ index 989230686789b006a4ecc7a07d31310c33416d74..fc220fe35a502bae91d5d1f26fedc17b
          className: "mdbase-collections-lead",
          children: lead
        }), _jsx(GateBody, {
+         ui: ui,
+         extraActions: view.kind === "signed_out" ? extra : undefined,
+         onDialog: setDialog
+-      }), ui.error && _jsx(NoticeBlock, {
++      }), ui.error && !(view.kind === "choosing" && ui.error.key === "account_collection_quota_exceeded") && _jsx(NoticeBlock, {
+         notice: ui.error,
+         ui: ui,
+         variant: "inline"
+@@ -291,7 +291,11 @@ function GateBody({
+           onDialog: onDialog
+         }), _jsx("div", {
+           className: "mdbase-collections-actions",
+-          children: _jsx(ActionButton, {
++          children: ui.error?.key === "account_collection_quota_exceeded" ? _jsx(NoticeBlock, {
++            notice: ui.error,
++            ui: ui,
++            variant: "inline"
++          }) : _jsx(ActionButton, {
+             tone: view.collections.length > 0 ? "secondary" : "primary",
+             inert: inert,
+             progress: busy === "add" ? copy.addingCollection : null,
 diff --git a/dist/collections/SetupReview.js b/dist/collections/SetupReview.js
 index e22bb3aa78c3694731df6238a5d4cd4265f2f8c6..a4bef8823f523262666d3d0b72a3b72d6ea8ba20 100644
 --- a/dist/collections/SetupReview.js

@@ -24,6 +24,7 @@ import { byRecentlyEdited, noteName, relativeTime, styleName, templateName } fro
 import { DraftStore } from "../workspace/drafts.js";
 import { localNamespace, recentManuscripts, setWordGoal, wordGoal } from "./recent.js";
 import { ChevronRight, PenIcon } from "./icons.js";
+import { recordTitle } from "./records.js";
 
 /** Manuscripts listed before a search field is worth showing. */
 const SEARCH_FROM = 6;
@@ -231,7 +232,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
                     : <><Trans>None yet. {readerSourceHref() ? <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open mdbase Reader</Trans></a> : t`Open mdbase Reader`} to import a PDF, a DOI or a BibTeX file; each source gets a citekey.</Trans></>}
               </li>
               <li><Trans>
-                <strong>A manuscript.</strong> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection.
+                <strong>A manuscript.</strong> Start one, or use a note you already have. It stays an ordinary Markdown file in this collection.
               </Trans></li>
               <li><Trans>
                 <strong>Write.</strong> Cite with <code>[@citekey, p. 12]</code> (or find sources by author and title in the Sources panel), label with{" "}
@@ -263,16 +264,6 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
             <p className="muted small"><Trans>A draft is what was typed but not saved to the collection. Opening its manuscript offers it back.</Trans></p>
           </section>
         )}
-        {continuing && manuscripts && manuscripts.length > 0 && (
-          <ContinueCard
-            manuscript={continuing}
-            words={summaries.get(continuing.path)?.words ?? continuing.words}
-            chapter={recent.find(entry => entry.path === continuing.path)?.chapter}
-            goal={wordGoal(namespace, continuing.path)}
-            onGoal={(goal) => { setWordGoal(namespace, continuing.path, goal); setReload((v) => v + 1); }}
-            onOpen={() => onOpen(continuing.path)}
-          />
-        )}
         {manuscripts && manuscripts.length >= SEARCH_FROM && (
           <label className="home-search">
             <SearchIcon />
@@ -283,6 +274,15 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
           <ul className="manuscripts" ref={rows}>
             {shown.slice(0, limit).map((m) => (
               <li key={m.path}>
+                {m.path === continuing?.path ? <ContinueCard
+                  backend={backend}
+                  manuscript={m}
+                  words={summaries.get(m.path)?.words ?? m.words}
+                  chapter={recent.find(entry => entry.path === m.path)?.chapter}
+                  goal={wordGoal(namespace, m.path)}
+                  onGoal={(goal) => { setWordGoal(namespace, m.path, goal); setReload((v) => v + 1); }}
+                  onOpen={() => onOpen(m.path)}
+                /> : <>
                 <button type="button" className="manuscript-row" data-path={m.path} onClick={() => onOpen(m.path)} title={m.path}>
                   <span className="manuscript-title">{m.title}</span>
                   <span className="manuscript-meta">
@@ -297,6 +297,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
                       .join(" · ")}
                   </span>
                 </button>
+                </>}
               </li>
             ))}
           </ul>
@@ -534,8 +535,20 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
 }
 
 /** The manuscript opened last: pick up where writing stopped, and see how far it is against a goal. */
-function ContinueCard({ manuscript, words, chapter, goal, onGoal, onOpen }: { manuscript: ManuscriptSummary; words: number | undefined; chapter?: string | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void }) {
+function ContinueCard({ backend, manuscript, words, chapter, goal, onGoal, onOpen }: { backend: WriterBackend; manuscript: ManuscriptSummary; words: number | undefined; chapter?: string | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void }) {
   useLingui();
+  const [chapterTitle, setChapterTitle] = useState<string>();
+  useEffect(() => {
+    setChapterTitle(undefined);
+    if (!chapter) return;
+    let live = true;
+    void backend.records.open(chapter, { autosave: false }).then(result => {
+      if (!result.ok) return;
+      if (live) setChapterTitle(recordTitle({ path: chapter, snapshot: result.value.session.getSnapshot() }, chapter));
+      result.value.release();
+    });
+    return () => { live = false; };
+  }, [backend, chapter]);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(goal ? String(goal) : "");
   const goalId = useId();
@@ -557,7 +570,7 @@ function ContinueCard({ manuscript, words, chapter, goal, onGoal, onOpen }: { ma
         <span className="muted small"><Trans>Continue writing</Trans></span>
         <h2 id={`${goalId}-title`} className="continue-title">{manuscript.title}</h2>
         <span className="muted small">
-          {[chapter ? noteName(chapter) : null, wordsLabel(words), manuscript.modified ? t`edited ${relativeTime(manuscript.modified)}` : null].filter(Boolean).join(" · ")}
+          {[chapterTitle, wordsLabel(words), manuscript.modified ? t`edited ${relativeTime(manuscript.modified)}` : null].filter(Boolean).join(" · ")}
           {goal && words !== undefined && <><Trans> · {Math.round((words / goal) * 100)}% of {formatNumber(goal)}</Trans></>}
         </span>
         {progress !== null && <span className="continue-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={t`Progress to the word goal`}><span style={{ width: `${progress * 100}%` }} /></span>}
@@ -575,7 +588,7 @@ function ContinueCard({ manuscript, words, chapter, goal, onGoal, onOpen }: { ma
           <button type="button" className="text-button is-quiet continue-goal" onClick={() => setEditing(true)}>{goal ? t`Change the word goal` : t`Set a word goal`}</button>
         )}
       </div>
-      <button type="button" className="mdbase-button is-primary" onClick={onOpen}><Trans>
+      <button type="button" className="mdbase-button is-primary" data-path={manuscript.path} onClick={onOpen}><Trans>
         <PenIcon />
         Continue
         <ChevronRight className="chevron" />

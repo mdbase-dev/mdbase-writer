@@ -48,9 +48,8 @@ it("refuses unknown build environments and leaves an absent one unselected for l
 });
 
 it("constructs the exact explicit build target and refuses BOTH other environment retargets", async () => {
-  // Qualification supplies staging explicitly; ordinary manifest/check defaults
-  // to production. Expected origin is independent of the candidate manifest.
-  const environment = (import.meta.env.VITE_MDBASE_ENV || "production") as keyof typeof ORIGINS;
+  // Qualification supplies staging explicitly; local checks use LAB.
+  const environment = (import.meta.env.VITE_MDBASE_ENV || "lab") as keyof typeof ORIGINS;
   expect(Object.keys(ORIGINS)).toContain(environment);
   expect(new URL(manifest.homepage).origin).toBe(ORIGINS[environment]);
   const fetch = vi.spyOn(globalThis, "fetch"), popup = vi.spyOn(window, "open");

@@ -78,7 +78,7 @@ const previewFingerprint = (record) => page.evaluate(async (rec) => {
 const exportAs = async (format) => {
   await page.locator(".toast.tone-busy").waitFor({ state: "detached", timeout: 120_000 });
   await page.getByRole("button", { name: "Export formats" }).click();
-  await page.getByRole("menuitem", { name: format }).click();
+  await page.getByRole("menuitem").filter({ has: page.getByText(format, { exact: true }) }).click();
 };
 // The text of the record in the editor, from its session: the editor's DOM
 // holds only the lines near the view, so it changes as the editor scrolls.
@@ -117,7 +117,7 @@ await step("home lists the demo manuscripts", async () => {
   await page.goto(`${base}?demo`);
   await page.getByRole("heading", { name: "Manuscripts" }).waitFor();
   // Recovery drafts share the title class, but are not registered manuscripts.
-  const titles = await page.locator(".manuscript-row[data-path] .manuscript-title").allTextContents();
+  const titles = await page.locator(".home [data-path][data-path] .manuscript-title").allTextContents();
   assert.deepEqual(titles, ["Patient Observation", "Small Agents, Large Effects: Darwin and the Science of Slow Change"]);
 });
 
@@ -134,13 +134,13 @@ await step("an existing note becomes a manuscript, keeping its type and fields",
   assert.deepEqual(fm.tags, ["draft"]);
   assert.equal(fm.title, "On worm stones");
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-  await page.locator(".manuscript-title", { hasText: "On worm stones" }).waitFor();
-  const titles = await page.locator(".manuscript-title").allTextContents();
+  await page.locator('.home [data-path="drafts/on-worm-stones.md"]').waitFor();
+  const titles = await page.locator(".manuscript-title, .continue-title").allTextContents();
   assert.ok(titles.includes("On worm stones"), titles.join(", "));
 });
 
 await step("opening a paper typesets it with no problems", async () => {
-  await page.locator(".manuscript-row", { hasText: "Small Agents, Large Effects" }).click();
+  await page.locator(".manuscripts > li", { hasText: "Small Agents, Large Effects" }).locator("[data-path]").click();
   await waitFor(() => document.querySelectorAll(".preview-pages canvas.page").length > 0, null);
   const s = await snapshot();
   assert.ok(s.pages >= 3, `expected at least 3 pages, got ${s.pages}`);
@@ -408,7 +408,7 @@ await step("clicking the preview moves the editor to that block", async () => {
 
 await step("a thesis follows embedded chapter records", async () => {
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-  await page.locator(".manuscript-row", { hasText: "Patient Observation" }).click();
+  await page.locator(".manuscripts > li", { hasText: "Patient Observation" }).locator("[data-path]").click();
   await waitFor(() => (window.writer?.workspace?.getSnapshot().result?.order.length ?? 0) === 3 && document.querySelectorAll(".preview-pages canvas.page").length >= 4, null, 60_000);
   const s = await snapshot();
   assert.deepEqual(s.order, ["manuscripts/patient-observation.md", "chapters/reefs.md", "chapters/worms.md"]);

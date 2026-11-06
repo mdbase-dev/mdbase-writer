@@ -22,7 +22,7 @@ try {
       });
     });
     await page.goto(`${origin}/?demo`);
-    await page.locator(".manuscript-row", { hasText: "Small Agents, Large Effects" }).click();
+    await page.locator(".manuscripts > li", { hasText: "Small Agents, Large Effects" }).locator("[data-path]").click();
     await page.waitForFunction(() => window.writer?.workspace?.getSnapshot().phase === "ready");
     // A user-visible compiler failure, not a Markdown/typesetting diagnostic.
     await page.evaluate(() => window.writer.workspace.update({ previewProblem: "PRIVATE compiler exception /private/manuscript.md" }));

@@ -7,7 +7,7 @@ import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap, s
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { lintGutter, setDiagnostics, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
-import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
+import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from "@codemirror/search";
 import { englishCodeMirrorPhrases, loadCodeMirrorPhrases } from "@mdbase-dev/i18n/codemirror";
 import { isLocale } from "@mdbase-dev/i18n";
 import { Annotation, Compartment, EditorSelection, EditorState, StateEffect, Text, Transaction } from "@codemirror/state";
@@ -36,7 +36,10 @@ const remote = Annotation.define<boolean>();
 const phraseCache = new Map([["en", englishCodeMirrorPhrases]]);
 
 export interface EditorHandle {
+  announce(message: string): void;
   focus(): void;
+  search(): void;
+  rememberPosition(): void;
   /** Scrolls to `offset` (selecting up to `to`, when given) and focuses the editor unless `focus` is false. */
   reveal(offset: number, options?: { to?: number; focus?: boolean }): void;
   /** Replaces the selection with text (a citation, a quotation) and leaves the cursor after it; with `complete`, opens completions there. */
@@ -205,6 +208,9 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     latest.current.onCursor?.(v.state.selection.main.head);
     shownDiagnostics.current = "";
     onReady?.({
+      announce: message => v.dispatch({ effects: EditorView.announce.of(message) }),
+      search: () => { openSearchPanel(v); },
+      rememberPosition: () => savePosition(),
       focus() { v.focus(); },
       reveal(offset, options) {
         const at = Math.min(offset, v.state.doc.length);

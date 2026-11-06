@@ -74,13 +74,13 @@ msgstr "{0, plural, one {Экспортировано: {name}; проблем: #
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr "{0, plural, one {В # записи; ссылки на источники, код и формулы не учитываются} few {В # записях; ссылки на источники, код и формулы не учитываются} many {В # записях; ссылки на источники, код и формулы не учитываются} other {В # записи; ссылки на источники, код и формулы не учитываются}}"
+msgid "{0, plural, one {In # chapter; citations, code and math are not counted} other {In # chapters; citations, code and math are not counted}}"
+msgstr "{0, plural, one {В # главе; цитаты, код и формулы не учитываются} few {В # главах; цитаты, код и формулы не учитываются} many {В # главах; цитаты, код и формулы не учитываются} other {В # главах; цитаты, код и формулы не учитываются}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr "{0, plural, one {Проверьте # восстановленный локальный черновик. Редактирование этой записи приостановлено, пока вы не восстановите черновик или не выберете версию коллекции.} few {Проверьте # восстановленных локальных черновика. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} many {Проверьте # восстановленных локальных черновиков. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} other {Проверьте # восстановленного локального черновика. Редактирование этих записей приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.}}"
+msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that chapter until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those chapters until you restore the local drafts or use the collection versions.}}"
+msgstr "{0, plural, one {Проверьте # восстановленный локальный черновик. Редактирование этой главы приостановлено, пока вы не восстановите черновик или не выберете версию коллекции.} few {Проверьте # восстановленных локальных черновика. Редактирование этих глав приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} many {Проверьте # восстановленных локальных черновиков. Редактирование этих глав приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.} other {Проверьте # восстановленного локального черновика. Редактирование этих глав приостановлено, пока вы не восстановите черновики или не выберете версии коллекции.}}"
 
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
@@ -131,8 +131,8 @@ msgid "{0}backed up {1}"
 msgstr "{0}резервная копия создана {1}"
 
 #: src/workspace/workspace.ts
-msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr "{at}: эта запись удалена; скачайте локальный черновик, прежде чем выйти."
+msgid "{at}: this chapter was deleted; download the local draft before leaving."
+msgstr "{at}: эта глава удалена; перед выходом скачайте локальный черновик."
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
@@ -248,8 +248,8 @@ msgid "<0/>New manuscript"
 msgstr "<0/>Новая рукопись"
 
 #: src/ui/Home.tsx
-msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr "<0>Рукопись.</0> Создайте её или используйте уже имеющуюся заметку. Она останется обычной записью Markdown в этой коллекции."
+msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown file in this collection."
+msgstr "<0>Рукопись.</0> Создайте новую или используйте существующую заметку. Она останется обычным файлом Markdown в этой коллекции."
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
@@ -286,6 +286,10 @@ msgstr "Принять"
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
 msgstr "Принято"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Actual size"
+msgstr "Исходный размер"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
@@ -422,9 +426,17 @@ msgstr "Изменено в другом месте"
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "Изменения сохраняются в метаданных рукописи по мере ввода, и предпросмотр обновляется вслед за ними."
 
+#: src/workspace/workspace.ts
+msgid "Chapter could not be loaded: {problem}"
+msgstr "Не удалось загрузить главу: {problem}"
+
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
 msgstr "Заголовок главы"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Chapters"
+msgstr "Главы"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
@@ -814,10 +826,6 @@ msgstr "Только редактор"
 msgid "Editor preferences"
 msgstr "Настройки редактора"
 
-#: src/workspace/workspace.ts
-msgid "Embedded record could not be loaded: {problem}"
-msgstr "Не удалось загрузить встроенную запись: {problem}"
-
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
 msgstr "Встраивание {value} сюда приведёт к встраиванию элемента в самого себя."
@@ -945,6 +953,10 @@ msgstr "найти поиск все главы"
 msgid "Find and replace"
 msgstr "Поиск и замена"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Find in chapter"
+msgstr "Найти в главе"
+
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "Найти в «Источниках»"
@@ -956,6 +968,10 @@ msgstr "Найти или выполнить команду"
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
 msgstr "По размеру · {zoomLabel}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Fit to width"
+msgstr "По ширине"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1462,6 +1478,15 @@ msgstr "Следующая проблема"
 msgid "No annotations on this source."
 msgstr "У этого источника нет аннотаций."
 
+#. placeholder {0}: this.target
+#: src/editor/chapter-cards.ts
+msgid "No chapter matches ![[{0}]]"
+msgstr "Нет главы, соответствующей ![[{0}]]"
+
+#: src/i18n/diagnostics.ts
+msgid "No chapter matches ![[{value}]]."
+msgstr "Нет главы, соответствующей ![[{value}]]."
+
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
@@ -1483,6 +1508,10 @@ msgstr "В коллекции нет файла, соответствующег�
 msgid "No manuscript matches “{filter}”."
 msgstr "Рукописей по запросу «{filter}» не найдено."
 
+#: src/ui/WorkspaceView.tsx
+msgid "No manuscript problems"
+msgstr "В рукописи нет проблем"
+
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "Заметок по запросу «{query}» не найдено."
@@ -1494,15 +1523,6 @@ msgstr "Нет открытых комментариев"
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
 msgstr "В этой коллекции нет других заметок."
-
-#. placeholder {0}: this.target
-#: src/editor/chapter-cards.ts
-msgid "No record matches ![[{0}]]"
-msgstr "Запись для ![[{0}]] не найдена"
-
-#: src/i18n/diagnostics.ts
-msgid "No record matches the embed ![[{value}]]."
-msgstr "Нет записи, соответствующей встраиванию ![[{value}]]."
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
@@ -1621,8 +1641,8 @@ msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open
 msgstr "В списке рукописей используйте стрелки или J и K, затем Enter для открытия."
 
 #: src/ui/CommentsPanel.tsx
-msgid "On the whole record"
-msgstr "Ко всей записи"
+msgid "On the whole chapter"
+msgstr "Ко всей главе"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
@@ -1796,10 +1816,6 @@ msgstr "Предпросмотр"
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
 msgstr "Только предпросмотр"
-
-#: src/preview/Preview.tsx
-msgid "Preview unavailable: {failure}. You can keep writing."
-msgstr "Предпросмотр недоступен: {failure}. Можно продолжать писать."
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
@@ -2416,8 +2432,8 @@ msgid "Table"
 msgstr "Таблица"
 
 #: src/workspace/workspace.ts
-msgid "That record is not open."
-msgstr "Эта запись не открыта."
+msgid "That chapter is not open."
+msgstr "Эта глава не открыта."
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
@@ -2486,6 +2502,10 @@ msgstr "Рукопись была закрыта."
 msgid "The person record that claims your account is not valid."
 msgstr "Запись о пользователе, связанная с вашей учётной записью, недействительна."
 
+#: src/preview/Preview.tsx
+msgid "The preview could not be loaded. You can keep writing."
+msgstr "Не удалось загрузить предпросмотр. Вы можете продолжать писать."
+
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
 msgstr "Предпросмотр загружался слишком долго. Повторите предпросмотр."
@@ -2499,8 +2519,8 @@ msgid "The style’s own (usually en-US)"
 msgstr "Как в самом стиле (обычно en-US)"
 
 #: src/workspace/workspace.ts
-msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr "Предложенного текста в записи больше нет; внесите правку вручную, затем закройте предложение."
+msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
+msgstr "Предложенного текста больше нет в главе; отредактируйте его вручную, затем разрешите предложение."
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
@@ -2530,6 +2550,14 @@ msgstr "Это изменит язык интерфейса в этом брау
 msgid "This chapter changed elsewhere while you were editing it."
 msgstr "Эта глава была изменена в другом месте, пока вы её редактировали."
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter was deleted elsewhere. Your local text is still available here."
+msgstr "Эта глава удалена в другом месте. Локальный текст по-прежнему доступен здесь."
+
+#: src/ui/CompareDialog.tsx
+msgid "This chapter was deleted. Download the local draft to keep it."
+msgstr "Эта глава удалена. Скачайте локальный черновик, чтобы сохранить его."
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "Эта коллекция не принимает файлы от mdbase writer."
@@ -2553,14 +2581,6 @@ msgstr "Не удалось открыть эту рукопись"
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "Этого фрагмента в тексте больше нет"
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr "Эта запись была удалена в другом месте. Ваш локальный текст по-прежнему доступен здесь."
-
-#: src/ui/CompareDialog.tsx
-msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr "Эта запись удалена. Скачайте локальный черновик, чтобы сохранить его: восстановить его в удалённой записи нельзя."
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

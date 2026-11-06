@@ -74,13 +74,13 @@ msgstr "{0, plural, other {{name}をエクスポートしました（問題#件:
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr "{0, plural, other {#件のレコード内（引用・コード・数式は除く）}}"
+msgid "{0, plural, one {In # chapter; citations, code and math are not counted} other {In # chapters; citations, code and math are not counted}}"
+msgstr "{0, plural, other {全 # 章。引用、コード、数式は含みません}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr "{0, plural, other {復元したローカル下書き#件を確認してください。復元するかコレクション版を使うまで、対象レコードの編集は一時停止されます。}}"
+msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that chapter until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those chapters until you restore the local drafts or use the collection versions.}}"
+msgstr "{0, plural, other {復元したローカル下書き#件を確認してください。復元するかコレクション版を使うまで、対象の章の編集は一時停止されます。}}"
 
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
@@ -131,8 +131,8 @@ msgid "{0}backed up {1}"
 msgstr "{0}バックアップ：{1}"
 
 #: src/workspace/workspace.ts
-msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr "{at}：このレコードは削除されています。移動する前にローカル下書きをダウンロードしてください。"
+msgid "{at}: this chapter was deleted; download the local draft before leaving."
+msgstr "{at}: この章は削除されました。離れる前にローカルの下書きをダウンロードしてください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
@@ -248,8 +248,8 @@ msgid "<0/>New manuscript"
 msgstr "<0/>新しい原稿"
 
 #: src/ui/Home.tsx
-msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr "<0>原稿。</0>新しく作成するか、すでにあるノートを使えます。コレクション内の通常のMarkdownレコードとして保持されます。"
+msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown file in this collection."
+msgstr "<0>原稿。</0>新しく作成するか、既存のノートを使います。このコレクション内の通常のMarkdownファイルとして保存されます。"
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
@@ -286,6 +286,10 @@ msgstr "承認"
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
 msgstr "承認済み"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Actual size"
+msgstr "実際のサイズ"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
@@ -422,9 +426,17 @@ msgstr "別の場所で変更されました"
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "入力すると変更内容が原稿のメタデータに保存され、プレビューにも反映されます。"
 
+#: src/workspace/workspace.ts
+msgid "Chapter could not be loaded: {problem}"
+msgstr "章を読み込めませんでした: {problem}"
+
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
 msgstr "章のタイトル"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Chapters"
+msgstr "章"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
@@ -814,10 +826,6 @@ msgstr "エディターのみ"
 msgid "Editor preferences"
 msgstr "エディターの設定"
 
-#: src/workspace/workspace.ts
-msgid "Embedded record could not be loaded: {problem}"
-msgstr "埋め込みレコードを読み込めませんでした：{problem}"
-
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
 msgstr "ここに{value}を埋め込むと、自分自身の中に含めることになります。"
@@ -945,6 +953,10 @@ msgstr "すべての章を検索"
 msgid "Find and replace"
 msgstr "検索と置換"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Find in chapter"
+msgstr "章内を検索"
+
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "出典内を検索"
@@ -956,6 +968,10 @@ msgstr "コマンドを検索または実行"
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
 msgstr "全体表示 · {zoomLabel}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Fit to width"
+msgstr "幅に合わせる"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1462,6 +1478,15 @@ msgstr "次の問題"
 msgid "No annotations on this source."
 msgstr "この出典には注釈がありません。"
 
+#. placeholder {0}: this.target
+#: src/editor/chapter-cards.ts
+msgid "No chapter matches ![[{0}]]"
+msgstr "![[{0}]] に一致する章がありません"
+
+#: src/i18n/diagnostics.ts
+msgid "No chapter matches ![[{value}]]."
+msgstr "![[{value}]] に一致する章がありません。"
+
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
@@ -1483,6 +1508,10 @@ msgstr "コレクション内にテンプレート{value}に一致するファ�
 msgid "No manuscript matches “{filter}”."
 msgstr "「{filter}」に一致する原稿はありません。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "No manuscript problems"
+msgstr "原稿に問題はありません"
+
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "「{query}」に一致するノートはありません。"
@@ -1494,15 +1523,6 @@ msgstr "未解決のコメントはありません"
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
 msgstr "このコレクションには他のノートはありません。"
-
-#. placeholder {0}: this.target
-#: src/editor/chapter-cards.ts
-msgid "No record matches ![[{0}]]"
-msgstr "![[{0}]]に一致するレコードはありません"
-
-#: src/i18n/diagnostics.ts
-msgid "No record matches the embed ![[{value}]]."
-msgstr "埋め込み![[{value}]]に一致するレコードがありません。"
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
@@ -1621,8 +1641,8 @@ msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open
 msgstr "原稿一覧では、矢印キーまたは J と K を使い、Enter で開きます。"
 
 #: src/ui/CommentsPanel.tsx
-msgid "On the whole record"
-msgstr "レコード全体"
+msgid "On the whole chapter"
+msgstr "章全体について"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
@@ -1796,10 +1816,6 @@ msgstr "プレビュー"
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
 msgstr "プレビューのみ"
-
-#: src/preview/Preview.tsx
-msgid "Preview unavailable: {failure}. You can keep writing."
-msgstr "プレビューを表示できません: {failure}。執筆は続けられます。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
@@ -2416,8 +2432,8 @@ msgid "Table"
 msgstr "表"
 
 #: src/workspace/workspace.ts
-msgid "That record is not open."
-msgstr "そのレコードは開いていません。"
+msgid "That chapter is not open."
+msgstr "その章は開かれていません。"
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
@@ -2486,6 +2502,10 @@ msgstr "原稿が閉じられました。"
 msgid "The person record that claims your account is not valid."
 msgstr "アカウントに紐づく人物レコードが有効ではありません。"
 
+#: src/preview/Preview.tsx
+msgid "The preview could not be loaded. You can keep writing."
+msgstr "プレビューを読み込めませんでした。執筆は続けられます。"
+
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
 msgstr "プレビューの読み込みに時間がかかりすぎました。プレビューを再試行してください。"
@@ -2499,8 +2519,8 @@ msgid "The style’s own (usually en-US)"
 msgstr "スタイル自体の言語（通常 en-US）"
 
 #: src/workspace/workspace.ts
-msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr "提案されたテキストはレコード内にありません。手動で編集してから、提案を解決済みにしてください。"
+msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
+msgstr "提案されたテキストは章にありません。手動で編集してから提案を解決してください。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
@@ -2530,6 +2550,14 @@ msgstr "これはこのブラウザーのインターフェース言語を変更
 msgid "This chapter changed elsewhere while you were editing it."
 msgstr "編集中にこの章が別の場所で変更されました。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter was deleted elsewhere. Your local text is still available here."
+msgstr "この章は別の場所で削除されました。ローカルのテキストはここで引き続き利用できます。"
+
+#: src/ui/CompareDialog.tsx
+msgid "This chapter was deleted. Download the local draft to keep it."
+msgstr "この章は削除されました。ローカルの下書きをダウンロードして保存してください。"
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "このコレクションは Writer からのファイルを受け付けません。"
@@ -2553,14 +2581,6 @@ msgstr "この原稿を開けませんでした"
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "この箇所は本文にありません"
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr "このレコードは別の場所で削除されました。ローカルのテキストはここに残っています。"
-
-#: src/ui/CompareDialog.tsx
-msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr "このレコードは削除されました。残すにはローカル下書きをダウンロードしてください。削除されたレコードには復元できません。"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

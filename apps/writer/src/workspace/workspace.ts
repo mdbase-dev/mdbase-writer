@@ -654,7 +654,7 @@ export class ManuscriptWorkspace {
       for (const embed of translated.includes) {
         const target = resolveLinkTarget(embed.target, path, recordPaths);
         const problem = target && this.current.recordProblems.get(target);
-        if (problem) diagnostics.push({ record: path, from: embed.from, to: embed.to, severity: "error" as const, origin: "writer" as const, message: t`Embedded record could not be loaded: ${problem}` });
+        if (problem) diagnostics.push({ record: path, from: embed.from, to: embed.to, severity: "error" as const, origin: "writer" as const, message: t`Chapter could not be loaded: ${problem}` });
       }
     }
     return diagnostics;
@@ -915,9 +915,9 @@ export class ManuscriptWorkspace {
    */
   async acceptSuggestion(record: string, suggestion: CommentRecord): Promise<Result<CommentRecord>> {
     const body = this.current.records.get(record)?.snapshot.body;
-    if (body === undefined || !suggestion.target || !suggestion.suggestion) return fail(t`That record is not open.`);
+    if (body === undefined || !suggestion.target || !suggestion.suggestion) return fail(t`That chapter is not open.`);
     const next = applySuggestion(body, suggestion.target, suggestion.suggestion.replacement);
-    if (next === null) return fail(t`The suggested text is no longer in the record; edit it by hand, then resolve the suggestion.`);
+    if (next === null) return fail(t`The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion.`);
     this.setBody(record, next);
     return this.changeComment(suggestion, { kind: "resolve", outcome: "accepted" });
   }
@@ -935,7 +935,7 @@ export class ManuscriptWorkspace {
     const problems: string[] = [];
     await Promise.all([...this.leases].filter(([at]) => !path || at === path).map(async ([at, { lease }]) => {
       try {
-        if (lease.session.getSnapshot().state === "deleted") { problems.push(t`${at}: this record was deleted; download the local draft before leaving.`); return; }
+        if (lease.session.getSnapshot().state === "deleted") { problems.push(t`${at}: this chapter was deleted; download the local draft before leaving.`); return; }
         const out = await lease.session.flush({ timeoutMs: 15_000 });
         if (!out.ok) problems.push(`${at}: ${out.problem.message ?? out.problem.code}`);
       } catch (error) { problems.push(`${at}: ${errorMessage(error)}`); }

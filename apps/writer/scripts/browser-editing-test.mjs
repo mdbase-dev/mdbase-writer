@@ -64,9 +64,9 @@ try {
   }, undefined, { timeout: 60_000 });
   const body = () => page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; });
   await page.goto(`${base}/?demo`);
-  await page.locator('.manuscript-row[data-path="manuscripts/patient-observation.md"]').waitFor();
+  await page.locator('.home [data-path][data-path="manuscripts/patient-observation.md"]').waitFor();
   const opened = await page.evaluate(() => performance.now());
-  await page.locator('.manuscript-row[data-path="manuscripts/patient-observation.md"]').click();
+  await page.locator('.home [data-path][data-path="manuscripts/patient-observation.md"]').click();
   await page.locator('.cm-content[contenteditable=true]').waitFor();
   const editorMs = await page.evaluate(opened => performance.now() - opened, opened);
   await painted();

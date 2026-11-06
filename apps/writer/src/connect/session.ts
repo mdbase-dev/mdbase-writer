@@ -5,9 +5,7 @@ import bundledManifest from "../generated/mdbase-app.json";
 
 const applicationUrl = new URL(import.meta.env.BASE_URL, location.origin).href;
 const serverParameter = new URL(location.href).searchParams.get("server");
-// Separate so a targeted build, for which vite.config.ts defines the Connect
-// URL, folds the local-development production fallback away entirely.
-const configuredConnectUrl = import.meta.env.VITE_MDBASE_CONNECT_URL ?? "https://connect.mdbase.dev";
+const configuredConnectUrl = import.meta.env.VITE_MDBASE_CONNECT_URL;
 
 function isLoopback(current: Location): boolean {
   return current.protocol === "http:" && ["localhost", "127.0.0.1", "::1", "[::1]"].includes(current.hostname);
@@ -22,11 +20,12 @@ function manifestFor(manifest: MdbaseAppManifest): MdbaseAppManifest {
 }
 
 export function createWriterSession() {
+  if (!configuredConnectUrl || !import.meta.env.VITE_MDBASE_CONNECT_LOOPBACK_URL) throw new Error("Writer requires explicit Connect URLs.");
   const callback = new URL(applicationUrl);
   if (serverParameter) callback.searchParams.set("server", new URL(serverParameter).origin);
   const connect = new MdbaseConnect<JsonObject>({
     serverUrl: serverParameter ?? configuredConnectUrl,
-    loopbackUrl: import.meta.env.VITE_MDBASE_CONNECT_LOOPBACK_URL ?? "http://127.0.0.1:28485",
+    loopbackUrl: import.meta.env.VITE_MDBASE_CONNECT_LOOPBACK_URL,
     manifest: manifestFor(bundledManifest as unknown as MdbaseAppManifest),
     redirectUri: callback.href,
     directAccess: "auto",

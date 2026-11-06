@@ -8,6 +8,8 @@
 export const writerDeployments = Object.freeze({
   lab: Object.freeze({
     origin: "https://lab.mdbase-writer.pages.dev",
+    editorUrl: "https://editor-lab.mdbase.dev",
+    readerUrl: "https://lab.mdbase-reader.pages.dev",
     connectUrl: "https://connect-lab.mdbase.dev",
     loopbackUrl: "http://127.0.0.1:28487",
     branch: "lab",
@@ -16,6 +18,8 @@ export const writerDeployments = Object.freeze({
   }),
   staging: Object.freeze({
     origin: "https://staging.mdbase-writer.pages.dev",
+    editorUrl: "https://editor-staging.mdbase.dev",
+    readerUrl: "https://staging.mdbase-reader.pages.dev",
     connectUrl: "https://connect-staging.mdbase.dev",
     loopbackUrl: "http://127.0.0.1:28486",
     branch: "staging",
@@ -23,6 +27,8 @@ export const writerDeployments = Object.freeze({
   }),
   production: Object.freeze({
     origin: "https://writer.mdbase.dev",
+    editorUrl: "https://editor.mdbase.dev",
+    readerUrl: "https://reader.mdbase.dev",
     connectUrl: "https://connect.mdbase.dev",
     loopbackUrl: "http://127.0.0.1:28485",
     branch: "main",
@@ -32,6 +38,19 @@ export const writerDeployments = Object.freeze({
 
 export const pagesProject = "mdbase-writer";
 export const assetsBucket = "mdbase-writer-assets";
+
+export function writerAppUrlsFor(target, environment = {}) {
+  const deployment = writerDeployments[target];
+  if (!deployment) throw new Error(`Unsupported writer deployment target: ${target}.`);
+  return Object.fromEntries(Object.entries({ editor: deployment.editorUrl, reader: deployment.readerUrl, writer: deployment.origin }).map(([app, expected]) => {
+    const key = `VITE_MDBASE_${app.toUpperCase()}_URL`;
+    const url = environment[key] ?? expected;
+    if (!url || new URL(url).origin !== expected || new URL(url).pathname !== "/" || new URL(url).search || new URL(url).hash || new URL(url).username || new URL(url).password) {
+      throw new Error(`${target} Writer requires ${key}=${expected}; refusing a missing or foreign app URL.`);
+    }
+    return [app, url];
+  }));
+}
 
 export function writerDeploymentFor(environment) {
   if (environment.MDBASE_ENV && environment.MDBASE_WRITER_DEPLOY_TARGET && environment.MDBASE_ENV !== environment.MDBASE_WRITER_DEPLOY_TARGET) {

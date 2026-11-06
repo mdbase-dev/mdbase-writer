@@ -74,13 +74,13 @@ msgstr "{0, plural, other {已导出 {name}，有 # 个问题：{firstProblem}}}
 
 #. placeholder {0}: order.length
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {In # record; citations, code and math are not counted} other {In # records; citations, code and math are not counted}}"
-msgstr "{0, plural, other {位于 # 条记录中；引文、代码和数学公式不计入}}"
+msgid "{0, plural, one {In # chapter; citations, code and math are not counted} other {In # chapters; citations, code and math are not counted}}"
+msgstr "{0, plural, other {共 # 章；不计引用、代码和公式}}"
 
 #. placeholder {0}: snap.recoveredDrafts.size
 #: src/ui/WorkspaceView.tsx
-msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that record until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those records until you restore the local drafts or use the collection versions.}}"
-msgstr "{0, plural, other {请检查 # 个已恢复的本地草稿。在恢复本地草稿或使用集合版本前，这些记录将暂停编辑。}}"
+msgid "{0, plural, one {Review # recovered local draft. Editing is paused in that chapter until you restore the local draft or use the collection version.} other {Review # recovered local drafts. Editing is paused in those chapters until you restore the local drafts or use the collection versions.}}"
+msgstr "{0, plural, other {请检查 # 个已恢复的本地草稿。在恢复本地草稿或使用集合版本前，这些章节将暂停编辑。}}"
 
 #. placeholder {0}: result.total
 #: src/ui/ManuscriptSearch.tsx
@@ -131,8 +131,8 @@ msgid "{0}backed up {1}"
 msgstr "{0}已备份于{1}"
 
 #: src/workspace/workspace.ts
-msgid "{at}: this record was deleted; download the local draft before leaving."
-msgstr "{at}：此记录已删除；离开前请下载本地草稿。"
+msgid "{at}: this chapter was deleted; download the local draft before leaving."
+msgstr "{at}：此章节已删除；离开前请下载本地草稿。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "{commentsTitle} ({MOD_LABEL}-Shift-M)"
@@ -248,8 +248,8 @@ msgid "<0/>New manuscript"
 msgstr "<0/>新建手稿"
 
 #: src/ui/Home.tsx
-msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown record in this collection."
-msgstr "<0>手稿。</0>新建一份，或使用已有笔记。它仍是此集合中的普通 Markdown 记录。"
+msgid "<0>A manuscript.</0> Start one, or use a note you already have. It stays an ordinary Markdown file in this collection."
+msgstr "<0>文稿。</0>新建一份文稿，或使用已有笔记。它仍是此集合中的普通 Markdown 文件。"
 
 #: src/ui/Home.tsx
 msgid "<0>Write.</0> Cite with <1>[@citekey, p. 12]</1> (or find sources by author and title in the Sources panel), label with <2>{#fig-plan}</2> and refer with <3>@fig-plan</3>, embed chapters with <4>![[chapters/one]]</4>. Export a PDF or a Word document."
@@ -286,6 +286,10 @@ msgstr "接受"
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
 msgstr "已接受"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Actual size"
+msgstr "实际大小"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Add"
@@ -422,9 +426,17 @@ msgstr "已在其他位置更改"
 msgid "Changes are saved to the manuscript’s frontmatter as you type, and the preview follows them."
 msgstr "更改会在输入时保存到手稿的前置元数据中，预览也会随之更新。"
 
+#: src/workspace/workspace.ts
+msgid "Chapter could not be loaded: {problem}"
+msgstr "无法加载章节：{problem}"
+
 #: src/ui/OutlinePanel.tsx
 msgid "Chapter title"
 msgstr "章节标题"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Chapters"
+msgstr "章节"
 
 #. placeholder {0}: chapters.filter(Boolean).length
 #: src/ui/OutlinePanel.tsx
@@ -814,10 +826,6 @@ msgstr "仅编辑器"
 msgid "Editor preferences"
 msgstr "编辑器偏好设置"
 
-#: src/workspace/workspace.ts
-msgid "Embedded record could not be loaded: {problem}"
-msgstr "无法加载嵌入的记录：{problem}"
-
 #: src/i18n/diagnostics.ts
 msgid "Embedding {value} here would include it inside itself."
 msgstr "在此嵌入 {value} 会使其包含自身。"
@@ -945,6 +953,10 @@ msgstr "查找 全部 章节"
 msgid "Find and replace"
 msgstr "查找和替换"
 
+#: src/ui/WorkspaceView.tsx
+msgid "Find in chapter"
+msgstr "在章节中查找"
+
 #: src/editor/fixes.ts
 msgid "Find in Sources"
 msgstr "在来源中查找"
@@ -956,6 +968,10 @@ msgstr "查找或运行命令"
 #: src/ui/WorkspaceView.tsx
 msgid "Fit · {zoomLabel}"
 msgstr "适应 · {zoomLabel}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "Fit to width"
+msgstr "适合宽度"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Fitting the width; click for actual size"
@@ -1462,6 +1478,15 @@ msgstr "下一个问题"
 msgid "No annotations on this source."
 msgstr "此来源没有注释。"
 
+#. placeholder {0}: this.target
+#: src/editor/chapter-cards.ts
+msgid "No chapter matches ![[{0}]]"
+msgstr "没有与 ![[{0}]] 匹配的章节"
+
+#: src/i18n/diagnostics.ts
+msgid "No chapter matches ![[{value}]]."
+msgstr "没有与 ![[{value}]] 匹配的章节。"
+
 #. placeholder {0}: query.trim()
 #: src/ui/CollectionPicker.tsx
 msgid "No collection matches “{0}”."
@@ -1483,6 +1508,10 @@ msgstr "集合中没有与模板 {value} 匹配的文件。"
 msgid "No manuscript matches “{filter}”."
 msgstr "没有匹配“{filter}”的手稿。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "No manuscript problems"
+msgstr "文稿没有问题"
+
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "没有匹配“{query}”的笔记。"
@@ -1494,15 +1523,6 @@ msgstr "没有未解决的评论"
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
 msgstr "此集合中没有其他笔记。"
-
-#. placeholder {0}: this.target
-#: src/editor/chapter-cards.ts
-msgid "No record matches ![[{0}]]"
-msgstr "没有匹配 ![[{0}]] 的记录"
-
-#: src/i18n/diagnostics.ts
-msgid "No record matches the embed ![[{value}]]."
-msgstr "没有匹配嵌入 ![[{value}]] 的记录。"
 
 #: src/i18n/diagnostics.ts
 msgid "No source in the library has the citekey {value}."
@@ -1621,8 +1641,8 @@ msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open
 msgstr "在稿件列表中，使用方向键或 J 和 K，然后按 Enter 打开。"
 
 #: src/ui/CommentsPanel.tsx
-msgid "On the whole record"
-msgstr "针对整条记录"
+msgid "On the whole chapter"
+msgstr "针对整章"
 
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
@@ -1796,10 +1816,6 @@ msgstr "预览"
 #: src/ui/WorkspaceView.tsx
 msgid "Preview only"
 msgstr "仅预览"
-
-#: src/preview/Preview.tsx
-msgid "Preview unavailable: {failure}. You can keep writing."
-msgstr "预览不可用：{failure}。您可以继续写作。"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Previous citation"
@@ -2416,8 +2432,8 @@ msgid "Table"
 msgstr "表格"
 
 #: src/workspace/workspace.ts
-msgid "That record is not open."
-msgstr "该记录尚未打开。"
+msgid "That chapter is not open."
+msgstr "该章节未打开。"
 
 #: src/i18n/diagnostics.ts
 msgid "The annotation {value} has no quotation to embed."
@@ -2486,6 +2502,10 @@ msgstr "手稿已关闭。"
 msgid "The person record that claims your account is not valid."
 msgstr "关联到你账户的人员记录无效。"
 
+#: src/preview/Preview.tsx
+msgid "The preview could not be loaded. You can keep writing."
+msgstr "无法加载预览。您可以继续写作。"
+
 #: src/compile/client.ts
 msgid "The preview took too long to load. Retry the preview."
 msgstr "预览加载超时。请重试预览。"
@@ -2499,8 +2519,8 @@ msgid "The style’s own (usually en-US)"
 msgstr "样式自身的语言（通常为 en-US）"
 
 #: src/workspace/workspace.ts
-msgid "The suggested text is no longer in the record; edit it by hand, then resolve the suggestion."
-msgstr "建议文本已不在记录中；请手动编辑，然后解决此建议。"
+msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
+msgstr "建议的文本已不在章节中；请手动编辑，然后处理该建议。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
@@ -2530,6 +2550,14 @@ msgstr "这会更改此浏览器中的界面语言，而不是手稿的语言。
 msgid "This chapter changed elsewhere while you were editing it."
 msgstr "你编辑此章节时，它已在其他位置被更改。"
 
+#: src/ui/WorkspaceView.tsx
+msgid "This chapter was deleted elsewhere. Your local text is still available here."
+msgstr "此章节已在其他位置删除。本地文本仍可在此处使用。"
+
+#: src/ui/CompareDialog.tsx
+msgid "This chapter was deleted. Download the local draft to keep it."
+msgstr "此章节已删除。请下载本地草稿以保留内容。"
+
 #: src/workspace/workspace.ts
 msgid "This collection does not accept files from Writer."
 msgstr "此集合不接受来自 Writer 的文件。"
@@ -2553,14 +2581,6 @@ msgstr "无法打开此手稿"
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
 msgstr "此段内容已不在文本中"
-
-#: src/ui/WorkspaceView.tsx
-msgid "This record was deleted elsewhere. Your local text is still available here."
-msgstr "此记录已在其他位置删除。你的本地文本仍保留在此处。"
-
-#: src/ui/CompareDialog.tsx
-msgid "This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record."
-msgstr "此记录已删除。请下载本地草稿以保留内容；无法将草稿恢复到已删除的记录中。"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

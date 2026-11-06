@@ -268,6 +268,10 @@ function inlineDecorations(view: EditorView, insight: () => EditorInsight): Deco
       enter(node) {
         if (touches(spans, node.from, node.to) && node.name !== "FencedCode" && node.name !== "Table" && node.name !== "MathBlock") return;
         switch (node.name) {
+          case "QuoteMark":
+            ranges.push(Decoration.line({ class: "cm-lp-quote" }).range(state.doc.lineAt(node.from).from));
+            hide(node.from, node.to + (state.sliceDoc(node.to, node.to + 1) === " " ? 1 : 0));
+            return;
           case "FencedCode":
           case "Table":
           case "MathBlock":

@@ -70,7 +70,7 @@ export function CompareDialog({ comparison, canRestore = true, onClose, onResolv
           <textarea className="mdbase-field" rows={12} value={merged} onChange={(event) => setMerge({ ...merge, text: event.target.value })} />
           <span className="muted small">This starts with your text. Edit it until it is right, then save. Your local settings are kept.</span>
         </Trans></label>}
-        {!canRestore && <p><Trans>This record was deleted. Download the local draft to preserve it; it cannot be restored into a deleted record.</Trans></p>}
+        {!canRestore && <p><Trans>This chapter was deleted. Download the local draft to keep it.</Trans></p>}
         <div className="compare-actions">
           <button type="button" className="mdbase-button" onClick={onDownload}><Trans>Download local draft</Trans></button>
           <button type="button" className="mdbase-button" onClick={() => onResolve("theirs")}><Trans>Use collection version</Trans></button>

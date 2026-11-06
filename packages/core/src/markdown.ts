@@ -129,13 +129,16 @@ export const writerMarkdown: MarkdownConfig = {
       parse(cx: BlockContext, line: Line) {
         if (line.indent !== 0 || !/^\[\^[^\]\s]+\]:/.test(line.text)) return false;
         const start = cx.lineStart;
+        const marker = /^\[\^[^\]\s]+\]:[ \t]*/.exec(line.text)![0];
+        const children = cx.parser.parseInline(line.text.slice(marker.length), start + marker.length);
         let end = start + line.text.length;
         while (cx.nextLine()) {
           if (line.text.trim() === "") continue;
           if (line.indent < 4) break;
+          children.push(...cx.parser.parseInline(line.text.slice(line.pos), cx.lineStart + line.pos));
           end = cx.lineStart + line.text.length;
         }
-        cx.addElement(cx.elt("FootnoteDefinition", start, end));
+        cx.addElement(cx.elt("FootnoteDefinition", start, end, children));
         return true;
       },
     },
