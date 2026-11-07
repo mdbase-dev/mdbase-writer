@@ -27,10 +27,14 @@ function readyFixture() {
 }
 const dialogClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "close");
 const dialogShowModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showModal");
+const dialogShowPopover = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showPopover");
+const dialogHidePopover = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "hidePopover");
 beforeEach(() => {
   // jsdom omits these browser APIs.
   Object.defineProperty(HTMLDialogElement.prototype, "close", {configurable: true, value(this: HTMLDialogElement) {this.removeAttribute("open");}});
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", {configurable: true, value(this: HTMLDialogElement) {this.setAttribute("open", "");}});
+  Object.defineProperty(HTMLDialogElement.prototype, "showPopover", {configurable: true, value() {}});
+  Object.defineProperty(HTMLDialogElement.prototype, "hidePopover", {configurable: true, value() {}});
   class Observer implements IntersectionObserver {
     readonly root = null; readonly rootMargin = "0px"; readonly thresholds = [0];
     observe() {} unobserve() {} disconnect() {} takeRecords(): IntersectionObserverEntry[] {return [];}
@@ -41,11 +45,26 @@ afterEach(() => {
   cleanup(); for (const app of apps.splice(0)) void app.close(); vi.restoreAllMocks(); vi.unstubAllGlobals();
   if (dialogClose) Object.defineProperty(HTMLDialogElement.prototype, "close", dialogClose); else Reflect.deleteProperty(HTMLDialogElement.prototype, "close");
   if (dialogShowModal) Object.defineProperty(HTMLDialogElement.prototype, "showModal", dialogShowModal); else Reflect.deleteProperty(HTMLDialogElement.prototype, "showModal");
+  if (dialogShowPopover) Object.defineProperty(HTMLDialogElement.prototype, "showPopover", dialogShowPopover); else Reflect.deleteProperty(HTMLDialogElement.prototype, "showPopover");
+  if (dialogHidePopover) Object.defineProperty(HTMLDialogElement.prototype, "hidePopover", dialogHidePopover); else Reflect.deleteProperty(HTMLDialogElement.prototype, "hidePopover");
 });
 function Capture({scope, publish}: {scope: WriterNativeScope; publish(scope: WriterNativeScope): void}) {
   useEffect(() => {publish(scope);}, [scope, publish]);
   return <p role="status">Native test consumer</p>;
 }
+
+it("retries the selected failed open through the shared recovery control", async () => {
+  const h = await fixture({ collections: [{ name: "Writing" }], phase: { problem: "unavailable" } });
+  const collectionId = h.mdbase.getSnapshot().selectedCollectionId;
+  expect(collectionId).toBeTruthy();
+  render(<SdkWriterRoot sdk={h.mdbase} renderNative={() => <p>Recovered Writer</p>} />);
+  expect(await screen.findByText("mdbase couldn't complete this request. Try again.")).toBeTruthy();
+  expect(screen.queryByText(/couldn't be reached/i)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /^Try again$/ }));
+  await screen.findByText("Recovered Writer");
+  expect(h.controls.observedActions().filter(call => call.action === "select")).toEqual([expect.objectContaining({ collectionId })]);
+  expect(h.count("start")).toBe(0);
+});
 
 it("hands Writer the gate's ready connection and retires that scope when the collection closes", async () => {
   const h = await readyFixture(); const close = vi.spyOn(h.client(), "close");

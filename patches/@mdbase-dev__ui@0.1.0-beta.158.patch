@@ -1,0 +1,216 @@
+diff --git a/css/collections.css b/css/collections.css
+index 825fab2b952a98ff3cdeb17a221d0757c67bcd1e..a923d0eb39b5eab3bc518cedef83347d1aa6b7c1 100644
+--- a/css/collections.css
++++ b/css/collections.css
+@@ -615,7 +615,7 @@
+   gap: 4px;
+ }
+ 
+-.mdbase-collections-setup-section h3 {
++.mdbase-collections-setup-section h2 {
+   margin: 0;
+   color: var(--_text-soft);
+   font-size: var(--_font-size-caption);
+diff --git a/dist/CommandPalette.js b/dist/CommandPalette.js
+index bc45212368c4fea7db946b69e893309f29eec34d..c637a6f79680da4d1bfb3923ef4b0c478d5e99d8 100644
+--- a/dist/CommandPalette.js
++++ b/dist/CommandPalette.js
+@@ -4,7 +4,7 @@ import { useLocaleRevision } from "./i18n.js";
+ import { Dialog } from "./Dialog.js";
+ import { shortcutLabel } from "./shortcuts.js";
+ export { isApplePlatform, shortcutLabel } from "./shortcuts.js";
+-import { Fragment, useEffect, useLayoutEffect, useId, useMemo, useRef, useState } from "react";
++import { Fragment, useLayoutEffect, useId, useMemo, useRef, useState } from "react";
+ const browseLimit = 6;
+ const searchLimit = 40;
+ function contextualCommands(commands) {
+@@ -115,7 +115,7 @@ function OpenCommandPalette({
+       block: "nearest"
+     });
+   }, [active, matches]);
+-  useEffect(() => {
++  useLayoutEffect(() => {
+     if (open) {
+       setQuery(initialQuery);
+       setActive(0);
+diff --git a/dist/Dialog.js b/dist/Dialog.js
+index ea6597f327aa4e5ab34b68a9d1c8828c925c66bc..322aef33cc57c8af1c40088507a825c562b75e7d 100644
+--- a/dist/Dialog.js
++++ b/dist/Dialog.js
+@@ -27,6 +27,10 @@ export function Dialog({
+   useLayoutEffect(() => {
+     const dialog = ref.current;
+     if (!dialog || !open || dialog.open) return;
++    if (dialog.hasAttribute("popover")) {
++      dialog.hidePopover();
++      dialog.removeAttribute("popover");
++    }
+     invoker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+     dialog.showModal();
+     const focus = () => {
+@@ -66,6 +70,15 @@ export function Dialog({
+       preventScroll: true
+     });
+   }, [closeDisabled, open, ref]);
++  useLayoutEffect(() => {
++    const dialog = ref.current;
++    if (!dialog || open || !present) return;
++    const restore = dialog.contains(document.activeElement) || document.activeElement === document.body;
++    if (dialog.open) dialog.close();
++    dialog.setAttribute("popover", "manual");
++    dialog.showPopover();
++    if (restore) (returnFocusRef?.current ?? invoker.current)?.focus({ preventScroll: true });
++  }, [open, present, ref, returnFocusRef]);
+   useEffect(() => {
+     const dialog = ref.current;
+     return () => {
+@@ -81,6 +94,8 @@ export function Dialog({
+     ref: ref,
+     className: ["mdbase-dialog mdbase-overlay", className].filter(Boolean).join(" "),
+     "data-open": open,
++    inert: !open,
++    "aria-hidden": !open || undefined,
+     role: role,
+     "aria-modal": "true",
+     "aria-labelledby": titleId,
+@@ -109,6 +124,9 @@ export function Dialog({
+     onClick: event => {
+       if (!closeDisabled && event.target === event.currentTarget) onClose();
+     },
++    onMouseDown: event => {
++      if (event.target === event.currentTarget) event.preventDefault();
++    },
+     children: _jsxs("div", {
+       className: "mdbase-dialog-body",
+       children: [_jsxs("header", {
+diff --git a/dist/apps.js b/dist/apps.js
+index b4b50856bfa266776c9dc1098c8ed7df8933fadb..e3ce9e48f5cbf7e16edf946ba957abdcb7b8d8cb 100644
+--- a/dist/apps.js
++++ b/dist/apps.js
+@@ -11,7 +11,7 @@ export const mdbaseApps = [{
+       message: "Browse and edit records"
+     });
+   },
+-  url: "https://editor.mdbase.dev/"
++  url: ""
+ }, {
+   id: "reader",
+   name: "Reader",
+@@ -23,7 +23,7 @@ export const mdbaseApps = [{
+       message: "Read and annotate sources"
+     });
+   },
+-  url: "https://reader.mdbase.dev/"
++  url: ""
+ }, {
+   id: "writer",
+   name: "Writer",
+@@ -35,19 +35,20 @@ export const mdbaseApps = [{
+       message: "Write manuscripts that cite your sources"
+     });
+   },
+-  url: "https://writer.mdbase.dev/"
++  url: ""
+ }];
+ /**
+  * Replaces app URLs for a lab or local build, for example from
+- * `import.meta.env.VITE_MDBASE_WRITER_URL`. Unset entries keep production.
++ * `import.meta.env.VITE_MDBASE_WRITER_URL`. Every destination must be explicit.
+  */
+ export function withAppUrls(urls, apps = mdbaseApps) {
+   return apps.map(app => {
+     const url = urls[app.id];
+-    return url ? {
++    if (!url) throw new Error(`Missing URL for mdbase ${app.id}.`);
++    return {
+       ...app,
+       url
+-    } : app;
++    };
+   });
+ }
+ /**
+diff --git a/dist/collections/CollectionGate.js b/dist/collections/CollectionGate.js
+index 989230686789b006a4ecc7a07d31310c33416d74..cbf03c747197a0882b1f3444da01d0f1d4b1a233 100644
+--- a/dist/collections/CollectionGate.js
++++ b/dist/collections/CollectionGate.js
+@@ -158,7 +158,7 @@ function GateScreen({
+   const Heading = layout === "page" ? "h1" : "h2";
+   const opening = view.kind === "starting" || view.kind === "opening";
+   const announce = view.kind === "authorizing" ? view.heading : "";
+-  return _jsxs("div", {
++  return _jsxs(layout === "page" ? "main" : "div", {
+     ref: root,
+     className: "mdbase-collections mdbase-collections-gate",
+     "data-layout": layout,
+@@ -182,17 +182,17 @@ function GateScreen({
+         children: headingText
+       }), opening ? _jsx(OpeningScreen, {
+         app: options.app,
+-        layout: layout,
++        layout: "panel",
+         title: headingText,
+         detail: lead ?? undefined
+-      }) : lead && _jsx("p", {
++      }) : lead && view.kind !== "needs_setup" && _jsx("p", {
+         className: "mdbase-collections-lead",
+         children: lead
+       }), _jsx(GateBody, {
+         ui: ui,
+         extraActions: view.kind === "signed_out" ? extra : undefined,
+         onDialog: setDialog
+-      }), ui.error && _jsx(NoticeBlock, {
++      }), ui.error && !(view.kind === "choosing" && ui.error.key === "account_collection_quota_exceeded") && _jsx(NoticeBlock, {
+         notice: ui.error,
+         ui: ui,
+         variant: "inline"
+@@ -291,7 +291,11 @@ function GateBody({
+           onDialog: onDialog
+         }), _jsx("div", {
+           className: "mdbase-collections-actions",
+-          children: _jsx(ActionButton, {
++          children: ui.error?.key === "account_collection_quota_exceeded" ? _jsx(NoticeBlock, {
++            notice: ui.error,
++            ui: ui,
++            variant: "inline"
++          }) : _jsx(ActionButton, {
+             tone: view.collections.length > 0 ? "secondary" : "primary",
+             inert: inert,
+             progress: busy === "add" ? copy.addingCollection : null,
+diff --git a/dist/collections/SetupReview.js b/dist/collections/SetupReview.js
+index e35799ab2b4c82bc19b4d4993d1beb8edc52a518..28e4d4572ebb10fecc67d8cca2a5c000a85885bf 100644
+--- a/dist/collections/SetupReview.js
++++ b/dist/collections/SetupReview.js
+@@ -171,7 +171,7 @@ export function SetupReview({
+       children: nothing ? ui.copy.setupNothing : plan.summary
+     }), plan.changes.length > 0 && _jsxs("section", {
+       className: "mdbase-collections-setup-section",
+-      children: [_jsx("h3", {
++      children: [_jsx("h2", {
+         children: ui.copy.setupChanges
+       }), _jsx("ul", {
+         className: "mdbase-collections-setup-list",
+@@ -181,7 +181,7 @@ export function SetupReview({
+       })]
+     }), plan.conflicts.length > 0 && _jsxs("section", {
+       className: "mdbase-collections-setup-section",
+-      children: [_jsx("h3", {
++      children: [_jsx("h2", {
+         children: ui.copy.setupConflicts
+       }), _jsx("ul", {
+         className: "mdbase-collections-setup-list",
+diff --git a/dist/collections/use-collection-ui.js b/dist/collections/use-collection-ui.js
+index dd79b2d11a1159116300d67cd037e8a5ee995f94..3d5f0bad2d4a5d1555ef154ce68fc7029514c06b 100644
+--- a/dist/collections/use-collection-ui.js
++++ b/dist/collections/use-collection-ui.js
+@@ -53,6 +53,10 @@ export function useCollectionUi(options) {
+   }), [snapshot, app.name, copy]);
+   const [busy, setBusy] = useState(null);
+   const [error, setError] = useState(null);
++  const collectionCount = view.collections.length;
++  useEffect(() => {
++    setError(previous => previous?.notice.key === "account_collection_quota_exceeded" ? null : previous);
++  }, [collectionCount]);
+   const [signOutPrompt, setSignOutPrompt] = useState(null);
+   const running = useRef(null);
+   const latest = useRef({

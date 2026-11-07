@@ -58,6 +58,34 @@ async function announcement(page, text) {
 }
 try {
   for (const surface of ["Home", "Workspace"]) {
+    await scenario(`Shared exiting dialog does not block the next shortcut on ${surface}`, async page => {
+      await (surface === "Home" ? home(page) : open(page));
+      const invoker = page.locator(surface === "Home" ? `.home [data-path="${main}"]` : ".cm-content");
+      await invoker.focus();
+      await page.keyboard.press("Control+/");
+      const dialog = page.locator('.shortcuts-dialog[data-open="true"]');
+      await dialog.waitFor();
+      await dialog.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+      const dispatched = await dialog.evaluate(async element => {
+        element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+        await new Promise(requestAnimationFrame);
+        const exiting = element.isConnected && element.dataset.open === "false";
+        const returnedFocus = document.activeElement?.matches('.home [data-path], .cm-content');
+        const shortcut = new KeyboardEvent("keydown", { key: "k", code: "KeyV", ctrlKey: true, bubbles: true, cancelable: true });
+        document.activeElement.dispatchEvent(shortcut);
+        return { exiting, inert: element.inert, returnedFocus, handled: shortcut.defaultPrevented };
+      });
+      assert.equal(dispatched.exiting, true, "Exercise the actual retained shared Dialog exit");
+      assert.equal(dispatched.inert, true, "The visual exit must not remain interactive");
+      assert.equal(dispatched.returnedFocus, true, "Closing must return focus before the visual exit finishes");
+      assert.equal(dispatched.handled, true, "An exiting dialog must not swallow the next logical shortcut");
+      await page.locator('.mdbase-command-palette[data-open="true"] input').waitFor();
+      assert.equal(await page.locator('.mdbase-command-palette').evaluate(element => element.parentElement === document.body), true, "Use the shared portal");
+      await page.keyboard.press("Escape");
+      await page.locator('.mdbase-command-palette').waitFor({ state: "detached" });
+    });
+  }
+  for (const surface of ["Home", "Workspace"]) {
     await scenario(`Dvorak logical shortcuts toggle on ${surface}`, async page => {
       await (surface === "Home" ? home(page) : open(page));
       const dispatch = (key, code) => page.evaluate(({ key, code }) => {

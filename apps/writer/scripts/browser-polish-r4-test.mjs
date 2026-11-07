@@ -37,7 +37,7 @@ async function command(page, query) {
   await page.keyboard.type(query);
   assert.equal(await page.locator(".mdbase-command-palette input").inputValue(), query);
   await page.keyboard.press("Enter");
-  await page.locator(".mdbase-command-backdrop").waitFor({ state: "detached" });
+  await page.locator(".mdbase-command-palette").waitFor({ state: "detached" });
 }
 
 async function pressFill(page, locator) {
@@ -148,7 +148,7 @@ async function immediateResume(page, shortcut, overlay, text, reduced) {
 }
 
 async function roundFive(page, width, reduced) {
-  for (const [shortcut, selector, text] of [["Control+k", ".mdbase-command-backdrop", " PALETTE_POINTER "], ["Control+/", ".shortcuts-dialog", " HELP_POINTER "]]) {
+  for (const [shortcut, selector, text] of [["Control+k", ".mdbase-command-palette", " PALETTE_POINTER "], ["Control+/", ".shortcuts-dialog", " HELP_POINTER "]]) {
     await page.locator(".cm-content").focus();
     await page.keyboard.press(shortcut);
     await page.locator(selector).waitFor();
@@ -158,7 +158,7 @@ async function roundFive(page, width, reduced) {
     assert.equal(await page.evaluate(() => document.activeElement?.matches(".cm-content")), true);
     await page.locator(selector).waitFor({ state: "hidden" });
   }
-  await immediateResume(page, "Control+k", ".mdbase-command-backdrop", " PALETTE_ESCAPE ", reduced);
+  await immediateResume(page, "Control+k", ".mdbase-command-palette", " PALETTE_ESCAPE ", reduced);
   await page.keyboard.press("Control+k");
   await page.keyboard.type("Settings");
   await page.keyboard.press("Escape");
@@ -166,7 +166,7 @@ async function roundFive(page, width, reduced) {
   await page.waitForFunction(() => document.activeElement?.matches(".mdbase-command-palette input"));
   assert.equal(await page.locator(".mdbase-command-palette input").inputValue(), "");
   await page.keyboard.press("Escape");
-  await page.locator(".mdbase-command-backdrop").waitFor({ state: "hidden" });
+  await page.locator(".mdbase-command-palette").waitFor({ state: "hidden" });
   await immediateResume(page, "Control+/", ".shortcuts-dialog", " HELP_ESCAPE ", reduced);
   await command(page, "Keyboard shortcuts");
   await page.locator(".shortcuts-dialog").waitFor();

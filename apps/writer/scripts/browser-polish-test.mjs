@@ -13,6 +13,14 @@ async function probe(page, selector, action, reverse) {
   return page.evaluate(async ({ selector, action, reverse }) => {
     const frames = [];
     const animations = [];
+    const captureAnimations = () => {
+      for (const animation of document.getAnimations()) {
+        const target = animation.effect?.target;
+        if (target?.matches?.(selector) && !animations.some((entry) => entry.id === animation.id && entry.duration === animation.effect.getTiming().duration && entry.startTime === animation.startTime)) {
+          animations.push({ id: animation.id, target: target.className, startTime: animation.startTime, duration: animation.effect.getTiming().duration, frames: animation.effect.getKeyframes() });
+        }
+      }
+    };
     const perform = (operation) => {
       if (operation === "settings") document.querySelector('.bar button[aria-label="Settings"]').click();
       else if (operation === "sidebar") document.querySelector('.bar button[aria-label="Sidebar"]').click();
@@ -33,6 +41,7 @@ async function probe(page, selector, action, reverse) {
       const style = getComputedStyle(element);
       return { left: element.getBoundingClientRect().left, height: element.getBoundingClientRect().height, opacity: Number(style.opacity), transform: style.transform, columns: style.gridTemplateColumns, rows: style.gridTemplateRows, inert: element.inert, hidden: element.ariaHidden, proseOpacity: selector === ".outline" ? Number(getComputedStyle(document.querySelector(".write")).opacity) : undefined };
     };
+    document.addEventListener("transitionrun", captureAnimations, true);
     perform(action);
     const started = performance.now();
     let reversed = false;
@@ -42,13 +51,9 @@ async function probe(page, selector, action, reverse) {
         const elapsed = performance.now() - started;
         const measurement = measure();
         frames.push({ elapsed, present: measurement !== null, ...measurement });
-        for (const animation of document.getAnimations()) {
-          const target = animation.effect?.target;
-          if (target?.matches?.(selector) && !animations.some((entry) => entry.id === animation.id && entry.duration === animation.effect.getTiming().duration && entry.startTime === animation.startTime)) {
-            animations.push({ id: animation.id, target: target.className, startTime: animation.startTime, duration: animation.effect.getTiming().duration, frames: animation.effect.getKeyframes() });
-          }
-        }
-        if (reverse && !reversed && elapsed >= 45) {
+        captureAnimations();
+        const inMotion = selector === ".outline" ? elapsed >= 45 : measurement?.opacity > 0.35 && measurement.opacity < 0.65;
+        if (reverse && !reversed && (matchMedia("(prefers-reduced-motion: reduce)").matches ? elapsed >= 45 : inMotion)) {
           const before = measure();
           perform(reverse);
           interruption = { before, after: measure() };
@@ -62,6 +67,7 @@ async function probe(page, selector, action, reverse) {
       };
       requestAnimationFrame(sample);
     });
+    document.removeEventListener("transitionrun", captureAnimations, true);
     return { selector, frames, animations, interruption };
   }, { selector, action, reverse });
 }
@@ -72,7 +78,7 @@ function motion(result, reduced, duration, property = "opacity") {
     assert.ok(result.animations.some((animation) => animation.duration === duration), `Missing ${duration}ms animation`);
     assert.ok(new Set(result.frames.map((frame) => frame[property]).filter((value) => value !== undefined)).size >= 3, `No continuous ${property} trajectory`);
   }
-  if (duration === 120 && [".mdbase-dialog", ".mdbase-command-backdrop", ".settings-sheet", ".sidebar-lower", ".popover"].includes(result.selector)) {
+  if (duration === 120 && [".mdbase-dialog", ".mdbase-command-palette", ".settings-sheet", ".sidebar-lower", ".popover"].includes(result.selector)) {
     let opacity = 1;
     let removed = false;
     for (const frame of result.frames) {
@@ -248,8 +254,8 @@ try {
       await probe(page, ".sidebar-lower", "lower");
       if (!reduced) for (const reversal of [result.lowerReversal, result.lowerReopen]) {
         assert.ok(Math.abs(reversal.interruption.before.opacity - reversal.interruption.after.opacity) < 0.02, "Lower reversal jumps");
-        assert.ok(reversal.animations.some(animation => animation.duration === 160));
-        assert.ok(reversal.animations.some(animation => animation.duration === 120));
+        assert.ok(reversal.animations.some(animation => animation.duration > 0 && animation.duration <= 160 && animation.frames.at(-1).opacity === "1"), "CSS reversal must still animate in within the shared entry budget");
+        assert.ok(reversal.animations.some(animation => animation.duration > 0 && animation.duration <= 120 && animation.frames.at(-1).opacity === "0"), "CSS reversal must still animate out within the shared exit budget");
       }
       if (width === 390) await page.getByRole("button", { name: "Write", exact: true }).click();
       result.settingsIn = await probe(page, ".settings-sheet", "settings");
@@ -264,17 +270,17 @@ try {
       result.settingsReopen = await probe(page, ".settings-sheet", "settings", "settings");
       if (!reduced) assert.ok(Math.abs(result.settingsReopen.interruption.before.opacity - result.settingsReopen.interruption.after.opacity) < 0.02);
       await probe(page, ".settings-sheet", "settings");
-      result.paletteIn = await probe(page, ".mdbase-command-backdrop", "palette");
+      result.paletteIn = await probe(page, ".mdbase-command-palette", "palette");
       assert.deepEqual(await page.locator(".mdbase-command-group").allTextContents(), ["Chapters", "Manuscript", "Format", "Insert", "Comments", "View", "Export", "Help"]);
       motion(result.paletteIn, reduced, 160);
-      result.paletteOut = await probe(page, ".mdbase-command-backdrop", "escape");
+      result.paletteOut = await probe(page, ".mdbase-command-palette", "escape");
       motion(result.paletteOut, reduced, 120);
-      result.paletteReversal = await probe(page, ".mdbase-command-backdrop", "palette", "palette");
+      result.paletteReversal = await probe(page, ".mdbase-command-palette", "palette", "palette");
       if (!reduced) assert.ok(Math.abs(result.paletteReversal.interruption.before.opacity - result.paletteReversal.interruption.after.opacity) < 0.02);
-      await probe(page, ".mdbase-command-backdrop", "palette");
-      result.paletteReopen = await probe(page, ".mdbase-command-backdrop", "palette", "palette");
+      await probe(page, ".mdbase-command-palette", "palette");
+      result.paletteReopen = await probe(page, ".mdbase-command-palette", "palette", "palette");
       if (!reduced) assert.ok(Math.abs(result.paletteReopen.interruption.before.opacity - result.paletteReopen.interruption.after.opacity) < 0.02);
-      await probe(page, ".mdbase-command-backdrop", "escape");
+      await probe(page, ".mdbase-command-palette", "escape");
       result.menuIn = await probe(page, ".popover", "insert");
       motion(result.menuIn, reduced, 160);
       result.menuOut = await probe(page, ".popover", "insert");

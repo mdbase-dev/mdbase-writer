@@ -23,7 +23,10 @@ import { wordCount } from "../words.js";
 import { formatNumber } from "../i18n/presentation.js";
 import { diagnosticMessage } from "../i18n/diagnostics.js";
 import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
-import { CommandPalette, Dialog, Popover, useOverlay } from "./overlays.js";
+import { CommandPalette } from "@mdbase-dev/ui/command-palette";
+import { Dialog } from "@mdbase-dev/ui/dialog";
+import { useOverlay } from "@mdbase-dev/ui/overlay";
+import { Popover } from "./Popover.js";
 import {
   AlertIcon,
   BooksIcon,
@@ -182,7 +185,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const openedChapter = useRef(false);
   const [pane, setPane] = useState<Pane>("write");
   const [layout, setLayoutState] = useState<Layout>(loadLayout);
-  const lower = useOverlay(layout.lowerTab !== null, ".sidebar-lower", "translateY(-3px)");
+  const lower = useOverlay<HTMLDivElement>(layout.lowerTab !== null);
   const lastLowerTab = useRef<SidebarTab>(layout.lowerTab ?? "comments");
   if (layout.lowerTab) lastLowerTab.current = layout.lowerTab;
   const lowerTab = layout.lowerTab ?? lastLowerTab.current;
@@ -1098,8 +1101,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           {(!lower.present || lowerTab !== "sources") && <div hidden={layout.tab !== "sources"}>{sourcesPanel}</div>}
         </div>
         {layout.lowerTab && <LowerResizer split={layout.sidebarSplit} onChange={sidebarSplit => setLayout(layout => ({ ...layout, sidebarSplit }))} />}
-        <div ref={lower.host} className="lower-host">{lower.present && (
-          <div className="sidebar-lower">
+        <div className="lower-host">{lower.present && (
+          <div ref={lower.ref} className="sidebar-lower mdbase-overlay" data-open={layout.lowerTab !== null} inert={layout.lowerTab === null}>
             <div className="sidebar-lower-tabs">
               <div className="sidebar-tab-list" style={{ "--tab-count": 2, "--tab-index": SIDEBAR_TABS.filter(tab => tab !== layout.tab).indexOf(lowerTab) } as React.CSSProperties} role="tablist" aria-label={translate`Lower panel`} onKeyDown={(event) => moveSidebarTab(event, SIDEBAR_TABS.filter((tab) => tab !== layout.tab), lowerTab, setLowerTab, "lower-sidebar-tab")}>
                 {SIDEBAR_TABS.filter((t) => t !== layout.tab).map((t) => (
