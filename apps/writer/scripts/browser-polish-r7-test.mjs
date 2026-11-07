@@ -33,7 +33,7 @@ try {
   measurements.transitions = [];
   for (let iteration = 0; iteration < 4; iteration++) {
     await page.evaluate(() => {
-      window.motion = { frames: [], tasks: [], draws: [] };
+      window.motion = { frames: [], tasks: [], draws: [], initialOpacity: Number(getComputedStyle(document.querySelector('.outline')).opacity) };
       window.motionStart = undefined;
       const start = event => {
         if (event.ctrlKey && event.code === "Backslash") {
@@ -45,12 +45,13 @@ try {
       window.taskObserver = new PerformanceObserver(list => window.motion.tasks.push(...list.getEntries().map(entry => ({ start: entry.startTime, duration: entry.duration }))));
       window.taskObserver.observe({ type: "longtask" });
       window.drawObserver = new MutationObserver(records => {
-        if (window.motionStart !== undefined) window.motion.draws.push(...records.map(record => ({ time: performance.now() - window.motionStart, page: record.target.dataset.page, attribute: record.attributeName })));
+        const moving = [...document.querySelectorAll('.write, .outline')].some(element => element.getAnimations().some(animation => animation.playState === 'running' || animation.pending));
+        if (window.motionStart !== undefined) window.motion.draws.push(...records.map(record => ({ time: performance.now() - window.motionStart, page: record.target.dataset.page, attribute: record.attributeName, moving })));
       });
       document.querySelectorAll('.preview canvas').forEach(canvas => window.drawObserver.observe(canvas, { attributes: true }));
       const sample = () => {
         const elapsed = window.motionStart === undefined ? undefined : performance.now() - window.motionStart;
-        if (elapsed !== undefined) window.motion.frames.push({ time: elapsed, opacity: Number(getComputedStyle(document.querySelector('.write')).opacity) });
+        if (elapsed !== undefined) window.motion.frames.push({ time: elapsed, opacity: Number(getComputedStyle(document.querySelector('.outline')).opacity) });
         if (elapsed === undefined || elapsed < 400) requestAnimationFrame(sample);
       };
       requestAnimationFrame(sample);
@@ -59,7 +60,7 @@ try {
     await page.waitForFunction(() => window.motion.frames.at(-1)?.time >= 400);
     measurements.transitions.push(await page.evaluate(() => {
       window.taskObserver.disconnect(); window.drawObserver.disconnect();
-      return { ...window.motion, maxTaskMs: Math.max(0, ...window.motion.tasks.map(task => task.duration)), firstFadeMs: window.motion.frames.find(frame => frame.opacity < .99)?.time ?? null };
+      return { ...window.motion, maxTaskMs: Math.max(0, ...window.motion.tasks.map(task => task.duration)), firstFadeMs: window.motion.frames.find(frame => Math.abs(frame.opacity - window.motion.initialOpacity) > .01)?.time ?? null };
     }));
   }
   const semantics = await page.evaluate(() => ({ beforeRevision: window.roundSevenArtifactRevision, afterRevision: window.writer.workspace.getSnapshot().artifactRevision, pages: [...document.querySelectorAll('.text-layer')].map((layer, index) => ({ page: index, hadNode: Boolean(window.roundSevenSemantics[index]), hasNode: Boolean(layer.firstElementChild), same: layer.firstElementChild === window.roundSevenSemantics[index] })) }));
@@ -171,7 +172,7 @@ try {
   }
   assert.ok(measurements.transitions.every(transition => transition.maxTaskMs < 50), "Sidebar must not create a long task");
   assert.ok(measurements.transitions.every(transition => transition.firstFadeMs !== null && transition.firstFadeMs < 50), "Sidebar fade must start within one frame plus input delivery");
-  assert.ok(measurements.transitions.every(transition => transition.draws.every(draw => draw.time >= 160)), "Preview drawing must wait for the sidebar transition");
+  assert.ok(measurements.transitions.every(transition => transition.draws.length > 0 && transition.draws.every(draw => !draw.moving)), "Preview drawing must wait for the actual sidebar transition to finish");
   assert.ok(measurements.transitions.every(transition => {
     const pages = transition.draws.filter(draw => draw.attribute === "data-version").map(draw => draw.page);
     return new Set(pages).size === pages.length;

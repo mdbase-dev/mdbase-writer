@@ -2087,10 +2087,6 @@ msgstr "Salvato su questo dispositivo"
 msgid "Saved on this device; waiting for sync"
 msgstr "Salvato su questo dispositivo; in attesa di sincronizzazione"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Saving to collection…"
-msgstr "Salvataggio nella raccolta…"
-
 #: src/ui/records.ts
 msgid "Saving…"
 msgstr "Salvataggio…"

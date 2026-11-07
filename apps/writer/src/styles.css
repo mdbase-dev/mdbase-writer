@@ -73,6 +73,8 @@ a, .link { color: var(--accent); }
 .preview-meta .preview-setting:first-of-type { flex: 0 1 auto; }
 .preview-meta .preview-setting:last-of-type { flex: none; }
 .bar .mdbase-save-notice.mdbase-settle { animation-duration: 400ms; }
+.save-slot:not(.has-saved) .mdbase-settle { animation: none; }
+.bar:not(:hover):not(:focus-within) .save-slot:not(.has-saved) .mdbase-settle { opacity: 0; }
 .app .mdbase-collections-brand { display: none; }
 .mdbase-command-palette { transform: none; transition: transform 160ms var(--ease-out); }
 @starting-style { .mdbase-command-palette { transform: translateY(-3px); } }
@@ -146,9 +148,8 @@ label > .mdbase-select { width: 100%; }
 .bar-spacer { flex: 1; }
 /* Save feedback follows the same text rhythm as the neighboring word count. */
 .bar .mdbase-save-notice { font-family: inherit; font-size: 12px; line-height: 1.5; }
-/* The short form of a save state is for phones (see below). */
-.bar .mdbase-save-notice.is-short { display: none; }
 .save-slot { display: contents; }
+.bar .sync-status { white-space: nowrap; flex-shrink: 0; }
 .app:has(.workspace:not([data-ready])) :is(button, .mdbase-button, .mdbase-icon-button) { transition: none !important; }
 .bar-layout { display: flex; align-items: center; gap: 0.3rem; }
 .bar-problems { display: inline-flex; align-items: center; gap: 0.3rem; height: 26px; padding: 0 0.5rem; border: 1px solid transparent; border-radius: 13px; background: none; font-size: 12px; white-space: nowrap; }
@@ -168,7 +169,7 @@ button.bar-problems { cursor: pointer; }
 /* Dialogs */
 .dialog-note { margin: 0; }
 .span-2 { grid-column: 1 / -1; }
-.shortcuts-dialog { width: min(32rem, calc(100vw - 32px)); }
+.shortcuts-dialog { width: min(64rem, calc(100vw - 32px)); }
 .shortcuts { margin: 0; display: grid; gap: 0.1rem; }
 .shortcuts div { display: grid; grid-template-columns: 9.5rem 1fr; gap: 1rem; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
 .shortcuts div:last-child { border-bottom: 0; }
@@ -249,7 +250,6 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .first-run { display: grid; gap: 1.25rem; justify-items: start; margin-top: 1rem; }
 .first-run ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.6rem; max-width: 38rem; color: var(--ink-soft); }
 .first-run strong { color: var(--ink); }
-.mdbase-button.is-primary:not(:disabled) { background: var(--action); border-color: var(--action); }
 .new-manuscript { display: grid; gap: 0.8rem; grid-template-columns: 1fr 1.3fr; align-items: end; }
 .new-manuscript button { grid-column: 1 / -1; justify-self: start; }
 .adopt-note { display: grid; gap: 0.8rem; justify-items: start; }
@@ -284,14 +284,18 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 
 /* The sidebar. Everything in it keeps one left edge, 16px in: the tabs, the
    group headings and the text of each row. */
-.outline { --lower-duration: 120ms; grid-area: outline; position: relative; z-index: 1; min-height: 0; min-width: 0; border-right: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr) 0px minmax(0, 0fr); opacity: 1; visibility: visible; transition: opacity 160ms var(--ease-out), visibility 0s, grid-template-rows var(--lower-duration) var(--ease-out); }
-.no-sidebar .outline { opacity: 0; visibility: hidden; overflow: clip; pointer-events: none; transition: opacity 120ms var(--ease-out), visibility 0s 120ms, grid-template-rows var(--lower-duration) var(--ease-out); }
+.outline { --lower-duration: 120ms; grid-area: outline; position: relative; z-index: 1; min-height: 0; min-width: 0; border-right: 1px solid var(--line); display: grid; grid-template-rows: auto minmax(0, 1fr) 0px minmax(0, 0fr); opacity: 1; visibility: visible; transition: visibility 0s, grid-template-rows var(--lower-duration) var(--ease-out); }
+.no-sidebar .outline { opacity: 0; visibility: hidden; overflow: clip; pointer-events: none; transition: visibility 0s 120ms, grid-template-rows var(--lower-duration) var(--ease-out); }
 /* Underlined tabs, as tall as the pane headers beside them so their rules meet. */
-.sidebar-tabs { display: flex; gap: 1.1rem; min-height: 38px; padding: 0 1rem; border-bottom: 1px solid var(--line); background: var(--canvas); }
+.sidebar-tabs { display: flex; gap: 0.5rem; min-height: 38px; padding: 0 0.5rem; border-bottom: 1px solid var(--line); background: var(--canvas); }
 .sidebar-tabs button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font-size: 13px; cursor: pointer; transition: color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
 .sidebar-tabs button:hover { color: var(--ink); }
-.sidebar-tabs button[aria-selected="true"] { color: var(--ink); font-weight: 700; }
+.sidebar-tabs button[aria-selected="true"] { color: var(--ink); }
 .sidebar-tab-list { position: relative; display: grid; grid-template-columns: repeat(var(--tab-count), minmax(0, 1fr)); gap: 0; flex: 1; }
+.sidebar-tabs .sidebar-tab-list { display: flex; flex-wrap: wrap; column-gap: 12px; min-width: 0; }
+.sidebar-tabs .sidebar-tab-list button { flex-shrink: 0; min-height: 38px; }
+.sidebar-tabs .sidebar-tab-list::after { display: none; }
+.sidebar-tabs button[aria-selected="true"] { border-bottom-color: var(--app-writer); }
 .sidebar-tab-list::after { content: ""; position: absolute; bottom: -1px; left: 0; width: calc(100% / var(--tab-count)); height: 2px; background: var(--app-writer); transform: translateX(calc(var(--tab-index) * 100%)); transition: transform 160ms var(--ease-out), width 160ms var(--ease-out); pointer-events: none; }
 .sidebar-tab-list button { justify-content: center; }
 .sidebar-tabs button:focus-visible { outline-offset: -2px; }
@@ -309,7 +313,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .sidebar-lower-tabs [role="tab"]:hover { color: var(--ink); }
 .sidebar-lower-tabs [role="tab"][aria-selected="true"] { color: var(--ink); font-weight: 700; }
 .sidebar-lower-tabs > .mdbase-icon-button { margin-left: auto; }
-.sidebar-split { margin-left: auto; align-self: center; color: var(--muted); }
+.sidebar-split { margin-left: auto; align-self: center; flex-shrink: 0; color: var(--muted); }
 .sidebar-split[aria-pressed="true"] { color: var(--ink); }
 /* The sidebar hidden leaves a rail of its tabs. */
 .sidebar-rail { grid-area: outline; z-index: 1; display: grid; align-content: start; justify-items: center; gap: 0.25rem; width: 44px; padding: 0.5rem 0; border-right: 1px solid var(--line); background: var(--canvas); }
@@ -699,7 +703,7 @@ blockquote.thread-quote::after { content: "”"; }
 .preview-cursor[hidden] { display: none; }
 .preview-page { position: relative; flex: none; background: #fff; box-shadow: var(--page-shadow); }
 .preview-paper .preview-empty { color: #595959; padding: 2rem; }
-.shortcuts-dialog .mdbase-dialog-body { columns: 2 300px; column-gap: 2rem; }
+.shortcuts-dialog .mdbase-dialog-body { display: block; columns: 2 300px; column-gap: 2rem; }
 .shortcut-group { break-inside: avoid; }
 .preview-pages canvas.page { display: block; width: 100%; height: 100%; cursor: text; }
 .preview-pages canvas.page.over-source { cursor: pointer; }
@@ -766,11 +770,10 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .preview-meta .preview-setting:first-of-type { flex: 1; }
   /* "No problems" is the Write tab's missing badge here. */
   .bar-back span, .bar-divider, .bar-layout { display: none; }
-  .bar .mdbase-save-notice.is-long { display: none; }
   /* Export is rarely what a phone is for; it moves into the More menu. */
   .bar .split-button { display: none; }
   .bar .save-slot { display: flex; align-items: center; gap: 0.5rem; order: 2; flex: 1 0 100%; height: 24px; min-width: 0; overflow: hidden; white-space: nowrap; }
-  .bar .mdbase-save-notice.is-short { display: block; min-width: 0; flex-shrink: 0; }
+  .bar .mdbase-save-notice { display: block; min-width: 0; flex-shrink: 0; }
   .bar .sync-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
   .editor .cm-panels .cm-panel.writer-find :is(button, summary) { min-width: 44px; min-height: 44px; }
   .settings-sheet input[type="checkbox"] { width: 24px; height: 24px; margin: 10px; }

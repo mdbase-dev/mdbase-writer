@@ -2087,10 +2087,6 @@ msgstr "已保存到此设备"
 msgid "Saved on this device; waiting for sync"
 msgstr "已保存到此设备；等待同步"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Saving to collection…"
-msgstr "正在保存到集合…"
-
 #: src/ui/records.ts
 msgid "Saving…"
 msgstr "正在保存…"

@@ -4,7 +4,6 @@ import { useLingui } from "@lingui/react";
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
-import { CollectionSaveWarning } from "@mdbase-dev/ui/collections";
 import { annotationSourcePath, blockQuotation, sourceAnnotation } from "@mdbase-writer/core/annotations";
 import { resolveLinkTarget } from "@mdbase-writer/core/records";
 import { themePreferences, type ThemePreference } from "@mdbase-dev/ui/theme";
@@ -66,10 +65,10 @@ import { ProblemsStrip } from "./ProblemsStrip.js";
 import { shortcutLabel, type Command } from "@mdbase-dev/ui/command-palette";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { signalMdbaseMark, useMdbaseMarkBusy } from "@mdbase-dev/ui/mark-activity";
-import { SaveNotice } from "@mdbase-dev/ui/save-notice";
+import { SaveNotice, saveToneSignal } from "@mdbase-dev/ui/save-notice";
 import { FeedbackButton, useFeedback } from "@mdbase-dev/ui/feedback";
 import { plural as countLabel, recordTitle, STATE_TONE, workspaceSaveNotice } from "./records.js";
-import { ConnectionNoticeContext, connectionNoticeLabels } from "./connection-notice.js";
+import { ConnectionNoticeContext } from "./connection-notice.js";
 import { Settings, type SettingsFocus } from "./Settings.js";
 import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
@@ -125,15 +124,15 @@ const VIEW_ORDER: readonly View[] = ["both", "write", "preview"];
 const SIDEBAR_TABS: readonly SidebarTab[] = ["outline", "sources", "comments"];
 const TAB_NAME: Record<SidebarTab, string> = { get outline() { return translate`Outline`; }, get sources() { return translate`Sources`; }, get comments() { return translate`Comments`; } };
 /** Whether the window is laid out for a phone (one pane at a time). */
-function useNarrow(): boolean {
-  const [narrow, setNarrow] = useState(() => typeof matchMedia === "function" && matchMedia("(max-width: 900px)").matches);
+function useNarrow(maxWidth = 900): boolean {
+  const [narrow, setNarrow] = useState(() => typeof matchMedia === "function" && matchMedia(`(max-width: ${maxWidth}px)`).matches);
   useEffect(() => {
     if (typeof matchMedia !== "function") return;
-    const query = matchMedia("(max-width: 900px)");
+    const query = matchMedia(`(max-width: ${maxWidth}px)`);
     const update = () => setNarrow(query.matches);
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
-  }, []);
+  }, [maxWidth]);
   return narrow;
 }
 const VIEW_NAME: Record<View, string> = { get both() { return translate`Editor and preview`; }, get write() { return translate`Editor only`; }, get preview() { return translate`Preview only`; } };
@@ -188,6 +187,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   if (layout.lowerTab) lastLowerTab.current = layout.lowerTab;
   const lowerTab = layout.lowerTab ?? lastLowerTab.current;
   const narrow = useNarrow();
+  const compactSave = useNarrow(1200);
   const [notice, setNotice] = useState<Notice | null>(null);
   // An export has no count to show, so the mark streams until it ends or is cancelled.
   useMdbaseMarkBusy(notice?.tone === "busy" && "stream");
@@ -229,22 +229,37 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     return () => cancelAnimationFrame(frame);
   }, []);
   const motionLayout = useRef({ view: layout.view, sidebar: layout.sidebar, active });
+  const sidebarAnimation = useRef<Animation | null>(null);
+  useLayoutEffect(() => () => sidebarAnimation.current?.cancel(), []);
   useLayoutEffect(() => {
     const previous = motionLayout.current;
     motionLayout.current = { view: layout.view, sidebar: layout.sidebar, active };
+    if (narrow) sidebarAnimation.current?.cancel();
     if (!grid.current?.dataset["ready"]) return;
-    const paneChanged = previous.view !== layout.view || previous.sidebar !== layout.sidebar;
-    if (!paneChanged && previous.active === active) return;
+    const paneChanged = previous.view !== layout.view;
+    const sidebarChanged = previous.sidebar !== layout.sidebar;
+    if (!paneChanged && !sidebarChanged && previous.active === active) return;
     const media = matchMedia("(prefers-reduced-motion: reduce)");
-    if (media.matches) return;
-    const animations = [...(paneChanged && layout.view === "preview" ? [] : grid.current?.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor") ?? [])].map(element => element.animate(
+    if (media.matches) { sidebarAnimation.current?.cancel(); return; }
+    if (sidebarChanged && !narrow) {
+      const element = grid.current.querySelector(".outline");
+      const interrupted = sidebarAnimation.current?.playState === "running" || sidebarAnimation.current?.pending;
+      const from = element && interrupted ? getComputedStyle(element).opacity : String(Number(previous.sidebar));
+      sidebarAnimation.current?.cancel();
+      sidebarAnimation.current = element?.animate([{ opacity: from }, { opacity: Number(layout.sidebar) }], {
+        duration: layout.sidebar ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)",
+      }) ?? null;
+      if (sidebarAnimation.current) sidebarAnimation.current.startTime = document.timeline.currentTime;
+    }
+    const proseChanged = paneChanged || previous.active !== active;
+    const animations = [...(!proseChanged || (paneChanged && layout.view === "preview") ? [] : grid.current.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor"))].map(element => element.animate(
       paneChanged ? [{ opacity: .7, transform: "translateX(6px)" }, { opacity: 1, transform: "none" }] : [{ opacity: .8 }, { opacity: 1 }],
       { duration: paneChanged ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)" },
     ));
-    const cancel = () => { animations.forEach(animation => animation.cancel()); };
+    const cancel = () => { animations.forEach(animation => animation.cancel()); sidebarAnimation.current?.cancel(); };
     media.addEventListener("change", cancel);
-    return () => { cancel(); media.removeEventListener("change", cancel); };
-  }, [layout.view, layout.sidebar, active]);
+    return () => { animations.forEach(animation => animation.cancel()); media.removeEventListener("change", cancel); };
+  }, [layout.view, layout.sidebar, active, narrow]);
   // Where the cursor is now (the cursor state above trails it slightly), and
   // whether typing has paused, for holding back problems on the line being typed.
   const [liveCursor, setLiveCursor] = useState<{ record: string; offset: number } | null>(null);
@@ -398,8 +413,15 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const overall = states.find((s) => STATE_TONE[s] === "attention") ?? states.find((s) => s === "saved_on_device") ?? states.find((s) => STATE_TONE[s] !== "saved") ?? "saved";
   const connection = useContext(ConnectionNoticeContext);
   const locallySaved = !snap.pendingSettings && !snap.draftProblem && [...snap.records.values()].every(record => !record.snapshot.dirty || record.localSaved);
-  const localPending = locallySaved && snap.recoveredDrafts.size === 0 && (overall === "unsaved" || overall === "saving");
   const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, connection, locallySaved);
+  const writeTone = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, null, locallySaved).tone;
+  const previousSaveTone = useRef(writeTone);
+  const [hasSaved, setHasSaved] = useState(false);
+  useEffect(() => {
+    setHasSaved(saveNotice.tone === "saved" && saveToneSignal(previousSaveTone.current, writeTone) === "saved");
+    if (writeTone !== "saved" || saveNotice.tone === "saved") previousSaveTone.current = writeTone;
+  }, [writeTone, saveNotice.tone]);
+  const saveLabel = compactSave ? saveNotice.shortLabel ?? saveNotice.label : saveNotice.label;
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -992,16 +1014,15 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <span className="bar-divider" aria-hidden="true" />
           <h1 id="manuscript-title" className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</h1>
           {workspace.kind === "demo" && <span className="demo-identity" title={translate`Demo manuscripts reset on reload.`}><Trans>Demo</Trans></span>}
-          <div className="save-slot">
-            <SaveNotice tone={saveNotice.tone} label={saveNotice.label} className="is-long" />
-            <SaveNotice tone={saveNotice.tone} label={saveNotice.shortLabel ?? saveNotice.label} className="is-short" />
-            {connection === "sync_delayed" ? <button type="button" className="sync-status link small" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button> : localPending && <span className="sync-status muted small">{connection ? connectionNoticeLabels[connection] : translate`Saving to collection…`}</span>}
-            <span className="visually-hidden" role="status" aria-live="polite">{connection === "sync_delayed" ? connectionNoticeLabels.sync_delayed : ""}</span>
+          <div className={`save-slot${hasSaved ? " has-saved" : ""}`}>
+            {saveNotice.tone === writeTone
+              ? <SaveNotice tone={writeTone} label={saveLabel} />
+              : <span className={`mdbase-save-notice is-${saveNotice.tone}`} aria-live="polite">{saveLabel}</span>}
+            {connection === "sync_delayed" && <button type="button" className="sync-status link small" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>}
             <span className="bar-words" title={icuPlural(order.length, { one: "In # chapter; citations, code and math are not counted", other: "In # chapters; citations, code and math are not counted" })}>
               {countLabel(stats.words, "word")}
             </span>
           </div>
-          <CollectionSaveWarning />
           <ProblemsButton
             pending={snap.indexLoad.phase !== "ready" || snap.libraryLoad.phase !== "ready" || snap.annotationsLoad.phase !== "ready"}
             checking={heldProblems > 0}

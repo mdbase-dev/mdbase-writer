@@ -31,7 +31,7 @@ async function probe(page, selector, action, reverse) {
       const element = document.querySelector(selector);
       if (!element || getComputedStyle(element).display === "none") return null;
       const style = getComputedStyle(element);
-      return { left: element.getBoundingClientRect().left, height: element.getBoundingClientRect().height, opacity: Number(style.opacity), transform: style.transform, columns: style.gridTemplateColumns, rows: style.gridTemplateRows, inert: element.inert, hidden: element.ariaHidden };
+      return { left: element.getBoundingClientRect().left, height: element.getBoundingClientRect().height, opacity: Number(style.opacity), transform: style.transform, columns: style.gridTemplateColumns, rows: style.gridTemplateRows, inert: element.inert, hidden: element.ariaHidden, proseOpacity: selector === ".outline" ? Number(getComputedStyle(document.querySelector(".write")).opacity) : undefined };
     };
     perform(action);
     const started = performance.now();
@@ -130,7 +130,7 @@ try {
         for (const middleWidth of [901, 1000, 1180, 1280]) {
           await page.setViewportSize({ width: middleWidth, height: 900 });
           assert.ok(await page.locator('.bar button[aria-label="More"]').evaluate(element => element.getBoundingClientRect().right <= innerWidth), `Toolbar overflow at ${middleWidth}px`);
-          assert.equal(await page.locator('.bar .mdbase-save-notice.is-long').innerText(), "Saved");
+          assert.equal(await page.locator('.bar .mdbase-save-notice').innerText(), "Saved");
           assert.equal(await page.locator(".demo-identity").innerText(), "Demo");
         }
         await page.setViewportSize({ width, height: 900 });
@@ -282,9 +282,9 @@ try {
       result.menuReversal = await probe(page, ".popover", "insert", "insert");
       if (!reduced) assert.ok(Math.abs(result.menuReversal.interruption.before.opacity - result.menuReversal.interruption.after.opacity) < 0.02);
       if (width === 1440) {
-        result.sidebarOut = await probe(page, ".write", "sidebar");
-        motion(result.sidebarOut, reduced, 160);
-        result.sidebarIn = await probe(page, ".write", "sidebar");
+        result.sidebarOut = await probe(page, ".outline", "sidebar");
+        motion(result.sidebarOut, reduced, 120);
+        result.sidebarIn = await probe(page, ".outline", "sidebar");
         motion(result.sidebarIn, reduced, 160);
         assert.ok(await page.locator(".workspace").evaluate(element => !getComputedStyle(element).transitionProperty.includes("grid-template-columns")), "Layout must not interpolate columns");
       } else {
@@ -293,7 +293,7 @@ try {
         result.sidebarOut = await probe(page, ".outline", "phone-sidebar");
         motion(result.sidebarOut, reduced, 120);
       }
-      const sidebarSelector = width === 1440 ? ".write" : ".outline";
+      const sidebarSelector = ".outline";
       const sidebarAction = width === 1440 ? "sidebar" : "phone-sidebar";
       result.sidebarReversal = await probe(page, sidebarSelector, sidebarAction, sidebarAction);
       await probe(page, sidebarSelector, sidebarAction);
@@ -302,8 +302,8 @@ try {
       if (!reduced) {
         for (const reversal of [result.sidebarReversal, result.sidebarReopen]) {
           const { before, after } = reversal.interruption;
-          if (width === 390) assert.ok(Math.abs(before.opacity - after.opacity) < 0.02);
-          else assert.ok(reversal.frames.every(frame => frame.opacity > 0), "Final-layout pane motion must never blank the editor");
+          assert.ok(Math.abs(before.opacity - after.opacity) < 0.02);
+          if (width === 1440) assert.ok(reversal.frames.every(frame => frame.proseOpacity === 1), "Sidebar reversal must never dim or blank the editor");
           assert.ok(reversal.animations.length > 0);
         }
         result.preferenceChange = await page.evaluate(async () => {

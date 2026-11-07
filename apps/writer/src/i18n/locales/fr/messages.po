@@ -2087,10 +2087,6 @@ msgstr "Enregistré sur cet appareil"
 msgid "Saved on this device; waiting for sync"
 msgstr "Enregistré sur cet appareil ; en attente de synchronisation"
 
-#: src/ui/WorkspaceView.tsx
-msgid "Saving to collection…"
-msgstr "Enregistrement dans la collection…"
-
 #: src/ui/records.ts
 msgid "Saving…"
 msgstr "Enregistrement…"

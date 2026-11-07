@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { selectLabCollection } from "./lab-consent.mjs";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -41,11 +42,7 @@ async function ready(target) {
     await popup.getByRole("button", { name: "Open mdbase writer", exact: true }).waitFor({ timeout: 60_000 });
     assert.equal(new URL(popup.url()).origin, connect);
     assert.ok((await popup.locator("body").textContent()).includes(account.email), "Registered LAB account must be signed in on the desk");
-    const choice = popup.getByRole("checkbox", { name: new RegExp(collectionName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
-    assert.equal(await choice.count(), 1, "The owned test collection must be an unambiguous consent choice");
-    console.log(`Collection hint preselected: ${await choice.isChecked()}`);
-    await choice.check();
-    assert.equal(await popup.locator('input[type="checkbox"]:checked').count(), 1, "Never approve additional collections");
+    console.log(`Collection hint preselected: ${await selectLabCollection(popup, collectionName)}`);
     await popup.getByRole("button", { name: "Open mdbase writer", exact: true }).click();
   }
   await target.waitForFunction(expected => window.writer?.backend?.draftNamespace === expected, collection, { timeout: 60_000 });

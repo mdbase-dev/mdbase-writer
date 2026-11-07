@@ -170,6 +170,7 @@ export class ManuscriptWorkspace {
     // Linking a person record happens in another tab (mdbase Editor): look again on return.
     if (typeof window !== "undefined") {
       const onFocus = () => {
+        if (this.hasUnsavedChanges() || [...this.current.records.values()].some(record => record.snapshot.state === "saved_on_device")) void this.retrySave();
         if (this.current.people.signing?.kind === "linked" || Date.now() - this.peopleCheckedAt < 5_000) return;
         void this.refreshPeople();
       };

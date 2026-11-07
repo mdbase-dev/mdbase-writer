@@ -36,11 +36,18 @@ export function workspaceSaveNotice(state: SessionSnapshot["state"], hasRecovere
   if (STATE_TONE[state] === "attention") return { tone: "attention", label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
   if (connection === "sync_delayed") return { tone: "attention", label: connectionNoticeLabels.sync_delayed, shortLabel: t`Not on server` };
   if (state === "recovery") return { tone: STATE_TONE[state], label: STATE_LABEL[state], shortLabel: STATE_SHORT_LABEL[state] };
+  const localPending = locallySaved && (state === "unsaved" || state === "saving" || state === "saved_on_device");
+  if (localPending && connection === "offline") return {
+    tone: "pending", label: t`Offline · saved on this device; waiting for sync`, shortLabel: t`Offline · on device, pending sync`,
+  };
+  if (localPending && connection === "reconnecting") return {
+    tone: "pending", label: `${connectionNoticeLabels.reconnecting} · ${STATE_LABEL.saved_on_device}`, shortLabel: `${connectionNoticeLabels.reconnecting} · ${STATE_SHORT_LABEL.saved_on_device}`,
+  };
   if (locallySaved && (state === "unsaved" || state === "saving")) return { tone: "pending", label: t`Saved on this device`, shortLabel: t`Saved on this device` };
   if (locallySaved && (state === "saved_on_device" || connection === "saved_on_device")) return {
     tone: "pending",
-    label: connection === "offline" ? t`Offline · saved on this device; waiting for sync` : STATE_LABEL.saved_on_device,
-    shortLabel: connection === "offline" ? t`Offline · on device, pending sync` : STATE_SHORT_LABEL.saved_on_device,
+    label: STATE_LABEL.saved_on_device,
+    shortLabel: STATE_SHORT_LABEL.saved_on_device,
   };
   if (connection && connection !== "saved_on_device") return { tone: "pending", label: connectionNoticeLabels[connection], shortLabel: connectionNoticeLabels[connection] };
   if (state === "saved_on_device" || connection === "saved_on_device") return { tone: "pending", label: STATE_LABEL.unsaved, shortLabel: STATE_SHORT_LABEL.unsaved };

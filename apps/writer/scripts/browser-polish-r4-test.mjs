@@ -41,7 +41,7 @@ async function command(page, query) {
 }
 
 async function pressFill(page, locator) {
-  await page.waitForFunction(() => !document.querySelector(".sync-status"));
+  await page.waitForFunction(() => document.querySelector(".home") || document.querySelector(".bar .mdbase-save-notice.is-saved"));
   await locator.hover();
   await page.waitForTimeout(130);
   const before = await locator.evaluate(element => getComputedStyle(element).backgroundColor);
@@ -83,17 +83,17 @@ async function continuePosition(page, width, reduced) {
       window.paneTaskObserver = new PerformanceObserver(list => window.paneLongTasks.push(...list.getEntries().map(entry => entry.duration)));
       window.paneTaskObserver.observe({ type: "longtask" });
     });
-    await page.evaluate(() => { window.paneFrames = []; window.paneRunning = true; const sample = () => { const element = document.querySelector(".write"); window.paneFrames.push({ opacity: Number(getComputedStyle(element).opacity), transform: getComputedStyle(element).transform, columns: getComputedStyle(document.querySelector(".workspace")).gridTemplateColumns, running: element.getAnimations().some(animation => animation.playState === "running" || animation.pending), bitmaps: [...document.querySelectorAll(".preview canvas")].map(element => element.width).join(",") }); if (window.paneRunning) requestAnimationFrame(sample); }; requestAnimationFrame(sample); });
+    await page.evaluate(() => { window.paneFrames = []; window.paneRunning = true; const sample = () => { const element = document.querySelector(".outline"); window.paneFrames.push({ opacity: Number(getComputedStyle(element).opacity), transform: getComputedStyle(element).transform, proseOpacity: Number(getComputedStyle(document.querySelector(".write")).opacity), columns: getComputedStyle(document.querySelector(".workspace")).gridTemplateColumns, running: element.getAnimations().some(animation => animation.playState === "running" || animation.pending), bitmaps: [...document.querySelectorAll(".preview canvas")].map(element => element.width).join(",") }); if (window.paneRunning) requestAnimationFrame(sample); }; requestAnimationFrame(sample); });
     await page.keyboard.press("Control+Backslash");
     if (!reduced) {
       await page.waitForFunction(() => window.paneFrames.some(frame => frame.opacity < 1));
-      await page.locator(".write").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+      await page.locator(".outline").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
     }
     await page.waitForTimeout(190);
     const frames = await page.evaluate(() => { window.paneRunning = false; return window.paneFrames; });
     const tasks = await page.evaluate(() => { window.paneTaskObserver.disconnect(); return window.paneLongTasks; });
     assert.ok(tasks.every(duration => duration < 50), `Sidebar long-task budget exceeded: ${JSON.stringify(tasks)}`);
-    assert.ok(frames.every(frame => frame.opacity > 0));
+    assert.ok(frames.every(frame => frame.proseOpacity === 1), "Sidebar-only movement must not dim the prose");
     assert.equal(await page.locator(".preview-pane").evaluate(element => getComputedStyle(element).opacity === "1" && element.getAnimations().length === 0), true, "Pane moves must leave the preview undimmed");
     if (!reduced) assert.ok(new Set(frames.map(frame => frame.opacity)).size >= 3, `10k-word pane move is not visibly animated: ${JSON.stringify(frames)}`);
     else assert.ok(frames.every(frame => frame.transform === "none"));
@@ -232,10 +232,11 @@ async function roundFive(page, width, reduced) {
   await pressFill(page, page.locator(".record-row").first());
   if (width === 390) assert.equal(await page.locator(".record-row").first().evaluate(element => getComputedStyle(element).alignItems), "center");
   await outline.focus();
-  const indicatorBefore = await tabs.evaluate(element => getComputedStyle(element, "::after").transform);
+  assert.equal(await outline.evaluate(element => getComputedStyle(element).borderBottomColor !== "rgba(0, 0, 0, 0)"), true);
   await page.keyboard.press("ArrowRight");
-  await page.waitForTimeout(190);
-  assert.notEqual(await tabs.evaluate(element => getComputedStyle(element, "::after").transform), indicatorBefore);
+  await tabs.evaluate(async element => { await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished)); });
+  assert.equal(await outline.evaluate(element => getComputedStyle(element).borderBottomColor), "rgba(0, 0, 0, 0)");
+  assert.equal(await tabs.locator('[aria-selected="true"]').evaluate(element => getComputedStyle(element).borderBottomColor !== "rgba(0, 0, 0, 0)"), true);
   await page.keyboard.press("ArrowLeft");
   await page.getByRole("button", { name: "Split sidebar", exact: true }).click();
   const resize = page.getByRole("separator", { name: "Resize sidebar panels", exact: true });
@@ -315,7 +316,7 @@ try {
       await semantics(page);
       await page.keyboard.press("Enter");
       await typeInEditor(page, " CITATION_CONTINUATION ");
-      await page.waitForFunction(() => !document.querySelector(".sync-status"));
+      await page.waitForFunction(() => document.querySelector(".bar .mdbase-save-notice.is-saved"));
       if (width === 390) await page.locator(".pane-tabs button").first().click();
       await page.getByRole("tab", { name: "Outline", exact: true }).click();
       await page.getByRole("button", { name: /^2 Earthworms/ }).click();
@@ -353,7 +354,9 @@ try {
       await page.mouse.move(0, 0);
       const savedNotice = page.locator(".bar .mdbase-save-notice.is-saved").first();
       await savedNotice.waitFor({ state: "attached" });
-      assert.equal(await savedNotice.isVisible(), width !== 390, "Phone keeps the existing quiet confirmed-save state");
+      assert.equal(await page.locator(".bar .mdbase-save-notice").count(), 1, "Desktop and phone use one canonical status");
+      await savedNotice.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+      assert.equal(await savedNotice.evaluate(element => getComputedStyle(element).opacity), reducedMotion === "reduce" ? "1" : "0", "Confirmed saves settle, or remain static under Reduce, at every width");
       assert.equal(await page.locator('.bar-problems.is-clear,.bar-problems[title="No manuscript problems"]').count(), 0);
       if (reducedMotion === "no-preference") assert.equal(await savedNotice.evaluate(element => getComputedStyle(element).animationDuration), "0.4s");
       await page.keyboard.press("Control+/");

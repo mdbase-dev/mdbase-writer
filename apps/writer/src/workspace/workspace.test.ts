@@ -68,6 +68,25 @@ function fixture() {
 }
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
 
+it("retries unsettled saves on focus as well as reconnect and removes both listeners on disposal", async () => {
+  const events = new EventTarget();
+  vi.stubGlobal("window", events);
+  const workspace = fixture().open();
+  await ready(workspace);
+  const save = vi.spyOn(workspace, "retrySave").mockResolvedValue(ok(undefined));
+  events.dispatchEvent(new Event("focus"));
+  expect(save).not.toHaveBeenCalled();
+  workspace.setBody("main.md", "[test] local changes");
+  events.dispatchEvent(new Event("focus"));
+  expect(save).toHaveBeenCalledTimes(1);
+  events.dispatchEvent(new Event("online"));
+  expect(save).toHaveBeenCalledTimes(2);
+  await workspace.dispose();
+  events.dispatchEvent(new Event("focus"));
+  events.dispatchEvent(new Event("online"));
+  expect(save).toHaveBeenCalledTimes(2);
+});
+
 describe("workspace reliability", () => {
   it("refuses chapter creation before the main record session is open", async () => {
     const { backend, open } = fixture();
