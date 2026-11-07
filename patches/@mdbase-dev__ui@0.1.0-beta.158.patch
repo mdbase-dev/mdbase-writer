@@ -34,21 +34,10 @@ index bc45212368c4fea7db946b69e893309f29eec34d..c637a6f79680da4d1bfb3923ef4b0c47
        setQuery(initialQuery);
        setActive(0);
 diff --git a/dist/Dialog.js b/dist/Dialog.js
-index ea6597f327aa4e5ab34b68a9d1c8828c925c66bc..322aef33cc57c8af1c40088507a825c562b75e7d 100644
+index ea6597f327aa4e5ab34b68a9d1c8828c925c66bc..920c46601dbedd8a8e5f4d9d58384699d914fb3f 100644
 --- a/dist/Dialog.js
 +++ b/dist/Dialog.js
-@@ -27,6 +27,10 @@ export function Dialog({
-   useLayoutEffect(() => {
-     const dialog = ref.current;
-     if (!dialog || !open || dialog.open) return;
-+    if (dialog.hasAttribute("popover")) {
-+      dialog.hidePopover();
-+      dialog.removeAttribute("popover");
-+    }
-     invoker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-     dialog.showModal();
-     const focus = () => {
-@@ -66,6 +70,15 @@ export function Dialog({
+@@ -66,6 +66,13 @@ export function Dialog({
        preventScroll: true
      });
    }, [closeDisabled, open, ref]);
@@ -57,14 +46,12 @@ index ea6597f327aa4e5ab34b68a9d1c8828c925c66bc..322aef33cc57c8af1c40088507a825c5
 +    if (!dialog || open || !present) return;
 +    const restore = dialog.contains(document.activeElement) || document.activeElement === document.body;
 +    if (dialog.open) dialog.close();
-+    dialog.setAttribute("popover", "manual");
-+    dialog.showPopover();
 +    if (restore) (returnFocusRef?.current ?? invoker.current)?.focus({ preventScroll: true });
 +  }, [open, present, ref, returnFocusRef]);
    useEffect(() => {
      const dialog = ref.current;
      return () => {
-@@ -81,6 +94,8 @@ export function Dialog({
+@@ -81,6 +88,8 @@ export function Dialog({
      ref: ref,
      className: ["mdbase-dialog mdbase-overlay", className].filter(Boolean).join(" "),
      "data-open": open,
@@ -73,7 +60,7 @@ index ea6597f327aa4e5ab34b68a9d1c8828c925c66bc..322aef33cc57c8af1c40088507a825c5
      role: role,
      "aria-modal": "true",
      "aria-labelledby": titleId,
-@@ -109,6 +124,9 @@ export function Dialog({
+@@ -109,6 +118,9 @@ export function Dialog({
      onClick: event => {
        if (!closeDisabled && event.target === event.currentTarget) onClose();
      },

@@ -16,7 +16,8 @@ intake at `4978743b960b4f40c25e5cafd479afff66ba5ccc`. No merge or deployment is 
   not an alternative presence or animation implementation.
 - The old optional-presence/WAAPI Dialog and palette patches are deleted; the
   published hook owns retention and CSS owns motion. Small non-redundant fixes
-  remain: release native modal focus immediately into an inert visual exit,
+  remain: release native modal focus immediately into an inert visual exit
+  (CSS discrete display/overlay transitions preserve the native backdrop),
   preserve the editor selection on backdrop mousedown, and reset the palette's
   query in a layout effect before its reopened input can accept typing.
   The whole patched dependency cannot yet go: beta.158 still embeds production app URLs,
@@ -87,6 +88,10 @@ pnpm test:lab:opening-recovery
   Writer now darkens the shared strong-accent token for a distinct press.
   R4's unchanged press-fill assertion catches the regression in both themes,
   including reduced motion.
+- UI158 intentionally changes the shared `--sans` token and bundled font from
+  Atkinson Hyperlegible Next to IBM Plex Sans. R4 now expects that published
+  family, still requiring Chromium to prove an actual custom font was used
+  rather than accepting a system fallback. Writer adds no font override.
 - The motion gate now samples the native shared palette dialog rather than
   the deleted custom backdrop. Full entry/exit remain 160/120 ms and Reduce
   remains animation-free. CSS reversals shorten their duration automatically;

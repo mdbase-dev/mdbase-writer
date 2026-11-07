@@ -66,7 +66,8 @@ a, .link { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .home, .workspace { opacity: 1; }
 .home.is-opening { opacity: .6; transition: opacity 100ms cubic-bezier(.4,0,1,1); }
-.mdbase-dialog:popover-open, .mdbase-dialog[data-open="false"] { display: block; }
+.mdbase-dialog.mdbase-overlay { transition-property: opacity, transform, display, overlay; transition-behavior: normal, normal, allow-discrete, allow-discrete; }
+.mdbase-dialog.mdbase-overlay::backdrop { transition-property: opacity, display, overlay; transition-behavior: normal, allow-discrete, allow-discrete; }
 .preview-meta { display: flex; align-items: center; }
 .preview-header > .bar-spacer { display: none; }
 .preview-meta .preview-setting:first-of-type { flex: 0 1 auto; }
@@ -78,7 +79,7 @@ a, .link { color: var(--accent); }
 .mdbase-feedback-sr-only { top: 0; }
 :is(.mdbase-button, .mdbase-icon-button, .manuscript-row) { transition: background 120ms var(--ease-out), transform 120ms var(--ease-out); }
 :is(.mdbase-button, .mdbase-icon-button):active:not(:disabled) { transform: scale(.98); background: color-mix(in oklch, var(--accent) 18%, var(--surface)); }
-.mdbase-button.is-primary:active:not(:disabled) { background: color-mix(in oklch, var(--color-accent-strong) 85%, black); }
+.app .mdbase-button.is-primary:active:not(:disabled) { background: color-mix(in oklch, var(--color-accent-strong) 85%, black); }
 :is(.manuscript-row, .record-row, .heading-row, .outline-manuscript, .sidebar-tabs button, .sidebar-lower-tabs button, .segmented button):active:not(:disabled) { background: color-mix(in oklch, var(--accent) 18%, var(--surface)); }
 .app .mdbase-signal-saved :is(.mdbase-mark-accent, .mdbase-mark-fence-top, .mdbase-mark-fence-bottom, .mdbase-mark-row-bottom) { animation-duration: 400ms; animation-delay: 0ms; }
 .compare-text mark { background: color-mix(in oklch, var(--warning) 25%, var(--surface)); border-left: 2px solid var(--warning); }

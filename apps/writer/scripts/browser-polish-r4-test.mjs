@@ -386,14 +386,14 @@ try {
       await create.waitFor({ state: "hidden" });
       await typeInEditor(page, " CREATE_HANDOFF ");
       await page.evaluate(() => document.fonts.ready);
-      assert.match(await page.locator(".cm-scroller").evaluate(element => getComputedStyle(element).fontFamily), /Atkinson Hyperlegible Next/);
+      assert.match(await page.locator(".cm-scroller").evaluate(element => getComputedStyle(element).fontFamily), /IBM Plex Sans/);
       const session = await context.newCDPSession(page);
       await session.send("DOM.enable");
       await session.send("CSS.enable");
       const { root } = await session.send("DOM.getDocument");
       const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId, selector: ".cm-line" });
       const { fonts } = await session.send("CSS.getPlatformFontsForNode", { nodeId });
-      assert.ok(fonts.some(font => /Atkinson Hyperlegible Next/i.test(font.familyName) && font.isCustomFont), JSON.stringify(fonts));
+      assert.ok(fonts.some(font => /IBM Plex Sans/i.test(font.familyName) && font.isCustomFont), JSON.stringify(fonts));
       if (width === 390) await touchTargets(page, ".topbar button:visible, .pane-tabs button:visible");
       await page.screenshot({ path: `out/polish-r4/${name}.png` });
       await continuePosition(page, width, reducedMotion === "reduce");
