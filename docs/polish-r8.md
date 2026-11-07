@@ -28,13 +28,25 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
 
 ## Red tests and gate maintenance
 
+- Final re-review regressions against d683eff2e: **17/20 passed**. The real
+  `retrySave()` acknowledgment under Reconnecting reached `saved`, `dirty=false`,
+  but clearing the notice produced zero confirmations. Keep the existing
+  previous write tone until a saved notice can present the transition; then
+  consume it exactly once. The new case also checks that a later clean reconnect
+  cannot replay it. At 248 px the local font did not reproduce the reported
+  38 → 75 px header jump, but selection changed Outline's width 44 → 40 px and
+  Sources' width 57.89 → 59.89 px in both themes. The extended test requires
+  stable tab widths, header height and panel top for every selected tab there.
+  Removing only the upper tabs' selected font weight keeps their metrics fixed;
+  the active colour/underline remains. Final R8: **20/20 passed**, including all
+  three new failing-before assertions. No new state, timeout or dependency.
 - Review regressions against c36473cbb: **0/4 passed** (200 px containment in
   both themes; clean reconnect before and after a real save). Comments extended
   to 205.78 px and Split to 238.78 px outside a 200 px sidebar in this local
   reproduction. The two clean reconnects each started `mdbase-settle` despite
   zero dirty records. With these product fixes, all four pass; the separate
-  real-write-pending/acknowledgment case also passes. The full R8 gate is now
-  **19 scenarios**, retaining its original 14 and unchanged assertion budgets.
+  real-write-pending/acknowledgment case also passes. That pass had **19
+  scenarios**; the final re-review adds the twentieth without removing any.
 - New R8 browser gate before product changes: **2/14 passed, 12 failed**.
   Sync geometry, hover, normal sidebar motion, counted tabs, initial settle and
   desktop reference all failed; Reduce and the phone reference already passed.

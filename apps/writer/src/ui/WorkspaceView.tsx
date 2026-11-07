@@ -418,8 +418,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const previousSaveTone = useRef(writeTone);
   const [hasSaved, setHasSaved] = useState(false);
   useEffect(() => {
-    setHasSaved(saveToneSignal(previousSaveTone.current, writeTone) === "saved");
-    previousSaveTone.current = writeTone;
+    setHasSaved(saveNotice.tone === "saved" && saveToneSignal(previousSaveTone.current, writeTone) === "saved");
+    if (writeTone !== "saved" || saveNotice.tone === "saved") previousSaveTone.current = writeTone;
   }, [writeTone, saveNotice.tone]);
   const saveLabel = compactSave ? saveNotice.shortLabel ?? saveNotice.label : saveNotice.label;
 

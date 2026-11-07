@@ -123,6 +123,16 @@ try {
       assert.match(geometry.controls[1].text, /Sources9/);
       assert.match(geometry.controls[2].text, /Comments2/);
       widths.push(geometry.width);
+      if (geometry.width === 248) {
+        const position = () => host.locator('.outline').evaluate(element => ({ height: element.querySelector('.sidebar-tabs').getBoundingClientRect().height, panelTop: element.querySelector('.sidebar-panel').getBoundingClientRect().top, widths: [...element.querySelectorAll('.sidebar-tabs [role="tab"]')].map(tab => tab.getBoundingClientRect().width) }));
+        const before = await position();
+        for (const tab of await host.locator('.sidebar-tabs [role="tab"]').all()) {
+          await tab.click();
+          assert.deepEqual(await position(), before, 'Tab selection must not change wrapping or move the panel at 248 px');
+        }
+        await host.locator('.sidebar-tabs [role="tab"]').first().click();
+        await resizer.focus();
+      }
       await page.keyboard.press('ArrowRight');
     }
     await page.keyboard.press('Home');
@@ -229,6 +239,39 @@ try {
     await host.locator('.save-slot .mdbase-settle').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
     assert.equal(await host.locator('.save-slot .mdbase-settle').evaluate(element => getComputedStyle(element).opacity), '0');
     return { pendingBeforeAcknowledgment: true, settledAfterAcknowledgment: true };
+  });
+  await scenario('settle-acknowledged-while-reconnecting', {}, async (page, host) => {
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => {
+      window.settleCount = 0;
+      document.addEventListener('animationstart', event => {
+        if (event.animationName === 'mdbase-settle' && event.target.closest('#round-eight .save-slot')) window.settleCount++;
+      });
+      window.roundEight.notice('reconnecting');
+    });
+    await host.locator('.save-slot .is-pending').waitFor();
+    await host.locator('.cm-content').focus();
+    await page.keyboard.insertText(' [test] acknowledge while reconnecting');
+    assert.equal(await page.evaluate(() => window.roundEight.workspace.getSnapshot().records.get(window.roundEight.workspace.main).snapshot.dirty), true);
+    assert.equal(await page.evaluate(async () => (await window.roundEight.workspace.retrySave()).ok), true);
+    assert.deepEqual(await page.evaluate(() => {
+      const record = window.roundEight.workspace.getSnapshot().records.get(window.roundEight.workspace.main).snapshot;
+      return { state: record.state, dirty: record.dirty, confirmations: window.settleCount };
+    }), { state: 'saved', dirty: false, confirmations: 0 });
+    assert.equal(await host.locator('.save-slot .mdbase-settle').count(), 0, 'The connection notice still owns the status');
+    await page.evaluate(() => window.roundEight.notice(null));
+    await host.locator('.save-slot .is-saved').waitFor();
+    await host.locator('.save-slot .is-saved').evaluate(async element => {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await Promise.all(element.getAnimations().map(animation => animation.finished));
+    });
+    assert.equal(await page.evaluate(() => window.settleCount), 1, 'A real acknowledgment hidden by Reconnecting must show exactly one confirmation when it clears');
+    await page.evaluate(() => window.roundEight.notice('reconnecting'));
+    await host.locator('.save-slot .is-pending').waitFor();
+    await page.evaluate(() => window.roundEight.notice(null));
+    await host.locator('.save-slot .is-saved').evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(await page.evaluate(() => window.settleCount), 1, 'A later clean reconnect cannot replay the consumed acknowledgment');
+    return { acknowledgedWhileReconnecting: true, confirmations: 1, replayed: 0 };
   });
   for (const width of [1440, 390]) await scenario(`reference-${width}`, { viewport: { width, height: 900 } }, async (page, host) => {
     await host.locator('.cm-content').focus();
