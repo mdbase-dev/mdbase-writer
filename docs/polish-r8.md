@@ -87,6 +87,16 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
   The new held-render regression fails without this fix (**2/3**) and all three
   running/pending/in-flight cases pass with it (**3/3**). Full finite checks pass
   **611 tests, six optional skips**. No first-frame or long-task budget changes.
+- Final local R7 still exposed a separate start delay: with no long task and no
+  writes during motion, first changed frames reached **50.0/54.6 ms**. A browser
+  trace showed the new sidebar animation waiting on its pending play task before
+  acquiring a timeline start. It now starts on the current document timeline,
+  keeping the same 120/160 ms durations and reversal/Reduce behavior. The added
+  deterministic R8 assertion is **13/14 without this correction** (pending play
+  task), **14/14 with it**, and requires immediate timeline ownership plus the
+  unchanged durations.
+  Local R7 after correction: first changes **11.3–23.5 ms**, **0 long tasks**,
+  **0 bitmap writes during motion** across all four transitions.
 - R8's narrow-tab check also reproduced a test race (**13/14**): it read the
   active underline before the CSS colour transition advanced. It now awaits
   that actual animation and additionally verifies `aria-selected`; the colour

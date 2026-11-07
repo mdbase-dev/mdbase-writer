@@ -249,6 +249,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       sidebarAnimation.current = element?.animate([{ opacity: from }, { opacity: Number(layout.sidebar) }], {
         duration: layout.sidebar ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)",
       }) ?? null;
+      if (sidebarAnimation.current) sidebarAnimation.current.startTime = document.timeline.currentTime;
     }
     const proseChanged = paneChanged || previous.active !== active;
     const animations = [...(!proseChanged || (paneChanged && layout.view === "preview") ? [] : grid.current.querySelectorAll<HTMLElement>(paneChanged ? ".write" : ".editor"))].map(element => element.animate(

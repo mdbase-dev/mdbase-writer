@@ -75,7 +75,13 @@ try {
     await page.evaluate(() => {
       window.roundEightAnimations = [];
       const animate = Element.prototype.animate;
-      Element.prototype.animate = function (frames, options) { window.roundEightAnimations.push({ prose: this.matches('.write, .editor'), frames }); return animate.call(this, frames, options); };
+      Element.prototype.animate = function (frames, options) {
+        const animation = animate.call(this, frames, options);
+        const sample = { prose: this.matches('.write, .editor'), sidebar: this.matches('.outline'), frames, duration: options.duration };
+        window.roundEightAnimations.push(sample);
+        queueMicrotask(() => { sample.pending = animation.pending; sample.startTime = animation.startTime; });
+        return animation;
+      };
     });
     await page.keyboard.press("Control+Backslash");
     await host.locator('.workspace.no-sidebar').waitFor();
@@ -84,6 +90,10 @@ try {
     await host.locator('.workspace:not(.no-sidebar)').waitFor();
     const animations = await page.evaluate(() => window.roundEightAnimations);
     assert.equal(animations.filter(animation => animation.prose).length, 0, JSON.stringify(animations));
+    const sidebar = animations.filter(animation => animation.sidebar);
+    assert.equal(sidebar.length, reducedMotion === "reduce" ? 0 : 2, JSON.stringify(animations));
+    assert.ok(sidebar.every(animation => !animation.pending && animation.startTime !== null), "Sidebar motion must start on the current timeline, not wait for a pending play task");
+    if (sidebar.length) assert.deepEqual(sidebar.map(animation => animation.duration), [120, 160]);
     assert.equal(await host.locator('.write').evaluate(element => getComputedStyle(element).opacity), "1");
     return animations;
   });
