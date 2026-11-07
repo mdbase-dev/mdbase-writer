@@ -243,7 +243,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     if (media.matches) { sidebarAnimation.current?.cancel(); return; }
     if (sidebarChanged && !narrow) {
       const element = grid.current.querySelector(".outline");
-      const from = element && sidebarAnimation.current ? getComputedStyle(element).opacity : String(Number(previous.sidebar));
+      const interrupted = sidebarAnimation.current?.playState === "running" || sidebarAnimation.current?.pending;
+      const from = element && interrupted ? getComputedStyle(element).opacity : String(Number(previous.sidebar));
       sidebarAnimation.current?.cancel();
       sidebarAnimation.current = element?.animate([{ opacity: from }, { opacity: Number(layout.sidebar) }], {
         duration: layout.sidebar ? 160 : 120, easing: "cubic-bezier(.22,1,.36,1)",

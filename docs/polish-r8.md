@@ -76,6 +76,9 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
   keeping two competing sidebar fades. Phone pane transitions remain CSS-owned.
   Focused preview regressions: **0/2 without the scheduler fix, 2/2 with it**
   (running and pending sidebar animation, unchanged prose, actual canvas draw).
+  The retained original motion gate also caught a completed-animation reopen
+  with no continuous opacity trajectory. Current opacity is reused only for a
+  still-running/pending reversal; a completed close reopens from opacity 0.
 - Extracted/compiled catalogues remove the unused “Saving to collection…” message
   deleted with the redundant companion status. No untranslated strings are added.
 
