@@ -98,6 +98,8 @@ try {
     assert.ok(tabs[2].text.match(/\d/));
     for (const tab of await host.locator('.sidebar-tabs [role="tab"]').all()) {
       await tab.click();
+      assert.equal(await tab.getAttribute('aria-selected'), 'true');
+      await tab.evaluate(async element => { await Promise.all(element.getAnimations().map(animation => animation.finished)); });
       assert.equal(await tab.evaluate(element => getComputedStyle(element).borderBottomColor !== 'rgba(0, 0, 0, 0)'), true);
     }
     return tabs;

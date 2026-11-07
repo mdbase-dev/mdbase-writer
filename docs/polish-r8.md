@@ -79,6 +79,10 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
   The retained original motion gate also caught a completed-animation reopen
   with no continuous opacity trajectory. Current opacity is reused only for a
   still-running/pending reversal; a completed close reopens from opacity 0.
+- R8's narrow-tab check also reproduced a test race (**13/14**): it read the
+  active underline before the CSS colour transition advanced. It now awaits
+  that actual animation and additionally verifies `aria-selected`; the colour
+  and spacing assertions are unchanged, with no added sleep or timeout.
 - Extracted/compiled catalogues remove the unused “Saving to collection…” message
   deleted with the redundant companion status. No untranslated strings are added.
 
