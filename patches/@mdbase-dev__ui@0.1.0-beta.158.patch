@@ -201,3 +201,28 @@ index dd79b2d11a1159116300d67cd037e8a5ee995f94..3d5f0bad2d4a5d1555ef154ce68fc702
    const [signOutPrompt, setSignOutPrompt] = useState(null);
    const running = useRef(null);
    const latest = useRef({
+diff --git a/dist/overlay.js b/dist/overlay.js
+index b66d362aabb34a3f2aa0213ebc3373bb38e92897..b996758d6fec6ef427de8361bb00064f1f15d65d 100644
+--- a/dist/overlay.js
++++ b/dist/overlay.js
+@@ -7,14 +7,12 @@ export function useOverlay(open) {
+       setRetained(true);
+       return;
+     }
+-    // The resolved transition duration is always in seconds, whatever a build does to the token.
+-    const duration = ref.current ? parseFloat(getComputedStyle(ref.current).transitionDuration) * 1000 : 0;
+-    if (!duration) {
+-      setRetained(false);
+-      return;
+-    }
+-    const timeout = setTimeout(() => setRetained(false), duration);
+-    return () => clearTimeout(timeout);
++    const animations = ref.current?.getAnimations() ?? [];
++    let cancelled = false;
++    void Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
++      if (!cancelled) setRetained(false);
++    });
++    return () => { cancelled = true; };
+   }, [open]);
+   return {
+     ref,

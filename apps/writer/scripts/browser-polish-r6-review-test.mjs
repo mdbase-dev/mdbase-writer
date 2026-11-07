@@ -57,6 +57,33 @@ async function announcement(page, text) {
   await page.waitForFunction(text => [...document.querySelectorAll('[aria-live]')].some(element => element.textContent.includes(text) && !element.closest('[inert], [aria-hidden="true"]')), text);
 }
 try {
+  await scenario("Shared exit waits for its actual transition", async page => {
+    await home(page);
+    await page.keyboard.press("Control+/");
+    const dialog = page.locator('.shortcuts-dialog[data-open="true"]');
+    await dialog.waitFor();
+    const element = await dialog.elementHandle();
+    const paused = await element.evaluate(async element => {
+      await Promise.all(element.getAnimations().map(animation => animation.finished));
+      const paused = new Promise(resolve => {
+        const observer = new MutationObserver(() => {
+          if (element.dataset.open !== "false") return;
+          const animations = element.getAnimations();
+          for (const animation of animations) animation.pause();
+          observer.disconnect();
+          resolve(animations.length);
+        });
+        observer.observe(element, { attributes: true, attributeFilter: ["data-open"] });
+      });
+      element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      return paused;
+    });
+    assert.ok(paused > 0, "Hold the real CSS exit, not a fabricated animation");
+    await page.waitForTimeout(180);
+    assert.equal(await element.evaluate(element => element.isConnected), true, "Do not unmount before the actual exit finishes");
+    await element.evaluate(element => element.getAnimations().forEach(animation => animation.finish()));
+    await page.locator(".shortcuts-dialog").waitFor({ state: "detached" });
+  });
   for (const surface of ["Home", "Workspace"]) {
     await scenario(`Shared exiting dialog does not block the next shortcut on ${surface}`, async page => {
       await (surface === "Home" ? home(page) : open(page));

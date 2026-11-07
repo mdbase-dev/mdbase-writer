@@ -13,9 +13,15 @@ async function probe(page, selector, action, reverse) {
   return page.evaluate(async ({ selector, action, reverse }) => {
     const frames = [];
     const animations = [];
+    const controlled = new Set();
     const captureAnimations = () => {
       for (const animation of document.getAnimations()) {
         const target = animation.effect?.target;
+        if (target?.matches?.(selector) && !controlled.has(animation)) {
+          animation.pause();
+          animation.currentTime = 0;
+          controlled.add(animation);
+        }
         if (target?.matches?.(selector) && !animations.some((entry) => entry.id === animation.id && entry.duration === animation.effect.getTiming().duration && entry.startTime === animation.startTime)) {
           animations.push({ id: animation.id, target: target.className, startTime: animation.startTime, duration: animation.effect.getTiming().duration, frames: animation.effect.getKeyframes() });
         }
@@ -59,9 +65,16 @@ async function probe(page, selector, action, reverse) {
           perform(reverse);
           interruption = { before, after: measure() };
           reversed = true;
+        } else {
+          for (const animation of controlled) {
+            if (animation.playState !== "paused") continue;
+            const duration = animation.effect.getComputedTiming().activeDuration;
+            animation.currentTime = Math.min(duration, Number(animation.currentTime) + duration / 8);
+            if (animation.currentTime >= duration) animation.finish();
+          }
         }
         const element = document.querySelector(selector);
-        const running = element?.getAnimations().some(animation => animation.playState === "running" || animation.pending);
+        const running = element?.getAnimations().some(animation => animation.playState === "running" || animation.playState === "paused" || animation.pending);
         const closing = element && (element.inert || element.ariaHidden === "true");
         if (elapsed < 350 || elapsed < 2000 && (running || closing)) requestAnimationFrame(sample);
         else resolve();

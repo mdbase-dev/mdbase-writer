@@ -15,7 +15,9 @@ intake at `4978743b960b4f40c25e5cafd479afff66ba5ccc`. No merge or deployment is 
   Popover is menu composition over the shared `useOverlay`/`useMenuPopover`,
   not an alternative presence or animation implementation.
 - The old optional-presence/WAAPI Dialog and palette patches are deleted; the
-  published hook owns retention and CSS owns motion. Small non-redundant fixes
+  shared hook owns retention and CSS owns motion. Its elapsed exit timer is
+  replaced by the actual browser animations' completion promises, so a delayed
+  first paint cannot truncate an exit. Small non-redundant fixes
   remain: release native modal focus immediately into an inert visual exit
   (CSS discrete display/overlay transitions preserve the native backdrop),
   preserve the editor selection on backdrop mousedown, and reset the palette's
@@ -115,6 +117,14 @@ pnpm test:lab:opening-recovery
 - No timeout, accessibility severity, save assertion, latency budget or
   cold-optimizer requirement is relaxed. CI's required check must still pass on
   GitHub; local passes alone are not release evidence.
+- A final cold run exposed the shared hook's exit timer removing a palette
+  with opacity still **0.88**. A regression pauses a real CSS exit beyond its
+  120 ms nominal duration: it fails with the timer and passes with completion-
+  owned retention, then requires removal after the real animation finishes.
+  GitHub also caught a probe that skipped its narrow reversal window between
+  paints. Motion probes now pause and advance the real browser animations in
+  eighth-duration steps; the same continuous-sample, 160/120 ms duration,
+  reversal-continuity, removal and reduced-motion assertions remain intact.
 - Final GitHub CI caught a real phone Continue regression: Editor cleanup
   overwrote the captured position after the workspace header had detached,
   moving visible text by **5.5 px** with the new font. Position capture now

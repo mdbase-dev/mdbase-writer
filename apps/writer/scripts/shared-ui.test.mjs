@@ -10,7 +10,8 @@ test("uses shared overlay lifecycles without the local adapter", () => {
   assert.equal(dependencies["@mdbase-dev/i18n"], "0.1.0-beta.158");
   assert.equal(existsSync(new URL("src/ui/overlays.tsx", app)), false);
   const patch = read("../../patches/@mdbase-dev__ui@0.1.0-beta.158.patch");
-  assert.doesNotMatch(patch, /dist\/overlay|dist\/CommandPalette\.d\.ts/);
+  assert.doesNotMatch(patch, /dist\/CommandPalette\.d\.ts/);
+  assert.match(patch, /animation\.finished/);
   assert.match(patch, /dist\/Dialog\.js/);
   assert.doesNotMatch(patch, /present = open|readonly present|\.animate\(/);
   assert.match(read("src/ui/Home.tsx"), /import \{ CommandPalette \} from "@mdbase-dev\/ui\/command-palette"/);
