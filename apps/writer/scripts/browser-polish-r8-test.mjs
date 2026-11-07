@@ -276,7 +276,7 @@ try {
   for (const width of [1440, 390]) await scenario(`reference-${width}`, { viewport: { width, height: 900 } }, async (page, host) => {
     await host.locator('.cm-content').focus();
     await page.keyboard.press("Control+/");
-    const dialog = host.getByRole('dialog', { name: 'Keyboard shortcuts', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Keyboard shortcuts', exact: true });
     await dialog.waitFor();
     await dialog.evaluate(async element => { await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished)); });
     const groups = await dialog.locator('.shortcut-group').evaluateAll(elements => elements.map(element => ({ x: Math.round(element.getBoundingClientRect().x), width: element.getBoundingClientRect().width })));

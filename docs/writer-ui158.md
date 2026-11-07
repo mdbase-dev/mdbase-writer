@@ -105,6 +105,13 @@ pnpm test:lab:opening-recovery
   too. Both save-guard interactions and the merged remote/local text assertions
   remain. The backdrop cancellation test sends the shared Dialog's real click
   event, not the deleted adapter's mousedown event.
+  R8's reference cases locate the unique accessible dialog at page scope,
+  because the published shared Dialog portals outside the fixture host;
+  the two-column/one-column and overflow assertions are unchanged.
+  These assertions exposed shared CSS loaded after Writer's override: the
+  desktop reference shrank to 560 px and one column. The more-specific
+  `.mdbase-dialog.shortcuts-dialog` width restores the intended desktop
+  reference without depending on stylesheet injection order.
 - No timeout, accessibility severity, save assertion, latency budget or
   cold-optimizer requirement is relaxed. CI's required check must still pass on
   GitHub; local passes alone are not release evidence.

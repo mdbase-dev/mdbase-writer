@@ -165,7 +165,7 @@ button.bar-problems { cursor: pointer; }
 /* Dialogs */
 .dialog-note { margin: 0; }
 .span-2 { grid-column: 1 / -1; }
-.shortcuts-dialog { width: min(64rem, calc(100vw - 32px)); }
+.mdbase-dialog.shortcuts-dialog { width: min(64rem, calc(100vw - 32px)); }
 .shortcuts { margin: 0; display: grid; gap: 0.1rem; }
 .shortcuts div { display: grid; grid-template-columns: 9.5rem 1fr; gap: 1rem; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
 .shortcuts div:last-child { border-bottom: 0; }
