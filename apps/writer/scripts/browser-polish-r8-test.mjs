@@ -97,6 +97,56 @@ try {
     assert.equal(await host.locator('.write').evaluate(element => getComputedStyle(element).opacity), "1");
     return animations;
   });
+  for (const colorScheme of ["light", "dark"]) await scenario(`tabs-range-${colorScheme}`, { colorScheme }, async (page, host) => {
+    await page.evaluate(() => document.fonts.ready);
+    const resizer = host.getByRole('separator', { name: 'Resize the sidebar', exact: true });
+    const widths = [];
+    await resizer.focus();
+    await page.keyboard.press('Home');
+    assert.equal(await resizer.getAttribute('aria-valuenow'), '200');
+    for (let index = 0; index <= 20; index++) {
+      const geometry = await host.locator('.outline').evaluate(element => {
+        const sidebar = element.getBoundingClientRect();
+        const controls = [...element.querySelectorAll('.sidebar-tabs button')].map(button => {
+          const box = button.getBoundingClientRect();
+          const range = document.createRange(); range.selectNodeContents(button);
+          const text = range.getBoundingClientRect();
+          return { text: button.textContent, left: Math.min(box.left, text.left), right: Math.max(box.right, text.right), top: box.top, bottom: box.bottom, hit: button.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)) };
+        });
+        return { width: sidebar.width, left: sidebar.left, right: sidebar.right, controls };
+      });
+      assert.equal(geometry.width, 200 + index * 16);
+      for (const control of geometry.controls) {
+        assert.ok(control.left >= geometry.left && control.right <= geometry.right, JSON.stringify(geometry));
+        assert.ok(control.hit, JSON.stringify(control));
+      }
+      assert.match(geometry.controls[1].text, /Sources9/);
+      assert.match(geometry.controls[2].text, /Comments2/);
+      widths.push(geometry.width);
+      await page.keyboard.press('ArrowRight');
+    }
+    await page.keyboard.press('Home');
+    await host.locator('.sidebar-tabs [role="tab"]').first().focus();
+    for (const name of ['Sources', 'Comments', 'Outline']) {
+      await page.keyboard.press('ArrowRight');
+      assert.match(await host.locator('.sidebar-tabs [aria-selected="true"]').innerText(), new RegExp(name));
+    }
+    for (const tab of await host.locator('.sidebar-tabs [role="tab"]').all()) {
+      await tab.click();
+      assert.equal(await tab.getAttribute('aria-selected'), 'true');
+      assert.equal(await tab.evaluate(element => {
+        const sidebar = element.closest('.outline').getBoundingClientRect();
+        const range = document.createRange(); range.selectNodeContents(element);
+        const text = range.getBoundingClientRect();
+        return text.left >= sidebar.left && text.right <= sidebar.right;
+      }), true, 'The selected tab and its count remain contained at 200 px');
+    }
+    await page.screenshot({ path: `out/polish-r8/tabs-200-${colorScheme}.png` });
+    await resizer.focus();
+    await page.keyboard.press('End');
+    assert.equal(await resizer.getAttribute('aria-valuenow'), '520');
+    return { widths, minimum: 200, maximum: 520 };
+  });
   await scenario("tabs-271", {}, async (page, host) => {
     await host.locator('.outline').evaluate(element => element.style.width = '271px');
     const tabs = await host.locator('.sidebar-tabs [role="tab"]').evaluateAll(elements => elements.map(element => {
@@ -129,6 +179,56 @@ try {
     await notice.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
     assert.equal(await notice.evaluate(element => getComputedStyle(element).opacity), "0", "A real save settles back to the quiet state");
     return { mount: 0, saved: 1 };
+  });
+  for (const afterSave of [false, true]) await scenario(`settle-clean-reconnect-${afterSave ? 'after-save' : 'initial'}`, {}, async (page, host) => {
+    await page.mouse.move(0, 0);
+    if (afterSave) {
+      await host.locator('.cm-content').focus();
+      await page.keyboard.insertText(' [test] save before clean reconnect');
+      await page.waitForFunction(() => [...document.querySelectorAll('#round-eight .save-slot .mdbase-settle')].some(element => element.getAnimations().some(animation => animation.animationName === 'mdbase-settle')));
+      await host.locator('.save-slot .mdbase-settle').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+      await host.locator('.cm-content').focus();
+      await host.locator('.cm-content').evaluate(element => element.blur());
+    }
+    assert.equal(await page.evaluate(() => {
+      const snapshot = window.roundEight.workspace.getSnapshot();
+      return !snapshot.pendingSettings && [...snapshot.records.values()].every(record => !record.snapshot.dirty && record.snapshot.state === 'saved');
+    }), true, 'Reconnect fixture has no edits or dirty records');
+    await page.evaluate(() => {
+      window.settleAnimations = [];
+      window.captureSettle = event => { if (event.animationName === 'mdbase-settle' && event.target.closest('#round-eight .save-slot')) window.settleAnimations.push(event.animationName); };
+      document.addEventListener('animationstart', window.captureSettle);
+      window.roundEight.notice('offline');
+    });
+    await host.locator('.save-slot .is-pending').waitFor();
+    await page.evaluate(() => window.roundEight.notice(null));
+    await host.locator('.save-slot .is-saved').waitFor();
+    const animations = await host.locator('.save-slot .is-saved').evaluate(async element => {
+      const active = element.getAnimations().map(animation => animation.animationName);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      document.removeEventListener('animationstart', window.captureSettle);
+      return [...active, ...window.settleAnimations];
+    });
+    assert.deepEqual(animations, [], 'A clean reconnect is not a save, including after an earlier genuine save');
+    return { afterSave, dirty: 0, reconnectAnimations: animations.length };
+  });
+  await scenario('settle-write-still-pending', {}, async (page, host) => {
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => {
+      const workspace = window.roundEight.workspace;
+      workspace.setBody(workspace.main, `${workspace.getSnapshot().records.get(workspace.main).snapshot.body} [test] unsettled write`);
+      window.roundEight.notice('offline');
+    });
+    await host.locator('.save-slot .is-pending').waitFor();
+    await page.evaluate(() => window.roundEight.notice(null));
+    await host.locator('.save-slot .is-pending').waitFor();
+    assert.equal(await page.evaluate(() => window.roundEight.workspace.getSnapshot().records.get(window.roundEight.workspace.main).snapshot.dirty), true);
+    assert.equal(await host.locator('.save-slot .mdbase-settle').count(), 0, 'A reconnect cannot settle a write still awaiting acknowledgment');
+    await page.evaluate(() => window.roundEight.workspace.retrySave());
+    await page.waitForFunction(() => [...document.querySelectorAll('#round-eight .save-slot .mdbase-settle')].some(element => element.getAnimations().some(animation => animation.animationName === 'mdbase-settle')));
+    await host.locator('.save-slot .mdbase-settle').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+    assert.equal(await host.locator('.save-slot .mdbase-settle').evaluate(element => getComputedStyle(element).opacity), '0');
+    return { pendingBeforeAcknowledgment: true, settledAfterAcknowledgment: true };
   });
   for (const width of [1440, 390]) await scenario(`reference-${width}`, { viewport: { width, height: 900 } }, async (page, host) => {
     await host.locator('.cm-content').focus();

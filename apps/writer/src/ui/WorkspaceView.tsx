@@ -414,12 +414,14 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const connection = useContext(ConnectionNoticeContext);
   const locallySaved = !snap.pendingSettings && !snap.draftProblem && [...snap.records.values()].every(record => !record.snapshot.dirty || record.localSaved);
   const saveNotice = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, connection, locallySaved);
-  const previousSaveTone = useRef(saveNotice.tone);
+  const writeTone = workspaceSaveNotice(overall, snap.recoveredDrafts.size > 0, null, locallySaved).tone;
+  const previousSaveTone = useRef(writeTone);
   const [hasSaved, setHasSaved] = useState(false);
   useEffect(() => {
-    if (saveToneSignal(previousSaveTone.current, saveNotice.tone) === "saved") setHasSaved(true);
-    previousSaveTone.current = saveNotice.tone;
-  }, [saveNotice.tone]);
+    setHasSaved(saveToneSignal(previousSaveTone.current, writeTone) === "saved");
+    previousSaveTone.current = writeTone;
+  }, [writeTone, saveNotice.tone]);
+  const saveLabel = compactSave ? saveNotice.shortLabel ?? saveNotice.label : saveNotice.label;
 
   useEffect(() => {
     document.title = `${manuscriptTitle} · mdbase writer`;
@@ -1013,7 +1015,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           <h1 id="manuscript-title" className="bar-title" title={manuscriptTitle}>{manuscriptTitle}</h1>
           {workspace.kind === "demo" && <span className="demo-identity" title={translate`Demo manuscripts reset on reload.`}><Trans>Demo</Trans></span>}
           <div className={`save-slot${hasSaved ? " has-saved" : ""}`}>
-            <SaveNotice tone={saveNotice.tone} label={compactSave ? saveNotice.shortLabel ?? saveNotice.label : saveNotice.label} />
+            {saveNotice.tone === writeTone
+              ? <SaveNotice tone={writeTone} label={saveLabel} />
+              : <span className={`mdbase-save-notice is-${saveNotice.tone}`} aria-live="polite">{saveLabel}</span>}
             {connection === "sync_delayed" && <button type="button" className="sync-status link small" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>}
             <span className="bar-words" title={icuPlural(order.length, { one: "In # chapter; citations, code and math are not counted", other: "In # chapters; citations, code and math are not counted" })}>
               {countLabel(stats.words, "word")}
