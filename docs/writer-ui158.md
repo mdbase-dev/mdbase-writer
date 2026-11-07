@@ -108,6 +108,14 @@ pnpm test:lab:opening-recovery
 - No timeout, accessibility severity, save assertion, latency budget or
   cold-optimizer requirement is relaxed. CI's required check must still pass on
   GitHub; local passes alone are not release evidence.
+- Final GitHub CI caught a real phone Continue regression: Editor cleanup
+  overwrote the captured position after the workspace header had detached,
+  moving visible text by **5.5 px** with the new font. Position capture now
+  belongs to the parent's layout cleanup, before its header is removed;
+  the child no longer overwrites it. The focused phone reproduction improves
+  to **0.5 px**, within the unchanged 2 px gate. R4 also checks Back/Forward
+  restoration after a distinct scroll, covering navigation without the
+  explicit Manuscripts-button capture.
 
 Unproved: naturally occurring outages (the failure injections are explicit),
 production/staging live acceptance, post-deployment/offline-shell behavior,

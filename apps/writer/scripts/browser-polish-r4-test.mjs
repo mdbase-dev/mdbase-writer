@@ -114,6 +114,17 @@ async function continuePosition(page, width, reduced) {
   const before = await page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; });
   await page.keyboard.type("RESUMED");
   assert.equal(await page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; }), before.slice(0, position.head) + "RESUMED" + before.slice(position.head));
+  await page.locator(".cm-scroller").evaluate(element => { element.scrollTop -= 190; });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const historyAnchor = await visible();
+  await page.goBack();
+  await page.locator(".continue-card").waitFor();
+  await page.goForward();
+  await editor.waitFor();
+  await page.waitForTimeout(220);
+  const historyRestored = await visible();
+  assert.equal(historyRestored.text, historyAnchor.text);
+  assert.ok(Math.abs(historyRestored.y - historyAnchor.y) < 2, `History moved visible text: ${JSON.stringify({ historyAnchor, historyRestored })}`);
   if (width === 390) await page.locator(".pane-tabs button").first().click();
   await page.getByRole("tablist", { name: "Sidebar", exact: true }).getByRole("tab", { name: /^Sources/ }).click();
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();

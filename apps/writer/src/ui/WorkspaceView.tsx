@@ -211,6 +211,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
   const [activeComment, setActiveComment] = useState<string | null>(null);
   const editor = useRef<EditorHandle | null>(null);
+  useLayoutEffect(() => () => editor.current?.rememberPosition(), []);
   const [problemAnnouncement, setProblemAnnouncement] = useState<{ message: string; sequence: number } | null>(null);
   const [editorStates] = useState(() => new Map<string, RetainedEditor>());
   const [position] = useState(() => recentManuscripts(workspace.namespace).find(entry => entry.path === workspace.main)?.position);
