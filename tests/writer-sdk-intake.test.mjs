@@ -13,14 +13,14 @@ const metadata=bytes=>JSON.parse(/^const metadata = (\{.*\});$/m.exec(bytes.toSt
 const member=(archive,path)=>execFileSync('tar',['-xOf',resolve(root,'vendor',archive),`package/dist/${path}`],{maxBuffer:8_000_000});
 
 test('production npm archive and installed SDK match the authenticated release',async()=>{
- const pin=JSON.parse(await read('vendor/sdk-production-beta159.json'));
- assert.equal(pin.sha256,'bcf234edfa1830708c38299f6a0e10c5657203da237f9fc481fc4c024685f846');
- assert.equal(pin.sourceCommit,'e6cfff7cf453559aaf07781ba7991bcdc6cfcb70');
+ const pin=JSON.parse(await read('vendor/sdk-production-beta160.json'));
+ assert.equal(pin.sha256,'2bc0eec7c91911213b2eb1f86a3c1b492f61a4b2b0fdd5cccf29bb863a029b3b');
+ assert.equal(pin.sourceCommit,'89548fc762b799ae686cb0143fe4ba11a0e537f3');
  assert.equal(hash(await read(`vendor/${pin.artifact}`)),pin.sha256);
  const pkg=JSON.parse(await read('apps/writer/package.json'));
  const target=process.env.VITE_MDBASE_ENV==='staging'?'staging':'production';
  const archive=pin.artifact;
- assert.equal(pkg.dependencies['@mdbase-dev/sdk'],'0.1.0-beta.159');
+ assert.equal(pkg.dependencies['@mdbase-dev/sdk'],'0.1.0-beta.160');
  const original=member(pin.artifact,'application/packaged-trust.js');
  assert.equal(hash(original),pin.packagedTrustModuleSha256);
  assert.deepEqual(await read('apps/writer/node_modules/@mdbase-dev/sdk/dist/application/packaged-trust.js'),member(archive,'application/packaged-trust.js'));
