@@ -125,6 +125,11 @@ pnpm test:lab:opening-recovery
   paints. Motion probes now pause and advance the real browser animations in
   eighth-duration steps; the same continuous-sample, 160/120 ms duration,
   reversal-continuity, removal and reduced-motion assertions remain intact.
+  R4's real-keyboard focus handoff holds that same real exit until the first
+  key arrives. It fully paints the entry before dismissal, rather than
+  racing an entry whose reversed exit may finish before the next DevTools
+  round trip. Its retained/inert overlay, editor target and complete text
+  assertions are unchanged.
 - Final GitHub CI caught a real phone Continue regression: Editor cleanup
   overwrote the captured position after the workspace header had detached,
   moving visible text by **5.5 px** with the new font. Position capture now

@@ -139,12 +139,23 @@ async function immediateResume(page, shortcut, overlay, text, reduced) {
   await page.locator(".cm-content").focus();
   await page.keyboard.press(shortcut);
   await page.locator(overlay).waitFor();
+  await page.locator(overlay).evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
   await page.evaluate(({ overlay }) => {
     window.resumeKeys = [];
+    const element = document.querySelector(overlay);
+    let held = [];
+    const observer = new MutationObserver(() => {
+      if (element.dataset.open !== "false") return;
+      held = element.getAnimations();
+      for (const animation of held) animation.pause();
+      observer.disconnect();
+    });
+    observer.observe(element, { attributes: true, attributeFilter: ["data-open"] });
     const record = event => {
       if (event.key.length !== 1) return;
       const element = document.querySelector(overlay);
       window.resumeKeys.push({ key: event.key, editor: event.target.matches(".cm-content"), attached: Boolean(element), inert: element?.inert });
+      for (const animation of held) animation.play();
       if (window.resumeKeys.length === 1) document.removeEventListener("keydown", record, true);
     };
     document.addEventListener("keydown", record, true);
