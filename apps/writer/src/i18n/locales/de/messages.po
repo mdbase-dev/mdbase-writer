@@ -758,7 +758,7 @@ msgstr "Verknüpfung aufgehoben: Der Text wurde geändert."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr "Ausblenden"
+msgstr "Schließen"
 
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"

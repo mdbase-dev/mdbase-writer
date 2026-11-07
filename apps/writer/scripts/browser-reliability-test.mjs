@@ -453,11 +453,13 @@ try {
     });
     await page.getByRole("button", { name: "Compare versions" }).waitFor();
     await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-    await page.getByRole("dialog", { name: "Some changes are not saved" }).waitFor();
-    await page.getByRole("button", { name: "Keep writing" }).click();
+    const activeGuard = page.getByRole("dialog", { name: "Some changes are not saved" }).and(page.locator('[data-open="true"]'));
+    await activeGuard.waitFor();
+    await activeGuard.getByRole("button", { name: "Keep writing" }).click();
     await page.goBack();
-    await page.getByRole("dialog", { name: "Some changes are not saved" }).waitFor();
-    await page.getByRole("button", { name: "Keep writing" }).click();
+    await activeGuard.waitFor();
+    assert.equal(await activeGuard.count(), 1, "Only the current guard is interactive during the previous dialog's visual exit");
+    await activeGuard.getByRole("button", { name: "Keep writing" }).click();
     await page.waitForFunction(() => new URL(location.href).searchParams.get("manuscript") === "manuscripts/patient-observation.md");
     await page.getByRole("button", { name: "Compare versions" }).click();
     await page.getByLabel("Merged Markdown").fill("# Merged\n\nLocal and remote changes preserved.\n");

@@ -758,7 +758,7 @@ msgstr "Anclaje desvinculado: el texto ha cambiado"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr "Cerrar aviso"
+msgstr "Descartar"
 
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"

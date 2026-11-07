@@ -1,0 +1,13 @@
+{
+  "environment": "lab",
+  "revision": "373c4a4e78e821e45a330e156a019a7aa635cfe8",
+  "engine": null,
+  "ui": "0.1.0-beta.158",
+  "sdk": "0.1.0-beta.159",
+  "sdkArchiveSha256": "857a94b6fa2cec0c37488f504fa99dc68534795c7ff0c659923022af33375e38",
+  "receipts": [
+    { "fault": "log-token", "hintPreselected": false, "failures": 1, "reopenRequests": 1, "recovered": "Home", "recoveryMs": 7771, "documentReloaded": false },
+    { "fault": "runtime-http200", "failures": 1, "registrations": 1, "networkBlame": false }
+  ],
+  "cleanup": "test and exploratory installations revoked; no records or setup changed"
+}

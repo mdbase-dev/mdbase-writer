@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { isApplePlatform, shortcutLabel, type Command } from "@mdbase-dev/ui/command-palette";
-import { Dialog } from "./overlays.js";
+import { Dialog } from "@mdbase-dev/ui/dialog";
 
 export function Shortcuts({ open, onClose, commands }: { open: boolean; onClose(): void; commands: readonly Command[] }) {
   return <Dialog open={open} onClose={onClose} title={t`Keyboard shortcuts`} className="shortcuts-dialog"><ShortcutEntries commands={commands} /></Dialog>;
