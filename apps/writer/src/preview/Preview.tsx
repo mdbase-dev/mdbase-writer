@@ -159,14 +159,20 @@ export const Preview = memo(function Preview({ visible: isVisible, artifact, pro
     };
   }, [retry]);
 
+  const waitForLayout = async () => {
+    for (;;) {
+      const panes = scroller.current?.closest(".workspace")?.querySelectorAll(".write, .outline") ?? [];
+      const animations = [...panes].flatMap(pane => pane.getAnimations()).filter(animation => animation.playState === "running" || animation.pending);
+      if (animations.length === 0) return;
+      await Promise.allSettled(animations.map(animation => animation.finished));
+    }
+  };
+
   /** Draws every visible page that is behind the current document version. */
   const drawVisible = () => {
     if (drawScheduled.current) return;
     drawScheduled.current = true;
     drawing.current = drawing.current.then(async () => {
-      const panes = scroller.current?.closest(".workspace")?.querySelectorAll(".write, .outline") ?? [];
-      const animations = [...panes].flatMap(pane => pane.getAnimations()).filter(animation => animation.playState === "running" || animation.pending);
-      await Promise.allSettled(animations.map(animation => animation.finished));
       drawScheduled.current = false;
       const s = session.current;
       const host = pagesHost.current;
@@ -192,7 +198,9 @@ export const Preview = memo(function Preview({ visible: isVisible, artifact, pro
         // Each page is a long task: let keystrokes in between, and leave the
         // rest for the newer document if one arrived meanwhile.
         await yieldToInput();
+        await waitForLayout();
         if (arrived.current !== waiting || version.current !== v || !root.checkVisibility({ visibilityProperty: true })) return;
+        if (canvas.clientWidth !== cssWidth) return;
         const pixelPerPt = Math.min(4, Math.max(1, (cssWidth / box.width) * (window.devicePixelRatio || 1)));
         const next = document.createElement("canvas");
         next.width = Math.round(box.width * pixelPerPt);
@@ -204,7 +212,9 @@ export const Preview = memo(function Preview({ visible: isVisible, artifact, pro
         const shown = drawnWidth.current.get(index) === cssWidth ? drawnKey.current.get(index) : undefined;
         const result = await s.renderer.renderCanvas({ renderSession: s.session, canvas: ctx, pageOffset: index, backgroundColor: "#ffffff", pixelPerPt, ...(shown ? { cacheKey: shown } : {}) });
         await yieldToInput();
+        await waitForLayout();
         if (arrived.current !== waiting || version.current !== v || !root.checkVisibility({ visibilityProperty: true })) return;
+        if (canvas.clientWidth !== cssWidth) return;
         const key = result?.cacheKey;
         if (!shown || key !== shown) {
           // Swap in the finished bitmap in one step so a page never flashes blank.

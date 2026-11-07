@@ -79,6 +79,14 @@ not a substitute for a live account, acknowledged remote writes or LAB recovery.
   The retained original motion gate also caught a completed-animation reopen
   with no continuous opacity trajectory. Current opacity is reused only for a
   still-running/pending reversal; a completed close reopens from opacity 0.
+- The next GitHub trace exposed the remaining product race: an already-started
+  preview render published at 52.7 ms during sidebar motion, delaying its first
+  changed frame to 53.8 ms. Waiting only when the draw queue starts is insufficient.
+  Preview now checks actual layout animations before each render and again before
+  publishing its bitmap/text layer, and discards work at an obsolete canvas width.
+  The new held-render regression fails without this fix (**2/3**) and all three
+  running/pending/in-flight cases pass with it (**3/3**). Full finite checks pass
+  **611 tests, six optional skips**. No first-frame or long-task budget changes.
 - R8's narrow-tab check also reproduced a test race (**13/14**): it read the
   active underline before the CSS colour transition advanced. It now awaits
   that actual animation and additionally verifies `aria-selected`; the colour
