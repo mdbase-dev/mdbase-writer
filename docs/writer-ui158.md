@@ -96,8 +96,10 @@ pnpm test:lab:opening-recovery
   the deleted custom backdrop. Full entry/exit remain 160/120 ms and Reduce
   remains animation-free. CSS reversals shorten their duration automatically;
   probes reverse during a measured mid-trajectory frame and capture native
-  transitions at transitionrun as well as animation frames, requiring both
-  directions within the original budgets, continuity and eventual removal.
+  transitions at DOM commits as well as animation frames, so a compositor-run
+  shortened reversal is recorded even if the next frame callback is delayed.
+  Both directions must stay within the original budgets, with continuity and
+  eventual removal.
 - Reliability's double navigation guard now targets the current
   `data-open=true` dialog rather than matching its predecessor's retained exit
   too. Both save-guard interactions and the merged remote/local text assertions

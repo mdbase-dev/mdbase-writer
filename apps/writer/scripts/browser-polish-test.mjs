@@ -41,7 +41,8 @@ async function probe(page, selector, action, reverse) {
       const style = getComputedStyle(element);
       return { left: element.getBoundingClientRect().left, height: element.getBoundingClientRect().height, opacity: Number(style.opacity), transform: style.transform, columns: style.gridTemplateColumns, rows: style.gridTemplateRows, inert: element.inert, hidden: element.ariaHidden, proseOpacity: selector === ".outline" ? Number(getComputedStyle(document.querySelector(".write")).opacity) : undefined };
     };
-    document.addEventListener("transitionrun", captureAnimations, true);
+    const observer = new MutationObserver(captureAnimations);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-open"] });
     perform(action);
     const started = performance.now();
     let reversed = false;
@@ -67,7 +68,7 @@ async function probe(page, selector, action, reverse) {
       };
       requestAnimationFrame(sample);
     });
-    document.removeEventListener("transitionrun", captureAnimations, true);
+    observer.disconnect();
     return { selector, frames, animations, interruption };
   }, { selector, action, reverse });
 }
