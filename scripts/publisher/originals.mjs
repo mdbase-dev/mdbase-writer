@@ -5,7 +5,7 @@ import { lstat, readFile, readdir, realpath, mkdtemp, rm } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
-import { authenticateProduction, stagingArchive, publicBytes } from './authentication.mjs';
+import { authenticateProduction, stagingArchive, publicBytes, archiveBytes } from './authentication.mjs';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 const hash = (bytes, algorithm = 'sha256') => createHash(algorithm).update(bytes).digest(algorithm === 'sha512' ? 'base64' : 'hex');
@@ -79,7 +79,7 @@ export async function productionPin(repoRoot) {
 }
 export async function compareInstalled(repoRoot,archives,{fetchImpl=fetch}={}) {
   for(const [key,archive] of Object.entries(archives)) {
-    const bytes=archive.path.startsWith('https:')?await publicBytes(archive.path,fetchImpl):await regular(repoRoot,archive.path);
+    const bytes=archive.path.startsWith('https:')?await archiveBytes(archive.path,fetchImpl):await regular(repoRoot,archive.path);
     requireValue(hash(bytes)===archive.sha256,'installed comparison archive mismatch');
     let members=originalMembers(bytes);
     const name=packages[key];
