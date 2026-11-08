@@ -110,7 +110,7 @@ it('pins staging to the production version and verifies both release digests and
   {name:'sdk-staging.tgz',digest:'sha256:'+sha(bytes),browser_download_url:prefix+'sdk-staging.tgz'},
   {name:'sdk-staging.tgz.sigstore.json',digest:'sha256:'+sha(proof),browser_download_url:prefix+'sdk-staging.tgz.sigstore.json'}]};
  let called=false;
- const options={fetchImpl:async url=>url.includes('api.github.com')?Response.json(release):new Response(url.endsWith('.json')?proof:bytes),
+ const options={token:'',fetchImpl:async url=>url.includes('api.github.com')?Response.json(release):new Response(url.endsWith('.json')?proof:bytes),
   run:(command,args)=>{called=true;assert.equal(command,'gh');assert.ok(args.includes('--bundle'));assert.ok(args.includes(pin.sourceCommit));assert.ok(args.includes('mdbase-dev/mdbase-connect/.github/workflows/publish-sdk-npm.yml'));}};
  assert.equal((await stagingArchive(pin,options)).authentication.sha256,sha(bytes));assert.equal(called,true);
  await assert.rejects(stagingArchive(pin,{...options,fetchImpl:async url=>url.includes('api.github.com')?Response.json(release):new Response('wrong')}),/digest mismatch/);

@@ -8,6 +8,7 @@ import { publicationInventory, serializeInventory } from './publisher.mjs';
 import { prepareRuntimeOriginals } from '../lib/writer-runtime-originals.mjs';
 const output=resolve(process.argv[2]),plan=JSON.parse(await readFile(join(output,'plan.json'),'utf8'));
 await compareInstalled(process.cwd(),plan.sdkTrust.archives);
+delete process.env.GITHUB_TOKEN;
 const env={...process.env,MDBASE_ENV:plan.target,VITE_MDBASE_ENV:plan.target,
  MDBASE_WRITER_ORIGIN:plan.origin,VITE_MDBASE_EDITOR_URL:plan.target==='production'?'https://editor.mdbase.dev':'https://editor-staging.mdbase.dev',
  MDBASE_CONNECT_URL:plan.sdkTrust.release.cpOrigin,VITE_MDBASE_WRITER_BUILD_ID:plan.sha,
