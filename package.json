@@ -9,6 +9,8 @@
     "node": ">=22.12 <23 || >=24.15 <25"
   },
   "scripts": {
+    "check:release-downloads": "node scripts/check-release-downloads.mjs",
+    "test:release-downloads": "node --test scripts/check-release-downloads.test.mjs",
     "build": "pnpm -r --if-present build",
     "build:production": "VITE_MDBASE_ENV=production VITE_MDBASE_EDITOR_URL=https://editor.mdbase.dev pnpm build",
     "check": "pnpm i18n:check && pnpm typecheck && pnpm test",
