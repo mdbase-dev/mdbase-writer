@@ -44,7 +44,7 @@ try {
       await page.goto(`${base}?demo&collection=lab-only-round-six`);
       await page.locator('.home [data-path][data-path="manuscripts/patient-observation.md"]').waitFor();
       await page.locator(".mdbase-app-switcher").click();
-      const hrefs = await page.locator('a[role="menuitem"]').evaluateAll(elements => elements.map(element => element.href));
+      const hrefs = await page.locator('a.mdbase-menu-item[role="menuitem"]').evaluateAll(elements => elements.map(element => element.href));
       assert.ok(hrefs.some(href => new URL(href).origin === "https://editor-lab.mdbase.dev"), JSON.stringify(hrefs));
       assert.ok(hrefs.some(href => new URL(href).origin === "https://lab.mdbase-reader.pages.dev"), JSON.stringify(hrefs));
       assert.ok(hrefs.every(href => new URL(href).searchParams.get("collection") === "lab-only-round-six"));
