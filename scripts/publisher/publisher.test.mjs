@@ -215,10 +215,10 @@ it('uses page20 and resolves only the unique uploaded URL/full source/channel to
  await assert.rejects(capture([entry,entry]),/UUID/);
 });
 
-it('authenticates the real SDK and compares the installed SDK, protocol and reviewed patched UI',async()=>{
+it('authenticates the real SDK and compares the installed SDK, protocol and unpatched UI',async()=>{
  const intake=await loadOriginals({target:'production',repoRoot,hashes,installed:true});
  assert.equal(intake.authentication.kind,'npm-provenance');
- assert.equal(intake.archives.ui.patch.sha256,createHash('sha256').update(await readFile(join(repoRoot,intake.archives.ui.patch.path))).digest('hex'));
+ assert.equal(intake.archives.ui.patch,undefined);
 });
 it('reads candidate data from the source root, not the workflow checkout',()=>{
  assert.equal(sourceRoot({WRITER_SOURCE_ROOT:'/candidate'}),'/candidate');

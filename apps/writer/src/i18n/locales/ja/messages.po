@@ -36,7 +36,7 @@ msgstr "· さらに{0}件を検索中"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr "（本文中の位置）"
+msgstr "(本文中の位置)"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
@@ -1619,7 +1619,7 @@ msgstr "「{query}」に一致するものはありません。"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr "まだ解決済みのコメントはありません。"
+msgstr "解決済みのものはまだありません。"
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
@@ -1932,7 +1932,7 @@ msgstr "選択中の章の名前を変更"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
-msgstr "再度開く"
+msgstr "再オープン"
 
 #: src/editor/search-panel.ts
 #: src/ui/CommentsPanel.tsx
@@ -1976,7 +1976,7 @@ msgstr "サイドバーのサイズを変更"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolve"
-msgstr "解決済みにする"
+msgstr "解決"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
@@ -2409,7 +2409,7 @@ msgstr "選択範囲への編集を提案（{0}）"
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
-msgstr "提案された挿入"
+msgstr "挿入の提案"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggested text"
@@ -2592,7 +2592,7 @@ msgstr "この原稿を開けませんでした"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr "この箇所は本文にありません"
+msgstr "この箇所はもう本文にありません"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
@@ -2668,7 +2668,7 @@ msgstr "このブラウザー内の未保存の下書き"
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr "未署名"
+msgstr "署名なし"
 
 #: src/i18n/diagnostics.ts
 msgid "Unsupported Markdown block: {value}."
@@ -2753,7 +2753,7 @@ msgstr "取り下げる"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr "取り下げました。"
+msgstr "取り下げ済み。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"

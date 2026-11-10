@@ -7,13 +7,12 @@ minimumReleaseAgeExclude:
   - '@mdbase-dev/connect-testing@0.1.0-beta.149'
   - '@mdbase-dev/connect@0.1.0-beta.149'
   - '@mdbase-dev/connect-dev@0.1.0-beta.149'
-  - '@mdbase-dev/ui@0.1.0-beta.125 || 0.1.0-beta.147'
-  - '@mdbase-dev/i18n@0.1.0-beta.147'
+  - '@mdbase-dev/ui@0.1.0-beta.167'
+  - '@mdbase-dev/i18n@0.1.0-beta.167'
   - '@mdbase-dev/sdk@0.1.0-beta.169'
 
 onlyBuiltDependencies:
   - esbuild
 
 patchedDependencies:
-  '@mdbase-dev/ui@0.1.0-beta.147': patches/@mdbase-dev__ui@0.1.0-beta.147.patch
   citeproc: patches/citeproc.patch

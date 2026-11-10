@@ -37,7 +37,7 @@ async function command(page, query) {
   await page.keyboard.type(query);
   assert.equal(await page.locator(".mdbase-command-palette input").inputValue(), query);
   await page.keyboard.press("Enter");
-  await page.locator(".mdbase-command-backdrop").waitFor({ state: "detached" });
+  await page.locator(".mdbase-command-palette").waitFor({ state: "detached" });
 }
 
 async function pressFill(page, locator) {
@@ -114,6 +114,17 @@ async function continuePosition(page, width, reduced) {
   const before = await page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; });
   await page.keyboard.type("RESUMED");
   assert.equal(await page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; }), before.slice(0, position.head) + "RESUMED" + before.slice(position.head));
+  await page.locator(".cm-scroller").evaluate(element => { element.scrollTop -= 190; });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const historyAnchor = await visible();
+  await page.goBack();
+  await page.locator(".continue-card").waitFor();
+  await page.goForward();
+  await editor.waitFor();
+  await page.waitForTimeout(220);
+  const historyRestored = await visible();
+  assert.equal(historyRestored.text, historyAnchor.text);
+  assert.ok(Math.abs(historyRestored.y - historyAnchor.y) < 2, `History moved visible text: ${JSON.stringify({ historyAnchor, historyRestored })}`);
   if (width === 390) await page.locator(".pane-tabs button").first().click();
   await page.getByRole("tablist", { name: "Sidebar", exact: true }).getByRole("tab", { name: /^Sources/ }).click();
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
@@ -128,12 +139,23 @@ async function immediateResume(page, shortcut, overlay, text, reduced) {
   await page.locator(".cm-content").focus();
   await page.keyboard.press(shortcut);
   await page.locator(overlay).waitFor();
+  await page.locator(overlay).evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
   await page.evaluate(({ overlay }) => {
     window.resumeKeys = [];
+    const element = document.querySelector(overlay);
+    let held = [];
+    const observer = new MutationObserver(() => {
+      if (element.dataset.open !== "false") return;
+      held = element.getAnimations();
+      for (const animation of held) animation.pause();
+      observer.disconnect();
+    });
+    observer.observe(element, { attributes: true, attributeFilter: ["data-open"] });
     const record = event => {
       if (event.key.length !== 1) return;
       const element = document.querySelector(overlay);
       window.resumeKeys.push({ key: event.key, editor: event.target.matches(".cm-content"), attached: Boolean(element), inert: element?.inert });
+      for (const animation of held) animation.play();
       if (window.resumeKeys.length === 1) document.removeEventListener("keydown", record, true);
     };
     document.addEventListener("keydown", record, true);
@@ -148,7 +170,7 @@ async function immediateResume(page, shortcut, overlay, text, reduced) {
 }
 
 async function roundFive(page, width, reduced) {
-  for (const [shortcut, selector, text] of [["Control+k", ".mdbase-command-backdrop", " PALETTE_POINTER "], ["Control+/", ".shortcuts-dialog", " HELP_POINTER "]]) {
+  for (const [shortcut, selector, text] of [["Control+k", ".mdbase-command-palette", " PALETTE_POINTER "], ["Control+/", ".shortcuts-dialog", " HELP_POINTER "]]) {
     await page.locator(".cm-content").focus();
     await page.keyboard.press(shortcut);
     await page.locator(selector).waitFor();
@@ -158,7 +180,7 @@ async function roundFive(page, width, reduced) {
     assert.equal(await page.evaluate(() => document.activeElement?.matches(".cm-content")), true);
     await page.locator(selector).waitFor({ state: "hidden" });
   }
-  await immediateResume(page, "Control+k", ".mdbase-command-backdrop", " PALETTE_ESCAPE ", reduced);
+  await immediateResume(page, "Control+k", ".mdbase-command-palette", " PALETTE_ESCAPE ", reduced);
   await page.keyboard.press("Control+k");
   await page.keyboard.type("Settings");
   await page.keyboard.press("Escape");
@@ -166,7 +188,7 @@ async function roundFive(page, width, reduced) {
   await page.waitForFunction(() => document.activeElement?.matches(".mdbase-command-palette input"));
   assert.equal(await page.locator(".mdbase-command-palette input").inputValue(), "");
   await page.keyboard.press("Escape");
-  await page.locator(".mdbase-command-backdrop").waitFor({ state: "hidden" });
+  await page.locator(".mdbase-command-palette").waitFor({ state: "hidden" });
   await immediateResume(page, "Control+/", ".shortcuts-dialog", " HELP_ESCAPE ", reduced);
   await command(page, "Keyboard shortcuts");
   await page.locator(".shortcuts-dialog").waitFor();
@@ -386,14 +408,14 @@ try {
       await create.waitFor({ state: "hidden" });
       await typeInEditor(page, " CREATE_HANDOFF ");
       await page.evaluate(() => document.fonts.ready);
-      assert.match(await page.locator(".cm-scroller").evaluate(element => getComputedStyle(element).fontFamily), /Atkinson Hyperlegible Next/);
+      assert.match(await page.locator(".cm-scroller").evaluate(element => getComputedStyle(element).fontFamily), /IBM Plex Sans/);
       const session = await context.newCDPSession(page);
       await session.send("DOM.enable");
       await session.send("CSS.enable");
       const { root } = await session.send("DOM.getDocument");
       const { nodeId } = await session.send("DOM.querySelector", { nodeId: root.nodeId, selector: ".cm-line" });
       const { fonts } = await session.send("CSS.getPlatformFontsForNode", { nodeId });
-      assert.ok(fonts.some(font => /Atkinson Hyperlegible Next/i.test(font.familyName) && font.isCustomFont), JSON.stringify(fonts));
+      assert.ok(fonts.some(font => /IBM Plex Sans/i.test(font.familyName) && font.isCustomFont), JSON.stringify(fonts));
       if (width === 390) await touchTargets(page, ".topbar button:visible, .pane-tabs button:visible");
       await page.screenshot({ path: `out/polish-r4/${name}.png` });
       await continuePosition(page, width, reducedMotion === "reduce");

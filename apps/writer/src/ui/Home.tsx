@@ -14,7 +14,8 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { bodySummary, fail, type ManuscriptSummary, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
 import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
-import { CommandPalette, Dialog } from "./overlays.js";
+import { CommandPalette } from "@mdbase-dev/ui/command-palette";
+import { Dialog } from "@mdbase-dev/ui/dialog";
 import { Shortcuts } from "./Shortcuts.js";
 import type { Command } from "@mdbase-dev/ui/command-palette";
 import { chapterEmbeds } from "../workspace/chapters.js";
@@ -177,9 +178,10 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
     const onKey = (event: KeyboardEvent) => {
       if (event.isComposing || event.defaultPrevented || !home.current?.checkVisibility() || home.current.inert) return;
       const mod = event.ctrlKey || event.metaKey;
-      if (mod && event.key.toLowerCase() === "k" && (paletteOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setPaletteOpen(open => !open); }
-      else if (mod && event.key === "/" && (shortcutsOpen || !document.querySelector("dialog[open]"))) { event.preventDefault(); setShortcutsOpen(open => !open); }
-      else if (document.querySelector("dialog[open]")) return;
+      const blockingDialog = document.querySelector("dialog[open]");
+      if (mod && event.key.toLowerCase() === "k" && (paletteOpen || !blockingDialog)) { event.preventDefault(); setPaletteOpen(open => !open); }
+      else if (mod && event.key === "/" && (shortcutsOpen || !blockingDialog)) { event.preventDefault(); setShortcutsOpen(open => !open); }
+      else if (blockingDialog) return;
       else if (!mod && event.key === "?" && !(event.target instanceof Element && event.target.closest("input, textarea, [contenteditable=true]"))) { event.preventDefault(); setShortcutsOpen(true); }
       else if (!(event.target instanceof Element && event.target.closest("input, textarea, [contenteditable=true]")) && ["ArrowDown", "ArrowUp", "j", "k"].includes(event.key)) {
         const buttons = [...(rows.current?.querySelectorAll<HTMLButtonElement>("[data-path]") ?? [])];
