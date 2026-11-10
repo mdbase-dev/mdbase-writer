@@ -19,7 +19,7 @@ import { ChevronUp, CloseIcon, MinusIcon, PlusIcon } from "./icons.js";
 import { styleName, templateName } from "./names.js";
 import { intlLocale } from "../i18n/presentation.js";
 import { InterfaceLanguage } from "../i18n/provider.js";
-import { useOverlay } from "./overlays.js";
+import { useOverlay } from "@mdbase-dev/ui/overlay";
 
 type JsonValue = JsonObject[string];
 
@@ -57,8 +57,7 @@ export function Settings({
 }) {
   useLingui();
   const titleId = useId();
-  const sheet = useRef<HTMLDialogElement>(null);
-  const { host, present } = useOverlay(open, ".settings-sheet", "translateX(-12px)");
+  const { ref: sheet, present } = useOverlay<HTMLDialogElement>(open);
   useLayoutEffect(() => {
     const dialog = sheet.current;
     if (!dialog) return;
@@ -97,9 +96,12 @@ export function Settings({
   const authorsKey = !("authors" in fm) && "author" in fm ? "author" : "authors";
 
   return (
-    <div ref={host} className="overlay-host"><dialog
+    <div className="overlay-host"><dialog
       ref={sheet}
-      className="settings-sheet"
+      className="settings-sheet mdbase-overlay"
+      data-open={open}
+      inert={!open}
+      aria-hidden={!open || undefined}
       role="dialog"
       aria-modal={modal}
       aria-labelledby={titleId}

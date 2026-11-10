@@ -57,6 +57,61 @@ async function announcement(page, text) {
   await page.waitForFunction(text => [...document.querySelectorAll('[aria-live]')].some(element => element.textContent.includes(text) && !element.closest('[inert], [aria-hidden="true"]')), text);
 }
 try {
+  await scenario("Shared exit waits for its actual transition", async page => {
+    await home(page);
+    await page.keyboard.press("Control+/");
+    const dialog = page.locator('.shortcuts-dialog[data-open="true"]');
+    await dialog.waitFor();
+    const element = await dialog.elementHandle();
+    const paused = await element.evaluate(async element => {
+      await Promise.all(element.getAnimations().map(animation => animation.finished));
+      const paused = new Promise(resolve => {
+        const observer = new MutationObserver(() => {
+          if (element.dataset.open !== "false") return;
+          const animations = element.getAnimations();
+          for (const animation of animations) animation.pause();
+          observer.disconnect();
+          resolve(animations.length);
+        });
+        observer.observe(element, { attributes: true, attributeFilter: ["data-open"] });
+      });
+      element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      return paused;
+    });
+    assert.ok(paused > 0, "Hold the real CSS exit, not a fabricated animation");
+    await page.waitForTimeout(180);
+    assert.equal(await element.evaluate(element => element.isConnected), true, "Do not unmount before the actual exit finishes");
+    await element.evaluate(element => element.getAnimations().forEach(animation => animation.finish()));
+    await page.locator(".shortcuts-dialog").waitFor({ state: "detached" });
+  });
+  for (const surface of ["Home", "Workspace"]) {
+    await scenario(`Shared exiting dialog does not block the next shortcut on ${surface}`, async page => {
+      await (surface === "Home" ? home(page) : open(page));
+      const invoker = page.locator(surface === "Home" ? `.home [data-path="${main}"]` : ".cm-content");
+      await invoker.focus();
+      await page.keyboard.press("Control+/");
+      const dialog = page.locator('.shortcuts-dialog[data-open="true"]');
+      await dialog.waitFor();
+      await dialog.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+      const dispatched = await dialog.evaluate(async element => {
+        element.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+        await new Promise(requestAnimationFrame);
+        const exiting = element.isConnected && element.dataset.open === "false";
+        const returnedFocus = document.activeElement?.matches('.home [data-path], .cm-content');
+        const shortcut = new KeyboardEvent("keydown", { key: "k", code: "KeyV", ctrlKey: true, bubbles: true, cancelable: true });
+        document.activeElement.dispatchEvent(shortcut);
+        return { exiting, inert: element.inert, returnedFocus, handled: shortcut.defaultPrevented };
+      });
+      assert.equal(dispatched.exiting, true, "Exercise the actual retained shared Dialog exit");
+      assert.equal(dispatched.inert, true, "The visual exit must not remain interactive");
+      assert.equal(dispatched.returnedFocus, true, "Closing must return focus before the visual exit finishes");
+      assert.equal(dispatched.handled, true, "An exiting dialog must not swallow the next logical shortcut");
+      await page.locator('.mdbase-command-palette[data-open="true"] input').waitFor();
+      assert.equal(await page.locator('.mdbase-command-palette').evaluate(element => element.parentElement === document.body), true, "Use the shared portal");
+      await page.keyboard.press("Escape");
+      await page.locator('.mdbase-command-palette').waitFor({ state: "detached" });
+    });
+  }
   for (const surface of ["Home", "Workspace"]) {
     await scenario(`Dvorak logical shortcuts toggle on ${surface}`, async page => {
       await (surface === "Home" ? home(page) : open(page));

@@ -77,7 +77,7 @@ it.each(["cancel", "escape", "backdrop", "close"])("keeps %s as a cancellation w
   render(<Harness download={download} cancel={cancel} />);
   if (action === "cancel") fireEvent.click(screen.getByRole("button", { name: "Cancel and fix problems" }));
   else if (action === "escape") fireEvent(screen.getByRole("dialog"), new Event("cancel", { cancelable: true }));
-  else if (action === "backdrop") fireEvent.mouseDown(screen.getByRole("dialog"));
+  else if (action === "backdrop") fireEvent.click(screen.getByRole("dialog"));
   else fireEvent.click(screen.getByRole("button", { name: "Close" }));
   act(() => vi.runOnlyPendingTimers());
   expect(cancel).toHaveBeenCalledTimes(1);

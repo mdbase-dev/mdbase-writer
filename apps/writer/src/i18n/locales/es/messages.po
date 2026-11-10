@@ -267,7 +267,7 @@ msgstr "Aceptar"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
-msgstr "Aceptada"
+msgstr "Aceptado"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Actual size"
@@ -345,7 +345,7 @@ msgstr "tal como debe aparecer"
 
 #: src/ui/CommentsPanel.tsx
 msgid "At the cursor"
-msgstr "En la posición del cursor"
+msgstr "En el cursor"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -664,7 +664,7 @@ msgstr "Seguir escribiendo"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copied"
-msgstr "Copiada"
+msgstr "Copiado"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copy key"
@@ -758,7 +758,7 @@ msgstr "Anclaje desvinculado: el texto ha cambiado"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr "Cerrar aviso"
+msgstr "Descartar"
 
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"
@@ -1303,7 +1303,7 @@ msgstr "Panel inferior"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
-msgstr "Aplicar esta edición"
+msgstr "Hacer este cambio"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1619,7 +1619,7 @@ msgstr "Nada coincide con “{query}”."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr "Aún no se ha resuelto nada."
+msgstr "Aún no hay nada resuelto."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
@@ -1932,7 +1932,7 @@ msgstr "Renombrar el capítulo enfocado"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
-msgstr "Volver a abrir"
+msgstr "Reabrir"
 
 #: src/editor/search-panel.ts
 #: src/ui/CommentsPanel.tsx
@@ -1980,7 +1980,7 @@ msgstr "Resolver"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
-msgstr "Resuelto"
+msgstr "Resueltos"
 
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"

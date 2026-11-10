@@ -36,7 +36,7 @@ msgstr "· pesquisando mais {0}"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr "(um ponto no texto)"
+msgstr "(um ponto do texto)"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
@@ -1619,7 +1619,7 @@ msgstr "Nada corresponde a “{query}”."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr "Nada foi resolvido ainda."
+msgstr "Nada resolvido ainda."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
@@ -1980,7 +1980,7 @@ msgstr "Resolver"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
-msgstr "Resolvido"
+msgstr "Resolvidos"
 
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
@@ -2753,7 +2753,7 @@ msgstr "Retirar"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr "Retirada."
+msgstr "Retirado."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"

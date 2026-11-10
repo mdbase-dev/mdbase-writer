@@ -345,7 +345,7 @@ msgstr "표시할 이름"
 
 #: src/ui/CommentsPanel.tsx
 msgid "At the cursor"
-msgstr "커서 위치에"
+msgstr "커서 위치"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -1279,7 +1279,7 @@ msgstr "컬렉션 데이터 불러오는 중…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Loading comments…"
-msgstr "댓글 불러오는 중…"
+msgstr "댓글을 불러오는 중…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
@@ -1303,7 +1303,7 @@ msgstr "아래쪽 패널"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
-msgstr "이 수정 적용"
+msgstr "이 편집 적용"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1519,7 +1519,7 @@ msgstr "“{query}”와(과) 일치하는 메모가 없습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "No open comments"
-msgstr "미해결 댓글 없음"
+msgstr "열린 댓글이 없습니다"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
@@ -1906,11 +1906,11 @@ msgstr "정규 표현식"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reject"
-msgstr "거부"
+msgstr "거절"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Rejected"
-msgstr "거부됨"
+msgstr "거절됨"
 
 #: src/LegacyApp.tsx
 msgid "Reload"
@@ -2536,7 +2536,7 @@ msgstr "제안된 텍스트가 더 이상 장에 없습니다. 직접 편집한 
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr "제안된 텍스트가 더 이상 없습니다."
+msgstr "제안된 텍스트가 더 이상 없습니다"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2592,7 +2592,7 @@ msgstr "이 원고를 열지 못했습니다."
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr "이 본문 구간은 더 이상 텍스트에 없습니다."
+msgstr "이 구절은 더 이상 본문에 없습니다"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
@@ -2668,7 +2668,7 @@ msgstr "이 브라우저에 저장되지 않음"
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr "서명되지 않음"
+msgstr "서명 없음"
 
 #: src/i18n/diagnostics.ts
 msgid "Unsupported Markdown block: {value}."
@@ -2753,7 +2753,7 @@ msgstr "철회"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Withdrawn."
-msgstr "철회했습니다."
+msgstr "철회됨."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"

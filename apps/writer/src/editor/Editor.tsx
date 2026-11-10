@@ -287,7 +287,6 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
       // React's development setup/cleanup/setup must not replace the retained
       // scroll target with zero before CodeMirror has had a layout pass.
       if (measured || retained) states?.set(path, { state: v.state, scroll: retained && !measured ? retained.scroll : v.scrollSnapshot() });
-      savePosition();
       window.removeEventListener("pagehide", savePosition);
       v.destroy();
       view.current = null;

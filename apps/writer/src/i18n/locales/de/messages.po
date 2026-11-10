@@ -263,11 +263,11 @@ msgstr "Zusammenfassung"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accept"
-msgstr "Übernehmen"
+msgstr "Annehmen"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
-msgstr "Übernommen"
+msgstr "Angenommen"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Actual size"
@@ -758,7 +758,7 @@ msgstr "Verknüpfung aufgehoben: Der Text wurde geändert."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
-msgstr "Ausblenden"
+msgstr "Schließen"
 
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"
@@ -1279,7 +1279,7 @@ msgstr "Sammlungsdaten werden geladen…"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Loading comments…"
-msgstr "Kommentare werden geladen…"
+msgstr "Kommentare werden geladen …"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
@@ -1303,7 +1303,7 @@ msgstr "Unterer Bereich"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
-msgstr "Änderung übernehmen"
+msgstr "Diese Änderung vornehmen"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1619,7 +1619,7 @@ msgstr "Nichts entspricht „{query}“."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr "Noch keine abgeschlossenen Kommentare."
+msgstr "Noch nichts erledigt."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
@@ -1932,7 +1932,7 @@ msgstr "Fokussiertes Kapitel umbenennen"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Reopen"
-msgstr "Erneut öffnen"
+msgstr "Wieder öffnen"
 
 #: src/editor/search-panel.ts
 #: src/ui/CommentsPanel.tsx
@@ -2536,7 +2536,7 @@ msgstr "Der vorgeschlagene Text ist nicht mehr im Kapitel; bearbeiten Sie ihn vo
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr "Der vorgeschlagene Text ist nicht mehr vorhanden."
+msgstr "Der vorgeschlagene Text ist nicht mehr vorhanden"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2592,7 +2592,7 @@ msgstr "Dieses Manuskript konnte nicht geöffnet werden"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr "Diese Textstelle ist nicht mehr im Text vorhanden."
+msgstr "Diese Passage steht nicht mehr im Text"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

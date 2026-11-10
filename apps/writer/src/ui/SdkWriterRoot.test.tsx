@@ -47,6 +47,19 @@ function Capture({scope, publish}: {scope: WriterNativeScope; publish(scope: Wri
   return <p role="status">Native test consumer</p>;
 }
 
+it("retries the selected failed open through the shared recovery control", async () => {
+  const h = await fixture({ collections: [{ name: "Writing" }], phase: { problem: "unavailable" } });
+  const collectionId = h.mdbase.getSnapshot().selectedCollectionId;
+  expect(collectionId).toBeTruthy();
+  render(<SdkWriterRoot sdk={h.mdbase} renderNative={() => <p>Recovered Writer</p>} />);
+  expect(await screen.findByText("mdbase couldn't complete this request. Try again.")).toBeTruthy();
+  expect(screen.queryByText(/couldn't be reached/i)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /^Try again$/ }));
+  await screen.findByText("Recovered Writer");
+  expect(h.controls.observedActions().filter(call => call.action === "select")).toEqual([expect.objectContaining({ collectionId })]);
+  expect(h.count("start")).toBe(0);
+});
+
 it("hands Writer the gate's ready connection and retires that scope when the collection closes", async () => {
   const h = await readyFixture(); const close = vi.spyOn(h.client(), "close");
   const scopes: WriterNativeScope[] = []; const publish = (scope: WriterNativeScope) => scopes.push(scope);
@@ -72,7 +85,7 @@ it("opens the manuscript list with the shared collection switcher in the top bar
   const {container} = render(<App sdk={h.mdbase} />);
   await screen.findByRole("button", { name: /Original manuscript/ });
   expect(screen.queryByText("Continue writing")).toBeNull();
-  const trigger = await screen.findByRole("button", {name: "Switch collection, current: Writing"});
+  const trigger = await screen.findByRole("button", {name: "Writing Owner"});
   expect(container.querySelector(".topbar-slot")?.contains(trigger)).toBe(true);
   fireEvent.click(trigger);
   // The popover's open state is a browser feature jsdom lacks, so find the row directly.

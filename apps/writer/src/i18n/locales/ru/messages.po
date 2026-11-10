@@ -1619,7 +1619,7 @@ msgstr "По запросу «{query}» ничего не найдено."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr "Закрытых комментариев пока нет."
+msgstr "Пока ничего не решено."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
@@ -1976,11 +1976,11 @@ msgstr "Изменить размер боковой панели"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolve"
-msgstr "Закрыть"
+msgstr "Решить"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
-msgstr "Закрыто"
+msgstr "Решённые"
 
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
@@ -2157,7 +2157,7 @@ msgstr "Настройки также различаются"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Show"
-msgstr "Показывать"
+msgstr "Показать"
 
 #. placeholder {0}: rest.length
 #: src/ui/OutlinePanel.tsx
@@ -2409,7 +2409,7 @@ msgstr "Предложить правку к выделенному фрагме
 
 #: src/editor/comments.ts
 msgid "Suggested insertion"
-msgstr "Предлагаемая вставка"
+msgstr "Предложенная вставка"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Suggested text"
@@ -2536,7 +2536,7 @@ msgstr "Предложенного текста больше нет в глав�
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr "Предложенного текста здесь больше нет"
+msgstr "Предложенного текста больше нет"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2592,7 +2592,7 @@ msgstr "Не удалось открыть эту рукопись"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr "Этого фрагмента в тексте больше нет"
+msgstr "Этого фрагмента больше нет в тексте"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

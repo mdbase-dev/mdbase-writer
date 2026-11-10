@@ -36,7 +36,7 @@ msgstr "· recherche de {0} autres en cours"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr "(un point dans le texte)"
+msgstr "(un point du texte)"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
@@ -345,7 +345,7 @@ msgstr "tel qu’il doit apparaître"
 
 #: src/ui/CommentsPanel.tsx
 msgid "At the cursor"
-msgstr "Au niveau du curseur"
+msgstr "Au curseur"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -664,7 +664,7 @@ msgstr "Continuer à écrire"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copied"
-msgstr "Copiée"
+msgstr "Copié"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Copy key"
@@ -1619,7 +1619,7 @@ msgstr "Aucun résultat pour « {query} »."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr "Rien n’est encore résolu."
+msgstr "Rien n’a encore été résolu."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
@@ -1910,7 +1910,7 @@ msgstr "Refuser"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Rejected"
-msgstr "Refusée"
+msgstr "Refusé"
 
 #: src/LegacyApp.tsx
 msgid "Reload"
@@ -1980,7 +1980,7 @@ msgstr "Résoudre"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
-msgstr "Résolu"
+msgstr "Résolus"
 
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
@@ -2536,7 +2536,7 @@ msgstr "Le texte suggéré n’est plus dans le chapitre ; modifiez-le à la mai
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr "Le texte suggéré n’y figure plus"
+msgstr "Le texte suggéré n’est plus là"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2592,7 +2592,7 @@ msgstr "Ce manuscrit n’a pas pu être ouvert"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr "Ce passage ne figure plus dans le texte"
+msgstr "Ce passage n’est plus dans le texte"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

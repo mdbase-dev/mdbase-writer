@@ -36,7 +36,7 @@ msgstr "· ricerca di altri {0}"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr "(un punto nel testo)"
+msgstr "(un punto del testo)"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
@@ -267,7 +267,7 @@ msgstr "Accetta"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Accepted"
-msgstr "Accettata"
+msgstr "Accettato"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Actual size"
@@ -345,7 +345,7 @@ msgstr "come deve apparire"
 
 #: src/ui/CommentsPanel.tsx
 msgid "At the cursor"
-msgstr "Alla posizione del cursore"
+msgstr "Al cursore"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -1303,7 +1303,7 @@ msgstr "Pannello inferiore"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
-msgstr "Apporta questa modifica"
+msgstr "Applica questa modifica"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1619,7 +1619,7 @@ msgstr "Nessuna corrispondenza per «{query}»."
 
 #: src/ui/CommentsPanel.tsx
 msgid "Nothing resolved yet."
-msgstr "Non è stato ancora risolto nulla."
+msgstr "Ancora niente di risolto."
 
 #: src/ui/connection-notice.ts
 msgid "Offline"
@@ -1910,7 +1910,7 @@ msgstr "Rifiuta"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Rejected"
-msgstr "Rifiutata"
+msgstr "Rifiutato"
 
 #: src/LegacyApp.tsx
 msgid "Reload"
@@ -1980,7 +1980,7 @@ msgstr "Risolvi"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Resolved"
-msgstr "Risolto"
+msgstr "Risolti"
 
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
@@ -2536,7 +2536,7 @@ msgstr "Il testo suggerito non è più nel capitolo; modificalo a mano, poi riso
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr "Il testo suggerito non è più presente"
+msgstr "Il testo suggerito non c’è più"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2592,7 +2592,7 @@ msgstr "Impossibile aprire questo manoscritto"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr "Questo brano non è più nel testo"
+msgstr "Questo passaggio non è più nel testo"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx

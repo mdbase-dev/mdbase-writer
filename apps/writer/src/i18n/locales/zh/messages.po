@@ -36,7 +36,7 @@ msgstr "· 另有 {0} 条正在搜索"
 
 #: src/ui/CommentsPanel.tsx
 msgid "(a point in the text)"
-msgstr "（文本中的一个位置）"
+msgstr "(文中的一处)"
 
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
@@ -1303,7 +1303,7 @@ msgstr "下方面板"
 
 #: src/ui/CommentsPanel.tsx
 msgid "Make this edit"
-msgstr "应用此编辑"
+msgstr "应用此修改"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -2536,7 +2536,7 @@ msgstr "建议的文本已不在章节中；请手动编辑，然后处理该建
 
 #: src/ui/CommentsPanel.tsx
 msgid "The suggested text is no longer there"
-msgstr "建议文本已不存在"
+msgstr "建议的文本已不存在"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2592,7 +2592,7 @@ msgstr "无法打开此手稿"
 
 #: src/ui/CommentsPanel.tsx
 msgid "This passage is no longer in the text"
-msgstr "此段内容已不在文本中"
+msgstr "这段文字已不在正文中"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
@@ -2668,7 +2668,7 @@ msgstr "在此浏览器中未保存"
 #: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
-msgstr "未签名"
+msgstr "未署名"
 
 #: src/i18n/diagnostics.ts
 msgid "Unsupported Markdown block: {value}."
