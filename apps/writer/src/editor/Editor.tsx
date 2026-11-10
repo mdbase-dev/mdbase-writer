@@ -16,7 +16,7 @@ import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { WriterDiagnostic } from "../compile/protocol.js";
 import { chapterCards, refreshChapterCards, type ChapterCards } from "./chapter-cards.js";
-import { commentAnchors, showAnchors, type AnchorCard, type CommentAnchor } from "./comments.js";
+import { commentAnchors, showCommentAnchors, type CommentAnchor, type CommentAnchorCard } from "@mdbase-dev/ui/comment-anchors";
 import { writerCompletions, type CompletionData } from "./completions.js";
 import { fixesFor } from "./fixes.js";
 import { formattingKeymap, makeLink, toggleBold, toggleCode, toggleItalic, type InlineFormat } from "./formatting.js";
@@ -95,7 +95,7 @@ export interface EditorProps {
   /** A click on a commented passage or suggestion. */
   onAnchor?(id: string): void;
   /** What a hover over a commented passage shows of its thread. */
-  anchorCard?(id: string): AnchorCard | null;
+  anchorCard?(id: string): CommentAnchorCard | null;
   /** An action from the toolbar over a selection, with the selected text. */
   onSelectionAction?(action: SelectionAction, selected: string): void;
 }
@@ -171,7 +171,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
           writerLanguage(),
           writerInsight(() => latest.current.insight, (target) => latest.current.onFollow?.(target)),
           chapterCards(() => latest.current.chapters),
-          commentAnchors((id) => latest.current.onAnchor?.(id), (id) => latest.current.anchorCard?.(id) ?? null),
+          commentAnchors((id) => latest.current.onAnchor?.(id), (id) => latest.current.anchorCard?.(id) ?? null, { margin: true }),
           selectionBar((action, view) => {
             const { from, to } = view.state.selection.main;
             const selected = view.state.sliceDoc(from, to);
@@ -383,7 +383,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
   // they are mapped through the edits since, so they never lag a keystroke.
   useEffect(() => {
     const v = view.current;
-    if (v) showAnchors(v, anchors ?? [], activeComment);
+    if (v) showCommentAnchors(v, anchors ?? [], activeComment);
   }, [anchors, activeComment, path, readOnly]);
 
   return <><div className="editor" ref={host} />{phraseProblem && <p role="status">{t`The editor language could not be loaded. You can keep writing.`}</p>}</>;

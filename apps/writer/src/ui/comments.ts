@@ -1,18 +1,11 @@
-import { t } from "@lingui/core/macro";
-import { formatDate, formatRelative } from "../i18n/presentation.js";
 // Which of the collection's comment threads belong to this manuscript, and
 // where each is in its record's current text.
-import { commentThreads, linkPath, locate, type CommentRecord, type CommentThread, type Located } from "@mdbase-writer/core/comments";
+import type { CommentAnchor } from "@mdbase-dev/ui/comment-anchors";
+import { commentThreads, linkPath, locate, type CommentRecord, type CommentThread, type PlacedThread as SharedPlacedThread } from "@mdbase-dev/ui/comments";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 
-import type { CommentAnchor } from "../editor/comments.js";
-
-export interface PlacedThread {
-  readonly thread: CommentThread;
-  readonly record: string;
-  /** Where its passage is now: "whole" for a comment on the whole record, null when detached. */
-  readonly at: Located | "whole" | null;
-}
+/** A thread on one of the manuscript's records. */
+export type PlacedThread = SharedPlacedThread & { readonly record: string };
 
 /** A thread shows unless its first comment was withdrawn and nobody replied. */
 const shown = (t: CommentThread) => !t.root.deletedAt || t.replies.some((r) => !r.deletedAt);
@@ -93,80 +86,4 @@ export function anchorsFor(placed: readonly PlacedThread[], record: string): Com
       target: root.target!,
       ...(root.motivation === "editing" && root.suggestion ? { replacement: root.suggestion.replacement } : {}),
     }));
-}
-
-/** A passage on one line, shortened to about 60 characters. */
-/**
- * A passage of Markdown as it reads: emphasis, code and link markup dropped,
- * soft line breaks as spaces ("*modal picture*" → "modal picture").
- */
-export function plainPassage(passage: string): string {
-  return passage
-    .replace(/!?\[([^\]\n]*)\]\([^)\n]*\)/g, "$1")
-    .replace(/\[\[(?:[^\]|\n]*\|)?([^\]\n]*)\]\]/g, "$1")
-    .replace(/(\*\*|__)(?=\S)([^\n]*?\S)\1/g, "$2")
-    .replace(/\*(?=\S)([^*\n]*?\S)\*/g, "$1")
-    .replace(/(?<![\p{L}\p{N}])_(?=\S)([^_\n]*?\S)_(?![\p{L}\p{N}])/gu, "$1")
-    .replace(/`([^`\n]*)`/g, "$1")
-    .replace(/([^\n])\n(?!\n)[ \t]*/g, "$1 ");
-}
-
-export function clipPassage(passage: string): string {
-  const one = plainPassage(passage).replace(/\s+/g, " ").trim();
-  return one.length > 60 ? `${one.slice(0, 57)}…` : one;
-}
-
-/** "Replace “x” with “y”", "Delete “x”" or "Insert “y”", for a suggestion. */
-export function describeSuggestion(root: CommentRecord): string {
-  const clip = (s: string) => `“${clipPassage(s)}”`;
-  const exact = root.target?.quote.exact ?? "";
-  const replacement = root.suggestion?.replacement ?? "";
-  if (exact && replacement) return t`Replace ${clip(exact)} with ${clip(replacement)}`;
-  if (exact) return t`Delete ${clip(exact)}`;
-  return t`Insert ${clip(replacement)}`;
-}
-
-/** "5 minutes ago", "yesterday", or a date for anything older than a week. */
-export function when(iso: string, now = Date.now()): string {
-  const then = Date.parse(iso);
-  if (Number.isNaN(then)) return iso;
-  const seconds = Math.round((then - now) / 1000);
-  const abs = Math.abs(seconds);
-  if (abs < 60) return formatRelative(0, "second");
-  if (abs < 3600) return formatRelative(Math.round(seconds / 60), "minute");
-  if (abs < 86_400) return formatRelative(Math.round(seconds / 3600), "hour");
-  if (abs < 7 * 86_400) return formatRelative(Math.round(seconds / 86_400), "day");
-  return formatDate(then, { day: "numeric", month: "short", year: "numeric" });
-}
-
-/** A run of comment text as it reads: plain, emphasised, code, or a link. */
-export type InlinePiece = { readonly kind: "text" | "em" | "strong" | "code"; readonly text: string } | { readonly kind: "link"; readonly text: string; readonly href: string };
-
-/**
- * The light Markdown a comment uses (emphasis, code, links), as pieces to
- * render; anything else stays as written. Only http(s) links are links.
- */
-export function inlinePieces(text: string): InlinePiece[] {
-  const out: InlinePiece[] = [];
-  const pattern = /`([^`\n]+)`|\*\*(?=\S)([^\n]*?\S)\*\*|\*(?=\S)([^*\n]*?\S)\*|(?<![\p{L}\p{N}])_(?=\S)([^_\n]*?\S)_(?![\p{L}\p{N}])|\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>")\]]+[^\s<>")\].,;:!?])/gu;
-  let last = 0;
-  for (const m of text.matchAll(pattern)) {
-    const at = m.index ?? 0;
-    if (at > last) out.push({ kind: "text", text: text.slice(last, at) });
-    if (m[1] !== undefined) out.push({ kind: "code", text: m[1] });
-    else if (m[2] !== undefined) out.push({ kind: "strong", text: m[2] });
-    else if (m[3] !== undefined || m[4] !== undefined) out.push({ kind: "em", text: (m[3] ?? m[4]) as string });
-    else if (m[5] !== undefined && m[6] !== undefined) out.push({ kind: "link", text: m[5], href: m[6] });
-    else if (m[7] !== undefined) out.push({ kind: "link", text: m[7], href: m[7] });
-    last = at + m[0].length;
-  }
-  if (last < text.length) out.push({ kind: "text", text: text.slice(last) });
-  return out;
-}
-
-/** Whether anyone else wrote in the thread after `since` (a thread of one's own is never new). */
-export function threadIsNew(thread: CommentThread, since: string | undefined, me: string | undefined): boolean {
-  if (!since) return false;
-  const mine = (c: CommentRecord) => Boolean(me && c.createdBy && c.createdBy.toLowerCase() === me.toLowerCase());
-  return [thread.root, ...thread.replies].some((c) => !c.deletedAt && !mine(c) && c.createdAt > since);
 }

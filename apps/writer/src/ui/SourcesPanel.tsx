@@ -15,7 +15,7 @@ import { authorYear, searchLibrary, sortedLibrary } from "../editor/library-sear
 import { readerSourceHref } from "../apps.js";
 import { useRowWindow } from "./paging.js";
 import { ChevronLeft, ChevronRight, ExternalIcon, SearchIcon } from "./icons.js";
-import { clipPassage } from "./comments.js";
+import { clipPassage } from "@mdbase-dev/ui/comments";
 
 /** Where a source is cited: a place in the text, named by its section. */
 export interface CitationSite {

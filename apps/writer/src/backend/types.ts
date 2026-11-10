@@ -3,11 +3,11 @@
 import type { JsonObject } from "@mdbase-dev/connect";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
 import type { SourceAnnotation } from "@mdbase-writer/core/annotations";
-import type { CommentRecord } from "@mdbase-writer/core/comments";
+import type { CommentChange, CommentRecord } from "@mdbase-dev/ui/comments";
 
 import { chapterEmbeds } from "../workspace/chapters.js";
 import { embedCount, wordCount } from "../words.js";
-import type { CommentChange, NewComment, People } from "./comments.js";
+import type { NewComment, People } from "./comments.js";
 
 export { sourceAnnotation, type SourceAnnotation } from "@mdbase-writer/core/annotations";
 

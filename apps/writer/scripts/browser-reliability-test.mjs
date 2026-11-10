@@ -66,18 +66,18 @@ try {
     const scroll = await page.locator(".sidebar-panel").evaluate((el) => el.scrollTop);
     await page.getByRole("tab", { name: /Comments/ }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().commentsLoad.phase === "ready");
-    assert.equal(await page.locator(".threads > .thread").count(), 50);
-    assert.equal(await page.locator(".comment.is-reply").count(), 50);
+    assert.equal(await page.locator(".mdbase-threads > .mdbase-thread").count(), 50);
+    assert.equal(await page.locator(".mdbase-comment.is-reply").count(), 50);
     await page.getByRole("button", { name: /^Show 50 more replies/ }).click();
-    assert.equal(await page.locator(".comment.is-reply").count(), 100);
-    await page.locator(".threads > .thread").first().getByRole("button", { name: "Reply", exact: true }).click();
+    assert.equal(await page.locator(".mdbase-comment.is-reply").count(), 100);
+    await page.locator(".mdbase-threads > .mdbase-thread").first().getByRole("button", { name: "Reply", exact: true }).click();
     await page.getByRole("textbox", { name: "Reply", exact: true }).fill("A draft to keep while paging");
     const nextThread = await page.evaluate(async () => {
       const { placeThreads } = await import("/src/ui/comments.ts");
       const w = window.writer.workspace, snap = w.getSnapshot();
       return placeThreads(snap.comments, w.readingOrder(), (p) => snap.records.get(p)?.snapshot.body, snap.recordIndex).filter((p) => p.thread.root.status === "open")[50].thread.root.path;
     });
-    await page.locator(".threads > .thread .thread-anchor").last().focus(); await page.keyboard.press("j");
+    await page.locator(".mdbase-threads > .mdbase-thread .mdbase-thread-anchor").last().focus(); await page.keyboard.press("j");
     await page.waitForFunction((path) => document.activeElement?.closest("[data-thread]")?.getAttribute("data-thread") === path, nextThread);
     await page.getByRole("tab", { name: /Sources/ }).click();
     assert.equal(await page.locator(".sources input[type=search]").inputValue(), "source00000");

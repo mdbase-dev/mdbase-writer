@@ -1,6 +1,6 @@
 // Lazy hydration on top of classified metadata. No discovery or watch ownership.
 import type { JsonObject } from "@mdbase-dev/connect";
-import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { commentFromRecord, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionCache } from "./cache.js";
 import type { CollectionStore, StoreDelta } from "./collection.js";
 import { toContract } from "./comments.js";

@@ -25,40 +25,22 @@ msgstr " · 새로고침 시 초기화"
 msgid " via mdbase Connect"
 msgstr " · mdbase Connect를 통해"
 
-#: src/ui/CommentsPanel.tsx
-msgid " with "
-msgstr " 와 "
-
 #. placeholder {0}: highlightIndex.pending
 #: src/ui/SourcesPanel.tsx
 msgid "· searching {0} more"
 msgstr "· {0}개 더 검색 중"
 
-#: src/ui/CommentsPanel.tsx
-msgid "(a point in the text)"
-msgstr "(본문의 한 지점)"
-
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
 msgstr "(본문 구간 삭제됨)"
-
-#. placeholder {0}: info.replies
-#: src/editor/comments.ts
-msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr "{0, plural, =0 {댓글에서 열기} other {답글 #개 · 댓글에서 열기}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
 msgstr "{0, plural, other {#장}}"
 
-#. placeholder {0}: this.ids.length
-#: src/editor/comments.ts
-msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr "{0, plural, other {이 줄의 댓글 #개}}"
-
 #. placeholder {0}: signing.paths.length
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
 msgstr "{0, plural, other {계정 사용자로 주장하는 사람 레코드가 #개여서 Writer는 어느 사람이 사용자인지 임의로 판단하지 않습니다.}}"
 
@@ -261,14 +243,6 @@ msgstr "페이지(12, 12–14) 또는 위치 정보(장 3, 절 2)"
 msgid "Abstract"
 msgstr "초록"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Accept"
-msgstr "수락"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Accepted"
-msgstr "수락됨"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Actual size"
 msgstr "실제 크기"
@@ -335,17 +309,9 @@ msgstr "모양 어둡게 밝게"
 msgid "Article"
 msgstr "논문"
 
-#: src/ui/CommentsPanel.tsx
-msgid "as {signer} · "
-msgstr "{signer} 이름으로 · "
-
 #: src/ui/Settings.tsx
 msgid "as it should appear"
 msgstr "표시할 이름"
-
-#: src/ui/CommentsPanel.tsx
-msgid "At the cursor"
-msgstr "커서 위치"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -378,7 +344,6 @@ msgstr "백업 저장되지 않은 내용 복구"
 msgid "Bold"
 msgstr "굵게"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
@@ -433,7 +398,7 @@ msgstr "장"
 msgid "Chapters <0>{0}</0>"
 msgstr "장 <0>{0}</0>"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "다시 확인"
 
@@ -587,14 +552,7 @@ msgstr "명령"
 msgid "Commands, shortcuts and theme"
 msgstr "명령, 단축키 및 테마"
 
-#: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
-msgid "Comment"
-msgstr "댓글"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
 msgid "Comment"
 msgstr "댓글"
 
@@ -607,24 +565,13 @@ msgstr "선택 영역에 댓글 달기"
 msgid "Comment on the selection ({0})"
 msgstr "선택 영역에 댓글 달기({0})"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Comment on this text"
-msgstr "이 텍스트에 댓글 달기"
-
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
 msgstr "댓글"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Comments are not set up in this collection."
 msgstr "이 컬렉션에는 댓글이 설정되어 있지 않습니다."
-
-#. placeholder {0}: literal(problem)
-#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
-#: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {0} {1}"
-msgstr "댓글을 사용할 수 없습니다: {0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -715,15 +662,6 @@ msgstr "어두운 테마"
 msgid "Date"
 msgstr "날짜"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Delete"
-msgstr "삭제"
-
-#. placeholder {0}: clip(exact)
-#: src/ui/comments.ts
-msgid "Delete {0}"
-msgstr "{0} 삭제"
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "삭제됨"
@@ -751,10 +689,6 @@ msgstr "종속 항목을 확인하지 않음"
 #: src/editor/chapter-cards.ts
 msgid "Detach"
 msgstr "분리"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Detached: the text has changed"
-msgstr "분리됨: 텍스트가 변경되었습니다"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
@@ -841,10 +775,6 @@ msgstr "수식"
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
 msgstr "오류 및 경고 목록"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Everyone"
-msgstr "모든 사용자"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
@@ -976,7 +906,7 @@ msgstr "너비에 맞추기"
 msgid "Fitting the width; click for actual size"
 msgstr "너비에 맞춤; 클릭하면 실제 크기 표시"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Fix it in mdbase Editor"
 msgstr "mdbase Editor에서 수정"
 
@@ -1132,7 +1062,6 @@ msgstr "색인을 불러오지 못했습니다: {0}"
 msgid "Inline code"
 msgstr "인라인 코드"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Insert"
 msgstr "삽입"
@@ -1142,11 +1071,6 @@ msgstr "삽입"
 msgid "Insert [@{0}] at the cursor (Enter)"
 msgstr "커서 위치에 [@{0}] 삽입(Enter)"
 
-#. placeholder {0}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Insert {0}"
-msgstr "{0} 삽입"
-
 #: src/ui/Shortcuts.tsx
 msgid "Insert a blank line"
 msgstr "빈 줄 삽입"
@@ -1154,10 +1078,6 @@ msgstr "빈 줄 삽입"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "인용, 각주, 상호 참조, 그림, 표 또는 수식을 삽입합니다(또는 텍스트에서 / 입력)."
-
-#: src/ui/CommentsPanel.tsx
-msgid "Insert at the cursor"
-msgstr "커서 위치에 삽입"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Insert quotation"
@@ -1253,11 +1173,11 @@ msgstr "{0}행"
 msgid "Link"
 msgstr "링크"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link it in mdbase Editor’s settings for this collection."
 msgstr "이 컬렉션의 mdbase Editor 설정에서 연결하세요."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link your account"
 msgstr "계정 연결"
 
@@ -1276,10 +1196,6 @@ msgstr "주석 불러오는 중…"
 #: src/ui/Home.tsx
 msgid "Loading collection data…"
 msgstr "컬렉션 데이터 불러오는 중…"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Loading comments…"
-msgstr "댓글을 불러오는 중…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
@@ -1300,10 +1216,6 @@ msgstr "출처 검색 중…"
 #: src/ui/WorkspaceView.tsx
 msgid "Lower panel"
 msgstr "아래쪽 패널"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Make this edit"
-msgstr "이 편집 적용"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1384,10 +1296,6 @@ msgstr "mdbase writer는 mdbase 컬렉션의 Markdown 레코드를 조판해 PDF
 msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
 msgstr "병합된 Markdown<0/><1>내 텍스트로 시작합니다. 올바르게 편집한 다음 저장하세요. 로컬 설정은 유지됩니다.</1>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Mine"
-msgstr "내 버전"
-
 #: src/ui/names.ts
 msgid "MLA 9th edition"
 msgstr "MLA 9판"
@@ -1432,31 +1340,10 @@ msgstr "이름"
 msgid "New chapter title"
 msgstr "새 장 제목"
 
-#: src/ui/CommentsPanel.tsx
-msgid "New comment"
-msgstr "새 댓글"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "New comment"
-msgstr "새 댓글"
-
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "새 원고"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since last visit ({newCount})"
-msgstr "지난 방문 이후 새 항목({newCount})"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since your last visit"
-msgstr "마지막 방문 이후 새 항목"
-
-#: src/editor/comments.ts
-msgid "New suggestion"
-msgstr "새 제안"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1516,10 +1403,6 @@ msgstr "원고에 문제가 없습니다"
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "“{query}”와(과) 일치하는 메모가 없습니다."
-
-#: src/ui/CommentsPanel.tsx
-msgid "No open comments"
-msgstr "열린 댓글이 없습니다"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
@@ -1617,10 +1500,6 @@ msgstr "“{0}”와(과) 일치하는 항목이 없습니다."
 msgid "Nothing matches “{query}”."
 msgstr "“{query}”와(과) 일치하는 항목이 없습니다."
 
-#: src/ui/CommentsPanel.tsx
-msgid "Nothing resolved yet."
-msgstr "아직 해결된 항목이 없습니다."
-
 #: src/ui/connection-notice.ts
 msgid "Offline"
 msgstr "오프라인"
@@ -1645,17 +1524,9 @@ msgstr "산호초의 형성에 관하여"
 msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
 msgstr "원고 목록에서 화살표 키 또는 J와 K를 사용하고 Enter로 여세요."
 
-#: src/ui/CommentsPanel.tsx
-msgid "On the whole chapter"
-msgstr "장 전체에 대해"
-
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
 msgstr "내 컴퓨터"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Open"
-msgstr "열기"
 
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
@@ -1872,10 +1743,6 @@ msgstr "원고처럼 읽기"
 msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
 msgstr "원고처럼 읽기<0>끄면 Markdown 원문을 표시합니다</0>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reason for the suggestion"
-msgstr "수정 제안 사유"
-
 #: src/ui/ConnectGate.tsx
 msgid "Reconnect"
 msgstr "다시 연결"
@@ -1904,14 +1771,6 @@ msgstr "@{id}로 참조"
 msgid "Regular expression"
 msgstr "정규 표현식"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reject"
-msgstr "거절"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Rejected"
-msgstr "거절됨"
-
 #: src/LegacyApp.tsx
 msgid "Reload"
 msgstr "새로고침"
@@ -1930,37 +1789,18 @@ msgstr "저자 {0} 삭제"
 msgid "Rename the focused chapter"
 msgstr "선택한 장 이름 바꾸기"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reopen"
-msgstr "다시 열기"
-
 #: src/editor/search-panel.ts
-#: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "바꾸기"
-
-#. placeholder {0}: clip(exact)
-#. placeholder {1}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Replace {0} with {1}"
-msgstr "{0}을(를) {1}(으)로 바꾸기"
 
 #: src/editor/search-panel.ts
 msgid "Replace all"
 msgstr "모두 바꾸기"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Replace with"
-msgstr "바꿀 내용"
-
 #. placeholder {0}: root.suggestion.replacement
 #: src/ui/WorkspaceView.tsx
 msgid "Replace with “{0}”"
 msgstr "“{0}”(으)로 바꾸기"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Reply"
-msgstr "답글"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize sidebar panels"
@@ -1974,14 +1814,6 @@ msgstr "편집기 및 미리보기 크기 조정"
 msgid "Resize the sidebar"
 msgstr "사이드바 크기 조정"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Resolve"
-msgstr "해결"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Resolved"
-msgstr "해결됨"
-
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
 msgstr "로컬 초안 복원"
@@ -1989,10 +1821,6 @@ msgstr "로컬 초안 복원"
 #: src/ui/Home.tsx
 msgid "Retry background data"
 msgstr "백그라운드 데이터 다시 시도"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Retry comments"
-msgstr "댓글 다시 시도"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry dependencies"
@@ -2042,7 +1870,7 @@ msgstr "검토"
 msgid "Review {0}"
 msgstr "{0} 검토"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Review access"
 msgstr "접근 권한 검토"
 
@@ -2110,7 +1938,7 @@ msgstr "절"
 
 #. placeholder {0}: shortcutLabel("mod+alt+m")
 #. placeholder {1}: shortcutLabel("mod+alt+s")
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
 msgstr "본문 구간을 선택하고 <0>{0}</0>을 눌러 댓글을 달거나 <1>{1}</1>를 눌러 수정을 제안하세요."
 
@@ -2155,10 +1983,6 @@ msgstr "설정 · {0}"
 msgid "Settings also differ"
 msgstr "설정도 다릅니다"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show"
-msgstr "표시"
-
 #. placeholder {0}: rest.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more chapters · {0}"
@@ -2168,11 +1992,6 @@ msgstr "장 50개 더 표시 · {0}"
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more cited sources · {0}"
 msgstr "인용된 출처 50개 더 표시 · {0}"
-
-#. placeholder {0}: logical.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more comments · {0}"
-msgstr "댓글 50개 더 표시 · {0}"
 
 #. placeholder {0}: list.length
 #: src/ui/OutlinePanel.tsx
@@ -2188,11 +2007,6 @@ msgstr "하이라이트 50개 더 표시 · {0}"
 #: src/ui/Home.tsx
 msgid "Show 50 more manuscripts · {0}"
 msgstr "원고 50개 더 표시 · {0}"
-
-#. placeholder {0}: thread.replies.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more replies · {0}"
-msgstr "답글 50개 더 표시 · {0}"
 
 #. placeholder {0}: rest.length
 #: src/ui/SourcesPanel.tsx
@@ -2216,10 +2030,6 @@ msgstr "자동 완성 표시"
 msgid "Show in Sources"
 msgstr "출처에서 표시"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show in the editor"
-msgstr "편집기에서 표시"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "Markdown 원문 표시"
@@ -2231,10 +2041,6 @@ msgstr "이전 장 50개 표시"
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 cited sources"
 msgstr "이전에 인용된 출처 50개 표시"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Show previous 50 comments"
-msgstr "이전 댓글 50개 표시"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 headings"
@@ -2261,10 +2067,6 @@ msgstr "사이드바 표시"
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar ({0})"
 msgstr "사이드바 표시 ({0})"
-
-#: src/editor/comments.ts
-msgid "Show this comment"
-msgstr "이 댓글 표시"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
@@ -2390,13 +2192,8 @@ msgid "Subtitle"
 msgstr "부제"
 
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
 msgid "Suggest"
 msgstr "제안"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggest an edit"
-msgstr "수정 제안"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
@@ -2406,19 +2203,6 @@ msgstr "선택 영역의 수정 제안"
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({0})"
 msgstr "선택 영역의 수정 제안({0})"
-
-#: src/editor/comments.ts
-msgid "Suggested insertion"
-msgstr "삽입 제안"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggested text"
-msgstr "제안된 텍스트"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "Suggestion"
-msgstr "제안"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
@@ -2510,7 +2294,7 @@ msgstr "내보내기에 필요한 항목을 불러오는 동안 원고가 계속
 msgid "The manuscript was closed."
 msgstr "원고가 닫혔습니다."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "The person record that claims your account is not valid."
 msgstr "계정 사용자라고 주장하는 사람 레코드가 유효하지 않습니다."
 
@@ -2533,10 +2317,6 @@ msgstr "스타일 자체의 언어(보통 en-US)"
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
 msgstr "제안된 텍스트가 더 이상 장에 없습니다. 직접 편집한 다음 제안을 해결하세요."
-
-#: src/ui/CommentsPanel.tsx
-msgid "The suggested text is no longer there"
-msgstr "제안된 텍스트가 더 이상 없습니다"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2589,10 +2369,6 @@ msgstr "이 버전은 로컬 개발 빌드입니다. 호스팅된 mdbase connect
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "이 원고를 열지 못했습니다."
-
-#: src/ui/CommentsPanel.tsx
-msgid "This passage is no longer in the text"
-msgstr "이 구절은 더 이상 본문에 없습니다"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
@@ -2665,7 +2441,6 @@ msgstr "저장되지 않은 초안"
 msgid "Unsaved in this browser"
 msgstr "이 브라우저에 저장되지 않음"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
 msgstr "서명 없음"
@@ -2710,7 +2485,7 @@ msgstr "내보내기 전에 원고가 열릴 때까지 기다리세요."
 msgid "Waiting for approval in the mdbase tab…"
 msgstr "mdbase 탭에서 승인 대기 중…"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Waiting for approval…"
 msgstr "승인 대기 중…"
 
@@ -2719,21 +2494,9 @@ msgstr "승인 대기 중…"
 msgid "Waiting for mdbase connect…"
 msgstr "mdbase connect 대기 중…"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Whole text"
-msgstr "전체 텍스트"
-
 #: src/editor/search-panel.ts
 msgid "Whole words"
 msgstr "단어 단위"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Whose comments"
-msgstr "댓글 작성자"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Why (optional)"
-msgstr "이유(선택 사항)"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
@@ -2746,14 +2509,6 @@ msgstr "삭제 예정"
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
 msgstr "업데이트 예정"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdraw"
-msgstr "철회"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdrawn."
-msgstr "철회됨."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
@@ -2805,7 +2560,7 @@ msgstr "Writer 명령"
 msgid "Writer could not open this collection"
 msgstr "Writer에서 이 컬렉션을 열지 못했습니다."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer에서 계정 정보를 볼 수 있는 권한이 없습니다."
 
@@ -2814,11 +2569,11 @@ msgid "You can close this window."
 msgstr "이 창을 닫아도 됩니다."
 
 #. placeholder {0}: signing.reason
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account could not be checked ({0})."
 msgstr "계정을 확인하지 못했습니다({0})."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account is not linked to a person record in this collection."
 msgstr "계정이 이 컬렉션의 사람 레코드에 연결되어 있지 않습니다."
 
@@ -2827,7 +2582,7 @@ msgstr "계정이 이 컬렉션의 사람 레코드에 연결되어 있지 않�
 msgid "Your browser blocked the sign-in tab."
 msgstr "브라우저에서 로그인 탭을 차단했습니다."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your comments are not signed."
 msgstr "댓글에 서명되지 않았습니다."
 

@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { diagnosticMessage } from "../i18n/diagnostics.js";
+import { applySuggestion, bodyHash, linkPath, targetFor, type CommentChange, type CommentRecord, type CommentThread } from "@mdbase-dev/ui/comments";
 // One open manuscript: its record sessions, the compile worker, and a single
 // snapshot the UI renders from.
 //
@@ -9,13 +10,12 @@ import { diagnosticMessage } from "../i18n/diagnostics.js";
 // the whole manuscript and reports which embedded records it still needs.
 import type { JsonObject } from "@mdbase-dev/connect";
 import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
-import { applySuggestion, bodyHash, linkPath, targetFor, type CommentRecord, type CommentThread } from "@mdbase-writer/core/comments";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";
 import { IMAGE_EXTENSION, PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
-import { NO_PEOPLE, type CommentChange, type NewComment, type People } from "../backend/comments.js";
+import { NO_PEOPLE, type NewComment, type People } from "../backend/comments.js";
 import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";

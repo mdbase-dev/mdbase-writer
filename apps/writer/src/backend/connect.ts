@@ -1,25 +1,13 @@
 // The writer on a real collection through mdbase connect.
 import { type CollectionFileDescriptor, type JsonObject, type QueryInput, type QueryMetadataInput, type QueryRecord, type MdbaseConnection } from "@mdbase-dev/connect";
-import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionSchema, CollectionStore, type Binding, type Domain, type StoreDelta, type CollectionRow } from "./collection.js";
 export { annotationContract, commentContract, manuscriptContract, sourceContract } from "./collection.js";
 import { CollectionCache } from "./cache.js";
 import { CollectionBodies } from "./bodies.js";
 import { errorMessage } from "../async.js";
 
-import {
-  changeFields,
-  commentPath,
-  newCommentFields,
-  NO_PEOPLE,
-  peopleFromDirectory,
-  signingFromProblem,
-  toContract,
-  toLocal,
-  type CommentChange,
-  type NewComment,
-  type People,
-} from "./comments.js";
+import { NO_PEOPLE, peopleFromDirectory, signingFromProblem, toContract, toLocal, type NewComment, type People } from "./comments.js";
 import {
   manuscriptBody,
   fail,

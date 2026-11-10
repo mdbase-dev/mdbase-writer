@@ -1,6 +1,8 @@
 import { Trans, Plural } from "@lingui/react/macro";
 import { t as translate, plural as icuPlural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import { personName, when } from "@mdbase-dev/ui/comments";
+import { CommentComposer, CommentsPanel, openCommentCount, type CommentDrafts, type PendingComment as PanelPending } from "@mdbase-dev/ui/comments-panel";
 // An open manuscript: the top bar's title, status and actions; a sidebar with
 // the outline and sources; the editor and the typeset preview side by side
 // (either can be hidden, and the split between them dragged).
@@ -20,9 +22,9 @@ import { authorYear } from "../editor/library-search.js";
 import { referenceAtOffset, referenceOffsets, type EditorInsight, type FollowTarget } from "../editor/insight.js";
 import { Preview, type PreviewView } from "../preview/Preview.js";
 import { wordCount } from "../words.js";
-import { formatNumber } from "../i18n/presentation.js";
+import { formatNumber, intlLocale } from "../i18n/presentation.js";
 import { diagnosticMessage } from "../i18n/diagnostics.js";
-import { discoveredDiagnostics, sourceKeys, type ManuscriptWorkspace } from "../workspace/workspace.js";
+import { discoveredDiagnostics, sourceKeys, type CommentDraft, type ManuscriptWorkspace } from "../workspace/workspace.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import { useOverlay } from "@mdbase-dev/ui/overlay";
@@ -56,11 +58,10 @@ import { CompareDialog, type Comparison } from "./CompareDialog.js";
 import { ExportReview, type PendingExport } from "./ExportReview.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
-import { anchorsFor, threadIsNew, ThreadPlacement, when, type PlacedThread } from "./comments.js";
-import { CommentsPanel, Composer, openCount, type CommentDrafts, type PendingComment } from "./CommentsPanel.js";
+import { anchorsFor, ThreadPlacement, type PlacedThread } from "./comments.js";
+import { CommentSigning } from "./CommentSigning.js";
 import { headingAt, headings } from "./outline.js";
-import { personName } from "../backend/comments.js";
-import type { AnchorCard } from "../editor/comments.js";
+import type { CommentAnchorCard } from "@mdbase-dev/ui/comment-anchors";
 import type { CitationSite } from "./SourcesPanel.js";
 import { ManuscriptSearch, type SearchRequest } from "./ManuscriptSearch.js";
 import { OutlinePanel } from "./OutlinePanel.js";
@@ -82,6 +83,13 @@ import { Shortcuts } from "./Shortcuts.js";
 
 /** Which part a phone shows. */
 type Pane = "outline" | "write" | "preview";
+/** A passage chosen to comment on or suggest an edit to, or (without a draft) a whole record. */
+interface PendingComment {
+  readonly kind: "comment" | "suggest";
+  readonly record: string;
+  readonly draft?: CommentDraft;
+}
+
 interface Notice {
   readonly text: string;
   readonly tone: "busy" | "ok" | "problem";
@@ -389,20 +397,18 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     showComments();
   }, [snap.records, active, showComments]);
 
-  const me = snap.people.me?.link;
-  const anchorCard = useCallback((id: string): AnchorCard | null => {
+  const anchorCard = useCallback((id: string): CommentAnchorCard | null => {
     const hit = placed.find((p) => p.thread.root.path === id);
     if (!hit) return null;
     const { root, replies } = hit.thread;
     return {
       kind: root.motivation === "editing" ? "suggestion" : "comment",
       author: personName(root.createdBy, snap.people) ?? translate`Unsigned`,
-      when: when(root.createdAt),
+      when: when(root.createdAt, intlLocale()),
       text: root.text || (root.suggestion ? translate`Replace with “${root.suggestion.replacement}”` : ""),
       replies: replies.filter((r) => !r.deletedAt).length,
-      isNew: threadIsNew(hit.thread, since, me),
     };
-  }, [placed, snap.people, since, me]);
+  }, [placed, snap.people]);
   // Where each record's open threads are anchored, for the outline's quiet counts.
   const commentOffsets = useMemo(() => {
     const map = new Map<string, number[]>();
@@ -715,6 +721,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   }, [pendingComment, workspace]);
   const bodyOf = useCallback((record: string) => snap.records.get(record)?.snapshot.body, [snap.records]);
   const titleOf = useCallback((record: string) => recordTitle(snap.records.get(record), record), [snap.records]);
+  const panelPending = (pending: PendingComment): PanelPending => ({
+    ...(pending.draft ? { quote: pending.draft.body.slice(pending.draft.from, pending.draft.to) } : {}),
+    suggest: pending.kind === "suggest",
+    on: titleOf(pending.record),
+  });
   const fileStem = manuscriptTitle.replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "manuscript";
   const download = (bytes: Uint8Array, type: string, name: string) => {
     const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
@@ -908,32 +919,32 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             />
           )}
         </>
+      ) : workspace.setupStatus?.comments === false ? (
+        <p className="muted pad"><Trans>Comments are not set up in this collection.</Trans></p>
       ) : (
         <CommentsPanel
           loading={snap.commentsLoad.phase === "loading" || snap.indexLoad.phase === "loading"}
           onRetry={() => void workspace.loadComments()}
-          placed={placed}
+          threads={placed}
           drafts={commentDrafts}
-          grouped={order.length > 1}
           people={snap.people}
           problem={snap.commentsProblem}
-          notSetUp={workspace.setupStatus?.comments === false}
           active={activeComment}
-          pending={pendingComment?.draft && !narrow ? null : pendingComment}
+          pending={pendingComment && !(pendingComment.draft && !narrow) ? panelPending(pendingComment) : null}
           since={since}
-          recordTitle={(path) => recordTitle(snap.records.get(path), path)}
-          onSelect={selectThread}
+          {...(order.length > 1 ? { recordTitle: titleOf } : {})}
+          hint={<Trans>Select a passage and press <kbd>{shortcutLabel("mod+alt+m")}</kbd> to comment, or <kbd>{shortcutLabel("mod+alt+s")}</kbd> to suggest an edit.</Trans>}
+          notice={<CommentSigning people={snap.people} onCheck={() => workspace.refreshPeople()} {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})} />}
+          onSelect={(thread) => selectThread(thread as PlacedThread)}
           onSubmit={submitComment}
           onCancel={() => setPendingComment(null)}
           onReply={replyToThread}
           onChange={changeComment}
-          onAccept={acceptSuggestion}
-          onWholeRecord={() => {
+          onAccept={(thread) => acceptSuggestion(thread as PlacedThread)}
+          onStart={() => {
             setPendingComment({ kind: "comment", record: active });
             setActiveComment(null);
           }}
-          onCheckAccount={() => workspace.refreshPeople()}
-          {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})}
         />
       )
     );
@@ -1092,7 +1103,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           onTab={setSidebarTab}
           sources={snap.library.length}
           comments={openThreads.length}
-          commentsTitle={openCount(placed)}
+          commentsTitle={openCommentCount(placed)}
           split={layout.lowerTab !== null}
           onSplit={toggleLower}
         />
@@ -1202,10 +1213,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         )}
         {pendingComment?.draft && !narrow && (
           <InlineComposer key={`${pendingComment.record}:${pendingComment.draft.from}:${pendingComment.kind}`} editor={editor} at={pendingComment.draft.to}>
-            <Composer
-              pending={pendingComment}
+            <CommentComposer
+              pending={panelPending(pendingComment)}
               signer={snap.people.signing?.kind === "linked" ? snap.people.me?.name : undefined}
-              recordTitle={titleOf}
               onSubmit={submitComment}
               onCancel={() => setPendingComment(null)}
             />

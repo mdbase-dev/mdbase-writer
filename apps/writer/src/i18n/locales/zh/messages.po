@@ -25,40 +25,22 @@ msgstr " · 重新加载时重置"
 msgid " via mdbase Connect"
 msgstr "，通过 mdbase Connect"
 
-#: src/ui/CommentsPanel.tsx
-msgid " with "
-msgstr " 替换为 "
-
 #. placeholder {0}: highlightIndex.pending
 #: src/ui/SourcesPanel.tsx
 msgid "· searching {0} more"
 msgstr "· 另有 {0} 条正在搜索"
 
-#: src/ui/CommentsPanel.tsx
-msgid "(a point in the text)"
-msgstr "(文中的一处)"
-
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
 msgstr "（文本片段已删除）"
-
-#. placeholder {0}: info.replies
-#: src/editor/comments.ts
-msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr "{0, plural, =0 {点击在评论中打开} other {# 条回复 · 点击在评论中打开}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
 msgstr "{0, plural, other {# 章}}"
 
-#. placeholder {0}: this.ids.length
-#: src/editor/comments.ts
-msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr "{0, plural, other {此行有 # 条评论}}"
-
 #. placeholder {0}: signing.paths.length
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
 msgstr "{0, plural, other {有 # 条人员记录关联到你的账户，因此 Writer 不会擅自猜测哪条记录是你本人。}}"
 
@@ -261,14 +243,6 @@ msgstr "页码（12、12–14）或定位信息（第 3 章，第 2 节）"
 msgid "Abstract"
 msgstr "摘要"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Accept"
-msgstr "接受"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Accepted"
-msgstr "已接受"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Actual size"
 msgstr "实际大小"
@@ -335,17 +309,9 @@ msgstr "外观 深色 浅色"
 msgid "Article"
 msgstr "文章"
 
-#: src/ui/CommentsPanel.tsx
-msgid "as {signer} · "
-msgstr "署名：{signer} · "
-
 #: src/ui/Settings.tsx
 msgid "as it should appear"
 msgstr "按预期显示"
-
-#: src/ui/CommentsPanel.tsx
-msgid "At the cursor"
-msgstr "在光标处"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -378,7 +344,6 @@ msgstr "备份 未保存 恢复"
 msgid "Bold"
 msgstr "粗体"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
@@ -433,7 +398,7 @@ msgstr "章节"
 msgid "Chapters <0>{0}</0>"
 msgstr "章节 <0>{0}</0>"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "再次检查"
 
@@ -587,14 +552,7 @@ msgstr "命令"
 msgid "Commands, shortcuts and theme"
 msgstr "命令、快捷键和主题"
 
-#: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
-msgid "Comment"
-msgstr "评论"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
 msgid "Comment"
 msgstr "评论"
 
@@ -607,24 +565,13 @@ msgstr "评论所选内容"
 msgid "Comment on the selection ({0})"
 msgstr "评论所选内容（{0}）"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Comment on this text"
-msgstr "评论此文本"
-
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
 msgstr "评论"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Comments are not set up in this collection."
 msgstr "此集合尚未设置评论功能。"
-
-#. placeholder {0}: literal(problem)
-#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
-#: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {0} {1}"
-msgstr "评论不可用：{0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -715,15 +662,6 @@ msgstr "深色"
 msgid "Date"
 msgstr "日期"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Delete"
-msgstr "删除"
-
-#. placeholder {0}: clip(exact)
-#: src/ui/comments.ts
-msgid "Delete {0}"
-msgstr "删除 {0}"
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "已删除"
@@ -751,10 +689,6 @@ msgstr "尚未检查依赖项"
 #: src/editor/chapter-cards.ts
 msgid "Detach"
 msgstr "分离"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Detached: the text has changed"
-msgstr "已分离：文本已更改"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
@@ -841,10 +775,6 @@ msgstr "公式"
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
 msgstr "错误 警告 列表"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Everyone"
-msgstr "所有人"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
@@ -976,7 +906,7 @@ msgstr "适合宽度"
 msgid "Fitting the width; click for actual size"
 msgstr "正在适应宽度；单击以查看实际大小"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Fix it in mdbase Editor"
 msgstr "在 mdbase Editor 中修复"
 
@@ -1132,7 +1062,6 @@ msgstr "无法加载索引：{0}"
 msgid "Inline code"
 msgstr "行内代码"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Insert"
 msgstr "插入"
@@ -1142,11 +1071,6 @@ msgstr "插入"
 msgid "Insert [@{0}] at the cursor (Enter)"
 msgstr "在光标处插入 [@{0}]（Enter）"
 
-#. placeholder {0}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Insert {0}"
-msgstr "插入 {0}"
-
 #: src/ui/Shortcuts.tsx
 msgid "Insert a blank line"
 msgstr "插入空行"
@@ -1154,10 +1078,6 @@ msgstr "插入空行"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "插入引文、脚注、交叉引用、插图、表格或公式（也可在文本中输入 /）"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Insert at the cursor"
-msgstr "在光标处插入"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Insert quotation"
@@ -1253,11 +1173,11 @@ msgstr "第 {0} 行"
 msgid "Link"
 msgstr "链接"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link it in mdbase Editor’s settings for this collection."
 msgstr "在 mdbase Editor 中此集合的设置里关联它。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link your account"
 msgstr "关联你的账户"
 
@@ -1276,10 +1196,6 @@ msgstr "正在加载注释…"
 #: src/ui/Home.tsx
 msgid "Loading collection data…"
 msgstr "正在加载集合数据…"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Loading comments…"
-msgstr "正在加载评论…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
@@ -1300,10 +1216,6 @@ msgstr "正在查找来源…"
 #: src/ui/WorkspaceView.tsx
 msgid "Lower panel"
 msgstr "下方面板"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Make this edit"
-msgstr "应用此修改"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1384,10 +1296,6 @@ msgstr "mdbase writer 将 mdbase 集合中的 Markdown 记录排版为 PDF 和 W
 msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
 msgstr "合并后的 Markdown<0/><1>以你的文本为起点。编辑至正确后保存。你的本地设置将保留。</1>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Mine"
-msgstr "我的"
-
 #: src/ui/names.ts
 msgid "MLA 9th edition"
 msgstr "MLA 第 9 版"
@@ -1432,31 +1340,10 @@ msgstr "名称"
 msgid "New chapter title"
 msgstr "新章节标题"
 
-#: src/ui/CommentsPanel.tsx
-msgid "New comment"
-msgstr "新评论"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "New comment"
-msgstr "新评论"
-
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "新手稿"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since last visit ({newCount})"
-msgstr "上次访问后新增（{newCount}）"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since your last visit"
-msgstr "自上次访问后新增"
-
-#: src/editor/comments.ts
-msgid "New suggestion"
-msgstr "新建议"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1516,10 +1403,6 @@ msgstr "文稿没有问题"
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "没有匹配“{query}”的笔记。"
-
-#: src/ui/CommentsPanel.tsx
-msgid "No open comments"
-msgstr "没有未解决的评论"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
@@ -1617,10 +1500,6 @@ msgstr "没有匹配“{0}”的内容。"
 msgid "Nothing matches “{query}”."
 msgstr "没有匹配“{query}”的内容。"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Nothing resolved yet."
-msgstr "尚无已解决的评论。"
-
 #: src/ui/connection-notice.ts
 msgid "Offline"
 msgstr "离线"
@@ -1645,17 +1524,9 @@ msgstr "关于珊瑚礁的形成"
 msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
 msgstr "在稿件列表中，使用方向键或 J 和 K，然后按 Enter 打开。"
 
-#: src/ui/CommentsPanel.tsx
-msgid "On the whole chapter"
-msgstr "针对整章"
-
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
 msgstr "在你的电脑上"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Open"
-msgstr "打开"
 
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
@@ -1872,10 +1743,6 @@ msgstr "按手稿方式阅读"
 msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
 msgstr "按手稿方式阅读<0>关闭后将显示原始 Markdown</0>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reason for the suggestion"
-msgstr "建议理由"
-
 #: src/ui/ConnectGate.tsx
 msgid "Reconnect"
 msgstr "重新连接"
@@ -1904,14 +1771,6 @@ msgstr "使用 @{id} 引用此项"
 msgid "Regular expression"
 msgstr "正则表达式"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reject"
-msgstr "拒绝"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Rejected"
-msgstr "已拒绝"
-
 #: src/LegacyApp.tsx
 msgid "Reload"
 msgstr "重新加载"
@@ -1930,37 +1789,18 @@ msgstr "移除作者 {0}"
 msgid "Rename the focused chapter"
 msgstr "重命名当前章节"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reopen"
-msgstr "重新打开"
-
 #: src/editor/search-panel.ts
-#: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "替换"
-
-#. placeholder {0}: clip(exact)
-#. placeholder {1}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Replace {0} with {1}"
-msgstr "将 {0} 替换为 {1}"
 
 #: src/editor/search-panel.ts
 msgid "Replace all"
 msgstr "全部替换"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Replace with"
-msgstr "替换为"
-
 #. placeholder {0}: root.suggestion.replacement
 #: src/ui/WorkspaceView.tsx
 msgid "Replace with “{0}”"
 msgstr "替换为“{0}”"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Reply"
-msgstr "回复"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize sidebar panels"
@@ -1974,14 +1814,6 @@ msgstr "调整编辑器和预览区域的大小"
 msgid "Resize the sidebar"
 msgstr "调整侧边栏大小"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Resolve"
-msgstr "解决"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Resolved"
-msgstr "已解决"
-
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
 msgstr "恢复本地草稿"
@@ -1989,10 +1821,6 @@ msgstr "恢复本地草稿"
 #: src/ui/Home.tsx
 msgid "Retry background data"
 msgstr "重试加载后台数据"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Retry comments"
-msgstr "重试加载评论"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry dependencies"
@@ -2042,7 +1870,7 @@ msgstr "审阅"
 msgid "Review {0}"
 msgstr "审阅 {0}"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Review access"
 msgstr "查看访问权限"
 
@@ -2110,7 +1938,7 @@ msgstr "章节"
 
 #. placeholder {0}: shortcutLabel("mod+alt+m")
 #. placeholder {1}: shortcutLabel("mod+alt+s")
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
 msgstr "选择一段文字并按 <0>{0}</0> 添加评论，或按 <1>{1}</1> 提出编辑建议。"
 
@@ -2155,10 +1983,6 @@ msgstr "设置 · {0}"
 msgid "Settings also differ"
 msgstr "设置也存在差异"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show"
-msgstr "显示"
-
 #. placeholder {0}: rest.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more chapters · {0}"
@@ -2168,11 +1992,6 @@ msgstr "再显示 50 个章节 · {0}"
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more cited sources · {0}"
 msgstr "再显示 50 个已引用来源 · {0}"
-
-#. placeholder {0}: logical.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more comments · {0}"
-msgstr "再显示 50 条评论 · {0}"
 
 #. placeholder {0}: list.length
 #: src/ui/OutlinePanel.tsx
@@ -2188,11 +2007,6 @@ msgstr "再显示 50 个高亮 · {0}"
 #: src/ui/Home.tsx
 msgid "Show 50 more manuscripts · {0}"
 msgstr "再显示 50 篇手稿 · {0}"
-
-#. placeholder {0}: thread.replies.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more replies · {0}"
-msgstr "再显示 50 条回复 · {0}"
 
 #. placeholder {0}: rest.length
 #: src/ui/SourcesPanel.tsx
@@ -2216,10 +2030,6 @@ msgstr "显示补全建议"
 msgid "Show in Sources"
 msgstr "在“来源”中显示"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show in the editor"
-msgstr "在编辑器中显示"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "显示原始 Markdown"
@@ -2231,10 +2041,6 @@ msgstr "显示之前的 50 个章节"
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 cited sources"
 msgstr "显示之前的 50 个已引用来源"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Show previous 50 comments"
-msgstr "显示之前的 50 条评论"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 headings"
@@ -2261,10 +2067,6 @@ msgstr "显示侧边栏"
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar ({0})"
 msgstr "显示侧边栏（{0}）"
-
-#: src/editor/comments.ts
-msgid "Show this comment"
-msgstr "显示此评论"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
@@ -2390,13 +2192,8 @@ msgid "Subtitle"
 msgstr "副标题"
 
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
 msgid "Suggest"
 msgstr "建议"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggest an edit"
-msgstr "提出编辑建议"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
@@ -2406,19 +2203,6 @@ msgstr "为所选内容提出编辑建议"
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({0})"
 msgstr "为所选内容提出编辑建议（{0}）"
-
-#: src/editor/comments.ts
-msgid "Suggested insertion"
-msgstr "建议插入的内容"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggested text"
-msgstr "建议文本"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "Suggestion"
-msgstr "建议"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
@@ -2510,7 +2294,7 @@ msgstr "加载导出依赖项期间手稿仍在变化。请暂停编辑后重试
 msgid "The manuscript was closed."
 msgstr "手稿已关闭。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "The person record that claims your account is not valid."
 msgstr "关联到你账户的人员记录无效。"
 
@@ -2533,10 +2317,6 @@ msgstr "样式自身的语言（通常为 en-US）"
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
 msgstr "建议的文本已不在章节中；请手动编辑，然后处理该建议。"
-
-#: src/ui/CommentsPanel.tsx
-msgid "The suggested text is no longer there"
-msgstr "建议的文本已不存在"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2589,10 +2369,6 @@ msgstr "这是本地开发版本。托管的 mdbase connect 服务仅接受通�
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "无法打开此手稿"
-
-#: src/ui/CommentsPanel.tsx
-msgid "This passage is no longer in the text"
-msgstr "这段文字已不在正文中"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
@@ -2665,7 +2441,6 @@ msgstr "未保存的草稿"
 msgid "Unsaved in this browser"
 msgstr "在此浏览器中未保存"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
 msgstr "未署名"
@@ -2710,7 +2485,7 @@ msgstr "请等待手稿打开后再导出。"
 msgid "Waiting for approval in the mdbase tab…"
 msgstr "正在等待 mdbase 标签页中的批准…"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Waiting for approval…"
 msgstr "正在等待批准…"
 
@@ -2719,21 +2494,9 @@ msgstr "正在等待批准…"
 msgid "Waiting for mdbase connect…"
 msgstr "正在等待 mdbase connect…"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Whole text"
-msgstr "全文"
-
 #: src/editor/search-panel.ts
 msgid "Whole words"
 msgstr "全字匹配"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Whose comments"
-msgstr "谁的评论"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Why (optional)"
-msgstr "原因（可选）"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
@@ -2746,14 +2509,6 @@ msgstr "将移除"
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
 msgstr "将更新"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdraw"
-msgstr "撤回"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdrawn."
-msgstr "已撤回。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
@@ -2805,7 +2560,7 @@ msgstr "Writer 命令"
 msgid "Writer could not open this collection"
 msgstr "Writer 无法打开此集合"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer 无权查看你的账户。"
 
@@ -2814,11 +2569,11 @@ msgid "You can close this window."
 msgstr "你可以关闭此窗口。"
 
 #. placeholder {0}: signing.reason
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account could not be checked ({0})."
 msgstr "无法验证你的账户（{0}）。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account is not linked to a person record in this collection."
 msgstr "你的账户未关联到此集合中的人员记录。"
 
@@ -2827,7 +2582,7 @@ msgstr "你的账户未关联到此集合中的人员记录。"
 msgid "Your browser blocked the sign-in tab."
 msgstr "浏览器已拦截登录标签页。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your comments are not signed."
 msgstr "你的评论未签名。"
 

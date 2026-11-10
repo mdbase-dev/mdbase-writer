@@ -1,9 +1,9 @@
 // Collection semantics, independent of queries, watches and record sessions.
 import type { CollectionDescription, JsonObject, QuerySelectionExpression } from "@mdbase-dev/connect";
 import { annotationSourceLink } from "@mdbase-writer/core/annotations";
-import { commentFromRecord, linkPath, type CommentRecord } from "@mdbase-writer/core/comments";
+import { commentFromRecord, linkPath, personKey, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
-import { personKey, toContract } from "./comments.js";
+import { toContract } from "./comments.js";
 import { fail, libraryEntry, ok, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type UnavailableType } from "./types.js";
 
 export const manuscriptContract = { id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2" } as const;

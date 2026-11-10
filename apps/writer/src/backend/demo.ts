@@ -4,11 +4,11 @@
 import type { JsonObject } from "@mdbase-dev/connect";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import type { CslItem } from "@mdbase-writer/core";
-import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { changeFields, commentFromRecord, commentPath, newCommentFields, personKey, recordLink, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
 import { CollectionStore, starterSchema, type CollectionRow } from "./collection.js";
 
-import { changeFields, commentPath, newCommentFields, personKey, personLink, type People } from "./comments.js";
+import { type People } from "./comments.js";
 import { manuscriptBody, bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionDelta, type CollectionIndex, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
@@ -74,7 +74,7 @@ export async function createDemoBackend(): Promise<WriterBackend> {
   const names = store.people;
   // The demo is written by the manuscript's author.
   const me = [...paths].find((p) => names.get(personKey(p)) === "Jordan Ellis");
-  const people: People = { names, ...(me ? { me: { link: personLink(me), name: "Jordan Ellis" }, signing: { kind: "linked" } } : { signing: { kind: "unlinked" } }) };
+  const people: People = { names, ...(me ? { me: { link: recordLink(me), name: "Jordan Ellis" }, signing: { kind: "linked" } } : { signing: { kind: "unlinked" } }) };
   const readComment = async (path: string): Promise<CommentRecord | null> => {
     const opened = await authority.records.open(path, { autosave: false });
     if (!opened.ok) return null;

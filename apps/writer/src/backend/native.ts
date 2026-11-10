@@ -2,10 +2,10 @@
 // legacy backend facade, SDK runtime/setup engine, copied client or app journal.
 import { isMdbaseError, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type Write, type wire } from "@mdbase-dev/sdk";
 import type { JsonObject } from "@mdbase-dev/connect";
-import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
-import { changeFields, commentPath, newCommentFields, NO_PEOPLE, peopleFromDirectory, type CommentChange, type NewComment, type People } from "./comments.js";
+import { NO_PEOPLE, peopleFromDirectory, type NewComment, type People } from "./comments.js";
 import { manifestContractDigest, nativeObject, sameDigest, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
 import { NextWriterRecords } from "./next-records.js";
 import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";

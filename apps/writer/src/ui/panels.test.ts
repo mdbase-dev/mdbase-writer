@@ -4,8 +4,6 @@ import { I18nProvider } from "@lingui/react";
 import { i18n } from "../i18n/app.js";
 import { describe, expect, it, vi } from "vitest";
 import { SourcesPanel } from "./SourcesPanel.js";
-import { CommentsPanel } from "./CommentsPanel.js";
-import { NO_PEOPLE } from "../backend/comments.js";
 import { ok } from "../backend/types.js";
 vi.mock("../apps.js", () => ({ readerSourceHref: () => undefined }));
 const renderToStaticMarkup = (child: ReactNode) => renderStatic(createElement(I18nProvider, { i18n }, child));
@@ -24,11 +22,5 @@ describe("quiet panel states and bounds", () => {
     const html = renderToStaticMarkup(createElement(SourcesPanel, { ...sources, library, cited: new Map(library.slice(0, 100).map((e) => [e.key, 1])) }));
     expect(html.match(/class="source-row"/g)).toHaveLength(70);
     expect(html).toContain("Show 50 more sources");
-  });
-  it("distinguishes comments not set up from an empty ready list", () => {
-    const props = { placed: [], people: NO_PEOPLE, active: null, pending: null, recordTitle: (p: string) => p, onSelect() {}, onSubmit: async () => ok(null), onCancel() {}, onReply: async () => ok(null), onChange: async () => ok(null), onAccept: async () => ok(null), onWholeRecord() {}, onCheckAccount: async () => null };
-    const html = renderToStaticMarkup(createElement(CommentsPanel, { ...props, notSetUp: true }));
-    expect(html).toContain("Comments are not set up");
-    expect(html).not.toContain("No open comments");
   });
 });

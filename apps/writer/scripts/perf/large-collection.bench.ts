@@ -9,7 +9,7 @@ import type { CollectionDescription, CollectionFileDescriptor, JsonObject, Mdbas
 import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess } from "@mdbase-dev/connect/advanced";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
-import { commentFromRecord, commentThreads } from "@mdbase-writer/core/comments";
+import { commentFromRecord, commentThreads } from "@mdbase-dev/ui/comments";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { expect, it, vi } from "vitest";
@@ -19,7 +19,7 @@ import { writerCompletions } from "../../src/editor/completions.js";
 import { CompletionContext } from "@codemirror/autocomplete";
 import { EditorState } from "@codemirror/state";
 import { placeThreads, ThreadPlacement } from "../../src/ui/comments.js";
-import { CommentsPanel } from "../../src/ui/CommentsPanel.js";
+import { CommentsPanel } from "@mdbase-dev/ui/comments-panel";
 import { SourcesPanel } from "../../src/ui/SourcesPanel.js";
 import { ManuscriptWorkspace } from "../../src/workspace/workspace.js";
 import { labelTargets, referenceKeys } from "../../src/editor/insight.js";
@@ -339,7 +339,7 @@ it("large collection baseline (opt-in)", async () => {
           place3000CommentsBareNames: measure(() => placeThreads(allComments.map((c) => ({ ...c, document: `[[${c.document.split("/").at(-1)}` })), [main], (p) => p === main ? f.body : undefined, snap.recordIndex), 1),
           oneThread3000Replies: measure(() => commentThreads([allComments[0]!, ...allComments.slice(1).map((c) => ({ ...c, inReplyTo: `[[${allComments[0]!.path}]]` }))])),
           sourcePanelSSR: measure(() => renderToString(createElement(SourcesPanel, { library, cited, loadAnnotations: () => Promise.resolve(annotations), onInsert: noop, onStepCitation: noop, canInsert: true })), 3),
-          commentsPanelSSR: measure(() => renderToString(createElement(CommentsPanel, { placed, people: snap.people, active: null, pending: null, recordTitle: (p) => p, onSelect: noop, onSubmit: ok, onCancel: noop, onReply: ok, onChange: ok, onAccept: ok, onWholeRecord: noop, onCheckAccount: ok })), 3),
+          commentsPanelSSR: measure(() => renderToString(createElement(CommentsPanel, { threads: placed, people: snap.people, active: null, pending: null, recordTitle: (p) => p, onSelect: noop, onSubmit: ok, onCancel: noop, onReply: ok, onChange: ok, onAccept: ok, onStart: noop })), 3),
           annotationFilter6: measure(() => annotations.ok ? annotations.value.filter((a) => a.source === library[0]!.path || library[0]!.path.endsWith(`/${a.source}`)) : []),
           cloneLibrary5000: measure(() => structuredClone({ type: "library", library: library.map((e) => e.item) })),
         };

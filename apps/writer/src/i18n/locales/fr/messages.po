@@ -25,40 +25,22 @@ msgstr " · réinitialisée au rechargement"
 msgid " via mdbase Connect"
 msgstr " via mdbase Connect"
 
-#: src/ui/CommentsPanel.tsx
-msgid " with "
-msgstr " avec "
-
 #. placeholder {0}: highlightIndex.pending
 #: src/ui/SourcesPanel.tsx
 msgid "· searching {0} more"
 msgstr "· recherche de {0} autres en cours"
 
-#: src/ui/CommentsPanel.tsx
-msgid "(a point in the text)"
-msgstr "(un point du texte)"
-
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
 msgstr "(passage supprimé)"
-
-#. placeholder {0}: info.replies
-#: src/editor/comments.ts
-msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr "{0, plural, =0 {Cliquez pour ouvrir dans Commentaires} one {# réponse · Cliquez pour ouvrir dans Commentaires} other {# réponses · Cliquez pour ouvrir dans Commentaires}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
 msgstr "{0, plural, one {# chapitre} other {# chapitres}}"
 
-#. placeholder {0}: this.ids.length
-#: src/editor/comments.ts
-msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr "{0, plural, one {# commentaire sur cette ligne} other {# commentaires sur cette ligne}}"
-
 #. placeholder {0}: signing.paths.length
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
 msgstr "{0, plural, one {# document de personne revendique votre compte : Writer ne devinera donc pas lequel est le vôtre.} other {# documents de personne revendiquent votre compte : Writer ne devinera donc pas lequel est le vôtre.}}"
 
@@ -261,14 +243,6 @@ msgstr "Une page (12, 12–14) ou un repère (chap. 3, sect. 2)"
 msgid "Abstract"
 msgstr "Résumé"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Accept"
-msgstr "Accepter"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Accepted"
-msgstr "Accepté"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Actual size"
 msgstr "Taille réelle"
@@ -335,17 +309,9 @@ msgstr "apparence sombre claire"
 msgid "Article"
 msgstr "Article"
 
-#: src/ui/CommentsPanel.tsx
-msgid "as {signer} · "
-msgstr "en tant que {signer} · "
-
 #: src/ui/Settings.tsx
 msgid "as it should appear"
 msgstr "tel qu’il doit apparaître"
-
-#: src/ui/CommentsPanel.tsx
-msgid "At the cursor"
-msgstr "Au curseur"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -378,7 +344,6 @@ msgstr "sauvegarde non enregistré récupération"
 msgid "Bold"
 msgstr "Gras"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
@@ -433,7 +398,7 @@ msgstr "Chapitres"
 msgid "Chapters <0>{0}</0>"
 msgstr "Chapitres <0>{0}</0>"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "Vérifier à nouveau"
 
@@ -587,14 +552,7 @@ msgstr "Commandes"
 msgid "Commands, shortcuts and theme"
 msgstr "Commandes, raccourcis et thème"
 
-#: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
-msgid "Comment"
-msgstr "Commentaire"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
 msgid "Comment"
 msgstr "Commentaire"
 
@@ -607,24 +565,13 @@ msgstr "Commenter la sélection"
 msgid "Comment on the selection ({0})"
 msgstr "Commenter la sélection ({0})"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Comment on this text"
-msgstr "Commenter ce texte"
-
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
 msgstr "Commentaires"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Comments are not set up in this collection."
 msgstr "Les commentaires ne sont pas configurés dans cette collection."
-
-#. placeholder {0}: literal(problem)
-#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
-#: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {0} {1}"
-msgstr "Commentaires indisponibles : {0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -715,15 +662,6 @@ msgstr "Sombre"
 msgid "Date"
 msgstr "Date"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Delete"
-msgstr "Supprimer"
-
-#. placeholder {0}: clip(exact)
-#: src/ui/comments.ts
-msgid "Delete {0}"
-msgstr "Supprimer {0}"
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "Supprimé"
@@ -751,10 +689,6 @@ msgstr "Dépendances non vérifiées"
 #: src/editor/chapter-cards.ts
 msgid "Detach"
 msgstr "Détacher"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Detached: the text has changed"
-msgstr "Détaché : le texte a changé"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
@@ -841,10 +775,6 @@ msgstr "Équation"
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
 msgstr "erreurs avertissements liste"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Everyone"
-msgstr "Tout le monde"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
@@ -976,7 +906,7 @@ msgstr "Ajuster à la largeur"
 msgid "Fitting the width; click for actual size"
 msgstr "Ajusté à la largeur ; cliquez pour la taille réelle"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Fix it in mdbase Editor"
 msgstr "Corrigez-le dans mdbase Editor"
 
@@ -1132,7 +1062,6 @@ msgstr "Impossible de charger l’index : {0}"
 msgid "Inline code"
 msgstr "Code en ligne"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Insert"
 msgstr "Insérer"
@@ -1142,11 +1071,6 @@ msgstr "Insérer"
 msgid "Insert [@{0}] at the cursor (Enter)"
 msgstr "Insérer [@{0}] au curseur (Entrée)"
 
-#. placeholder {0}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Insert {0}"
-msgstr "Insérer {0}"
-
 #: src/ui/Shortcuts.tsx
 msgid "Insert a blank line"
 msgstr "Insérer une ligne vide"
@@ -1154,10 +1078,6 @@ msgstr "Insérer une ligne vide"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "Insérer une citation, une note de bas de page, un renvoi, une figure, un tableau ou une équation (ou tapez / dans le texte)"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Insert at the cursor"
-msgstr "Insérer au curseur"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Insert quotation"
@@ -1253,11 +1173,11 @@ msgstr "Ligne {0}"
 msgid "Link"
 msgstr "Lien"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link it in mdbase Editor’s settings for this collection."
 msgstr "Associez-le dans les paramètres de mdbase Editor pour cette collection."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link your account"
 msgstr "Associer votre compte"
 
@@ -1276,10 +1196,6 @@ msgstr "Chargement des annotations…"
 #: src/ui/Home.tsx
 msgid "Loading collection data…"
 msgstr "Chargement des données de la collection…"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Loading comments…"
-msgstr "Chargement des commentaires…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
@@ -1300,10 +1216,6 @@ msgstr "Recherche de sources…"
 #: src/ui/WorkspaceView.tsx
 msgid "Lower panel"
 msgstr "Panneau inférieur"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Make this edit"
-msgstr "Appliquer cette modification"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1384,10 +1296,6 @@ msgstr "mdbase writer met en forme les documents Markdown d’une collection mdb
 msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
 msgstr "Markdown fusionné<0/><1>Ce texte commence par votre version. Modifiez-le, puis enregistrez-le. Vos paramètres locaux sont conservés.</1>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Mine"
-msgstr "Les miennes"
-
 #: src/ui/names.ts
 msgid "MLA 9th edition"
 msgstr "MLA, 9e édition"
@@ -1432,31 +1340,10 @@ msgstr "Nom"
 msgid "New chapter title"
 msgstr "Titre du nouveau chapitre"
 
-#: src/ui/CommentsPanel.tsx
-msgid "New comment"
-msgstr "Nouveau commentaire"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "New comment"
-msgstr "Nouveau commentaire"
-
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "Nouveau manuscrit"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since last visit ({newCount})"
-msgstr "Nouveaux depuis la dernière visite ({newCount})"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since your last visit"
-msgstr "Nouveaux depuis votre dernière visite"
-
-#: src/editor/comments.ts
-msgid "New suggestion"
-msgstr "Nouvelle suggestion"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1516,10 +1403,6 @@ msgstr "Aucun problème dans le manuscrit"
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "Aucune note ne correspond à « {query} »."
-
-#: src/ui/CommentsPanel.tsx
-msgid "No open comments"
-msgstr "Aucun commentaire ouvert"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
@@ -1617,10 +1500,6 @@ msgstr "Aucun résultat pour « {0} »."
 msgid "Nothing matches “{query}”."
 msgstr "Aucun résultat pour « {query} »."
 
-#: src/ui/CommentsPanel.tsx
-msgid "Nothing resolved yet."
-msgstr "Rien n’a encore été résolu."
-
 #: src/ui/connection-notice.ts
 msgid "Offline"
 msgstr "Hors ligne"
@@ -1645,17 +1524,9 @@ msgstr "Sur la formation des récifs coralliens"
 msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
 msgstr "Dans la liste des manuscrits, utilisez les flèches ou J et K, puis Entrée pour ouvrir."
 
-#: src/ui/CommentsPanel.tsx
-msgid "On the whole chapter"
-msgstr "Sur tout le chapitre"
-
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
 msgstr "Sur votre ordinateur"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Open"
-msgstr "Ouvert"
 
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
@@ -1872,10 +1743,6 @@ msgstr "Afficher comme le manuscrit"
 msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
 msgstr "Afficher comme le manuscrit<0>Désactivé : le Markdown s’affiche tel qu’il est écrit</0>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reason for the suggestion"
-msgstr "Motif de la suggestion"
-
 #: src/ui/ConnectGate.tsx
 msgid "Reconnect"
 msgstr "Se reconnecter"
@@ -1904,14 +1771,6 @@ msgstr "Faites-y référence avec @{id}"
 msgid "Regular expression"
 msgstr "Expression régulière"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reject"
-msgstr "Refuser"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Rejected"
-msgstr "Refusé"
-
 #: src/LegacyApp.tsx
 msgid "Reload"
 msgstr "Recharger"
@@ -1930,37 +1789,18 @@ msgstr "Retirer l’auteur {0}"
 msgid "Rename the focused chapter"
 msgstr "Renommer le chapitre sélectionné"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reopen"
-msgstr "Rouvrir"
-
 #: src/editor/search-panel.ts
-#: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "Remplacer"
-
-#. placeholder {0}: clip(exact)
-#. placeholder {1}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Replace {0} with {1}"
-msgstr "Remplacer {0} par {1}"
 
 #: src/editor/search-panel.ts
 msgid "Replace all"
 msgstr "Tout remplacer"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Replace with"
-msgstr "Remplacer par"
-
 #. placeholder {0}: root.suggestion.replacement
 #: src/ui/WorkspaceView.tsx
 msgid "Replace with “{0}”"
 msgstr "Remplacer par « {0} »"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Reply"
-msgstr "Répondre"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize sidebar panels"
@@ -1974,14 +1814,6 @@ msgstr "Redimensionner l’éditeur et l’aperçu"
 msgid "Resize the sidebar"
 msgstr "Redimensionner la barre latérale"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Resolve"
-msgstr "Résoudre"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Resolved"
-msgstr "Résolus"
-
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
 msgstr "Restaurer le brouillon local"
@@ -1989,10 +1821,6 @@ msgstr "Restaurer le brouillon local"
 #: src/ui/Home.tsx
 msgid "Retry background data"
 msgstr "Réessayer les données d’arrière-plan"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Retry comments"
-msgstr "Réessayer les commentaires"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry dependencies"
@@ -2042,7 +1870,7 @@ msgstr "Examiner"
 msgid "Review {0}"
 msgstr "Examiner {0}"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Review access"
 msgstr "Examiner l’accès"
 
@@ -2110,7 +1938,7 @@ msgstr "Section"
 
 #. placeholder {0}: shortcutLabel("mod+alt+m")
 #. placeholder {1}: shortcutLabel("mod+alt+s")
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
 msgstr "Sélectionnez un passage et appuyez sur <0>{0}</0> pour commenter, ou sur <1>{1}</1> pour suggérer une modification."
 
@@ -2155,10 +1983,6 @@ msgstr "Paramètres · {0}"
 msgid "Settings also differ"
 msgstr "Les paramètres diffèrent aussi"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show"
-msgstr "Afficher"
-
 #. placeholder {0}: rest.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more chapters · {0}"
@@ -2168,11 +1992,6 @@ msgstr "Afficher 50 chapitres de plus · {0}"
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more cited sources · {0}"
 msgstr "Afficher 50 sources citées de plus · {0}"
-
-#. placeholder {0}: logical.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more comments · {0}"
-msgstr "Afficher 50 commentaires de plus · {0}"
 
 #. placeholder {0}: list.length
 #: src/ui/OutlinePanel.tsx
@@ -2188,11 +2007,6 @@ msgstr "Afficher 50 surlignages de plus · {0}"
 #: src/ui/Home.tsx
 msgid "Show 50 more manuscripts · {0}"
 msgstr "Afficher 50 manuscrits de plus · {0}"
-
-#. placeholder {0}: thread.replies.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more replies · {0}"
-msgstr "Afficher 50 réponses de plus · {0}"
 
 #. placeholder {0}: rest.length
 #: src/ui/SourcesPanel.tsx
@@ -2216,10 +2030,6 @@ msgstr "Afficher les suggestions"
 msgid "Show in Sources"
 msgstr "Afficher dans Sources"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show in the editor"
-msgstr "Afficher dans l’éditeur"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "Afficher le Markdown tel qu’il est écrit"
@@ -2231,10 +2041,6 @@ msgstr "Afficher les 50 chapitres précédents"
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 cited sources"
 msgstr "Afficher les 50 sources citées précédentes"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Show previous 50 comments"
-msgstr "Afficher les 50 commentaires précédents"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 headings"
@@ -2261,10 +2067,6 @@ msgstr "Afficher la barre latérale"
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar ({0})"
 msgstr "Afficher la barre latérale ({0})"
-
-#: src/editor/comments.ts
-msgid "Show this comment"
-msgstr "Afficher ce commentaire"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
@@ -2390,13 +2192,8 @@ msgid "Subtitle"
 msgstr "Sous-titre"
 
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
 msgid "Suggest"
 msgstr "Suggérer"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggest an edit"
-msgstr "Suggérer une modification"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
@@ -2406,19 +2203,6 @@ msgstr "Suggérer une modification de la sélection"
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({0})"
 msgstr "Suggérer une modification de la sélection ({0})"
-
-#: src/editor/comments.ts
-msgid "Suggested insertion"
-msgstr "Insertion suggérée"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggested text"
-msgstr "Texte suggéré"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "Suggestion"
-msgstr "Suggestion"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
@@ -2510,7 +2294,7 @@ msgstr "Le manuscrit a continué à changer pendant le chargement des dépendanc
 msgid "The manuscript was closed."
 msgstr "Le manuscrit a été fermé."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "The person record that claims your account is not valid."
 msgstr "Le document de personne associé à votre compte n’est pas valide."
 
@@ -2533,10 +2317,6 @@ msgstr "Celle du style (généralement en-US)"
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
 msgstr "Le texte suggéré n’est plus dans le chapitre ; modifiez-le à la main, puis résolvez la suggestion."
-
-#: src/ui/CommentsPanel.tsx
-msgid "The suggested text is no longer there"
-msgstr "Le texte suggéré n’est plus là"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2589,10 +2369,6 @@ msgstr "Il s’agit d’une version de développement locale. Le service mdbase 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "Ce manuscrit n’a pas pu être ouvert"
-
-#: src/ui/CommentsPanel.tsx
-msgid "This passage is no longer in the text"
-msgstr "Ce passage n’est plus dans le texte"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
@@ -2665,7 +2441,6 @@ msgstr "Brouillons non enregistrés"
 msgid "Unsaved in this browser"
 msgstr "Non enregistré dans ce navigateur"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
 msgstr "Non signé"
@@ -2710,7 +2485,7 @@ msgstr "Attendez l’ouverture du manuscrit avant d’exporter."
 msgid "Waiting for approval in the mdbase tab…"
 msgstr "En attente d’approbation dans l’onglet mdbase…"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Waiting for approval…"
 msgstr "En attente d’approbation…"
 
@@ -2719,21 +2494,9 @@ msgstr "En attente d’approbation…"
 msgid "Waiting for mdbase connect…"
 msgstr "En attente de mdbase connect…"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Whole text"
-msgstr "Texte entier"
-
 #: src/editor/search-panel.ts
 msgid "Whole words"
 msgstr "Mots entiers"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Whose comments"
-msgstr "Commentaires de qui"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Why (optional)"
-msgstr "Motif (facultatif)"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
@@ -2746,14 +2509,6 @@ msgstr "à supprimer"
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
 msgstr "à mettre à jour"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdraw"
-msgstr "Retirer"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdrawn."
-msgstr "Retiré."
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
@@ -2805,7 +2560,7 @@ msgstr "Commandes de Writer"
 msgid "Writer could not open this collection"
 msgstr "Writer n’a pas pu ouvrir cette collection"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer n’a pas été autorisé à voir votre compte."
 
@@ -2814,11 +2569,11 @@ msgid "You can close this window."
 msgstr "Vous pouvez fermer cette fenêtre."
 
 #. placeholder {0}: signing.reason
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account could not be checked ({0})."
 msgstr "Votre compte n’a pas pu être vérifié ({0})."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account is not linked to a person record in this collection."
 msgstr "Votre compte n’est pas lié à un document de personne dans cette collection."
 
@@ -2827,7 +2582,7 @@ msgstr "Votre compte n’est pas lié à un document de personne dans cette coll
 msgid "Your browser blocked the sign-in tab."
 msgstr "Votre navigateur a bloqué l’onglet de connexion."
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your comments are not signed."
 msgstr "Vos commentaires ne sont pas signés."
 

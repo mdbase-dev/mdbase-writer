@@ -25,40 +25,22 @@ msgstr " · 再読み込みでリセット"
 msgid " via mdbase Connect"
 msgstr "（mdbase Connect 経由）"
 
-#: src/ui/CommentsPanel.tsx
-msgid " with "
-msgstr "を"
-
 #. placeholder {0}: highlightIndex.pending
 #: src/ui/SourcesPanel.tsx
 msgid "· searching {0} more"
 msgstr "· さらに{0}件を検索中"
 
-#: src/ui/CommentsPanel.tsx
-msgid "(a point in the text)"
-msgstr "(本文中の位置)"
-
 #: src/ui/CompareDialog.tsx
 msgid "(passage removed)"
 msgstr "（削除された箇所）"
-
-#. placeholder {0}: info.replies
-#: src/editor/comments.ts
-msgid "{0, plural, =0 {Click to open in Comments} one {# reply · Click to open in Comments} other {# replies · Click to open in Comments}}"
-msgstr "{0, plural, =0 {クリックしてコメントを開く} other {返信#件 · クリックしてコメントを開く}}"
 
 #. placeholder {0}: summaries.get(m.path)?.embeds ?? m.embeds ?? 0
 #: src/ui/Home.tsx
 msgid "{0, plural, one {# chapter} other {# chapters}}"
 msgstr "{0, plural, other {#章}}"
 
-#. placeholder {0}: this.ids.length
-#: src/editor/comments.ts
-msgid "{0, plural, one {# comment on this line} other {# comments on this line}}"
-msgstr "{0, plural, other {この行にコメントが#件あります}}"
-
 #. placeholder {0}: signing.paths.length
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
 msgstr "{0, plural, other {アカウントに紐づく人物レコードが#件あります。どれが本人かWriterが推測することはありません。}}"
 
@@ -261,14 +243,6 @@ msgstr "ページ（12、12–14）または位置（第3章、第2節）"
 msgid "Abstract"
 msgstr "要旨"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Accept"
-msgstr "承認"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Accepted"
-msgstr "承認済み"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Actual size"
 msgstr "実際のサイズ"
@@ -335,17 +309,9 @@ msgstr "外観 ダーク ライト"
 msgid "Article"
 msgstr "論文"
 
-#: src/ui/CommentsPanel.tsx
-msgid "as {signer} · "
-msgstr "署名者：{signer} · "
-
 #: src/ui/Settings.tsx
 msgid "as it should appear"
 msgstr "表示する形式で"
-
-#: src/ui/CommentsPanel.tsx
-msgid "At the cursor"
-msgstr "カーソル位置"
 
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
@@ -378,7 +344,6 @@ msgstr "下書き 未保存 バックアップ 復元"
 msgid "Bold"
 msgstr "太字"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/Home.tsx
 #: src/ui/OutlinePanel.tsx
 msgid "Cancel"
@@ -433,7 +398,7 @@ msgstr "章"
 msgid "Chapters <0>{0}</0>"
 msgstr "章 <0>{0}</0>"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "もう一度確認"
 
@@ -587,14 +552,7 @@ msgstr "コマンド"
 msgid "Commands, shortcuts and theme"
 msgstr "コマンド、ショートカット、テーマ"
 
-#: src/editor/comments.ts
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
-msgid "Comment"
-msgstr "コメント"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
 msgid "Comment"
 msgstr "コメント"
 
@@ -607,24 +565,13 @@ msgstr "選択範囲にコメント"
 msgid "Comment on the selection ({0})"
 msgstr "選択範囲にコメント（{0}）"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Comment on this text"
-msgstr "このテキストにコメントする"
-
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Comments"
 msgstr "コメント"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Comments are not set up in this collection."
 msgstr "このコレクションではコメントが設定されていません。"
-
-#. placeholder {0}: literal(problem)
-#. placeholder {1}: onRetry && <button type="button" className="text-button" onClick={onRetry}><Trans>Retry comments</Trans></button>
-#: src/ui/CommentsPanel.tsx
-msgid "Comments unavailable: {0} {1}"
-msgstr "コメントを利用できません：{0} {1}"
 
 #: src/ui/CompareDialog.tsx
 msgid "Compare conflicting versions"
@@ -715,15 +662,6 @@ msgstr "ダーク"
 msgid "Date"
 msgstr "日付"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Delete"
-msgstr "削除"
-
-#. placeholder {0}: clip(exact)
-#: src/ui/comments.ts
-msgid "Delete {0}"
-msgstr "{0}を削除"
-
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "削除済み"
@@ -751,10 +689,6 @@ msgstr "依存関係は確認されていません"
 #: src/editor/chapter-cards.ts
 msgid "Detach"
 msgstr "切り離す"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Detached: the text has changed"
-msgstr "切り離されました：テキストが変更されています"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Dismiss"
@@ -841,10 +775,6 @@ msgstr "数式"
 #: src/ui/WorkspaceView.tsx
 msgid "errors warnings list"
 msgstr "エラーと警告の一覧"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Everyone"
-msgstr "全員"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Export"
@@ -976,7 +906,7 @@ msgstr "幅に合わせる"
 msgid "Fitting the width; click for actual size"
 msgstr "幅に合わせています。クリックすると実際のサイズになります"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Fix it in mdbase Editor"
 msgstr "mdbase Editor で修正"
 
@@ -1132,7 +1062,6 @@ msgstr "インデックスを読み込めませんでした：{0}"
 msgid "Inline code"
 msgstr "インラインコード"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Insert"
 msgstr "挿入"
@@ -1142,11 +1071,6 @@ msgstr "挿入"
 msgid "Insert [@{0}] at the cursor (Enter)"
 msgstr "カーソル位置に [@{0}] を挿入（Enter）"
 
-#. placeholder {0}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Insert {0}"
-msgstr "{0}を挿入"
-
 #: src/ui/Shortcuts.tsx
 msgid "Insert a blank line"
 msgstr "空行を挿入"
@@ -1154,10 +1078,6 @@ msgstr "空行を挿入"
 #: src/ui/WorkspaceView.tsx
 msgid "Insert a citation, footnote, cross-reference, figure, table or equation (or type / in the text)"
 msgstr "引用、脚注、相互参照、図、表、数式を挿入（または本文で / を入力）"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Insert at the cursor"
-msgstr "カーソル位置に挿入"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Insert quotation"
@@ -1253,11 +1173,11 @@ msgstr "{0}行目"
 msgid "Link"
 msgstr "リンク"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link it in mdbase Editor’s settings for this collection."
 msgstr "このコレクションのmdbase Editor設定でリンクしてください。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Link your account"
 msgstr "アカウントをリンク"
 
@@ -1276,10 +1196,6 @@ msgstr "注釈を読み込み中…"
 #: src/ui/Home.tsx
 msgid "Loading collection data…"
 msgstr "コレクションデータを読み込み中…"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Loading comments…"
-msgstr "コメントを読み込み中…"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
@@ -1300,10 +1216,6 @@ msgstr "出典を検索中…"
 #: src/ui/WorkspaceView.tsx
 msgid "Lower panel"
 msgstr "下部パネル"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Make this edit"
-msgstr "この編集を適用"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
@@ -1384,10 +1296,6 @@ msgstr "mdbase writerは、mdbaseコレクション内のMarkdownレコードを
 msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
 msgstr "マージした Markdown<0/><1>自分のテキストから始まります。内容を確認・編集して保存してください。ローカル設定は保持されます。</1>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Mine"
-msgstr "自分のもの"
-
 #: src/ui/names.ts
 msgid "MLA 9th edition"
 msgstr "MLA第9版"
@@ -1432,31 +1340,10 @@ msgstr "名前"
 msgid "New chapter title"
 msgstr "新しい章のタイトル"
 
-#: src/ui/CommentsPanel.tsx
-msgid "New comment"
-msgstr "新しいコメント"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "New comment"
-msgstr "新しいコメント"
-
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "New manuscript"
 msgstr "新しい原稿"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since last visit ({newCount})"
-msgstr "前回の訪問以降の新着（{newCount}件）"
-
-#: src/ui/CommentsPanel.tsx
-msgid "New since your last visit"
-msgstr "前回の訪問以降の新着"
-
-#: src/editor/comments.ts
-msgid "New suggestion"
-msgstr "新しい提案"
 
 #: src/ui/SourcesPanel.tsx
 msgid "Next citation"
@@ -1516,10 +1403,6 @@ msgstr "原稿に問題はありません"
 #: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "「{query}」に一致するノートはありません。"
-
-#: src/ui/CommentsPanel.tsx
-msgid "No open comments"
-msgstr "未解決のコメントはありません"
 
 #: src/ui/Home.tsx
 msgid "No other notes in this collection."
@@ -1617,10 +1500,6 @@ msgstr "「{0}」に一致するものはありません。"
 msgid "Nothing matches “{query}”."
 msgstr "「{query}」に一致するものはありません。"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Nothing resolved yet."
-msgstr "解決済みのものはまだありません。"
-
 #: src/ui/connection-notice.ts
 msgid "Offline"
 msgstr "オフライン"
@@ -1645,17 +1524,9 @@ msgstr "サンゴ礁の形成について"
 msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
 msgstr "原稿一覧では、矢印キーまたは J と K を使い、Enter で開きます。"
 
-#: src/ui/CommentsPanel.tsx
-msgid "On the whole chapter"
-msgstr "章全体について"
-
 #: src/ui/CollectionPicker.tsx
 msgid "On your computer"
 msgstr "お使いのコンピューター上"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Open"
-msgstr "未解決"
 
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
@@ -1872,10 +1743,6 @@ msgstr "原稿として読む"
 msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
 msgstr "原稿として読む<0>オフにすると、Markdownをそのまま表示します</0>"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reason for the suggestion"
-msgstr "提案の理由"
-
 #: src/ui/ConnectGate.tsx
 msgid "Reconnect"
 msgstr "再接続"
@@ -1904,14 +1771,6 @@ msgstr "@{id}で参照"
 msgid "Regular expression"
 msgstr "正規表現"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reject"
-msgstr "却下"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Rejected"
-msgstr "却下済み"
-
 #: src/LegacyApp.tsx
 msgid "Reload"
 msgstr "再読み込み"
@@ -1930,37 +1789,18 @@ msgstr "著者{0}を削除"
 msgid "Rename the focused chapter"
 msgstr "選択中の章の名前を変更"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Reopen"
-msgstr "再オープン"
-
 #: src/editor/search-panel.ts
-#: src/ui/CommentsPanel.tsx
 msgid "Replace"
 msgstr "置換"
-
-#. placeholder {0}: clip(exact)
-#. placeholder {1}: clip(replacement)
-#: src/ui/comments.ts
-msgid "Replace {0} with {1}"
-msgstr "{0}を{1}に置換"
 
 #: src/editor/search-panel.ts
 msgid "Replace all"
 msgstr "すべて置換"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Replace with"
-msgstr "置換するテキスト"
-
 #. placeholder {0}: root.suggestion.replacement
 #: src/ui/WorkspaceView.tsx
 msgid "Replace with “{0}”"
 msgstr "「{0}」に置換"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Reply"
-msgstr "返信"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Resize sidebar panels"
@@ -1974,14 +1814,6 @@ msgstr "エディターとプレビューのサイズを変更"
 msgid "Resize the sidebar"
 msgstr "サイドバーのサイズを変更"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Resolve"
-msgstr "解決"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Resolved"
-msgstr "解決済み"
-
 #: src/ui/CompareDialog.tsx
 msgid "Restore local draft"
 msgstr "ローカル下書きを復元"
@@ -1989,10 +1821,6 @@ msgstr "ローカル下書きを復元"
 #: src/ui/Home.tsx
 msgid "Retry background data"
 msgstr "バックグラウンドデータを再試行"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Retry comments"
-msgstr "コメントを再試行"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Retry dependencies"
@@ -2042,7 +1870,7 @@ msgstr "確認"
 msgid "Review {0}"
 msgstr "{0}を確認"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Review access"
 msgstr "アクセスを確認"
 
@@ -2110,7 +1938,7 @@ msgstr "セクション"
 
 #. placeholder {0}: shortcutLabel("mod+alt+m")
 #. placeholder {1}: shortcutLabel("mod+alt+s")
-#: src/ui/CommentsPanel.tsx
+#: src/ui/WorkspaceView.tsx
 msgid "Select a passage and press <0>{0}</0> to comment, or <1>{1}</1> to suggest an edit."
 msgstr "テキストを選択し、<0>{0}</0>を押してコメントするか、<1>{1}</1>を押して編集を提案してください。"
 
@@ -2155,10 +1983,6 @@ msgstr "設定 · {0}"
 msgid "Settings also differ"
 msgstr "設定も異なります"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show"
-msgstr "表示"
-
 #. placeholder {0}: rest.length
 #: src/ui/OutlinePanel.tsx
 msgid "Show 50 more chapters · {0}"
@@ -2168,11 +1992,6 @@ msgstr "さらに50章を表示 · {0}"
 #: src/ui/SourcesPanel.tsx
 msgid "Show 50 more cited sources · {0}"
 msgstr "引用された出典をさらに50件表示 · {0}"
-
-#. placeholder {0}: logical.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more comments · {0}"
-msgstr "コメントをさらに50件表示 · {0}"
 
 #. placeholder {0}: list.length
 #: src/ui/OutlinePanel.tsx
@@ -2188,11 +2007,6 @@ msgstr "ハイライトをさらに50件表示 · {0}"
 #: src/ui/Home.tsx
 msgid "Show 50 more manuscripts · {0}"
 msgstr "原稿をさらに50件表示 · {0}"
-
-#. placeholder {0}: thread.replies.length
-#: src/ui/CommentsPanel.tsx
-msgid "Show 50 more replies · {0}"
-msgstr "返信をさらに50件表示 · {0}"
 
 #. placeholder {0}: rest.length
 #: src/ui/SourcesPanel.tsx
@@ -2216,10 +2030,6 @@ msgstr "補完候補を表示"
 msgid "Show in Sources"
 msgstr "出典に表示"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Show in the editor"
-msgstr "エディターで表示"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Show Markdown as written"
 msgstr "Markdownをそのまま表示"
@@ -2231,10 +2041,6 @@ msgstr "前の50章を表示"
 #: src/ui/SourcesPanel.tsx
 msgid "Show previous 50 cited sources"
 msgstr "前の50件の引用された出典を表示"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Show previous 50 comments"
-msgstr "前の50件のコメントを表示"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Show previous 50 headings"
@@ -2261,10 +2067,6 @@ msgstr "サイドバーを表示"
 #: src/ui/WorkspaceView.tsx
 msgid "Show the sidebar ({0})"
 msgstr "サイドバーを表示（{0}）"
-
-#: src/editor/comments.ts
-msgid "Show this comment"
-msgstr "このコメントを表示"
 
 #: src/preview/Preview.tsx
 msgid "Showing the last successful preview; it may not match your latest text."
@@ -2390,13 +2192,8 @@ msgid "Subtitle"
 msgstr "サブタイトル"
 
 #: src/editor/selection-bar.tsx
-#: src/ui/CommentsPanel.tsx
 msgid "Suggest"
 msgstr "提案"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggest an edit"
-msgstr "編集を提案"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Suggest an edit to the selection"
@@ -2406,19 +2203,6 @@ msgstr "選択範囲への編集を提案"
 #: src/editor/selection-bar.tsx
 msgid "Suggest an edit to the selection ({0})"
 msgstr "選択範囲への編集を提案（{0}）"
-
-#: src/editor/comments.ts
-msgid "Suggested insertion"
-msgstr "挿入の提案"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Suggested text"
-msgstr "提案されたテキスト"
-
-#: src/editor/comments.ts
-msgctxt "comment tooltip"
-msgid "Suggestion"
-msgstr "提案"
 
 #: src/ui/CollectionPicker.tsx
 msgid "Switch collection"
@@ -2510,7 +2294,7 @@ msgstr "エクスポートの依存関係を読み込んでいる間も原稿が
 msgid "The manuscript was closed."
 msgstr "原稿が閉じられました。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "The person record that claims your account is not valid."
 msgstr "アカウントに紐づく人物レコードが有効ではありません。"
 
@@ -2533,10 +2317,6 @@ msgstr "スタイル自体の言語（通常 en-US）"
 #: src/workspace/workspace.ts
 msgid "The suggested text is no longer in the chapter; edit it by hand, then resolve the suggestion."
 msgstr "提案されたテキストは章にありません。手動で編集してから提案を解決してください。"
-
-#: src/ui/CommentsPanel.tsx
-msgid "The suggested text is no longer there"
-msgstr "提案されたテキストはもうありません"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Theme"
@@ -2589,10 +2369,6 @@ msgstr "これはローカル開発用ビルドです。ホスト型の mdbase c
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
 msgstr "この原稿を開けませんでした"
-
-#: src/ui/CommentsPanel.tsx
-msgid "This passage is no longer in the text"
-msgstr "この箇所はもう本文にありません"
 
 #: src/ui/Home.tsx
 #: src/ui/Settings.tsx
@@ -2665,7 +2441,6 @@ msgstr "未保存の下書き"
 msgid "Unsaved in this browser"
 msgstr "このブラウザー内の未保存の下書き"
 
-#: src/ui/CommentsPanel.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Unsigned"
 msgstr "署名なし"
@@ -2710,7 +2485,7 @@ msgstr "原稿が開くまで待ってからエクスポートしてください
 msgid "Waiting for approval in the mdbase tab…"
 msgstr "mdbase タブでの承認を待っています…"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Waiting for approval…"
 msgstr "承認を待っています…"
 
@@ -2719,21 +2494,9 @@ msgstr "承認を待っています…"
 msgid "Waiting for mdbase connect…"
 msgstr "mdbase connect を待っています…"
 
-#: src/ui/CommentsPanel.tsx
-msgid "Whole text"
-msgstr "テキスト全体"
-
 #: src/editor/search-panel.ts
 msgid "Whole words"
 msgstr "単語全体"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Whose comments"
-msgstr "誰のコメント"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Why (optional)"
-msgstr "理由（任意）"
 
 #: src/ui/ConnectGate.tsx
 msgid "will be added"
@@ -2746,14 +2509,6 @@ msgstr "削除されます"
 #: src/ui/ConnectGate.tsx
 msgid "will be updated"
 msgstr "更新されます"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdraw"
-msgstr "取り下げる"
-
-#: src/ui/CommentsPanel.tsx
-msgid "Withdrawn."
-msgstr "取り下げ済み。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
@@ -2805,7 +2560,7 @@ msgstr "Writer コマンド"
 msgid "Writer could not open this collection"
 msgstr "Writer はこのコレクションを開けませんでした"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer によるアカウントの表示は許可されませんでした。"
 
@@ -2814,11 +2569,11 @@ msgid "You can close this window."
 msgstr "このウィンドウは閉じてかまいません。"
 
 #. placeholder {0}: signing.reason
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account could not be checked ({0})."
 msgstr "アカウントを確認できませんでした（{0}）。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your account is not linked to a person record in this collection."
 msgstr "アカウントがこのコレクションの人物レコードにリンクされていません。"
 
@@ -2827,7 +2582,7 @@ msgstr "アカウントがこのコレクションの人物レコードにリン
 msgid "Your browser blocked the sign-in tab."
 msgstr "ブラウザーによりサインインタブがブロックされました。"
 
-#: src/ui/CommentsPanel.tsx
+#: src/ui/CommentSigning.tsx
 msgid "Your comments are not signed."
 msgstr "コメントは署名されていません。"
 
