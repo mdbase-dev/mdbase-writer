@@ -1,9 +1,9 @@
-import { commentFromRecord, type CommentRecord } from "@mdbase-writer/core/comments";
+import { commentFromRecord, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { describe, expect, it } from "vitest";
 
-import { changeFields, newCommentFields, peopleFromDirectory, personName, signingFromProblem, toContract, toLocal } from "../backend/comments.js";
+import { peopleFromDirectory, signingFromProblem, toContract, toLocal } from "../backend/comments.js";
 import { PathIndex } from "@mdbase-writer/core/records";
-import { anchorsFor, describeSuggestion, placeThreads, plainPassage, ThreadPlacement } from "./comments.js";
+import { anchorsFor, placeThreads, ThreadPlacement } from "./comments.js";
 
 const body = "# Method\n\nThe evidence suggests strongly that it works.\n";
 const comment = (path: string, fields: Record<string, unknown>) =>
@@ -54,38 +54,9 @@ describe("placing threads", () => {
     expect(cache.place(bare, order, read, index)).toHaveLength(1);
     expect(cache.place(bare, order, read, new PathIndex([...recordPaths, "other/method.md"]))).toEqual([]);
   });
-
-  it("describes suggestions", () => {
-    expect(describeSuggestion(suggestion)).toBe("Delete “strongly”");
-    expect(describeSuggestion({ ...suggestion, suggestion: { replacement: "shows" } })).toBe("Replace “strongly” with “shows”");
-    expect(describeSuggestion({ ...suggestion, target: { quote: { exact: "", prefix: "a" } }, suggestion: { replacement: "x" } })).toBe("Insert “x”");
-  });
 });
 
 describe("writing comments", () => {
-  const now = new Date("2026-09-29T10:00:00Z");
-
-  it("writes a thread, a suggestion and a reply through the contract's fields", () => {
-    const target = { quote: { exact: "x" } };
-    expect(newCommentFields({ document: "chapters/method.md", text: "Hm", target }, now, "[[people/me]]")).toEqual({
-      document: "[[chapters/method]]",
-      motivation: "commenting",
-      target,
-      status: "open",
-      created_by: "[[people/me]]",
-      created_at: "2026-09-29T10:00:00.000Z",
-    });
-    expect(newCommentFields({ document: "chapters/method.md", text: "", target, replacement: "" }, now, undefined)).toMatchObject({ motivation: "editing", suggestion: { replacement: "" } });
-    const thread = comment("comments/a.md", {});
-    const reply = newCommentFields({ document: "chapters/method.md", text: "Yes", thread, target }, now, undefined);
-    expect(reply).toEqual({ document: "[[chapters/method]]", in_reply_to: "[[comments/a]]", motivation: "replying", created_at: "2026-09-29T10:00:00.000Z" });
-  });
-
-  it("resolves, records a suggestion's outcome, and withdraws by emptying", () => {
-    const s = comment("comments/f.md", { motivation: "editing", target: { quote: { exact: "x" } }, suggestion: { replacement: "y" } });
-    expect(changeFields(s, { kind: "resolve", outcome: "accepted" }, now, "[[people/me]]").fields).toMatchObject({ status: "resolved", resolved_by: "[[people/me]]", suggestion: { replacement: "y", outcome: "accepted" } });
-    expect(changeFields(s, { kind: "withdraw" }, now, undefined)).toMatchObject({ fields: { deleted_at: "2026-09-29T10:00:00.000Z" }, body: "" });
-  });
 
   it("maps to and from a collection's own field names", () => {
     const mapping = { document: "on", created_at: "created" };
@@ -94,20 +65,6 @@ describe("writing comments", () => {
   });
 });
 
-describe("author names", () => {
-  const people = { names: new Map([["people/alex rivera", "Alex Rivera"], ["people/sam", "Sam Okafor"]]) };
-
-  it("uses the person record's name, found by path or unique file name", () => {
-    expect(personName("[[people/sam]]", people)).toBe("Sam Okafor");
-    expect(personName("[[Alex Rivera]]", people)).toBe("Alex Rivera");
-  });
-
-  it("falls back to the link's own text", () => {
-    expect(personName("[[people/Gone Person]]", people)).toBe("Gone Person");
-    expect(personName("[[people/x|Xavier]]", people)).toBe("Xavier");
-    expect(personName(undefined, people)).toBeUndefined();
-  });
-});
 
 describe("signing comments", () => {
   const account = { issuer: "https://mdbase.dev", subject: "acct_1", name: "Callum", personSettingsUrl: "https://editor.example/?surface=settings#your-person" };
@@ -135,14 +92,5 @@ describe("signing comments", () => {
   it("tells a declined identity permission from an unavailable account", () => {
     expect(signingFromProblem({ code: "access_denied", message: "not approved" })).toEqual({ kind: "not-approved" });
     expect(signingFromProblem({ code: "temporarily_unavailable", message: "Account identity information is unavailable." })).toEqual({ kind: "unavailable", reason: "Account identity information is unavailable." });
-  });
-});
-
-describe("passages as they read", () => {
-  it("drops emphasis, code and link markup, and soft line breaks", () => {
-    expect(plainPassage("the *modal picture*")).toBe("the modal picture");
-    expect(plainPassage("**bold** and `code` and [a link](https://x.org)")).toBe("bold and code and a link");
-    expect(plainPassage("snake_case_name stays; _this_ goes")).toBe("snake_case_name stays; this goes");
-    expect(plainPassage("wrapped\nline\n\nnew paragraph")).toBe("wrapped line\n\nnew paragraph");
   });
 });

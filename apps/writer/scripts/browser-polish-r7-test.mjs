@@ -153,21 +153,17 @@ try {
       const page = await unread.newPage();
       await page.goto(`${base}?demo&manuscript=manuscripts/slow-change.md`);
       await page.locator("#sidebar-tab-comments").click();
-      await page.locator(".thread.is-new").first().waitFor();
-      const threads = await page.locator(".thread.is-new").evaluateAll(elements => elements.map(element => {
-        const probe = document.createElement("span");
-        probe.style.backgroundColor = "var(--selected)";
-        element.append(probe);
-        const selected = getComputedStyle(probe).backgroundColor;
-        probe.remove();
+      // What others wrote since the last visit is marked in words, never by a stripe or a second fill.
+      await page.locator(".mdbase-thread-new").first().waitFor();
+      const threads = await page.locator(".mdbase-thread:has(.mdbase-thread-new)").evaluateAll(elements => elements.map(element => {
         const style = getComputedStyle(element);
-        return { fill: style.backgroundColor, selected, shadow: style.boxShadow, border: style.borderLeftWidth };
+        return { shadow: style.boxShadow, border: style.borderLeftWidth };
       }));
       assert.equal(threads.length, 2);
-      assert.ok(threads.every(thread => thread.fill === thread.selected && thread.shadow === "none" && thread.border === "0px"), JSON.stringify(threads));
+      assert.ok(threads.every(thread => thread.shadow === "none" && thread.border === "0px"), JSON.stringify(threads));
       await page.waitForFunction(() => document.querySelector(".preview canvas[data-version]"), null, { timeout: 60000 });
       await page.screenshot({ path: `out/polish-r7-unread-${colorScheme}.png` });
-      console.log(`PASS unread thread fill ${colorScheme}`);
+      console.log(`PASS unread thread mark ${colorScheme}`);
     } finally { await unread.close(); }
   }
   assert.ok(measurements.transitions.every(transition => transition.maxTaskMs < 50), "Sidebar must not create a long task");

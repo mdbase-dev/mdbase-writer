@@ -8,6 +8,7 @@ import "@mdbase-dev/ui/controls.css";
 import "@mdbase-dev/ui/screens.css";
 import "@mdbase-dev/ui/palette.css";
 import "@mdbase-dev/ui/feedback.css";
+import "@mdbase-dev/ui/comments.css";
 import "./feedback-shell.css";
 import "./styles.css";
 

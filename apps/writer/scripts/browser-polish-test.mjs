@@ -218,7 +218,7 @@ try {
       await page.screenshot({ path: `${output}/${name}-editor.png` });
       if (width === 390) await page.locator(".pane-tabs button").nth(0).click();
       await page.getByRole("tab", { name: /^Comments/ }).click();
-      result.comments = await page.locator(".comments-bar").evaluate((element) => ({ right: element.getBoundingClientRect().right, children: [...element.children].map((child) => child.getBoundingClientRect().right) }));
+      result.comments = await page.locator(".mdbase-comments-bar").evaluate((element) => ({ right: element.getBoundingClientRect().right, children: [...element.children].map((child) => child.getBoundingClientRect().right) }));
       assert.ok(result.comments.children.every((right) => right <= result.comments.right + 1), "Comment action clipped");
       await page.getByRole("tab", { name: "Outline", exact: true }).click();
       result.contrast = await page.evaluate(() => {
@@ -255,7 +255,7 @@ try {
       await page.waitForFunction(() => document.activeElement?.id === "lower-sidebar-tab-sources");
       await page.keyboard.press("ArrowRight");
       await page.waitForFunction(() => document.activeElement?.id === "lower-sidebar-tab-comments");
-      result.lowerComments = await page.locator('.sidebar-lower .comments-bar').evaluate(element => ({ width: element.clientWidth, scrollWidth: element.scrollWidth }));
+      result.lowerComments = await page.locator('.sidebar-lower .mdbase-comments-bar').evaluate(element => ({ width: element.clientWidth, scrollWidth: element.scrollWidth }));
       assert.ok(result.lowerComments.scrollWidth <= result.lowerComments.width + 1, "Lower Comments actions overflow");
       await page.screenshot({ path: `${output}/${name}-lower.png` });
       result.lowerOut = await probe(page, ".sidebar-lower", "lower-close");
