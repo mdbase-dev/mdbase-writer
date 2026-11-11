@@ -66,8 +66,8 @@ importers:
         specifier: file:vendor/mdbase-dev-connect-protocol-0.1.0-beta.145-e6e66bcd172f.tgz
         version: file:apps/writer/vendor/mdbase-dev-connect-protocol-0.1.0-beta.145-e6e66bcd172f.tgz
       '@mdbase-dev/i18n':
-        specifier: 0.1.0-beta.167
-        version: 0.1.0-beta.167(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)
+        specifier: 0.1.0-beta.176
+        version: 0.1.0-beta.176(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)
       '@mdbase-dev/sdk':
         specifier: 0.1.0-beta.180
         version: 0.1.0-beta.180
@@ -78,8 +78,8 @@ importers:
         specifier: file:../../vendor/sdk-staging-beta157.tgz
         version: file:vendor/sdk-staging-beta157.tgz
       '@mdbase-dev/ui':
-        specifier: 0.1.0-beta.167
-        version: 0.1.0-beta.167(@codemirror/commands@6.11.1)(@codemirror/language@6.12.4)(@codemirror/state@6.7.6)(@codemirror/view@6.43.13)(@lezer/common@1.5.3)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.167(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@0.1.0-beta.180)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: 0.1.0-beta.176
+        version: 0.1.0-beta.176(@codemirror/commands@6.11.1)(@codemirror/language@6.12.4)(@codemirror/state@6.7.6)(@codemirror/view@6.43.13)(@lezer/common@1.5.3)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.176(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@0.1.0-beta.180)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@mdbase-writer/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -594,8 +594,8 @@ packages:
   '@mdbase-dev/connect@0.1.0-beta.149':
     resolution: {integrity: sha512-m/pnWm1crBvFxliJuu/oalegX2UOhvmaZN92yPlCJNEvDhsK9Ym9gvIXbCKszxNF9XL/wGBgCJT6bwoOIwPnow==}
 
-  '@mdbase-dev/i18n@0.1.0-beta.167':
-    resolution: {integrity: sha512-Tpqv+u64nmjFrAls6SbtltOjL8tR7SCjnkOXh2gcbpk/OVRsYI9tnWfxb84vjt4HjSLSko4AweuOEnOhPDJePA==}
+  '@mdbase-dev/i18n@0.1.0-beta.176':
+    resolution: {integrity: sha512-7ZN3WFvh7h1tZyYNbG0i64egcbRZ6d11lr73kBpsesaJY/65aiHlwWNhnAjkAqvOmCxDEDqoTNXwtBWRCp8Hlg==}
     hasBin: true
     peerDependencies:
       '@lingui/core': 6.9.0
@@ -622,8 +622,8 @@ packages:
     bundledDependencies:
       - '@mdbase-dev/connect-protocol'
 
-  '@mdbase-dev/ui@0.1.0-beta.167':
-    resolution: {integrity: sha512-OFTvzEWXh8a1ZsXmC5VdqauDX13PKjwUF4xKpCE8TEakJEVA7XQNdac2qkzKV208pYbV6grtqgwHYCCj0kA94A==}
+  '@mdbase-dev/ui@0.1.0-beta.176':
+    resolution: {integrity: sha512-vqmP04884Hg7zYm255AnUeTJ8jOP04o1Xp1XETm4awQ/grSTzya2TbFazqwG8FeMGsi7OKXC382u8d+zrW4Xkg==}
     peerDependencies:
       '@codemirror/commands': ^6.0.0
       '@codemirror/language': ^6.0.0
@@ -2340,7 +2340,7 @@ snapshots:
     dependencies:
       '@mdbase-dev/connect-protocol': 0.1.0-beta.149
 
-  '@mdbase-dev/i18n@0.1.0-beta.167(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)':
+  '@mdbase-dev/i18n@0.1.0-beta.176(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)':
     dependencies:
       '@lingui/cli': 6.9.0(babel-plugin-macros@3.1.0)(rolldown@1.2.11)(supports-color@7.2.0)
       '@lingui/conf': 6.9.0
@@ -2374,13 +2374,13 @@ snapshots:
       '@noble/curves': 2.4.0
       '@noble/hashes': 2.4.0
 
-  '@mdbase-dev/ui@0.1.0-beta.167(@codemirror/commands@6.11.1)(@codemirror/language@6.12.4)(@codemirror/state@6.7.6)(@codemirror/view@6.43.13)(@lezer/common@1.5.3)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.167(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@0.1.0-beta.180)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@mdbase-dev/ui@0.1.0-beta.176(@codemirror/commands@6.11.1)(@codemirror/language@6.12.4)(@codemirror/state@6.7.6)(@codemirror/view@6.43.13)(@lezer/common@1.5.3)(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(@mdbase-dev/i18n@0.1.0-beta.176(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0))(@mdbase-dev/sdk@0.1.0-beta.180)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@fontsource/azeret-mono': 5.3.0
       '@fontsource/ibm-plex-sans': 5.3.0
       '@lingui/core': 6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)
       '@lingui/react': 6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0)
-      '@mdbase-dev/i18n': 0.1.0-beta.167(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)
+      '@mdbase-dev/i18n': 0.1.0-beta.176(@lingui/core@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0))(@lingui/react@6.9.0(@babel/core@7.29.7(supports-color@7.2.0))(babel-plugin-macros@3.1.0)(react@19.3.0))(babel-plugin-macros@3.1.0)(react@19.3.0)(rolldown@1.2.11)(supports-color@7.2.0)
       react: 19.3.0
     optionalDependencies:
       '@codemirror/commands': 6.11.1
