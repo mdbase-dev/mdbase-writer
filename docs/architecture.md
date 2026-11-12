@@ -39,7 +39,14 @@
   editor shows it as a tracked change, and accepting it edits the record
   through its session. Authors are links to the signed-in account's
   `mdbase.person` record, found through Connect's optional identity
-  permission; without it, comments are unsigned.
+  permission; without it, comments are unsigned. The comment and annotation
+  body reads behind the panel accept a record that is still pending (the watch
+  reports each write before it confirms, and the panel reloads at once); only a
+  hold or an unresolved conflict refuses them. Writes and their readbacks still
+  require a confirmed record. Account checks are applied in the order they were
+  started, so a slow, older check never replaces a newer signing state, and a
+  transient `unavailable` directory failure is checked once more before the
+  notice says the account could not be checked.
 - **Images** are collection files, referenced relative to the record
   (`![Caption](figures/plot.png){#fig-plot}`) or by wikilink (`![[plot.png]]`).
 
