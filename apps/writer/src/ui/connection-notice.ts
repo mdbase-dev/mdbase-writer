@@ -22,7 +22,7 @@ export const connectionNoticeLabels: Record<ConnectionNotice, string> = {
 };
 
 type Observed = Partial<
-  Pick<MdbaseSnapshot, "phase" | "sync" | "writes" | "transport" | "live">
+  Pick<MdbaseSnapshot, "phase" | "sync" | "transport" | "live">
 >;
 
 export function connectionNotice(
@@ -32,17 +32,19 @@ export function connectionNotice(
 ): ConnectionNotice | null {
   if (!snapshot || (snapshot.phase && snapshot.phase.kind !== "ready"))
     return null;
-  if (snapshot.writes?.rejected.length || snapshot.writes?.pending.some(entry => now - entry.createdAt >= SYNC_DELAY_MS))
+  const writes = snapshot.sync?.writes;
+  if (writes?.rejected.length || writes?.pending.some(entry => now - entry.createdAt >= SYNC_DELAY_MS))
     return "sync_delayed";
   const health = snapshot.sync?.health ?? snapshot.transport?.kind ?? null;
   if (!online || health === "offline") return "offline";
-  if (snapshot.writes?.saveState === "saved_on_device")
+  if (writes?.saveState === "saved_on_device")
     return "saved_on_device";
   if (
     health === "unreachable" ||
     health === "server_busy" ||
     health === "rate_limited" ||
-    snapshot.sync?.kind === "offline" ||
+    snapshot.sync?.connection === "offline" ||
+    snapshot.sync?.connection === "reconnecting" ||
     (snapshot.sync?.live ?? snapshot.live) === false
   )
     return "reconnecting";
@@ -71,7 +73,7 @@ export function useConnectionNotice(
       let timer: ReturnType<typeof setTimeout> | undefined;
       const changed = () => {
         clearTimeout(timer);
-        const pending = entry.getSnapshot()?.writes?.pending ?? [];
+        const pending = entry.getSnapshot()?.sync?.writes?.pending ?? [];
         const oldest = Math.min(...pending.map(write => write.createdAt));
         const remaining = oldest + SYNC_DELAY_MS - Date.now();
         if (Number.isFinite(remaining) && remaining > 0) timer = setTimeout(changed, remaining);

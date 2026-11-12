@@ -50,9 +50,9 @@ export async function mountNative(body = "# Original manuscript\n\nConfirmed nat
     phase: "ready",
   });
   fixture.client().describe = async () => ({
-    specVersion: "0.3.0", settings: new Map(), issues: [], inclusion: { include: ["image"] },
+    specVersion: "0.3.0", settings: {}, issues: [], inclusion: { include: ["image"] },
     contracts: manifest.requirements.contracts.map((contract, index) => ({ ...contract, path: `_contracts/${contract.id}.md`, digest: contract.digest.replace(/^sha256:/, ""), contractType: "record", implementedBy: [names[index]!] })),
-    types: manifest.requirements.contracts.map((contract, index) => ({ name: names[index]!, path: `_types/${names[index]}.md`, implements: [{ contract: contract.id, version: contract.version, fields: new Map([["title", "title"], ["template", "template"], ["csl", "csl"]]) }] })),
+    types: manifest.requirements.contracts.map((contract, index) => ({ name: names[index]!, path: `_types/${names[index]}.md`, implements: [{ contract: contract.id, version: contract.version, fields: { title: "title", template: "template", csl: "csl" } }] })),
   });
   document.getElementById("root")!.hidden = true;
   const host = document.createElement("div");

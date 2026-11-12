@@ -1,4 +1,4 @@
-import { toPlain, type wire } from "@mdbase-dev/sdk";
+import type { DescribeResult, JsonValue } from "@mdbase-dev/sdk";
 import type { JsonObject } from "@mdbase-dev/connect";
 import manifest from "../generated/mdbase-app.json";
 import { annotationContract, CollectionSchema, domainContract, unavailableTypeMessage, type Domain, type WriterSchemaDescription } from "./collection.js";
@@ -7,8 +7,8 @@ import type { UnavailableType } from "./types.js";
 const DOMAINS: readonly Domain[] = ["manuscript", "source", "annotation", "comment", "person"];
 const domainOf = (id: string): Domain | undefined => DOMAINS.find(domain => domainContract(domain).id === id);
 /** The definition path an issue is attached to, when it names one. */
-function issuePath(details: unknown): string | null {
-  const path = details instanceof Map ? (details as Map<unknown, unknown>).get("path") : null;
+function issuePath(details: JsonValue | undefined): string | null {
+  const path = typeof details === "object" && details !== null && !Array.isArray(details) ? details["path"] : null;
   return typeof path === "string" && path ? path : null;
 }
 
@@ -27,8 +27,8 @@ export function nativeJson(value: unknown): NativeJson {
 export function nativeWriteFields(fields: JsonObject): { [key: string]: NativeJson } {
   return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, nativeJson(value)]));
 }
-export function nativeObject(value: wire.Value): JsonObject {
-  const json = nativeJson(toPlain(value));
+export function nativeObject(value: JsonValue): JsonObject {
+  const json = nativeJson(value);
   if (json === null || typeof json !== "object" || Array.isArray(json)) throw new Error("Writer requires a native field map.");
   return json;
 }
@@ -48,7 +48,7 @@ export function manifestContractDigest(id: string, version: string): string | un
  * recognise a starter name without its actual native contract implementation.
  * The SDK remains responsible for root readiness and configuration/provisioning.
  */
-export function nativeWriterSchema(catalog: wire.DescribeResult): CollectionSchema {
+export function nativeWriterSchema(catalog: DescribeResult): CollectionSchema {
   // Aggregate readiness belongs to the SDK. An unrelated definition diagnostic
   // must not hide usable Writer records; exact domain bindings remain checked.
   const required = manifest.requirements.contracts;
@@ -77,7 +77,7 @@ export function nativeWriterSchema(catalog: wire.DescribeResult): CollectionSche
         if (domain && !unavailableTypes.some(entry => entry.name === type.name)) unavailableTypes.push({name: type.name, domain, message: unavailableTypeMessage(type.name, domain)});
         return [];
       }
-      return [{typeName: type.name, fields: Object.fromEntries(binding.fields)}];
+      return [{typeName: type.name, fields: binding.fields}];
     })}));
   const schema = new CollectionSchema({types: catalog.types.map(type => ({name: type.name})), contracts,
     // A collection without settings reports null: that is no settings, not an error.

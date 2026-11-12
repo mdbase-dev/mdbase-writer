@@ -91,7 +91,7 @@ try {
       await page.screenshot({ path: `out/polish-r2/${name}-hold.png` });
       await page.evaluate(() => {
         const client = window.nativeFixture.client();
-        window.nativeHoldResolution = client.save(client.resolveHold(window.nativeHold, "keep_mine")).then(
+        window.nativeHoldResolution = client.settle(client.resolveHold(window.nativeHold, "keep_mine")).then(
           result => { window.nativeHoldResult = { outcome: result.outcome }; },
           error => { window.nativeHoldResult = { error: String(error) }; },
         );
@@ -110,7 +110,7 @@ try {
       await comparison.getByRole("textbox", { name: /Merged Markdown/ }).fill("Deliberately merged native draft\n");
       await comparison.getByRole("button", { name: "Save merged version", exact: true }).click();
       await page.waitForFunction(() => { const snapshot = window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot; return snapshot.state === "saved" && snapshot.body === "Deliberately merged native draft\n"; });
-      assert.equal(await page.evaluate(async () => (await window.nativeFixture.client().get({ path: "writing/main.md" }, { body: true })).body), "Deliberately merged native draft\n");
+      assert.equal(await page.evaluate(async () => (await window.nativeFixture.client().get({ path: "writing/main.md" }, { include: { body: true } })).body), "Deliberately merged native draft\n");
       await page.evaluate(() => {
         window.nativeFixture.replica().setOnline(false);
         window.restoreStorage = Storage.prototype.setItem;

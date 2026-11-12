@@ -169,7 +169,7 @@ refusal. Confirm applies that original object; an empty plan uses `configure()`.
 Unknown outcomes re-assess through the SDK rather than claim no changes or
 submit a fresh mutation automatically. Scope retirement fences the review.
 
-Live migration, update and suspension status uses `summarizeStatus` over the
+Live migration, update and suspension status uses the SDK's `snapshot.sync` status over the
 original client without replacing a still-current editable workspace, its local
 edits or record leases. Teardown removes only owned listeners/adapters, never the
 borrowed client.

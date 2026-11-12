@@ -1,4 +1,4 @@
-import { isMdbaseError, toPlain, type MdbaseClient, type PlainValue, type RecordOpenOptions as NativeOpenOptions, type RecordSessionSnapshot as NativeSnapshot, type wire } from "@mdbase-dev/sdk";
+import { isMdbaseError, type MdbaseClient, type PlainValue, type RecordOpenOptions as NativeOpenOptions, type RecordSessionSnapshot as NativeSnapshot, type RecordView } from "@mdbase-dev/sdk";
 import type { JsonObject } from "@mdbase-dev/connect";
 
 import type { RecordLease, RecordOpenOptions, RecordSession, RecordSessionSnapshot, SessionProblem, SessionRecord, WriterRecords } from "./types.js";
@@ -105,14 +105,14 @@ function plain(value: unknown): PlainValue {
   throw new TypeError("Writer frontmatter patches require plain JSON values.");
 }
 
-function record(view: wire.RecordView): SessionRecord {
+function record(view: RecordView): SessionRecord {
   return {
     path: view.path,
     revision: view.revision,
     types: view.types,
-    // Display/edit view only. Native session keeps the exact Map/tag values and
-    // genuine full record witness; writes only receive the explicit app patch.
-    frontmatter: toPlain(view.frontmatter) as JsonObject,
+    // Display/edit view only. Native session keeps the genuine full record
+    // witness; writes only receive the explicit app patch.
+    frontmatter: view.frontmatter,
     ...(view.body === undefined ? {} : { body: view.body }),
   };
 }
@@ -121,7 +121,7 @@ function snapshot(value: NativeSnapshot): RecordSessionSnapshot {
   return {
     state: value.state,
     body: value.body,
-    frontmatter: toPlain(new Map(value.frontmatter)) as JsonObject,
+    frontmatter: value.frontmatter,
     record: record(value.record),
     remote: value.remote && value.remote.state.state === "confirmed" && !value.remote.state.hold && !value.remote.state.unresolved ? record(value.remote) : null,
     dirty: value.dirty,
