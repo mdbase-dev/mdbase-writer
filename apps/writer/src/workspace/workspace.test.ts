@@ -197,6 +197,21 @@ describe("workspace reliability", () => {
     expect(retry).toEqual(expect.any(String));
     expect(retry).toBe(first);
   });
+  it("never lets an older account check replace a newer one (issue 91)", async () => {
+    const { backend, open } = fixture();
+    const workspace = open(); await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().commentsLoad.phase).toBe("ready"));
+    const answers: ((people: Awaited<ReturnType<WriterBackend["people"]>>) => void)[] = [];
+    backend.people = () => new Promise(resolve => { answers.push(resolve); });
+    const comments = workspace.loadComments();
+    const refreshed = workspace.refreshPeople();
+    answers[1]!({ ...NO_PEOPLE, me: { link: "[[people/me]]", name: "Me" }, signing: { kind: "linked" } });
+    await refreshed;
+    answers[0]!({ ...NO_PEOPLE, signing: { kind: "unlinked" } });
+    await comments;
+    expect(workspace.getSnapshot().commentsLoad.phase).toBe("ready");
+    expect(workspace.getSnapshot().people.signing).toEqual({ kind: "linked" });
+  });
   it("sends only worker deltas and no unchanged collection data for unrelated edits", async () => {
     const { backend, open } = fixture();
     const known = { key: "known", path: "sources/known.md", title: "Known", item: { id: "known", type: "book", title: "Known" } };

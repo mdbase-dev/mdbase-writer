@@ -382,11 +382,24 @@ export class ManuscriptWorkspace {
   }
 
   private peopleCheckedAt = 0;
+  /** Order of people checks: a check never replaces the result of one started after it. */
+  private peopleRequested = 0;
+  private peopleShown = 0;
+
+  /** The account's people, or undefined when a later check has already been shown. */
+  private async checkPeople(options?: { fresh?: boolean }): Promise<People | undefined> {
+    const request = ++this.peopleRequested;
+    this.peopleCheckedAt = Date.now();
+    const people = await this.backend.people(options);
+    if (request < this.peopleShown) return undefined;
+    this.peopleShown = request;
+    return people;
+  }
 
   /** Checks the account against the collection's person records again. */
   async refreshPeople(): Promise<void> {
-    this.peopleCheckedAt = Date.now();
-    this.update({ people: await this.backend.people({ fresh: true }) });
+    const people = await this.checkPeople({ fresh: true });
+    if (people && !this.disposed) this.update({ people });
   }
 
   /** Asks Connect to approve Writer again (to allow the identity permission), then checks the account. */
@@ -448,11 +461,11 @@ export class ManuscriptWorkspace {
     const scope = this.readingOrder();
     this.commentsScope = scope.join("\u0000");
     this.update({ commentsLoad: LOADING });
-    this.peopleCheckedAt = Date.now();
     try {
-      const [comments, people] = await Promise.all([this.backend.comments(scope), this.backend.people()]);
+      const [comments, checked] = await Promise.all([this.backend.comments(scope), this.checkPeople()]);
       if (this.disposed || generation !== this.commentsGeneration) return;
-      this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, commentsLoad: READY, people } : { commentsProblem: comments.message, commentsLoad: { phase: "failed", problem: comments.message }, people });
+      const people = checked ? { people: checked } : {};
+      this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, commentsLoad: READY, ...people } : { commentsProblem: comments.message, commentsLoad: { phase: "failed", problem: comments.message }, ...people });
     } catch (error) { if (generation === this.commentsGeneration) this.update({ commentsProblem: errorMessage(error), commentsLoad: { phase: "failed", problem: errorMessage(error) } }); }
   }
 

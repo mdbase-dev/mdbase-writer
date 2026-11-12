@@ -24,9 +24,15 @@ interface NativeMetadata {
   readonly files: ReadonlyMap<string, wire.FileView>;
   readonly generation: number;
 }
-const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000;
+const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000, PEOPLE_RETRY_MS = 250;
 function unprotected(record: wire.RecordView): boolean {
-  return record.state.state === "confirmed" && !record.state.hold && !(record.state.unresolved ?? 0);
+  return record.state.state === "confirmed" && readable(record);
+}
+/** A record a display read may show: no hold or unresolved conflict. It may still be
+ * pending, as every write is between the watch's change and its confirmation; a
+ * rejected write is rolled back and arrives as another change. Writes need `unprotected`. */
+function readable(record: wire.RecordView): boolean {
+  return !record.state.hold && !(record.state.unresolved ?? 0);
 }
 
 export class NativeWriterBackend implements WriterBackend {
@@ -284,9 +290,9 @@ export class NativeWriterBackend implements WriterBackend {
         const identity = metadata.identities.get(path);
         if (!identity) throw new Error("Writer lost the original record identity.");
         const record = await this.client.get(identity.id, {body: true}, this.signal); this.check(metadata.generation);
-        if (record.id !== identity.id || record.path !== path || record.revision !== identity.revision || !record.types.includes(entry.type) || !unprotected(record)) throw new Error("Writer's selected record changed or is protected.");
+        if (record.id !== identity.id || record.path !== path || record.revision !== identity.revision || !record.types.includes(entry.type) || !readable(record)) throw new Error("Writer's selected record changed or is protected.");
         const contract = metadata.store.comments.has(path) ? commentContract : annotationContract;
-        const projected = await this.contractRecord(record, {...contract, type: entry.type}); this.check(metadata.generation);
+        const projected = await this.contractRecord(record, {...contract, type: entry.type}, readable); this.check(metadata.generation);
         rows.push({path: record.path, types: record.types, contractFields: nativeObject(projected.fields), body: record.body ?? ""});
       }
       return rows;
@@ -334,7 +340,13 @@ export class NativeWriterBackend implements WriterBackend {
   private async loadPeople(): Promise<People> {
     try {
       this.check();
-      const directory = await this.connection.people.directory({members: "omit", signal: this.signal}); this.check();
+      const directory = await this.connection.people.directory({members: "omit", signal: this.signal}).catch(async (error: unknown) => {
+        // A read session replaced mid-check (a reconnect) or a briefly incomplete
+        // inventory is transient: look once more before saying the account is unchecked.
+        if (!isMdbaseError(error, "unavailable")) throw error;
+        await new Promise(resolve => setTimeout(resolve, PEOPLE_RETRY_MS)); this.check();
+        return this.connection.people.directory({members: "omit", signal: this.signal});
+      }); this.check();
       return peopleFromDirectory(directory);
     } catch (error) {
       // Names only, never a substitute account/author or guessed identity.
@@ -404,7 +416,7 @@ export class NativeWriterBackend implements WriterBackend {
       throw error;
     }
   }
-  private async contractRecord(original: wire.RecordView, contract: ContractSelector): Promise<ContractRecordView> {
+  private async contractRecord(original: wire.RecordView, contract: ContractSelector, usable: (record: wire.RecordView) => boolean = unprotected): Promise<ContractRecordView> {
     const projected = await this.client.getContract(original.id, contract, this.signal); this.check();
     const expected = (await this.metadata()).schema.description.contracts.find(candidate => candidate.id === contract.id);
     const digest = manifestContractDigest(contract.id, contract.version);
@@ -412,7 +424,7 @@ export class NativeWriterBackend implements WriterBackend {
       || projected.contract.id !== contract.id || projected.contract.version !== contract.version || projected.contract.type !== contract.type
       || (digest !== undefined && !sameDigest(projected.contract.digest, digest))) throw new Error("Writer's contract record binding changed.");
     const current = await this.client.get(original.id, {body: true, document: true}, this.signal); this.check();
-    if (!unprotected(current) || current.id !== original.id || current.path !== original.path || current.revision !== original.revision) throw new Error("Writer's contract record changed or is protected.");
+    if (!usable(current) || current.id !== original.id || current.path !== original.path || current.revision !== original.revision) throw new Error("Writer's contract record changed or is protected.");
     return projected;
   }
   private async confirmed(write: Write, id: string, contract?: ContractSelector): Promise<wire.RecordView> {

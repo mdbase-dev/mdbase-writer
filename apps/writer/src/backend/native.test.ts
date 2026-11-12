@@ -359,6 +359,47 @@ describe("native Writer domain backend", () => {
     expect(review).toMatchObject({state: "resolved", deleted: expect.any(String), modified: expect.any(String)});
     expect(raw.frontmatter.has("deleted_at")).toBe(false);
   });
+  it("reloads comments without an error while a comment write is still pending (issue 91)", async () => {
+    // The watch reports a write before it confirms, and the panel reloads at once.
+    const h = await fixture();
+    const created = await h.backend.createComment({document: "manuscripts/original.md", text: "First"});
+    if (!created.ok) throw new Error(created.message);
+    expect((await h.backend.comments(["manuscripts/original.md"])).ok).toBe(true);
+    const changed = vi.fn(); h.backend.onCollectionChange(changed);
+    h.replica.stallConfirmations();
+    const writes = [h.backend.changeComment(created.value, {kind: "resolve"})];
+    await vi.waitFor(() => expect(changed).toHaveBeenCalled());
+    const pendingChange = await h.backend.comments(["manuscripts/original.md"]);
+    expect(pendingChange).toMatchObject({ok: true, value: [{path: created.value.path, status: "resolved"}]});
+    h.replica.confirmAll(); expect((await writes[0])?.ok).toBe(true);
+    changed.mockClear();
+    const reply = h.backend.createComment({document: "manuscripts/original.md", text: "A reply", intent: "reply-1"});
+    await vi.waitFor(() => expect(changed).toHaveBeenCalled());
+    const pendingCreate = await h.backend.comments(["manuscripts/original.md"]);
+    expect(pendingCreate.ok && pendingCreate.value.map(comment => comment.text)).toEqual(expect.arrayContaining(["First", "A reply"]));
+    h.replica.confirmAll(); h.replica.stallConfirmations(false);
+    expect((await reply).ok).toBe(true);
+  });
+  it("checks the account once more after a transient directory failure (issue 91)", async () => {
+    const h = await fixture();
+    const account = {id: "fixture-account", displayName: "Fixture", identities: []};
+    const directory = vi.spyOn(MdbasePeopleClient.prototype, "directory")
+      .mockRejectedValueOnce(new MdbaseError({code: "unavailable", recovery: "retry", message: "people read session changed", reason: "people_fenced"}))
+      .mockResolvedValueOnce({account, me: {status: "linked", person: {id: "p", path: "people/me.md", name: "Me", identities: [], typeNames: ["person"]}}, people: [], invalid: []} as never);
+    expect(await h.backend.people()).toMatchObject({signing: {kind: "linked"}, me: {name: "Me"}});
+    expect(directory).toHaveBeenCalledTimes(2);
+    directory.mockRejectedValue(new MdbaseError({code: "unavailable", recovery: "retry", message: "people read session changed", reason: "people_fenced"}));
+    expect(await h.backend.people({fresh: true})).toMatchObject({signing: {kind: "unavailable"}});
+    expect(directory).toHaveBeenCalledTimes(4);
+  });
+  it("still refuses a held or conflicted comment body on a display read", async () => {
+    const h = await fixture();
+    const created = await h.backend.createComment({document: "manuscripts/original.md", text: "Held"});
+    if (!created.ok) throw new Error(created.message);
+    const get = h.client.get.bind(h.client);
+    vi.spyOn(h.client, "get").mockImplementation(async (...args) => {const record = await get(...args); return {...record, state: {...record.state, unresolved: 1}};});
+    expect(await h.backend.comments(["manuscripts/original.md"])).toMatchObject({ok: false, message: "Writer's selected record changed or is protected."});
+  });
   it.each(["untyped", "sdk-mid", "mismatched-sdk-mid"])("recovers a %s lost create reply by the original SDK MID without creating a duplicate", async mode => {
     const h = await fixture();
     const original = h.client.create.bind(h.client);
