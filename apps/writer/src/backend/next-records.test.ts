@@ -1,4 +1,4 @@
-import { connect, MdbaseError, type MdbaseClient } from "@mdbase-dev/sdk";
+import { MdbaseError, type MdbaseClient } from "@mdbase-dev/sdk";
 import { MemoryReplica } from "@mdbase-dev/sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -15,7 +15,7 @@ afterEach(() => {
 async function fixture(pending = false) {
   const replica = new MemoryReplica({ confirmDelayMs: pending ? null : 0 });
   const record = replica.seed({ path: "writing/draft.md", frontmatter: { title: "Draft", custom: "preserve" }, body: "Original body\n" });
-  const client = await connect({ connector: replica.connector(), app: { name: "writer-lease-test", version: "test" }, reconnect: false });
+  const client = await replica.client({ app: { name: "writer-lease-test", version: "test" } });
   clients.push(client);
   const owner = new AbortController();
   // The public helper is frozen; a typed test-only forwarding port observes
@@ -42,7 +42,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     expect(lease.session.getNativeSnapshot().remote?.state.hold).toBeTruthy();
     expect(lease.session.getSnapshot()).toMatchObject({ state: "conflict", remote: null, body: "Local draft while held\n" });
     expect(await fixtureState.client.listHolds()).toHaveLength(1);
-    expect((await fixtureState.client.save(fixtureState.client.resolveHold(hold, "keep_mine"))).outcome).toBe("confirmed");
+    expect((await fixtureState.client.settle(fixtureState.client.resolveHold(hold, "keep_mine"))).outcome).toBe("confirmed");
     expect((await lease.session.flush({ timeoutMs: 100 })).ok).toBe(false);
     await vi.waitFor(() => expect(lease.session.getSnapshot().remote).not.toBeNull());
     lease.session.resolve({ body: "Deliberately merged draft\n" });
@@ -58,7 +58,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     await vi.waitFor(() => expect(lease.session.getSnapshot()).toMatchObject({ state: "conflict", body: "Local concurrent edit\n", remote: { body: "Collection concurrent edit\n" } }));
     lease.session.resolve({ body: "Merged concurrent edit\n" });
     expect((await lease.session.flush({ timeoutMs: 100 })).ok).toBe(true);
-    expect((await fixtureState.client.get(fixtureState.record.id, { body: true })).body).toBe("Merged concurrent edit\n");
+    expect((await fixtureState.client.get(fixtureState.record.id, { include: { body: true } })).body).toBe("Merged concurrent edit\n");
   });
 
   it("opens an explicit native path and projects display JSON without replacing the native view", async () => {
@@ -69,7 +69,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     expect(lease.session.getSnapshot()).toMatchObject({ state: "saved", body: "Original body\n", dirty: false, frontmatter: { title: "Draft", custom: "preserve" } });
     const native = lease.session.getNativeSnapshot();
     expect(native.record.id).toBe(f.record.id);
-    expect(native.record.frontmatter).toBeInstanceOf(Map);
+    expect(native.record.frontmatter).toEqual({ title: "Draft", custom: "preserve" });
     expect(native.record.document).toBeDefined();
   });
 
@@ -84,7 +84,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     expect(await lease.session.flush({ timeoutMs: 1000 })).toEqual({ ok: true });
     expect(lease.session.getSnapshot()).toMatchObject({ state: "saved", body: "Changed body\n", dirty: false });
     expect(lease.session.getNativeSnapshot().lastReceipt?.state).toBe("confirmed");
-    expect((await f.client.get(f.record.id, { body: true })).body).toBe("Changed body\n");
+    expect((await f.client.get(f.record.id, { include: { body: true } })).body).toBe("Changed body\n");
     expect(changed).toHaveBeenCalled();
     stop();
   });
@@ -97,7 +97,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     expect(second.session.getSnapshot().body).toBe("Shared peer draft\n");
     first.release();
     expect(await second.session.flush({ timeoutMs: 1000 })).toEqual({ ok: true });
-    expect((await f.client.get(f.record.id, { body: true })).body).toBe("Shared peer draft\n");
+    expect((await f.client.get(f.record.id, { include: { body: true } })).body).toBe("Shared peer draft\n");
   });
 
   it("passes retained recovery identity to the native open helper without a factory shim", async () => {
@@ -168,7 +168,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
       expect(lease.session.getSnapshot()).toMatchObject({ state: "saved", dirty: false, frontmatter: { title: "Draft" } });
     }
     lease.session.patchFrontmatter({ custom: undefined });
-    expect(lease.session.getNativeSnapshot().frontmatter.has("custom")).toBe(false);
+    expect(lease.session.getNativeSnapshot().frontmatter).not.toHaveProperty("custom");
     expect((await f.client.pendingWrites())).toEqual([]);
   });
 

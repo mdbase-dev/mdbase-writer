@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { connect, MdbaseError, MdbasePeopleClient, type ChangesWatch, type MdbaseApplicationConnection, type MdbaseClient, type wire } from "@mdbase-dev/sdk";
+import { MdbaseError, MdbasePeopleClient, type ChangesWatch, type DescribeResult, type MdbaseApplicationConnection, type MdbaseClient } from "@mdbase-dev/sdk";
 import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { NativeWriterBackend } from "./native.js";
@@ -11,29 +11,29 @@ import { byRecentlyEdited } from "../ui/names.js";
 const clients: MdbaseClient[] = [];
 const backends: NativeWriterBackend[] = [];
 afterEach(() => {for (const backend of backends.splice(0)) backend.dispose(); for (const client of clients.splice(0)) client.close(); vi.restoreAllMocks();});
-function catalog(): wire.DescribeResult {
+function catalog(): DescribeResult {
   const definitions = manifest.requirements.contracts.map((contract, index) => ({contract, type: ["native-manuscript", "native-source", "native-comment"][index] ?? "unknown"}));
   const mappings: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     "native-manuscript": {title: "/meta/heading", template: "layout", csl: "style"},
     "native-source": {title: "heading", csl: "citation"},
     "native-comment": {document: "document", motivation: "motivation", status: "/review/state", created_at: "created_at", created_by: "created_by", in_reply_to: "in_reply_to", target: "target", suggestion: "suggestion", resolved_at: "resolved_at", resolved_by: "resolved_by", modified_at: "/review/modified", deleted_at: "/review/deleted"},
   };
-  return {specVersion: "0.3.0", settings: new Map([["explicit_type_keys", ["type"]]]), inclusion: {include: ["image"]}, issues: [],
+  return {specVersion: "0.3.0", settings: {explicit_type_keys: ["type"]}, inclusion: {include: ["image"]}, issues: [],
     contracts: definitions.map(({contract, type}) => ({...contract, path: `_contracts/${contract.id}.md`, contractType: "record", implementedBy: [type]})),
-    types: definitions.map(({contract, type}) => ({name: type, path: `_types/${type}.md`, implements: [{contract: contract.id, version: contract.version, fields: new Map(Object.entries(mappings[type] ?? {}))}]}))};
+    types: definitions.map(({contract, type}) => ({name: type, path: `_types/${type}.md`, implements: [{contract: contract.id, version: contract.version, fields: {...mappings[type]}}]}))};
 }
 async function fixture(beforeBackend?: (client: MdbaseClient) => void) {
   const description = catalog();
   const contracts: MemoryContract[] = description.types.flatMap(type => (type.implements ?? []).map(implementation => {
     const contract = description.contracts.find(candidate => candidate.id === implementation.contract && candidate.version === implementation.version);
     if (!contract || !implementation.version) throw new Error("Missing exact fixture contract");
-    return {id: contract.id, version: implementation.version, type: type.name, contractDigest: contract.digest, fields: Object.fromEntries(implementation.fields ?? new Map())};
+    return {id: contract.id, version: implementation.version, type: type.name, contractDigest: contract.digest, fields: implementation.fields ?? {}};
   }));
   const replica = new MemoryReplica({confirmDelayMs: 0, contracts});
   const manuscript = replica.seed({path: "manuscripts/original.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "Original"]]), layout: "article", style: "apa"}, body: "Original manuscript\n"});
   replica.seed({path: "sources/paper.md", types: ["native-source"], frontmatter: {type: "native-source", heading: "Citation source", citation: new Map([["id", "paper"], ["type", "article-journal"], ["title", "Citation source"]])}, body: "Lazy source body\n"});
   replica.seed({path: "notes/chapter.md", frontmatter: {custom: "keep"}, body: "# A chapter\n"});
-  const client = await connect({connector: replica.connector(), app: {name: "writer-native-test", version: "test"}, reconnect: false}); clients.push(client);
+  const client = await replica.client({app: {name: "writer-native-test", version: "test"}}); clients.push(client);
   vi.spyOn(client, "describe").mockResolvedValue(description);
   const metadata = vi.fn(async () => {throw new Error("Identity was not approved");});
   const current = vi.fn(() => true);
@@ -60,7 +60,7 @@ describe("native Writer domain backend", () => {
   it("discovers mapped manuscripts/library/index without bodies or identity requests", async () => {
     const h = await fixture(); const query = vi.spyOn(h.client, "query"); const get = vi.spyOn(h.client, "get");
     const projected = await h.client.queryContract({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, {pageSize: 128});
-    expect(projected.records[0]?.implementations[0]?.fields.get("title")).toBe("Original");
+    expect(projected.records[0]?.implementations[0]?.fields["title"]).toBe("Original");
     const manuscripts = await h.backend.listManuscripts();
     expect(manuscripts).toEqual({ok: true, value: [{path: "manuscripts/original.md", title: "Original", template: "article", style: "apa"}]});
     const library = await h.backend.library();
@@ -69,7 +69,7 @@ describe("native Writer domain backend", () => {
     expect(index.ok && index.value.recordPaths).toContain("sources/paper.md");
     expect(index.ok && index.value.notePaths).not.toContain("sources/paper.md");
     expect(index.ok && index.value.notePaths).toContain("notes/chapter.md");
-    expect(query.mock.calls.every(call => !call[1]?.body && !call[1]?.document)).toBe(true);
+    expect(query.mock.calls.every(call => !call[1]?.include?.body && !call[1]?.include?.document)).toBe(true);
     expect(get).not.toHaveBeenCalled(); expect(h.metadata).not.toHaveBeenCalled();
     expect("writeFile" in h.backend).toBe(false);
   });
@@ -114,7 +114,7 @@ describe("native Writer domain backend", () => {
   });
   it("unrelated invalid definitions do not hide Writer records or untyped notes", async () => {
     const h = await fixture();
-    h.description.issues.push({code: "type_invalid", severity: "error", message: "An unrelated custom type is invalid", details: new Map([["path", "_types/unrelated.md"]])});
+    h.description.issues.push({code: "type_invalid", severity: "error", message: "An unrelated custom type is invalid", details: {path: "_types/unrelated.md"}});
     expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
     expect(await h.backend.index()).toMatchObject({ok: true, value: {notePaths: expect.arrayContaining(["notes/chapter.md"])}});
     expect(await h.backend.readBody("notes/chapter.md")).toEqual({ok: true, value: "# A chapter\n"});
@@ -147,7 +147,7 @@ describe("native Writer domain backend", () => {
   });
   it("an error in one of Writer's own types makes only that type unavailable", async () => {
     const h = await fixture();
-    h.description.issues.push({code: "type_invalid", severity: "error", message: "Bad comment type", details: new Map([["path", "_types/native-comment.md"]])});
+    h.description.issues.push({code: "type_invalid", severity: "error", message: "Bad comment type", details: {path: "_types/native-comment.md"}});
     expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
     expect((await h.backend.library()).ok).toBe(true);
     const index = await h.backend.index();
@@ -158,7 +158,7 @@ describe("native Writer domain backend", () => {
   });
   it("an error in the manuscript type leaves notes and sources usable", async () => {
     const h = await fixture();
-    h.description.issues.push({code: "type_invalid", severity: "error", message: "Bad manuscript type", details: new Map([["path", "_types/native-manuscript.md"]])});
+    h.description.issues.push({code: "type_invalid", severity: "error", message: "Bad manuscript type", details: {path: "_types/native-manuscript.md"}});
     expect(await h.backend.listManuscripts()).toMatchObject({ok: false, message: expect.stringContaining("native-manuscript")});
     expect(await h.backend.library()).toMatchObject({ok: true, value: [{key: "paper"}]});
     const index = await h.backend.index();
@@ -214,7 +214,7 @@ describe("native Writer domain backend", () => {
     initial.publish(state);
     expect((await h.backend.index()).ok).toBe(true);
     expect(watch).toHaveBeenCalledTimes(2); expect(initial.stop).toHaveBeenCalledOnce(); expect(initial.listeners.size).toBe(0);
-    const old = watch.mock.calls[0]?.[1]; if (!old) throw new Error("Missing original watch callback");
+    const old = watch.mock.calls[0]?.[0]; if (!old) throw new Error("Missing original watch callback");
     const calls = notified.mock.calls.length;
     old({changes: [], cursor: "retired-watch", reset: true});
     expect(notified).toHaveBeenCalledTimes(calls);
@@ -253,7 +253,7 @@ describe("native Writer domain backend", () => {
     expect(query.mock.calls.some(call => call[1]?.cursor !== undefined)).toBe(true);
   });
   it.each(["changed snapshot", "repeated cursor"]) ("refuses unsafe metadata pagination: %s", async failure => {
-    const h = await fixture(); const actual = await h.client.query({}, {effective: true});
+    const h = await fixture(); const actual = await h.client.query({}, {include: {effective: true}});
     vi.spyOn(h.client, "pages").mockImplementation(async function* () {
       yield {...actual, records: [], complete: false, cursor: "original-cursor"};
       yield {...actual, records: [], complete: false, ...(failure === "changed snapshot" ? {asOf: actual.asOf + 1, cursor: "next-cursor"} : {cursor: "original-cursor"})};
@@ -286,7 +286,7 @@ describe("native Writer domain backend", () => {
     expect(opened.value.session.getNativeSnapshot().record.id).toBe(h.manuscript.id);
     opened.value.session.setBody("Changed through native lease\n");
     expect((await opened.value.session.flush()).ok).toBe(true);
-    expect((await h.client.get(h.manuscript.id, {body: true})).body).toBe("Changed through native lease\n");
+    expect((await h.client.get(h.manuscript.id, {include: {body: true}})).body).toBe("Changed through native lease\n");
     h.backend.dispose(); expect(close).not.toHaveBeenCalled();
     peer.session.setBody("Peer still active\n"); expect((await peer.session.flush()).ok).toBe(true); peer.release();
   });
@@ -295,13 +295,13 @@ describe("native Writer domain backend", () => {
     const row = h.replica.seed({path: "comments/unsupported.md", types: ["native-comment"], frontmatter: {type: "native-comment", document: "manuscripts/original.md", motivation: "commenting", status: "open", created_at: "2026-06-10T12:00:00Z"}, body: "Unconfirmed contract text\n"});
     const read = vi.spyOn(h.client, "getContract").mockRejectedValue(new MdbaseError({code: "upgrade_required", recovery: "upgrade", message: "Contract records unsupported", reason: "contract_records_unsupported"}));
     expect(await h.backend.comments()).toMatchObject({ok: false, message: expect.stringContaining("upgrade_required")});
-    expect(read).toHaveBeenCalledWith(row.id, {id: "mdbase.comment", version: "1.0.0", type: "native-comment"}, expect.any(AbortSignal));
+    expect(read).toHaveBeenCalledWith(row.id, {id: "mdbase.comment", version: "1.0.0", type: "native-comment"}, {signal: expect.any(AbortSignal)});
   });
   it("creates a mapped manuscript and chapter only after confirmed current native readback", async () => {
     const h = await fixture();
     const created = await h.backend.createManuscript({title: "Launch", template: "article", style: "apa"});
     expect(created).toEqual({ok: true, value: "manuscripts/launch.md"});
-    const actual = await h.client.get({path: "manuscripts/launch.md"}, {body: true});
+    const actual = await h.client.get({path: "manuscripts/launch.md"}, {include: {body: true}});
     expect(nativeObject(actual.frontmatter)["meta"]).toMatchObject({heading: "Launch"}); expect(actual.state.state).toBe("confirmed");
     const chapter = await h.backend.createRecord("notes/chapter.md", "# New chapter\n");
     expect(chapter).toEqual({ok: true, value: "notes/chapter-2.md"});
@@ -320,12 +320,12 @@ describe("native Writer domain backend", () => {
   });
   it("adopts a note with original UUID/body/custom metadata preserved by native CAS", async () => {
     const h = await fixture();
-    const original = await h.client.get({path: "notes/chapter.md"}, {body: true, document: true});
+    const original = await h.client.get({path: "notes/chapter.md"}, {include: {body: true, document: true}});
     const update = vi.spyOn(h.client, "update");
     expect(await h.backend.adoptManuscript(original.path)).toEqual({ok: true, value: original.path});
-    const changed = await h.client.get(original.id, {body: true});
+    const changed = await h.client.get(original.id, {include: {body: true}});
     expect(changed.id).toBe(original.id); expect(changed.body).toBe(original.body);
-    expect(changed.frontmatter.get("custom")).toBe("keep"); expect(changed.types).toContain("native-manuscript");
+    expect(changed.frontmatter["custom"]).toBe("keep"); expect(changed.types).toContain("native-manuscript");
     expect(nativeObject(changed.frontmatter)["meta"]).toMatchObject({heading: "A chapter"});
     expect(update).toHaveBeenCalledTimes(1);
     expect(update.mock.calls[0]?.[1]).toMatchObject({contract: {id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2", type: "native-manuscript"}, promote: true, patch: {title: "A chapter"}, ifRevision: original.revision});
@@ -352,12 +352,12 @@ describe("native Writer domain backend", () => {
     expect(withdrawn.ok).toBe(true);
     expect(update).toHaveBeenCalledTimes(1);
     expect(update.mock.calls[0]?.[1]).toMatchObject({body: "", contract: {id: "mdbase.comment", version: "1.0.0", type: "native-comment"}});
-    const raw = await h.client.get({path: changed.value.path}, {body: true});
+    const raw = await h.client.get({path: changed.value.path}, {include: {body: true}});
     expect(raw.body).toBe("");
-    expect(raw.frontmatter.get("review")).toBeInstanceOf(Map);
+    expect(raw.frontmatter["review"]).toBeTypeOf("object");
     const review = nativeObject(raw.frontmatter)["review"];
     expect(review).toMatchObject({state: "resolved", deleted: expect.any(String), modified: expect.any(String)});
-    expect(raw.frontmatter.has("deleted_at")).toBe(false);
+    expect(raw.frontmatter).not.toHaveProperty("deleted_at");
   });
   it("reloads comments without an error while a comment write is still pending (issue 91)", async () => {
     // The watch reports a write before it confirms, and the panel reloads at once.
@@ -418,9 +418,9 @@ describe("native Writer domain backend", () => {
     const receipt = vi.spyOn(h.client, "awaitReceipt");
     const recover = await h.backend.createRecord("notes/unknown.md", "Fresh retry must not submit\n");
     expect(recover).toMatchObject({ok: false, message: expect.stringContaining("recovered the original operation")});
-    expect(receipt).toHaveBeenCalledWith(submitted[0], 5_000, expect.any(AbortSignal));
+    expect(receipt).toHaveBeenCalledWith(submitted[0], {timeoutMs: 5_000, signal: expect.any(AbortSignal)});
     expect(h.client.create).toHaveBeenCalledOnce();
-    const queried = await h.client.query({}, {body: true});
+    const queried = await h.client.query({}, {include: {body: true}});
     const records = queried.records.filter(record => record.path === "notes/unknown.md");
     expect(records).toHaveLength(1); expect(records[0]?.body).toBe("Original intent\n");
   });
