@@ -3,7 +3,6 @@ import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react
 import { render } from "../test/render.js";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { DescribeResult } from "@mdbase-dev/sdk";
 import { createTestApp, type TestApp, type TestAppOptions } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { App } from "../App.js";
@@ -77,11 +76,6 @@ it("hands Writer the gate's ready connection and retires that scope when the col
 
 it("opens the manuscript list with the shared collection switcher in the top bar", async () => {
   const h = await readyFixture();
-  const names = ["manuscript", "source", "comment"];
-  const catalog: DescribeResult = {specVersion: "0.3.0", settings: {}, issues: [], inclusion: {include: ["image"]},
-    contracts: manifest.requirements.contracts.map((contract, index) => ({...contract, path: `_contracts/${contract.id}.md`, digest: contract.digest.replace(/^sha256:/, ""), contractType: "record", implementedBy: [names[index] ?? "unknown"]})),
-    types: manifest.requirements.contracts.map((contract, index) => ({name: names[index] ?? "unknown", path: `_types/${names[index]}.md`, implements: [{contract: contract.id, version: contract.version, fields: {title: "title", template: "template", csl: "csl"}}]}))};
-  vi.spyOn(h.client(), "describe").mockResolvedValue(catalog);
   const {container} = render(<App sdk={h.mdbase} />);
   await screen.findByRole("button", { name: /Original manuscript/ });
   expect(screen.queryByText("Continue writing")).toBeNull();
