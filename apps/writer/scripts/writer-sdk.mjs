@@ -19,8 +19,8 @@ const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
 /** Intake pins (under vendor/) for each environment's SDK original. */
 export const writerSdkPins = Object.freeze({
-  lab: "sdk-lab-beta157.json",
-  staging: "sdk-staging-beta157.json",
+  lab: "sdk-lab-beta188.json",
+  staging: "sdk-staging-beta188.json",
   production: "sdk-production-beta188.json",
 });
 

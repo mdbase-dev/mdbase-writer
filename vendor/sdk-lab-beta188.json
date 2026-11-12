@@ -1,20 +1,20 @@
 {
   "schema": "tnapp/production-sdk-original/1",
   "package": "@mdbase-dev/sdk-lab",
-  "version": "0.1.0-beta.157",
-  "artifact": "sdk-lab-beta157.tgz",
-  "sourceCommit": "493d29ca2a3494c5d59677e8b83e309b44a28c31",
+  "version": "0.1.0-beta.188",
+  "artifact": "sdk-lab-beta188.tgz",
+  "sourceCommit": "e8ffb806d16c58fe03cf50c96fb66e29ebb612ba",
   "environment": "lab",
-  "bytes": 4537675,
-  "sha256": "927cc688a22d0931207d9108b53958e3279f2d2d711342b04ac80c02d8091e26",
-  "sri": "sha512-Q71Vbuk4iQFZknK0GR/2CmUpeNsf0T/XL2GMuv/PVWNxqO+dYTMw1mDpvb8pAtYAMpRyVrnQUf26Vk9HAuSjuQ==",
+  "bytes": 4819910,
+  "sha256": "ee3283c5e37eadb728a32076b4831e1e2bcca064a526f7456aab43ae003771f9",
+  "sri": "sha512-Tc/R1WhEBNDc2ODSWSOkmw35Fr+EhKGogdfECBgNS9R1gawItPaMiqA96D1S2/vlh01+CH2X8H0e9fG1alUXRw==",
   "publication": {
     "repository": "mdbase-dev/mdbase-connect",
     "workflow": ".github/workflows/publish-sdk-npm.yml",
-    "ref": "refs/heads/main",
-    "tag": "sdk-v0.1.0-beta.157",
+    "ref": "refs/tags/v0.1.0-beta.188",
+    "tag": "sdk-v0.1.0-beta.188",
     "asset": "sdk-lab.tgz",
-    "bundle": "sdk-lab-beta157.tgz.sigstore.json"
+    "bundle": "sdk-lab-beta188.tgz.sigstore.json"
   },
   "trust": {
     "package": "@mdbase-dev/sdk-lab",
@@ -26,12 +26,12 @@
     "sourceVersion": "0.1.0-beta.129"
   },
   "runtime": {
-    "sha256": "d375ce16a48dec718801704f56ffb6a545247a2793912c2c8e68ceb171ff2537",
-    "bytes": 3797530,
-    "maxBytes": 3797530,
+    "sha256": "7004351583c3a79411e644fafe9f5786816d32ea058605d1905fd50666012f40",
+    "bytes": 3875815,
+    "maxBytes": 3875815,
     "source": {
       "repository": "mdbase-dev/mdbase-connect",
-      "commit": "3e433313e0a234513478789686a4f4274e4dd76c"
+      "commit": "aae332572834fbfa065c0f696017c0de3540649d"
     }
   },
   "packagedTrustModuleSha256": "a7db2cc3ba9fd1e78d86093599b608a2e3268408402630d81242450603c98a10",
