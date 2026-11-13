@@ -77,28 +77,84 @@ async function continuePosition(page, width, reduced) {
   assert.ok(await page.locator(".cm-scroller").evaluate(element => element.scrollTop > 1000));
   if (width === 1440) {
     await pressFill(page, page.locator(".segmented button").first());
-    const bitmaps = await page.locator(".preview canvas").evaluateAll(elements => elements.map(element => element.width).join(","));
+    // Hiding the sidebar beside a 10k-word manuscript must stay under the 50ms
+    // long-task budget. One hide on a shared CI runner can catch an unrelated
+    // GC or scheduler stall, so the budget applies to the median of several
+    // hides: a real regression slows every hide, a stall slows one.
+    const longestTasks = [];
     await page.evaluate(() => {
-      window.paneLongTasks = [];
-      window.paneTaskObserver = new PerformanceObserver(list => window.paneLongTasks.push(...list.getEntries().map(entry => entry.duration)));
-      window.paneTaskObserver.observe({ type: "longtask" });
+      // Catch the sidebar's fade when the app starts it, so the check does not
+      // depend on how many frames a busy runner paints during 120ms.
+      window.paneAnimations = [];
+      window.paneAnimate = Element.prototype.animate;
+      Element.prototype.animate = function (...args) {
+        const animation = window.paneAnimate.apply(this, args);
+        if (this.matches(".outline")) window.paneAnimations.push(animation);
+        return animation;
+      };
     });
-    await page.evaluate(() => { window.paneFrames = []; window.paneRunning = true; const sample = () => { const element = document.querySelector(".outline"); window.paneFrames.push({ opacity: Number(getComputedStyle(element).opacity), transform: getComputedStyle(element).transform, proseOpacity: Number(getComputedStyle(document.querySelector(".write")).opacity), columns: getComputedStyle(document.querySelector(".workspace")).gridTemplateColumns, running: element.getAnimations().some(animation => animation.playState === "running" || animation.pending), bitmaps: [...document.querySelectorAll(".preview canvas")].map(element => element.width).join(",") }); if (window.paneRunning) requestAnimationFrame(sample); }; requestAnimationFrame(sample); });
-    await page.keyboard.press("Control+Backslash");
-    if (!reduced) {
-      await page.waitForFunction(() => window.paneFrames.some(frame => frame.opacity < 1));
-      await page.locator(".outline").evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+    // Wait for the move to commit (the rail replaces the sidebar, or the
+    // sidebar returns) and, with motion, for the sidebar fade it started to finish.
+    const settleSidebar = async (open, started) => {
+      await page.locator(".sidebar-rail").waitFor({ state: open ? "detached" : "attached" });
+      if (!reduced) {
+        await page.waitForFunction(started => window.paneAnimations.length > started, started).catch(() => assert.fail(`10k-word pane move is not visibly animated: the sidebar ${open ? "showed" : "hid"} without starting a fade`));
+        // finished rejects when the fade is cancelled, so a cut-short move fails here.
+        return await page.evaluate(async started => {
+          const animation = window.paneAnimations[started];
+          await animation.finished;
+          return { opacity: animation.effect.getKeyframes().map(keyframe => Number(keyframe.opacity)), duration: animation.effect.getTiming().duration, playState: animation.playState };
+        }, started);
+      }
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      return null;
+    };
+    for (let run = 0; run < 5; run++) {
+      // Measure each hide from a quiet main thread, as the single hide this
+      // replaced was: showing the sidebar again re-lays out the preview, and
+      // that work must not be charged to the next hide.
+      await page.evaluate(() => new Promise(resolve => {
+        const deadline = performance.now() + 5000;
+        let busy = performance.now();
+        const observer = new PerformanceObserver(() => { busy = performance.now(); });
+        observer.observe({ type: "longtask" });
+        const check = () => {
+          if (performance.now() - busy >= 200 || performance.now() > deadline) { observer.disconnect(); resolve(); } else requestIdleCallback(check, { timeout: 250 });
+        };
+        requestIdleCallback(check, { timeout: 250 });
+      }));
+      const started = await page.evaluate(() => {
+        window.paneLongTasks = [];
+        window.paneTaskObserver = new PerformanceObserver(list => window.paneLongTasks.push(...list.getEntries().map(entry => entry.duration)));
+        window.paneTaskObserver.observe({ type: "longtask" });
+        window.paneFrames = [];
+        window.paneRunning = true;
+        const sample = () => { const element = document.querySelector(".outline"); window.paneFrames.push({ transform: getComputedStyle(element).transform, proseOpacity: Number(getComputedStyle(document.querySelector(".write")).opacity) }); if (window.paneRunning) requestAnimationFrame(sample); };
+        requestAnimationFrame(sample);
+        return window.paneAnimations.length;
+      });
+      await page.keyboard.press("Control+Backslash");
+      const hide = await settleSidebar(false, started);
+      const { frames, tasks } = await page.evaluate(() => {
+        window.paneRunning = false;
+        window.paneLongTasks.push(...window.paneTaskObserver.takeRecords().map(entry => entry.duration));
+        window.paneTaskObserver.disconnect();
+        return { frames: window.paneFrames, tasks: window.paneLongTasks };
+      });
+      longestTasks.push(Math.max(0, ...tasks));
+      assert.ok(frames.every(frame => frame.proseOpacity === 1), "Sidebar-only movement must not dim the prose");
+      assert.equal(await page.locator(".preview-pane").evaluate(element => getComputedStyle(element).opacity === "1" && element.getAnimations().length === 0), true, "Pane moves must leave the preview undimmed");
+      if (!reduced) assert.ok(hide.playState === "finished" && hide.duration > 0 && hide.opacity[0] > hide.opacity.at(-1), `10k-word pane move is not visibly animated: ${JSON.stringify(hide)}`);
+      else assert.ok(frames.every(frame => frame.transform === "none"));
+      const shown = await page.evaluate(() => window.paneAnimations.length);
+      await page.keyboard.press("Control+Backslash");
+      await settleSidebar(true, shown);
     }
-    await page.waitForTimeout(190);
-    const frames = await page.evaluate(() => { window.paneRunning = false; return window.paneFrames; });
-    const tasks = await page.evaluate(() => { window.paneTaskObserver.disconnect(); return window.paneLongTasks; });
-    assert.ok(tasks.every(duration => duration < 50), `Sidebar long-task budget exceeded: ${JSON.stringify(tasks)}`);
-    assert.ok(frames.every(frame => frame.proseOpacity === 1), "Sidebar-only movement must not dim the prose");
-    assert.equal(await page.locator(".preview-pane").evaluate(element => getComputedStyle(element).opacity === "1" && element.getAnimations().length === 0), true, "Pane moves must leave the preview undimmed");
-    if (!reduced) assert.ok(new Set(frames.map(frame => frame.opacity)).size >= 3, `10k-word pane move is not visibly animated: ${JSON.stringify(frames)}`);
-    else assert.ok(frames.every(frame => frame.transform === "none"));
-    await page.keyboard.press("Control+Backslash");
-    await page.waitForTimeout(190);
+    await page.evaluate(() => { Element.prototype.animate = window.paneAnimate; });
+    const median = [...longestTasks].sort((a, b) => a - b)[Math.floor(longestTasks.length / 2)];
+    // Logged on success too, so CI shows how close the hide runs to its budget.
+    console.log(`sidebar hide longest tasks ${reduced ? "reduce" : "no-preference"}: median ${median}ms of ${JSON.stringify(longestTasks)}`);
+    assert.ok(median < 50, `Sidebar long-task budget exceeded: median of the longest task per hide is ${median}ms (${JSON.stringify(longestTasks)})`);
   }
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
   await page.locator(".continue-card").waitFor();
@@ -202,32 +258,69 @@ async function roundFive(page, width, reduced) {
   await page.keyboard.type(" PALETTE_SETTINGS ", { delay: 3 });
   assert.ok(await page.evaluate(() => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes(" PALETTE_SETTINGS "))));
   await page.locator(".settings-sheet").waitFor({ state: "detached" });
+  // The backdrop fade is checked through the transitions the browser creates,
+  // their events and how long the closing dialog stays rendered, not by
+  // sampling opacity on animation frames: a busy CI runner can paint only one
+  // or two frames in a 120-160ms fade, which made frame sampling fail
+  // intermittently.
   await page.evaluate(() => {
-    window.backdropFrames = [];
-    window.backdropRunning = true;
-    const sample = () => {
-      const dialog = document.querySelector(".shortcuts-dialog");
-      if (dialog) window.backdropFrames.push({ open: dialog.open, opacity: Number(getComputedStyle(dialog, "::backdrop").opacity), animations: dialog.getAnimations({ subtree: true }).filter(animation => animation.effect?.pseudoElement === "::backdrop").map(animation => ({ duration: animation.effect.getTiming().duration, easing: animation.effect.getTiming().easing })) });
-      if (window.backdropRunning) requestAnimationFrame(sample);
+    window.backdrop = { phase: "in", transitions: [], events: [] };
+    const backdropOpacity = dialog => dialog.getAnimations({ subtree: true }).find(animation => animation.effect?.pseudoElement === "::backdrop" && animation.transitionProperty === "opacity");
+    // Opening or closing the dialog toggles its open attribute; reading its
+    // animations in the same task forces the style change that creates the
+    // transition, so the transition is caught before any frame can end it.
+    window.backdrop.observer = new MutationObserver(records => {
+      for (const { target } of records) {
+        if (!(target instanceof HTMLDialogElement && target.matches(".shortcuts-dialog"))) continue;
+        const transition = backdropOpacity(target);
+        window.backdrop.transitions.push({ open: target.open, ...(transition && { opacity: transition.effect.getKeyframes().map(keyframe => Number(keyframe.opacity)), duration: transition.effect.getTiming().duration, easing: transition.effect.getTiming().easing }) });
+        if (target.open) continue;
+        // A closing fade keeps the dialog rendered (display and overlay
+        // transition discretely at the end) for the fade's duration. Late
+        // frames only lengthen this measure, so a slow runner cannot fail it.
+        const closedAt = performance.now();
+        const watch = () => { if (target.checkVisibility()) requestAnimationFrame(watch); else window.backdrop.rendered = performance.now() - closedAt; };
+        watch();
+      }
+    });
+    window.backdrop.observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"] });
+    // Transition events are dispatched even when a fade starts and ends
+    // between two painted frames. (Closing is not judged by its end event:
+    // when the dialog leaves rendering in the frame its fade completes, a busy
+    // runner can dispatch neither transitionend nor transitioncancel.)
+    window.backdrop.listener = event => {
+      if (event.target instanceof Element && event.target.matches(".shortcuts-dialog") && event.pseudoElement === "::backdrop" && event.propertyName === "opacity") window.backdrop.events.push({ phase: window.backdrop.phase, type: event.type, elapsed: event.elapsedTime });
     };
-    requestAnimationFrame(sample);
+    for (const type of ["transitionrun", "transitionend", "transitioncancel"]) document.addEventListener(type, window.backdrop.listener, true);
   });
   await page.keyboard.press("Control+/");
   const help = page.locator(".shortcuts-dialog");
   await help.waitFor();
   assert.ok(await help.locator(".shortcut-group").count() >= 6);
   for (const label of ["Cycle editor and preview", "Choose export format", "Previous problem", "Find and replace", "Select next occurrence", "Move the focused chapter up"]) assert.match(await help.innerText(), new RegExp(label));
-  await page.waitForTimeout(190);
+  if (!reduced) await page.waitForFunction(() => window.backdrop.events.some(event => event.phase === "in" && event.type !== "transitionrun")).catch(async () => assert.fail(`Backdrop did not animate in: ${JSON.stringify(await page.evaluate(() => window.backdrop))}`));
+  else await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.evaluate(() => { window.backdrop.phase = "out"; });
   await page.keyboard.press("Escape");
   await help.waitFor({ state: "hidden" });
-  const frames = await page.evaluate(() => { window.backdropRunning = false; return window.backdropFrames; });
+  await page.waitForFunction(() => window.backdrop.rendered !== undefined);
+  const backdrop = await page.evaluate(() => {
+    window.backdrop.observer.disconnect();
+    for (const type of ["transitionrun", "transitionend", "transitioncancel"]) document.removeEventListener(type, window.backdrop.listener, true);
+    return { transitions: window.backdrop.transitions, events: window.backdrop.events, rendered: window.backdrop.rendered };
+  });
   if (!reduced) {
     for (const open of [true, false]) {
-      const phase = frames.filter(frame => frame.open === open);
-      assert.ok(new Set(phase.map(frame => frame.opacity)).size >= 3, `Backdrop did not animate ${open ? "in" : "out"}: ${JSON.stringify(phase)}`);
+      const transition = backdrop.transitions.find(transition => transition.open === open);
+      const [from, to] = [transition?.opacity?.[0], transition?.opacity?.at(-1)];
+      // Declared: the open (or close) created a backdrop opacity transition in the right direction.
+      assert.ok(transition?.duration > 0 && (open ? from < to : from > to), `Backdrop did not animate ${open ? "in" : "out"}: ${JSON.stringify(backdrop)}`);
+      // Ran: opening reached its full duration; closing kept the dialog rendered for the whole fade.
+      const ran = open ? backdrop.events.some(event => event.phase === "in" && event.type === "transitionend" && event.elapsed >= transition.duration / 1000 - 0.001) : backdrop.rendered >= transition.duration - 2;
+      assert.ok(ran, `Backdrop ${open ? "in" : "out"} transition was cut short: ${JSON.stringify(backdrop)}`);
     }
-    assert.ok(frames.some(frame => frame.animations.some(animation => animation.duration === 120 && animation.easing === "cubic-bezier(0.4, 0, 1, 1)")));
-  } else assert.ok(frames.every(frame => frame.animations.length === 0));
+    assert.ok(backdrop.transitions.some(transition => !transition.open && transition.duration === 120 && transition.easing === "cubic-bezier(0.4, 0, 1, 1)"), JSON.stringify(backdrop));
+  } else assert.ok(backdrop.transitions.every(transition => transition.duration === undefined) && backdrop.events.length === 0, `Reduce must not fade the backdrop: ${JSON.stringify(backdrop)}`);
   if (width === 1440) {
     await page.keyboard.press("Control+Shift+Backslash");
     await page.keyboard.press("Control+Shift+Backslash");
@@ -360,7 +453,14 @@ try {
         await page.getByRole("button", { name: "Editor and preview", exact: true }).click();
       }
       await typeInEditor(page, " VIEW_HANDOFF ");
-      if (width !== 390) await page.getByRole("button", { name: "Preview only", exact: true }).click();
+      if (width !== 390) {
+        await page.getByRole("button", { name: "Preview only", exact: true }).click();
+        // Choosing a view moves focus to it on the next animation frame. Wait
+        // for that handoff: on a busy runner the frame can land after the search
+        // below has been filled, and the late focus then leaves the search
+        // field's caret at the start ("darwin earth" became " earthdarwin").
+        await page.waitForFunction(() => document.activeElement?.matches(".preview"));
+      }
       await page.keyboard.press("Control+Shift+f");
       const manuscriptSearch = page.getByRole("searchbox", { name: "Search outline", exact: true });
       await manuscriptSearch.fill("darwin");
