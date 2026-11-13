@@ -912,7 +912,7 @@ export class ManuscriptWorkspace {
     const target = "body" in draft ? targetFor(draft.body, draft.from, draft.to, await bodyHash(draft.body)) : undefined;
     const key = JSON.stringify([draft.record, "body" in draft ? [draft.from, draft.to] : null, text, replacement ?? null]);
     const created = await this.createComment(key, { document: draft.record, text, ...(target ? { target } : {}), ...(replacement !== undefined ? { replacement } : {}) });
-    if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
+    if (created.ok) this.update({ comments: withComment(this.current.comments, created.value) });
     return created;
   }
 
@@ -928,7 +928,7 @@ export class ManuscriptWorkspace {
     // A reply repeats its thread's document.
     const document = resolveLinkTarget(linkPath(thread.root.document), thread.root.path, this.current.recordIndex) ?? linkPath(thread.root.document);
     const created = await this.createComment(JSON.stringify([thread.root.path, text]), { document, text, thread: thread.root });
-    if (created.ok) this.update({ comments: [...this.current.comments, created.value] });
+    if (created.ok) this.update({ comments: withComment(this.current.comments, created.value) });
     return created;
   }
 
@@ -1135,6 +1135,14 @@ export class ManuscriptWorkspace {
     }));
     this.leases.clear();
   }
+}
+
+/**
+ * The comment list with `comment` in it once: a refresh that finished while
+ * the comment was being created may already hold its record (issue 99).
+ */
+function withComment(comments: readonly CommentRecord[], comment: CommentRecord): readonly CommentRecord[] {
+  return comments.some((c) => c.path === comment.path) ? comments.map((c) => (c.path === comment.path ? comment : c)) : [...comments, comment];
 }
 
 const IMAGE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp" };

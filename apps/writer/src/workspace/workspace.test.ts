@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fail, ok, type CollectionDelta, type WriterBackend } from "../backend/types.js";
+import type { CommentRecord, CommentThread } from "@mdbase-dev/ui/comments";
 import { NO_PEOPLE } from "../backend/comments.js";
 import { DraftStore, type LocalDraft } from "./drafts.js";
 import { discoveredDiagnostics, ManuscriptWorkspace } from "./workspace.js";
@@ -196,6 +197,31 @@ describe("workspace reliability", () => {
     const [first, retry] = createComment.mock.calls.map(([input]) => input.intent);
     expect(retry).toEqual(expect.any(String));
     expect(retry).toBe(first);
+  });
+  it("holds one entry per comment when a refresh in flight already includes the new one (issue 99)", async () => {
+    const { backend, open } = fixture();
+    const workspace = open(); await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().commentsLoad.phase).toBe("ready"));
+    const comment = { path: "comments/new.md", document: "[[main]]", text: "Hi" } as unknown as CommentRecord;
+    const reply = { path: "comments/reply.md", text: "Re" } as unknown as CommentRecord;
+    let confirm!: (record: CommentRecord) => void;
+    backend.createComment = () => new Promise(resolve => { confirm = (record) => resolve(ok(record)); });
+    // The refresh started by the write's echo answers before the create's readback does.
+    backend.comments = async () => ok([comment]);
+    const added = workspace.addComment({ record: "main.md" }, "Hi");
+    await workspace.loadComments();
+    confirm(comment);
+    expect((await added).ok).toBe(true);
+    expect(workspace.getSnapshot().comments.map((c) => c.path)).toEqual(["comments/new.md"]);
+    // The same for a reply, with the refresh still in flight when the reply is confirmed.
+    let answer!: () => void;
+    backend.comments = () => new Promise(resolve => { answer = () => resolve(ok([comment, reply])); });
+    const replied = workspace.reply({ root: comment } as unknown as CommentThread, "Re");
+    const refreshed = workspace.loadComments();
+    confirm(reply);
+    await replied;
+    answer(); await refreshed;
+    expect(workspace.getSnapshot().comments.map((c) => c.path)).toEqual(["comments/new.md", "comments/reply.md"]);
   });
   it("never lets an older account check replace a newer one (issue 91)", async () => {
     const { backend, open } = fixture();
