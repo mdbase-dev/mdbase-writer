@@ -25,6 +25,8 @@ interface NativeMetadata {
   readonly generation: number;
 }
 const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000;
+/** The producer's largest contract page; a refused page is asked for again at half. */
+const CONTRACT_PAGE_SIZE = 128;
 /** Pauses before each further account check after a transient failure. */
 const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
 function unprotected(record: RecordView): boolean {
@@ -61,6 +63,9 @@ export class NativeWriterBackend implements WriterBackend {
   private generation = 0;
   private cached: NativeMetadata | undefined;
   private metadataJob: Promise<NativeMetadata> | undefined;
+  /** The page size each domain's contract metadata last loaded at, so a reload
+   * does not repeat the refused sizes. */
+  private readonly contractPageSizes = new Map<Domain, number>();
   private peopleJob: Promise<People> | undefined;
   private peopleFailed = false;
   private writing = false;
@@ -145,7 +150,7 @@ export class NativeWriterBackend implements WriterBackend {
     try {this.check(); const value = await operation(); this.check(); return ok(value);}
     catch (error) {
       return fail(this.signal.aborted || this.disposed ? "Writer's collection view has closed."
-        : isMdbaseError(error) ? `The native collection operation could not complete (${error.code}).`
+        : isMdbaseError(error) ? `The native collection operation could not complete (${error.reason ? `${error.code}: ${error.reason}` : error.code}).`
         : error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
   }
@@ -230,37 +235,52 @@ export class NativeWriterBackend implements WriterBackend {
       const contract = domainContract(domain);
       const declared = catalog.contracts.find(candidate => candidate.id === contract.id && candidate.version === contract.version);
       if (!declared) throw new Error("Writer's metadata lost its exact contract.");
-      const seen = new Set<string>();
-      const cursors = new Set<string>();
-      let cursor: string | undefined;
-      do {
-        const result = await this.client.queryContract(contract, {pageSize: 128, ...(cursor ? {cursor} : {}), signal: this.signal}); this.check(generation);
-        if (!sameDigest(result.contractDigest, declared.digest) || result.page.asOf !== asOf) throw new Error("Writer's contract metadata snapshot or digest changed.");
-        const witnesses = new Map(result.page.records.map(record => [record.id, record]));
-        if (witnesses.size !== result.page.records.length) throw new Error("Writer's contract query repeated a record identity.");
-        for (const projected of result.records) {
-          const row = selected.get(projected.id);
-          const witness = witnesses.get(projected.id);
-          const identity = row && identities.get(row.path);
-          if (!row || !witness || !identity || witness.path !== row.path || witness.revision !== identity.revision || seen.has(projected.id)) throw new Error("Writer's contract metadata identity changed or repeated.");
-          const binding = schema.roles(row.types).get(domain);
-          const implementations = projected.implementations.filter(candidate => candidate.typeName === binding?.name);
-          const implementation = implementations[0];
-          if (implementations.length !== 1 || !implementation) throw new Error("Writer's contract metadata projection is ambiguous.");
-          seen.add(projected.id);
-          // One invalid record stays listed without its projected fields;
-          // it never blocks the rest of the collection.
-          if (implementation.issues.some(issue => issue.severity === "error")) continue;
-          rows.set(projected.id, {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
+      // The producer refuses a page whose projection exceeds its fixed budget
+      // (`too_large`), and only it knows record sizes: ask again for fewer.
+      // A cursor is bound to its page size, so the domain restarts.
+      let pageSize = this.contractPageSizes.get(domain) ?? CONTRACT_PAGE_SIZE;
+      for (;;) {
+        try {await this.projectDomain(domain, contract, declared.digest, pageSize, selected, schema, rows, identities, asOf, generation); break;}
+        catch (error) {
+          if (pageSize === 1 || !isMdbaseError(error) || error.code !== "too_large") throw error;
+          this.check(generation);
+          pageSize = Math.ceil(pageSize / 2);
         }
-        cursor = result.page.cursor;
-        if (cursor) {
-          if (cursors.has(cursor)) throw new Error("Writer's contract metadata cursor repeated.");
-          cursors.add(cursor);
-        } else if (!result.page.complete) throw new Error("Writer's contract metadata query is incomplete.");
-      } while (cursor);
-      if (seen.size !== selected.size) throw new Error("Writer's contract metadata omitted an original record.");
+      }
+      this.contractPageSizes.set(domain, pageSize);
     }
+  }
+  private async projectDomain(domain: Domain, contract: ReturnType<typeof domainContract>, digest: DescribeResult["contracts"][number]["digest"], pageSize: number, selected: ReadonlyMap<string, CollectionRow>, schema: CollectionSchema, rows: Map<string, CollectionRow>, identities: ReadonlyMap<string, {id: string; revision: string}>, asOf: number, generation: number): Promise<void> {
+    const seen = new Set<string>();
+    const cursors = new Set<string>();
+    let cursor: string | undefined;
+    do {
+      const result = await this.client.queryContract(contract, {pageSize, ...(cursor ? {cursor} : {}), signal: this.signal}); this.check(generation);
+      if (!sameDigest(result.contractDigest, digest) || result.page.asOf !== asOf) throw new Error("Writer's contract metadata snapshot or digest changed.");
+      const witnesses = new Map(result.page.records.map(record => [record.id, record]));
+      if (witnesses.size !== result.page.records.length) throw new Error("Writer's contract query repeated a record identity.");
+      for (const projected of result.records) {
+        const row = selected.get(projected.id);
+        const witness = witnesses.get(projected.id);
+        const identity = row && identities.get(row.path);
+        if (!row || !witness || !identity || witness.path !== row.path || witness.revision !== identity.revision || seen.has(projected.id)) throw new Error("Writer's contract metadata identity changed or repeated.");
+        const binding = schema.roles(row.types).get(domain);
+        const implementations = projected.implementations.filter(candidate => candidate.typeName === binding?.name);
+        const implementation = implementations[0];
+        if (implementations.length !== 1 || !implementation) throw new Error("Writer's contract metadata projection is ambiguous.");
+        seen.add(projected.id);
+        // One invalid record stays listed without its projected fields;
+        // it never blocks the rest of the collection.
+        if (implementation.issues.some(issue => issue.severity === "error")) continue;
+        rows.set(projected.id, {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
+      }
+      cursor = result.page.cursor;
+      if (cursor) {
+        if (cursors.has(cursor)) throw new Error("Writer's contract metadata cursor repeated.");
+        cursors.add(cursor);
+      } else if (!result.page.complete) throw new Error("Writer's contract metadata query is incomplete.");
+    } while (cursor);
+    if (seen.size !== selected.size) throw new Error("Writer's contract metadata omitted an original record.");
   }
   manuscriptBindings(): Promise<Result<readonly Binding[]>> {return this.safely(async () => this.bindingList((await this.metadata()).schema, "manuscript"));}
   private bindingList(schema: CollectionSchema, domain: Domain): Binding[] {

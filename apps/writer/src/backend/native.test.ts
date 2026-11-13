@@ -254,6 +254,36 @@ describe("native Writer domain backend", () => {
     expect(manuscripts.ok && manuscripts.value.some(book => book.path === "manuscripts/page-128.md" && book.title === "Book 128")).toBe(true);
     expect(query.mock.calls.some(call => call[1]?.cursor !== undefined)).toBe(true);
   });
+  it("asks for smaller contract pages when the producer refuses a page as over its budget", async () => {
+    const h = await fixture();
+    for (let index = 0; index < 129; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
+    const original = h.client.queryContract.bind(h.client);
+    const sizes: number[] = [];
+    vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
+      const size = options?.pageSize ?? 128;
+      if (contract.id === "dev.mdbase.writer.manuscript") sizes.push(size);
+      // The second page is the over-budget one until pages hold 32 records.
+      if (size > 32 && options?.cursor) throw new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"});
+      return original(contract, options);
+    });
+    const manuscripts = await h.backend.listManuscripts();
+    expect(manuscripts.ok && manuscripts.value).toHaveLength(130);
+    expect(manuscripts.ok && manuscripts.value.some(book => book.path === "manuscripts/page-128.md" && book.title === "Book 128")).toBe(true);
+    // Each refusal restarts the domain at half the size: a cursor is bound to its page size.
+    expect(sizes).toEqual([128, 128, 64, 64, 32, 32, 32, 32, 32]);
+    // A reload starts from the size that worked.
+    sizes.length = 0;
+    h.replica.seed({path: "manuscripts/later.md", types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", "Later"]])}});
+    await vi.waitFor(async () => {const reloaded = await h.backend.listManuscripts(); expect(reloaded.ok && reloaded.value).toHaveLength(131);});
+    expect(sizes.length).toBeGreaterThan(0);
+    expect(new Set(sizes)).toEqual(new Set([32]));
+  });
+  it("reports the refusal reason when a single record exceeds the producer's contract budget", async () => {
+    const h = await fixture();
+    const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"}));
+    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "The native collection operation could not complete (too_large: contract_projection_budget)."});
+    expect(query.mock.calls.map(call => call[1]?.pageSize)).toEqual([128, 64, 32, 16, 8, 4, 2, 1]);
+  });
   it.each(["changed snapshot", "repeated cursor"]) ("refuses unsafe metadata pagination: %s", async failure => {
     const h = await fixture(); const actual = await h.client.query({}, {include: {effective: true}});
     vi.spyOn(h.client, "pages").mockImplementation(async function* () {
