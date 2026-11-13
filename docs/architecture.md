@@ -44,9 +44,15 @@
   reports each write before it confirms, and the panel reloads at once); only a
   hold or an unresolved conflict refuses them. Writes and their readbacks still
   require a confirmed record. Account checks are applied in the order they were
-  started, so a slow, older check never replaces a newer signing state, and a
-  transient `unavailable` directory failure is checked once more before the
-  notice says the account could not be checked.
+  started, so a slow, older check never replaces a newer signing state. A
+  transient people-directory failure (`unavailable`, `unauthenticated`/`people_fenced`,
+  `cancelled`, `rate_limited`) is checked again after 250 ms, 1 s and 3 s before
+  the notice says the account could not be checked, and a failed check is never
+  reused: the next panel reload or new comment checks again, so a linked account
+  never writes an unsigned comment from a stale failure. The SDK host's identity
+  READ runs under its collection control's lifetime and shares one READ slot with
+  launch readiness, so a replaced connection or a busy slot fails Writer's first
+  check at startup.
 - **Images** are collection files, referenced relative to the record
   (`![Caption](figures/plot.png){#fig-plot}`) or by wikilink (`![[plot.png]]`).
 

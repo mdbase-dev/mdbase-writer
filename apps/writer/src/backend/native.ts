@@ -24,7 +24,9 @@ interface NativeMetadata {
   readonly files: ReadonlyMap<string, FileView>;
   readonly generation: number;
 }
-const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000, PEOPLE_RETRY_MS = 250;
+const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000;
+/** Pauses before each further account check after a transient failure. */
+const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
 function unprotected(record: RecordView): boolean {
   return record.state.state === "confirmed" && readable(record);
 }
@@ -60,6 +62,7 @@ export class NativeWriterBackend implements WriterBackend {
   private cached: NativeMetadata | undefined;
   private metadataJob: Promise<NativeMetadata> | undefined;
   private peopleJob: Promise<People> | undefined;
+  private peopleFailed = false;
   private writing = false;
   /** This session's write whose reply was lost, so a repeated click can't duplicate it.
    * Writes from earlier sessions are the SDK write ledger's to keep and settle. */
@@ -334,25 +337,37 @@ export class NativeWriterBackend implements WriterBackend {
     });
   }
   people(options: {fresh?: boolean} = {}): Promise<People> {
-    if (!this.peopleJob || options.fresh) this.peopleJob = this.loadPeople();
+    // A failed check is never reused: the next caller (the panel's reload, or a new
+    // comment about to be signed) checks again rather than writing it unsigned.
+    if (!this.peopleJob || options.fresh || this.peopleFailed) {
+      this.peopleFailed = false;
+      const job = this.loadPeople(); this.peopleJob = job;
+      void job.then(people => {if (this.peopleJob === job && people.signing?.kind === "unavailable") this.peopleFailed = true;});
+    }
     return this.peopleJob;
   }
   private async loadPeople(): Promise<People> {
-    try {
-      this.check();
-      const directory = await this.connection.people.directory({members: "omit", signal: this.signal}).catch(async (error: unknown) => {
-        // A read session replaced mid-check (a reconnect) or a briefly incomplete
-        // inventory is transient: look once more before saying the account is unchecked.
-        if (!isMdbaseError(error, "unavailable")) throw error;
-        await new Promise(resolve => setTimeout(resolve, PEOPLE_RETRY_MS)); this.check();
-        return this.connection.people.directory({members: "omit", signal: this.signal});
-      }); this.check();
-      return peopleFromDirectory(directory);
-    } catch (error) {
-      // Names only, never a substitute account/author or guessed identity.
-      try {const names = (await this.metadata()).store.people; this.check(); return {names, signing: {kind: "unavailable", reason: "Writer could not check the account's person record."}};}
-      catch {return {...NO_PEOPLE, signing: isMdbaseError(error) && error.code === "forbidden" ? {kind: "not-approved"} : {kind: "unavailable", reason: "Writer could not check the account's person record."}};}
+    let failure: unknown;
+    for (const delay of [0, ...PEOPLE_RETRY_MS]) {
+      try {
+        if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+        this.check();
+        const directory = await this.connection.people.directory({members: "omit", signal: this.signal}); this.check();
+        return peopleFromDirectory(directory);
+      } catch (error) {
+        failure = error;
+        // These are transient at startup: the SDK host's identity READ ends with its
+        // collection control (aborted when that connection is replaced: `people_fenced`),
+        // its one READ slot can be busy with launch readiness (`people_busy`), or the read
+        // session can change. Look again, briefly, before saying the account is unchecked.
+        // A refusal or an unknown failure is the answer.
+        const transient = isMdbaseError(error) && ["unavailable", "unauthenticated", "cancelled", "rate_limited"].includes(error.code);
+        if (!transient || this.signal.aborted || this.disposed) break;
+      }
     }
+    // Names only, never a substitute account/author or guessed identity.
+    try {const names = (await this.metadata()).store.people; this.check(); return {names, signing: {kind: "unavailable", reason: "Writer could not check the account's person record."}};}
+    catch {return {...NO_PEOPLE, signing: isMdbaseError(failure) && failure.code === "forbidden" ? {kind: "not-approved"} : {kind: "unavailable", reason: "Writer could not check the account's person record."}};}
   }
   reviewIdentityAccess(): Promise<Result<void>> {
     return this.safely(async () => {if (!this.options.authorize) throw new Error("Writer cannot request identity access here."); await this.options.authorize(); this.check(); this.peopleJob = undefined;});
