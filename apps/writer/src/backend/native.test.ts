@@ -45,6 +45,8 @@ async function fixture(beforeBackend?: (client: MdbaseClient) => void) {
   return {replica, client, description, metadata, current, caller, backend, manuscript};
 }
 
+const linked = {account: {id: "fixture-account", displayName: "Fixture", identities: []}, me: {status: "linked", person: {id: "p", path: "people/me.md", name: "Me", identities: [], typeNames: ["person"]}}, people: [], invalid: []} as never;
+
 // Public watch lifecycle stand-ins only; no private SDK fault hooks.
 function controlledWatch(initialState: ChangesWatch["state"] = "active", ready: Promise<void> = Promise.resolve()) {
   let state = initialState;
@@ -380,17 +382,37 @@ describe("native Writer domain backend", () => {
     h.replica.confirmAll(); h.replica.stallConfirmations(false);
     expect((await reply).ok).toBe(true);
   });
-  it("checks the account once more after a transient directory failure (issue 91)", async () => {
+  it("checks the account again after its first identity READ is cut off (issue 91)", async () => {
     const h = await fixture();
-    const account = {id: "fixture-account", displayName: "Fixture", identities: []};
-    const directory = vi.spyOn(MdbasePeopleClient.prototype, "directory")
-      .mockRejectedValueOnce(new MdbaseError({code: "unavailable", recovery: "retry", message: "people read session changed", reason: "people_fenced"}))
-      .mockResolvedValueOnce({account, me: {status: "linked", person: {id: "p", path: "people/me.md", name: "Me", identities: [], typeNames: ["person"]}}, people: [], invalid: []} as never);
+    // What the SDK reports when the host's collection control closes mid-READ
+    // (its /identity fetch is aborted), and when the one READ slot is busy.
+    const fenced = new MdbaseError({code: "unauthenticated", recovery: "reauthorize", message: "people scope changed", reason: "people_fenced"});
+    const busy = new MdbaseError({code: "unavailable", recovery: "retry", message: "people metadata request failed", reason: "people_busy"});
+    const directory = vi.spyOn(MdbasePeopleClient.prototype, "directory").mockRejectedValueOnce(fenced).mockRejectedValueOnce(busy).mockResolvedValueOnce(linked);
     expect(await h.backend.people()).toMatchObject({signing: {kind: "linked"}, me: {name: "Me"}});
-    expect(directory).toHaveBeenCalledTimes(2);
-    directory.mockRejectedValue(new MdbaseError({code: "unavailable", recovery: "retry", message: "people read session changed", reason: "people_fenced"}));
-    expect(await h.backend.people({fresh: true})).toMatchObject({signing: {kind: "unavailable"}});
-    expect(directory).toHaveBeenCalledTimes(4);
+    expect(directory).toHaveBeenCalledTimes(3);
+  });
+  it("takes a refusal as the answer without retrying", async () => {
+    const h = await fixture();
+    const directory = vi.spyOn(MdbasePeopleClient.prototype, "directory").mockRejectedValue(new MdbaseError({code: "forbidden", recovery: "reauthorize", message: "no identity", reason: "people_access"}));
+    expect((await h.backend.people()).signing?.kind).not.toBe("linked");
+    expect(directory).toHaveBeenCalledOnce();
+  });
+  it("never signs a new comment from a failed account check (issue 91)", async () => {
+    const h = await fixture();
+    vi.useFakeTimers({toFake: ["setTimeout"]});
+    try {
+      const directory = vi.spyOn(MdbasePeopleClient.prototype, "directory").mockRejectedValue(new MdbaseError({code: "unavailable", recovery: "retry", message: "people metadata request failed", reason: "people_busy"}));
+      const checked = h.backend.people();
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(await checked).toMatchObject({signing: {kind: "unavailable"}});
+      expect(directory).toHaveBeenCalledTimes(4);
+      directory.mockResolvedValue(linked);
+    } finally {vi.useRealTimers();}
+    const created = await h.backend.createComment({document: "manuscripts/original.md", text: "Signed"});
+    if (!created.ok) throw new Error(created.message);
+    expect(created.value.createdBy).toBe("[[people/me]]");
+    expect(await h.backend.people()).toMatchObject({signing: {kind: "linked"}});
   });
   it("still refuses a held or conflicted comment body on a display read", async () => {
     const h = await fixture();
