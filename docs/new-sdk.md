@@ -1,3 +1,5 @@
+> Historical SDK migration notes. Writer now uses the SDK entry in all ordinary deployment builds and has removed the legacy client. See [development.md](development.md) for current entrypoints and protocol-pin ownership.
+
 # New SDK migration
 
 ## Current declared Private setup SDK intake — 2026-10-15

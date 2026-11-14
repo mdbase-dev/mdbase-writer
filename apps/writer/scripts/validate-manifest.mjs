@@ -5,13 +5,9 @@ import { fileURLToPath } from "node:url";
 import {
   formatManifestValidationIssues,
   validateAppManifest,
-} from "@mdbase-dev/connect-protocol/manifest";
+} from "@mdbase-dev/sdk/manifest";
 
-// Same canonical validator the mdbase-connect-dev CLI wraps, but resolved
-// from this app's pinned connect-protocol. The CLI's older bundled protocol
-// rejects installation_origins, which the pinned protocol (and the SDK/CP
-// runtime parser) already accept. TODO: return to the CLI once an actually
-// published devkit carries the canonical installation_origins support.
+// Use the validator bundled with the SDK selected by this app.
 export function validateManifestValue(value, { allowLocal = false } = {}) {
   return validateAppManifest(value, { allowLocal });
 }

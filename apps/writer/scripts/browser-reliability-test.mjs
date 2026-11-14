@@ -128,7 +128,7 @@ try {
     await page.evaluate(async (path) => {
       const backend = window.writer.backend;
       const index = await backend.index();
-      backend.authority.editElsewhere(path, { body: "# Self-contained\n\nA plain paragraph.\n" });
+      backend.replica.editElsewhere(path, { body: "# Self-contained\n\nA plain paragraph.\n" });
       backend.index = () => new Promise((resolve) => { window.finishIndex = () => resolve(index); });
     }, main);
     await page.locator(".manuscripts > li", { hasText: "Patient Observation" }).locator("[data-path]").click();
@@ -194,7 +194,7 @@ try {
     await page.getByRole("button", { name: "Retry annotations" }).waitFor();
     await page.getByRole("button", { name: "Retry annotations" }).click();
     await page.locator(".annotations blockquote", { hasText: "It may be doubted" }).waitFor();
-    await page.evaluate(() => window.writer.backend.authority.editElsewhere("annotations/darwin-worms-history.md", { body: "> Changed Reader quotation\n" }));
+    await page.evaluate(() => window.writer.backend.replica.editElsewhere("annotations/darwin-worms-history.md", { body: "> Changed Reader quotation\n" }));
     await page.locator(".annotations blockquote", { hasText: "Changed Reader quotation" }).waitFor();
     assert.equal(await page.locator(".annotations blockquote", { hasText: "It may be doubted" }).count(), 0);
   });
@@ -221,10 +221,7 @@ try {
     await page.evaluate(() => {
       const backend = window.writer.backend;
       const source = window.writer.workspace.getSnapshot().library.find((entry) => entry.key === "darwinFormation81");
-      // Demo CSL entries can be virtual (library.json); give this one a real record.
-      if (!backend.authority.get(source.path)) backend.authority.seed(source.path, { frontmatter: { type: "reader-source", csl: source.item }, body: "Source record" });
-      const record = backend.authority.get(source.path);
-      backend.authority.editElsewhere(source.path, { patch: { ...record.frontmatter, csl: { ...source.item, title: "Revised cited source title" } } });
+      backend.replica.editElsewhere(source.path, { frontmatter: { csl: { ...source.item, title: "Revised cited source title" } } });
     });
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().result?.references.some((ref) => ref.key === "darwinFormation81" && ref.text.toLowerCase().includes("revised cited source title")));
     await painted(page);
@@ -400,7 +397,7 @@ try {
     const result = await page.evaluate(async () => {
       const { workspace, backend } = window.writer;
       workspace.setBody(workspace.main, "# Unsent local draft\n");
-      backend.authority.failNextWrite({ problem_version: 1, code: "access_denied", category: "authorization", recovery: "reauthorize", message: "Test save failure" });
+      backend.replica.failNextRead("get", { code: "unavailable", recovery: "retry", message: "Test save failure" });
       const saved = await workspace.retrySave();
       const { DraftStore } = await import("/src/workspace/drafts.ts");
       return { failed: !saved.ok, backedUp: new DraftStore("demo").read(workspace.main)?.body === "# Unsent local draft\n" };
@@ -449,7 +446,7 @@ try {
       const { workspace, backend } = window.writer;
       const snapshot = workspace.getSnapshot().records.get(workspace.main).snapshot;
       workspace.setBody(workspace.main, snapshot.body + "\nLocal conflict text.\n");
-      backend.authority.editElsewhere(workspace.main, { body: snapshot.body + "\nRemote conflict text.\n" });
+      backend.replica.editElsewhere(workspace.main, { body: snapshot.body + "\nRemote conflict text.\n" });
     });
     await page.getByRole("button", { name: "Compare versions" }).waitFor();
     await page.getByRole("button", { name: "Manuscripts", exact: true }).click();

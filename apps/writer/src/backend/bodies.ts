@@ -1,12 +1,11 @@
 // Lazy hydration on top of classified metadata. No discovery or watch ownership.
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "@mdbase-dev/sdk";
 import { commentFromRecord, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionCache } from "./cache.js";
 import type { CollectionStore, StoreDelta } from "./collection.js";
-import { toContract } from "./comments.js";
 import { ok, sourceAnnotation, type Result, type SourceAnnotation } from "./types.js";
 
-export interface WriterBodyRow { readonly path: string; readonly types: readonly string[]; readonly frontmatter?: JsonObject; readonly contractFields?: JsonObject; readonly body?: string }
+export interface WriterBodyRow { readonly path: string; readonly types: readonly string[]; readonly contractFields: JsonObject; readonly body?: string }
 type ReadSelected = (metadata: ReadonlyMap<string, { readonly type: string }>) => Promise<Result<WriterBodyRow[]>>;
 export class CollectionBodies {
   private readonly comments = new Map<string, CommentRecord>();
@@ -29,7 +28,7 @@ export class CollectionBodies {
       if (!loaded.ok) return loaded;
       return ok(loaded.value.flatMap((row) => {
         const entry = selected.get(row.path);
-        const a = entry && sourceAnnotation(row.path, row.contractFields ?? toContract(row.frontmatter ?? {}, entry.fields), row.body ?? "");
+        const a = entry && sourceAnnotation(row.path, row.contractFields, row.body ?? "");
         return a ? [a] : [];
       }));
     });
@@ -44,8 +43,7 @@ export class CollectionBodies {
       const entry = wanted.get(row.path);
       // Reset or a path update during a read must not cache an old body.
       if (!entry || entry !== this.store().comments.get(row.path)) continue;
-      const fields = row.contractFields ?? (Object.keys(entry.fields).length ? toContract(row.frontmatter ?? {}, entry.fields) : row.frontmatter ?? {});
-      const comment = commentFromRecord(row.path, fields, row.body ?? "");
+      const comment = commentFromRecord(row.path, row.contractFields, row.body ?? "");
       if (comment) this.comments.set(row.path, comment);
     }
     return ok([...wanted.keys()].flatMap((p) => { const c = this.comments.get(p); return c ? [c] : []; }));

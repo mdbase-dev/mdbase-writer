@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { libraryEntry, manuscriptBody, manuscriptSlug, titleFromNote, withType } from "./types.js";
+import { libraryEntry, manuscriptBody, manuscriptSlug, titleFromNote } from "./types.js";
 
 it("starts a blank manuscript without a scaffold and keeps the worked example opt-in", () => {
   expect(manuscriptBody()).toBe("");
@@ -31,14 +31,7 @@ describe("manuscriptSlug", () => {
   });
 });
 
-describe("withType", () => {
-  it("adds the manuscript type and keeps existing types", () => {
-    expect(withType(undefined, "writer-manuscript")).toBe("writer-manuscript");
-    expect(withType("note", "writer-manuscript")).toEqual(["note", "writer-manuscript"]);
-    expect(withType(["note", "draft"], "writer-manuscript")).toEqual(["note", "draft", "writer-manuscript"]);
-    expect(withType("Writer-Manuscript", "writer-manuscript")).toBe("Writer-Manuscript");
-  });
-});
+
 
 describe("titleFromNote", () => {
   it("uses the first heading, without its attributes, else the file name", () => {

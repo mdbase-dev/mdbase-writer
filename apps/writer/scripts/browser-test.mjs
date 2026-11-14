@@ -129,6 +129,7 @@ await step("home lists the demo manuscripts", async () => {
 });
 
 await step("an existing note becomes a manuscript, keeping its type and fields", async () => {
+  try {
   await page.getByRole("button", { name: "New manuscript" }).click();
   await page.getByRole("button", { name: "Use a note you already have…" }).click();
   await page.locator(".adopt-note input").fill("worm stones");
@@ -144,6 +145,11 @@ await step("an existing note becomes a manuscript, keeping its type and fields",
   await page.locator('.home [data-path="drafts/on-worm-stones.md"]').waitFor();
   const titles = await page.locator(".manuscript-title, .continue-title").allTextContents();
   assert.ok(titles.includes("On worm stones"), titles.join(", "));
+  } finally {
+    // Keep later independent scenarios reachable if this SDK operation refuses.
+    await page.goto(`${base}?demo`);
+    await page.locator(".home [data-path]").first().waitFor();
+  }
 });
 
 await step("opening a paper typesets it with no problems", async () => {
@@ -165,7 +171,7 @@ await step("typing autosaves and updates the preview", async () => {
   keystrokeMs = Date.now() - started;
   assert.notEqual(await previewFingerprint("manuscripts/slow-change.md"), shownBefore, "the preview did not change");
   await waitFor(() => Object.values(Object.fromEntries([...window.writer.workspace.getSnapshot().records].map(([p, r]) => [p, r.snapshot.state]))).every((s) => s === "saved"), null, 10_000);
-  const saved = await page.evaluate(() => window.writer.backend.authority.writes.at(-1)?.body ?? window.writer.backend.authority.writes.at(-1));
+  const saved = await page.evaluate(() => window.writer.backend.fixture.client().get({path: "manuscripts/slow-change.md"}, {include: {body: true}}).then(record => record.body));
   assert.match(JSON.stringify(saved), /Indeed\./);
 });
 
@@ -444,7 +450,7 @@ await step("editing a chapter re-typesets the whole manuscript", async () => {
 await step("an edit made elsewhere during typing becomes a resolvable conflict", async () => {
   await typeAtEndOfParagraph("Worms swallow earth", " Mine.");
   await page.evaluate(() => {
-    const a = window.writer.backend.authority;
+    const a = window.writer.backend.replica;
     const current = window.writer.workspace.getSnapshot().records.get("chapters/worms.md").snapshot.record;
     a.editElsewhere("chapters/worms.md", { body: current.body.replace("# Earthworms", "# Earthworms (theirs)") });
   });

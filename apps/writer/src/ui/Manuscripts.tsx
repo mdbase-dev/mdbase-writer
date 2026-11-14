@@ -1,8 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-// Existing manuscript navigation/workspace shared by legacy, sample and SDK
-// backends. This reads only the app's manuscript route; SDK owns collection URL.
+// Manuscript navigation/workspace shared by real and sample SDK collections. This reads only the app's manuscript route; SDK owns collection URL.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Dialog } from "@mdbase-dev/ui/dialog";
 import type { WriterBackend } from "../backend/types.js";

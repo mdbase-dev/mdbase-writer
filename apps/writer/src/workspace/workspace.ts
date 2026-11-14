@@ -8,7 +8,7 @@ import { applySuggestion, bodyHash, linkPath, targetFor, type CommentChange, typ
 // (autosave, conflict detection, exact recovery — all from the SDK). Every
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { JsonObject } from "@mdbase-dev/sdk";
 import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";

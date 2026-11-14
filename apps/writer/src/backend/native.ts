@@ -1,7 +1,6 @@
 // Writer's domain repository over one borrowed public SDK connection. No
 // legacy backend facade, SDK runtime/setup engine, copied client or app journal.
-import { isMdbaseError, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type DescribeResult, type FileView, type Receipt, type RecordView, type Write } from "@mdbase-dev/sdk";
-import type { JsonObject } from "@mdbase-dev/connect";
+import { isMdbaseError, type JsonObject, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type DescribeResult, type FileView, type Receipt, type RecordView, type Write } from "@mdbase-dev/sdk";
 import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
@@ -51,7 +50,7 @@ function readable(record: RecordView): boolean {
 }
 
 export class NativeWriterBackend implements WriterBackend {
-  readonly kind = "connect";
+  readonly kind: WriterBackend["kind"] = "connect";
   readonly collectionName: string;
   readonly draftNamespace: string;
   readonly records: NextWriterRecords;
@@ -236,7 +235,7 @@ export class NativeWriterBackend implements WriterBackend {
         if (identities.has(record.path) || ids.has(record.id)) throw new Error("Writer's native query repeated a record identity.");
         identities.set(record.path, {id: record.id, revision: record.revision}); ids.add(record.id);
         rows.set(record.id, {path: record.path, types: record.types,
-          ...(record.mtime !== undefined ? {file: {mtime: new Date(record.mtime).toISOString()}} : {})});
+          ...(record.mtime !== undefined ? {modified: new Date(record.mtime).toISOString()} : {})});
       }
       complete = page.complete && !page.cursor;
     }
@@ -571,7 +570,7 @@ export class NativeWriterBackend implements WriterBackend {
       const fields = newCommentFields(input, now, (await this.people()).me?.link); this.check();
       const body = input.text.trim() ? `${input.text.trim()}\n` : "";
       const contract = {...commentContract, type: binding.name};
-      const current = await this.create(commentPath(now), body, fields, contract, input.intent);
+      const current = await this.create(commentPath(now), body, nativeWriteFields(fields), contract, input.intent);
       const projected = await this.contractRecord(current, contract);
       const comment = commentFromRecord(current.path, nativeObject(projected.fields), current.body ?? "");
       if (!comment || current.body !== body) throw new Error("Writer's comment could not be confirmed from its native readback.");

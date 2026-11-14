@@ -131,30 +131,8 @@ canvas preview  ◀──── artifact ────────  raw-block iso
   identities arrive later. Export still awaits the index and annotation discovery;
   real annotation failures are non-blocking problems/warnings, not preview/export
   gates. Missing-dependency diagnostics remain gated by their discovery domain.
-- **Collection ownership** lives in `backend/collection.ts`. `CollectionSchema`
-  centralizes mapped fields, structural starter roles and active contract bindings.
-  `CollectionStore` applies the same classifier for full discovery and incremental
-  `upsert/remove/reset`, producing `CollectionDelta` snapshots. It retains compact
-  domain metadata, not query rows or bodies. Partial discovery preserves already
-  learned effective defaults; authoritative watch rows replace them. Connect owns
-  query pagination, schema/watch lifetimes, bounded path reads and binary descriptors;
-  `backend/bodies.ts` owns lazy selected-source/scoped-comment hydration. The small
-  demo uses the same store; the large demo already uses ConnectBackend. Native CEL
-  link queries remain deferred: installed canonical CEL lacks `asFile()`, and native
-  basename resolution is not Writer's unique-basename rule.
-- **Path resolution** uses shared immutable collection-generation indexes: exact paths,
-  then relative paths, then a unique case-insensitive basename. Comment membership
-  is cached by comments/index identity; only changed manuscript bodies are
-  re-anchored. Comment metadata resolves manuscript targets against the complete
-  collection index; only relevant bodies/replies are fetched in bounded typed
-  path-list queries. Scope expands as nested chapters open. Source annotations
-  remain cached per source. Watch paths (including both rename endpoints) coalesce
-  for 50 ms into bounded no-body queries, update cached index/library/manuscript/
-  annotation/comment entries and publish changed domains. One incremental job runs
-  at a time, draining queued follow-ups. Annotation changes invalidate their old/new
-  source buckets; non-annotation changes preserve those caches. Only explicit retry,
-  schema/type changes and reset/gap events reconcile the full collection. Binary
-  events enumerate affected folders because the SDK has no exact file-stat API.
+- **Collection ownership** lives in `backend/native.ts` over the SDK connection handed to Writer. `CollectionSchema` uses exact native contract bindings; `CollectionStore` retains compact domain metadata. `NativeWriterBackend` reads a complete record/file snapshot and public contract projections, fences identities/revisions, and invalidates metadata on collection watch changes. `backend/bodies.ts` owns lazy selected-source/scoped-comment hydration. Both demos use the same native backend over the SDK testing kit.
+- **Path resolution** uses shared immutable collection-generation indexes: exact paths, then relative paths, then a unique case-insensitive basename. Comment membership is cached by comments/index identity; only changed manuscript bodies are re-anchored. Metadata resolves manuscript targets against the complete collection index; only relevant comment bodies/replies and source annotations are fetched. Scope expands as nested chapters open. Native CEL link queries remain deferred because their basename resolution differs from Writer's unique-basename rule.
 - **Home** lists manuscript metadata before reading bodies. Visible manuscripts
   get bounded background counts. The backend's lazy collection-scoped cache shares
   discovery and body reads across Home/workspace/navigation/focus, evicts failures
