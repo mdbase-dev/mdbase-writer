@@ -1,7 +1,7 @@
 import { commentFromRecord, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { describe, expect, it } from "vitest";
 
-import { peopleFromDirectory, signingFromProblem, toContract, toLocal } from "../backend/comments.js";
+import { peopleFromDirectory, toLocal } from "../backend/comments.js";
 import { PathIndex } from "@mdbase-writer/core/records";
 import { anchorsFor, placeThreads, ThreadPlacement } from "./comments.js";
 
@@ -61,14 +61,13 @@ describe("writing comments", () => {
   it("maps to and from a collection's own field names", () => {
     const mapping = { document: "on", created_at: "created" };
     expect(toLocal({ document: "[[a]]", created_at: "t", motivation: "commenting" }, mapping)).toEqual({ on: "[[a]]", created: "t", motivation: "commenting" });
-    expect(toContract({ on: "[[a]]", created: "t", other: 1 }, mapping)).toEqual({ document: "[[a]]", created_at: "t" });
   });
 });
 
 
 describe("signing comments", () => {
   const account = { issuer: "https://mdbase.dev", subject: "acct_1", name: "Callum", personSettingsUrl: "https://editor.example/?surface=settings#your-person" };
-  const person = { path: "people/Callum Alpass.md", name: "Callum Alpass", identities: [], typeNames: ["person"] };
+  const person = { path: "people/Callum Alpass.md", name: "Callum Alpass", id: "person-id", identities: [], typeNames: ["person"] };
 
   it("signs with the one person record linked to the account", () => {
     const people = peopleFromDirectory({ account, me: { status: "linked", person }, people: [person] });
@@ -89,8 +88,4 @@ describe("signing comments", () => {
     expect(peopleFromDirectory({ account, me: { status: "invalid", paths: ["a.md"] }, people: [] }).me).toBeUndefined();
   });
 
-  it("tells a declined identity permission from an unavailable account", () => {
-    expect(signingFromProblem({ code: "access_denied", message: "not approved" })).toEqual({ kind: "not-approved" });
-    expect(signingFromProblem({ code: "temporarily_unavailable", message: "Account identity information is unavailable." })).toEqual({ kind: "unavailable", reason: "Account identity information is unavailable." });
-  });
 });

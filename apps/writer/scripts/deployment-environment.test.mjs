@@ -29,19 +29,18 @@ test("staging and production are explicit, and production uses the custom domain
   const { deployment } = writerDeploymentFor({ MDBASE_WRITER_DEPLOY_TARGET: "production" });
   assert.equal(deployment.origin, "https://writer.mdbase.dev");
   assert.equal(deployment.connectUrl, "https://connect.mdbase.dev");
-  assert.equal(deployment.loopbackUrl, "http://127.0.0.1:28485");
   assert.equal(deployment.branch, "main");
   assert.equal(writerDeployments.staging.branch, "staging");
   assert.equal(writerDeployments.staging.connectUrl, "https://connect-staging.mdbase.dev");
 });
 
-test("every target has an exact HTTPS app origin and its own Connect loopback port", () => {
+test("every target has an exact HTTPS app and Connect origin", () => {
   assert.deepEqual(
-    Object.fromEntries(Object.entries(writerDeployments).map(([name, d]) => [name, [d.origin, d.connectUrl, d.loopbackUrl]])),
+    Object.fromEntries(Object.entries(writerDeployments).map(([name, d]) => [name, [d.origin, d.connectUrl]])),
     {
-      lab: ["https://lab.mdbase-writer.pages.dev", "https://connect-lab.mdbase.dev", "http://127.0.0.1:28487"],
-      staging: ["https://staging.mdbase-writer.pages.dev", "https://connect-staging.mdbase.dev", "http://127.0.0.1:28486"],
-      production: ["https://writer.mdbase.dev", "https://connect.mdbase.dev", "http://127.0.0.1:28485"],
+      lab: ["https://lab.mdbase-writer.pages.dev", "https://connect-lab.mdbase.dev"],
+      staging: ["https://staging.mdbase-writer.pages.dev", "https://connect-staging.mdbase.dev"],
+      production: ["https://writer.mdbase.dev", "https://connect.mdbase.dev"],
     },
   );
 });

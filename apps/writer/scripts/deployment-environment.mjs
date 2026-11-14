@@ -1,19 +1,15 @@
 // Where each build of mdbase writer is deployed, and which Connect it uses.
 // Lab, staging and production mirror mdbase Reader's targets.
 // `origin` is the exact app origin for that environment (its manifest
-// installation origin). `loopbackUrl` is different: the per-environment port
-// of the local Connect daemon used by the legacy Connect session
-// (src/connect/session.ts). The native SDK entry does not read it, and app
-// loopback serving stays LAB-only in the SDK's own environment selection.
+// installation origin). The SDK owns its local connector routing.
 export const writerDeployments = Object.freeze({
   lab: Object.freeze({
     origin: "https://lab.mdbase-writer.pages.dev",
     editorUrl: "https://editor-lab.mdbase.dev",
     readerUrl: "https://lab.mdbase-reader.pages.dev",
     connectUrl: "https://connect-lab.mdbase.dev",
-    loopbackUrl: "http://127.0.0.1:28487",
     branch: "lab",
-    // Lab is a test deployment: it also serves the in-memory demo (?demo).
+    // Explicit test builds may include the in-memory demo.
     demo: true,
   }),
   staging: Object.freeze({
@@ -21,7 +17,6 @@ export const writerDeployments = Object.freeze({
     editorUrl: "https://editor-staging.mdbase.dev",
     readerUrl: "https://staging.mdbase-reader.pages.dev",
     connectUrl: "https://connect-staging.mdbase.dev",
-    loopbackUrl: "http://127.0.0.1:28486",
     branch: "staging",
     demo: false,
   }),
@@ -30,7 +25,6 @@ export const writerDeployments = Object.freeze({
     editorUrl: "https://editor.mdbase.dev",
     readerUrl: "https://reader.mdbase.dev",
     connectUrl: "https://connect.mdbase.dev",
-    loopbackUrl: "http://127.0.0.1:28485",
     branch: "main",
     demo: false,
   }),

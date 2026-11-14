@@ -3,7 +3,6 @@ export interface WriterDeployment {
   readonly editorUrl: string;
   readonly readerUrl: string;
   readonly connectUrl: string;
-  readonly loopbackUrl: string;
   readonly branch: string;
   readonly demo: boolean;
 }

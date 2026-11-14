@@ -1,23 +1,16 @@
-import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppSwitcher } from "./ui/AppSwitcher.js";
 import { FeedbackButton } from "@mdbase-dev/ui/feedback";
 import { loadThemePreference, saveThemePreference, type ThemePreference } from "@mdbase-dev/ui/theme";
 import { ThemeSelect } from "@mdbase-dev/ui/theme-select";
-import { OpeningScreen } from "@mdbase-dev/ui/screens";
 import { ThemeChoice, TopbarSlot } from "./ui/topbar.js";
 import { SdkWriterRoot, type SdkWriterRootProps } from "./ui/SdkWriterRoot.js";
 
-// Native mode never imports the legacy session/collection URL module.
-// Production keeps its existing default; switching/bootstrap belongs to owner GO.
-const LegacyApp = lazy(async () => ({ default: (await import("./LegacyApp.js")).LegacyApp }));
-export function App(props: Partial<SdkWriterRootProps> = {}) {
-  useLingui();
-  return props.sdk ? <NativeApp {...props} sdk={props.sdk} /> :
-    <Suspense fallback={<OpeningScreen app="writer" title={t`Opening mdbase writer`} />}><LegacyApp /></Suspense>;
+export function App(props: SdkWriterRootProps) {
+  return <WriterShell><SdkWriterRoot {...props} /></WriterShell>;
 }
-function NativeApp(props: SdkWriterRootProps) {
+export function WriterShell({ children }: { children: ReactNode }) {
   useLingui();
   const [theme, setTheme] = useState<ThemePreference>(() => loadThemePreference());
   const [slot, setSlot] = useState<HTMLElement | null>(null);
@@ -27,6 +20,6 @@ function NativeApp(props: SdkWriterRootProps) {
     <div className="app"><header className="topbar">
       <AppSwitcher /><div className="topbar-slot" ref={setSlot} />
       <ThemeSelect className="topbar-theme" value={theme} onChange={setTheme} /><FeedbackButton />
-    </header><SdkWriterRoot {...props} /></div>
+    </header>{children}</div>
   </TopbarSlot.Provider></ThemeChoice.Provider>;
 }

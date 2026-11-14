@@ -2,7 +2,8 @@
 import { act, cleanup } from "@testing-library/react";
 import { render } from "../test/render.js";
 import { useCallback } from "react";
-import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
+import { MemoryReplica } from "@mdbase-dev/sdk/testing";
+import { NextWriterRecords } from "../backend/next-records.js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { RecordView } from "../workspace/workspace.js";
 import { OutlinePanel } from "./OutlinePanel.js";
@@ -21,9 +22,12 @@ beforeEach(() => Object.defineProperty(HTMLElement.prototype, "scrollIntoView", 
 afterEach(() => { cleanup(); reveals.mockClear(); });
 
 async function fixture(body: string) {
-  const authority = createRecordTestAuthority();
-  authority.seed("main.md", { body, frontmatter: { title: "Document" } });
-  const opened = await authority.records.open("main.md", { autosave: false });
+  const replica = new MemoryReplica({ confirmDelayMs: 0 });
+  replica.seed({ path: "main.md", body, frontmatter: { title: "Document" } });
+  const client = await replica.client();
+  const scope = new AbortController();
+  const records = new NextWriterRecords(client, scope.signal);
+  const opened = await records.open("main.md", { autosave: false });
   if (!opened.ok) throw new Error(opened.problem.code);
   const { session, release } = opened.value;
   const props = { main: "main.md", order: ["main.md"], chapters: [], words: 100, byRecord: new Map(), active: "main.md", onOpen: vi.fn(), onJump: vi.fn(), onMove: vi.fn(), onAdd: vi.fn() };
@@ -31,7 +35,7 @@ async function fixture(body: string) {
     const view: RecordView = { path: "main.md", snapshot: session.getSnapshot() };
     return <OutlinePanel {...props} records={new Map([[view.path, view]])} cursor={{ record: view.path, offset }} />;
   };
-  return { session, release, panel };
+  return { session, release: () => { release(); scope.abort(); client.close(); }, panel };
 }
 
 it("does not request the same heading window again when typing reparses its rows", async () => {

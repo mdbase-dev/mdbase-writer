@@ -268,8 +268,8 @@ msgid "Adding…"
 msgstr "追加中…"
 
 #: src/ui/Home.tsx
-msgid "Adds the manuscript type to the note. Its other types, text and location stay as they are."
-msgstr "ノートに原稿のタイプを追加します。ほかのタイプ、本文、場所は変更されません。"
+msgid "Adds the manuscript type to a note with no type. Its text and location stay as they are."
+msgstr "タイプのないノートに原稿タイプを追加します。本文と保存場所は変わりません。"
 
 #: src/ui/Settings.tsx
 msgid "Affiliation"
@@ -278,10 +278,6 @@ msgstr "所属"
 #: src/ui/WorkspaceView.tsx
 msgid "All manuscripts"
 msgstr "すべての原稿"
-
-#: src/ui/ConnectGate.tsx
-msgid "already present"
-msgstr "すでに存在します"
 
 #. placeholder {0}: snap.annotationsLoad.problem ?? ""
 #: src/workspace/workspace.ts
@@ -411,10 +407,6 @@ msgstr "章と画像を確認してから{0}を作成しています…"
 msgid "Checking chapters and images, then making Word… (first use loads about 16 MB)"
 msgstr "章と画像を確認してからWordを作成しています…（初回は約16 MBを読み込みます）"
 
-#: src/ui/ConnectGate.tsx
-msgid "Checking the collection"
-msgstr "コレクションを確認しています"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Checking…"
 msgstr "確認中…"
@@ -426,10 +418,6 @@ msgstr "シカゴ（著者・出版年方式）"
 #: src/ui/names.ts
 msgid "Chicago (notes and bibliography)"
 msgstr "シカゴ（注・参考文献方式）"
-
-#: src/ui/ConnectGate.tsx
-msgid "Choose another collection"
-msgstr "別のコレクションを選択"
 
 #: src/ui/Home.tsx
 msgid "Choose collection"
@@ -540,10 +528,6 @@ msgstr "コレクションのメタデータを読み込み中です。"
 msgid "Collection version"
 msgstr "コレクションのバージョン"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Collections"
-msgstr "コレクション"
-
 #: src/ui/WorkspaceView.tsx
 msgid "Commands"
 msgstr "コマンド"
@@ -585,26 +569,6 @@ msgstr "バージョンを比較"
 msgid "Conflict"
 msgstr "競合"
 
-#: src/ui/ConnectGate.tsx
-msgid "conflicts with an existing file"
-msgstr "既存のファイルと競合しています"
-
-#: src/ui/ConnectGate.tsx
-msgid "Connect a collection"
-msgstr "コレクションを接続"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Connect another collection…"
-msgstr "別のコレクションを接続…"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Connected collections"
-msgstr "接続済みコレクション"
-
-#: src/ui/ConnectGate.tsx
-msgid "Connecting to mdbase connect"
-msgstr "mdbase connect に接続しています"
-
 #: src/ui/Home.tsx
 msgid "Continue writing"
 msgstr "執筆を続ける"
@@ -621,17 +585,9 @@ msgstr "キーをコピー"
 msgid "Could not check manuscript problems"
 msgstr "原稿の問題を確認できませんでした"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Could not connect another collection."
-msgstr "別のコレクションに接続できませんでした。"
-
 #: src/ui/Home.tsx
 msgid "Could not create the manuscript. Please try again."
 msgstr "原稿を作成できませんでした。もう一度お試しください。"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Could not switch collections."
-msgstr "コレクションを切り替えられませんでした。"
 
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
@@ -714,7 +670,7 @@ msgstr "保存を完了できない場合は、画面を離れる前にローカ
 msgid "Download local draft"
 msgstr "ローカルの下書きをダウンロード"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 #: src/ui/Manuscripts.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Download local drafts"
@@ -843,10 +799,6 @@ msgstr "画像から図を作成…"
 #: src/workspace/workspace.ts
 msgid "Figures must be PNG, JPEG, GIF, SVG or WebP images."
 msgstr "図には PNG、JPEG、GIF、SVG、WebP 形式の画像を指定してください。"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Filter collections"
-msgstr "コレクションを絞り込む"
 
 #: src/editor/search-panel.ts
 msgid "Find"
@@ -995,10 +947,6 @@ msgstr "このコレクションではハイライトが設定されていませ
 msgid "Highlights from Reader"
 msgstr "Reader のハイライト"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Hosted by mdbase"
-msgstr "mdbase がホスト"
-
 #: src/i18n/diagnostics.ts
 msgid "Image “{value}” is missing. Add it to the collection or correct its path."
 msgstr "画像「{value}」がありません。コレクションに追加するか、パスを修正してください。"
@@ -1113,10 +1061,6 @@ msgstr "自分の変更を保持"
 #: src/ui/WorkspaceView.tsx
 msgid "Keep writing"
 msgstr "執筆を続ける"
-
-#: src/ui/ConnectGate.tsx
-msgid "kept as it is"
-msgstr "そのまま保持"
 
 #: src/ui/Home.tsx
 #: src/ui/Shortcuts.tsx
@@ -1275,23 +1219,6 @@ msgstr "数式: 中括弧が閉じられていません。"
 msgid "Math: Unmatched closing brace."
 msgstr "数式: 対応する開き中括弧のない閉じ中括弧があります。"
 
-#: src/ui/ConnectGate.tsx
-msgid "mdbase connect is unavailable"
-msgstr "mdbase Connectを利用できません"
-
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer can't use this collection"
-msgstr "mdbase writerはこのコレクションを使用できません"
-
-#. placeholder {0}: literal(snapshot.info.displayName)
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer needs two record contracts in <0>{0}</0>: manuscripts, and Reader sources for citations. Setting up adds only what is missing; existing records are not changed."
-msgstr "mdbase writerには<0>{0}</0>に2種類のレコード契約が必要です。原稿用と、引用に使うReaderの出典用です。設定では不足分だけを追加し、既存のレコードは変更しません。"
-
-#: src/ui/ConnectGate.tsx
-msgid "mdbase writer typesets Markdown records in an mdbase collection into PDF and Word documents, with citations from your mdbase Reader library. Connect a collection to choose what it can access."
-msgstr "mdbase writerは、mdbaseコレクション内のMarkdownレコードを組版し、mdbase Readerライブラリの引用を含むPDFやWord文書を作成します。コレクションを接続して、アクセスを許可する対象を選んでください。"
-
 #: src/ui/CompareDialog.tsx
 msgid "Merged Markdown<0/><1>This starts with your text. Edit it until it is right, then save. Your local settings are kept.</1>"
 msgstr "マージした Markdown<0/><1>自分のテキストから始まります。内容を確認・編集して保存してください。ローカル設定は保持されます。</1>"
@@ -1374,11 +1301,6 @@ msgstr "![[{0}]] に一致する章がありません"
 #: src/i18n/diagnostics.ts
 msgid "No chapter matches ![[{value}]]."
 msgstr "![[{value}]] に一致する章がありません。"
-
-#. placeholder {0}: query.trim()
-#: src/ui/CollectionPicker.tsx
-msgid "No collection matches “{0}”."
-msgstr "「{0}」に一致するコレクションはありません。"
 
 #: src/ui/ExportReview.tsx
 msgid "No file has been downloaded yet. Missing images or chapters can leave this export incomplete. Review these problems before sharing or submitting it."
@@ -1524,10 +1446,6 @@ msgstr "サンゴ礁の形成について"
 msgid "On the manuscript list, use the arrow keys or J and K, then Enter to open."
 msgstr "原稿一覧では、矢印キーまたは J と K を使い、Enter で開きます。"
 
-#: src/ui/CollectionPicker.tsx
-msgid "On your computer"
-msgstr "お使いのコンピューター上"
-
 #: src/editor/chapter-cards.ts
 msgctxt "open embedded chapter action"
 msgid "Open"
@@ -1554,10 +1472,6 @@ msgstr "原稿を開く"
 msgid "Open mdbase Reader"
 msgstr "mdbase Readerを開く"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Open now"
-msgstr "現在開いています"
-
 #: src/ui/SourcesPanel.tsx
 msgid "Open Reader to add a source"
 msgstr "Readerを開いて出典を追加"
@@ -1578,12 +1492,11 @@ msgstr "この箇所をReaderで開く"
 msgid "Opening collections isn't available in this build yet."
 msgstr "このビルドではまだコレクションを開けません。"
 
-#: src/App.tsx
-#: src/ui/ConnectGate.tsx
+#: src/main.tsx
 msgid "Opening mdbase writer"
 msgstr "mdbase writerを開いています"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "Opening the demo collection"
 msgstr "デモコレクションを開いています"
 
@@ -1711,10 +1624,6 @@ msgstr "前の一致"
 msgid "Previous problem"
 msgstr "前の問題"
 
-#: src/ui/ConnectGate.tsx
-msgid "Previously connected"
-msgstr "以前に接続したコレクション"
-
 #: src/ui/WorkspaceView.tsx
 msgid "problem"
 msgstr "問題"
@@ -1743,10 +1652,6 @@ msgstr "原稿として読む"
 msgid "Read as the manuscript<0>Off shows the Markdown as written</0>"
 msgstr "原稿として読む<0>オフにすると、Markdownをそのまま表示します</0>"
 
-#: src/ui/ConnectGate.tsx
-msgid "Reconnect"
-msgstr "再接続"
-
 #: src/ui/connection-notice.ts
 msgid "Reconnecting"
 msgstr "再接続中"
@@ -1771,7 +1676,7 @@ msgstr "@{id}で参照"
 msgid "Regular expression"
 msgstr "正規表現"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "Reload"
 msgstr "再読み込み"
 
@@ -1830,7 +1735,7 @@ msgstr "依存関係を再試行"
 msgid "Retry export"
 msgstr "エクスポートを再試行"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 #: src/ui/Home.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Retry loading"
@@ -1957,18 +1862,6 @@ msgstr "単語数の目標を設定"
 #: src/ui/Home.tsx
 msgid "Set goal"
 msgstr "目標を設定"
-
-#: src/ui/ConnectGate.tsx
-msgid "Set up collection"
-msgstr "コレクションをセットアップ"
-
-#: src/ui/ConnectGate.tsx
-msgid "Set up this collection for writing"
-msgstr "執筆用にこのコレクションをセットアップ"
-
-#: src/ui/ConnectGate.tsx
-msgid "Setting up…"
-msgstr "セットアップ中…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Settings"
@@ -2118,13 +2011,9 @@ msgstr "一部の変更は保存されていません"
 msgid "Some images or chapters could not be loaded. See Problems for their locations."
 msgstr "一部の画像や章を読み込めませんでした。該当箇所は「問題」で確認してください。"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "Something went wrong"
 msgstr "問題が発生しました"
-
-#: src/ui/ConnectGate.tsx
-msgid "Something went wrong."
-msgstr "問題が発生しました。"
 
 #: src/editor/insight.ts
 msgid "Source"
@@ -2204,14 +2093,6 @@ msgstr "選択範囲への編集を提案"
 msgid "Suggest an edit to the selection ({0})"
 msgstr "選択範囲への編集を提案（{0}）"
 
-#: src/ui/CollectionPicker.tsx
-msgid "Switch collection"
-msgstr "コレクションを切り替え"
-
-#: src/ui/CollectionPicker.tsx
-msgid "Switch collection: {name}"
-msgstr "コレクションを切り替え：{name}"
-
 #: src/ui/WorkspaceView.tsx
 msgid "System"
 msgstr "システム"
@@ -2242,7 +2123,7 @@ msgstr "コレクションのバージョンを比較できません。ここで
 msgid "The compile worker stopped."
 msgstr "コンパイルワーカーが停止しました。"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "The demo could not be loaded"
 msgstr "デモを読み込めませんでした"
 
@@ -2326,10 +2207,6 @@ msgstr "テーマ"
 msgid "Thesis or book"
 msgstr "学位論文または書籍"
 
-#: src/ui/ConnectGate.tsx
-msgid "This action could not be completed. Please try again."
-msgstr "この操作を完了できませんでした。もう一度お試しください。"
-
 #: src/ui/Settings.tsx
 msgid "This applies in this browser, to every manuscript."
 msgstr "このブラウザーのすべての原稿に適用されます。"
@@ -2354,17 +2231,9 @@ msgstr "この章は削除されました。ローカルの下書きをダウン
 msgid "This collection does not accept files from Writer."
 msgstr "このコレクションは Writer からのファイルを受け付けません。"
 
-#: src/ui/ConnectGate.tsx
-msgid "This collection is unavailable"
-msgstr "このコレクションは利用できません"
-
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "このコレクションビューを開けませんでした。上のバーから別のコレクションを選択するか、再読み込みして再試行してください。"
-
-#: src/ui/ConnectGate.tsx
-msgid "This is a local development build. The hosted mdbase connect service only accepts applications served over HTTPS, so use Connect's local environment (<0>pnpm dev:environment:up</0> in mdbase-connect) or open the <1>demo collection</1>."
-msgstr "これはローカル開発用ビルドです。ホスト型の mdbase connect サービスは HTTPS で提供されるアプリケーションのみを受け付けるため、Connect のローカル環境（mdbase-connect の <0>pnpm dev:environment:up</0>）を使用するか、<1>デモコレクション</1>を開いてください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2383,10 +2252,6 @@ msgstr "タイトル、著者、要旨、引用スタイル、レイアウト、
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "変更履歴"
-
-#: src/ui/ConnectGate.tsx
-msgid "Try again"
-msgstr "再試行"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2489,26 +2354,9 @@ msgstr "mdbase タブでの承認を待っています…"
 msgid "Waiting for approval…"
 msgstr "承認を待っています…"
 
-#: src/ui/CollectionPicker.tsx
-#: src/ui/ConnectGate.tsx
-msgid "Waiting for mdbase connect…"
-msgstr "mdbase connect を待っています…"
-
 #: src/editor/search-panel.ts
 msgid "Whole words"
 msgstr "単語全体"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be added"
-msgstr "追加されます"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be removed"
-msgstr "削除されます"
-
-#: src/ui/ConnectGate.tsx
-msgid "will be updated"
-msgstr "更新されます"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Word (DOCX)"
@@ -2534,7 +2382,6 @@ msgstr "単語数（例：8000）"
 msgid "Write"
 msgstr "執筆"
 
-#: src/ui/ConnectGate.tsx
 #: src/ui/NativeSignIn.tsx
 msgid "Write from your collection"
 msgstr "コレクションから執筆"
@@ -2602,7 +2449,7 @@ msgstr "ローカル下書きは、ストレージが利用可能な場合にこ
 msgid "Your local text"
 msgstr "ローカルのテキスト"
 
-#: src/LegacyApp.tsx
+#: src/ui/DemoRoot.tsx
 msgid "Your saved text is in your collection. Unsent local drafts are backed up in this browser when storage is available. Download a copy before reloading."
 msgstr "保存したテキストはコレクションにあります。未送信のローカル下書きは、ストレージが利用可能な場合にこのブラウザーにバックアップされます。再読み込みする前にコピーをダウンロードしてください。"
 

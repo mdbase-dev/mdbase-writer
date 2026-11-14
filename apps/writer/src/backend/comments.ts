@@ -1,6 +1,6 @@
-// Comment records as both backends write them: mdbase.comment contract
+// Comment records as Writer writes them: mdbase.comment contract
 // fields, mapped to and from a collection's own field names.
-import type { JsonObject, PeopleDirectory } from "@mdbase-dev/connect";
+import type { JsonObject, PeopleDirectory } from "@mdbase-dev/sdk";
 import { personKey, recordLink, type CommentPeople, type newCommentFields } from "@mdbase-dev/ui/comments";
 
 export interface NewComment extends Readonly<Parameters<typeof newCommentFields>[0]> {
@@ -35,20 +35,7 @@ export function peopleFromDirectory({ account, me, people }: Pick<PeopleDirector
   }
 }
 
-/** Why the account could not be checked, from the directory's problem. */
-export function signingFromProblem(problem: { readonly code: string; readonly message?: string }): Signing {
-  if (problem.code === "access_denied") return { kind: "not-approved" };
-  return { kind: "unavailable", reason: problem.message ?? problem.code };
-}
-
 /** Contract fields under a collection type's own names (unmapped fields keep theirs). */
 export function toLocal(fields: JsonObject, mapping: Readonly<Record<string, string>>): JsonObject {
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [mapping[k] ?? k, v]));
-}
-
-/** A record's frontmatter under the contract's names. */
-export function toContract(frontmatter: JsonObject, mapping: Readonly<Record<string, string>>): JsonObject {
-  const out: JsonObject = {};
-  for (const [canonical, local] of Object.entries(mapping)) if (local in frontmatter) out[canonical] = frontmatter[local] as JsonObject[string];
-  return out;
 }
