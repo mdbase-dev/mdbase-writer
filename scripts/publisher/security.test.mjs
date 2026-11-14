@@ -7,6 +7,7 @@ import { it } from 'node:test';
 import { createRequire } from 'node:module';
 const {parse}=createRequire(new URL('../../apps/writer/package.json',import.meta.url))('yaml');
 import { assertProtocolArchive, productionPin } from './originals.mjs';
+import { CAPTURE_DELAYS, CAPTURE_READ_TIMEOUT } from './publisher.mjs';
 import { assertEntryAsset, smoke } from './smoke.mjs';
 import { installTool } from './tool.mjs';
 import { verifyProvenanceBundle } from './sdk-provenance.mjs';
@@ -67,6 +68,7 @@ it('protected jobs only execute workflow-owned helpers, with ancestry checks bef
  assert.ok(deploy.steps.reduce((sum,step)=>sum+step['timeout-minutes'],0)<deploy['timeout-minutes'],'job deadline must outlive every step bound, including recovery and receipts');
  for(const step of deploy.steps.filter(s=>s.id==='deployment')) {
   assert.match(step.if,/always\(\)/);
+  assert.ok(step['timeout-minutes']*60000>(CAPTURE_DELAYS.length+1)*CAPTURE_READ_TIMEOUT+CAPTURE_DELAYS.reduce((sum,delay)=>sum+delay,0),'deployment capture step must outlive its bounded GET-only re-read');
   assert.match(step.if,/upload.outcome == 'failure'/);assert.match(step.if,/upload.outcome == 'cancelled'/);
  }
  assert.doesNotMatch(JSON.stringify(deploy),/rollback\.mjs recover/);

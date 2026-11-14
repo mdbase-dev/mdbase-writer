@@ -6,7 +6,7 @@ import { cp, readFile, mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { it } from 'node:test';
+import { describe, it } from 'node:test';
 import { createRequire } from 'node:module';
 const {parse}=createRequire(new URL('../../apps/writer/package.json',import.meta.url))('yaml');
 import { assertDispatch, assertCheckout, assertAncestor, deploymentFor } from './refs.mjs';
@@ -18,7 +18,7 @@ import { capturePrevious, rollback } from './rollback.mjs';
 import { assertArtifactMetadata, assertArtifactRun, assertArtifactDirectory } from './artifact.mjs';
 
 
-import { captureDeployment, createReceipt } from './publisher.mjs';
+import { CAPTURE_DELAYS, captureDeployment, createReceipt } from './publisher.mjs';
 const repoRoot=fileURLToPath(new URL('../../',import.meta.url));
 const hashes={WRITER_TRUST_ASSET_SHA256:'7912e40838213e60b65848350d319a48019021317b112e3326429b250f0133d7'};
 const source='a'.repeat(40),tree='b'.repeat(40),origin='https://staging.mdbase-writer.pages.dev';
@@ -204,7 +204,7 @@ it('binds immutable artifact metadata AND the exact workflow/run attempt/manual 
 });
 it('uses page20 and resolves only the unique uploaded URL/full source/channel to a FULL UUID',async()=>{
  const entry={id:uuid,url:deployment.url,deployment_trigger:{metadata:{commit_hash:source,branch:'staging'}}};
- const options={output:'Success '+deployment.url,target:'staging',sha:source,accountId:'a'.repeat(32),apiToken:'fixture'};
+ const options={output:'Success '+deployment.url,target:'staging',sha:source,accountId:'a'.repeat(32),apiToken:'fixture',sleep:async()=>{}};
  const capture=rows=>captureDeployment({...options,fetchImpl:async url=>{assert.match(url,/\/mdbase-writer\/deployments\?per_page=20$/);return Response.json({success:true,result:rows});}});
  assert.deepEqual(await capture([entry]),deployment);
  // Re-uploading identical source is not a source conflict: identify the new URL.
@@ -223,4 +223,57 @@ it('authenticates the real SDK and compares the installed SDK, protocol and unpa
 it('reads candidate data from the source root, not the workflow checkout',()=>{
  assert.equal(sourceRoot({WRITER_SOURCE_ROOT:'/candidate'}),'/candidate');
  assert.equal(sourceRoot({}),process.cwd());
+});
+
+describe('captureDeployment bounded GET-only re-read',()=>{
+ const entry={id:uuid,url:deployment.url,deployment_trigger:{metadata:{commit_hash:source,branch:'staging'}}};
+ const listed=rows=>Response.json({success:true,result:rows});
+ const capture=replies=>{
+  const calls=[],sleeps=[];
+  const run=captureDeployment({output:'Success '+deployment.url,target:'staging',sha:source,accountId:'a'.repeat(32),apiToken:'fixture',
+   fetchImpl:async(url,init)=>{calls.push([url,init.method??'GET']);const reply=replies[Math.min(calls.length,replies.length)-1];if(reply instanceof Error)throw reply;return reply();},
+   sleep:async ms=>{sleeps.push(ms);}});
+  return {run,calls,sleeps};
+ };
+ const budget=CAPTURE_DELAYS.reduce((sum,delay)=>sum+delay,0);
+ const refusal=message=>new RegExp(`^Error: Writer publisher refusal: ${message.replaceAll('/','\\/')}$`);
+ it('re-reads until the list catches up with the upload',async()=>{
+  const {run,calls,sleeps}=capture([()=>listed([]),()=>listed([]),()=>listed([entry])]);
+  assert.deepEqual(await run,deployment);
+  assert.equal(calls.length,3);assert.ok(calls.every(([,method])=>method==='GET'));
+  assert.deepEqual(sleeps,CAPTURE_DELAYS.slice(0,2));
+ });
+ it('retries a 429 honouring Retry-After, and a 5xx or network error',async()=>{
+  const {run,calls,sleeps}=capture([()=>new Response(null,{status:429,headers:{'retry-after':'20'}}),()=>new Response(null,{status:503}),new Error('socket hang up'),()=>listed([entry])]);
+  assert.deepEqual(await run,deployment);
+  assert.equal(calls.length,4);
+  assert.deepEqual(sleeps,[20000,CAPTURE_DELAYS[1],CAPTURE_DELAYS[2]]);
+ });
+ it('caps Retry-After to the fixed bound and then refuses',async()=>{
+  const {run,calls,sleeps}=capture([()=>new Response(null,{status:429,headers:{'retry-after':'600'}})]);
+  await assert.rejects(run,refusal('deployment UUID lookup failed'));
+  assert.equal(calls.length,CAPTURE_DELAYS.length+1);
+  assert.equal(sleeps.reduce((sum,ms)=>sum+ms,0),budget);
+ });
+ it('refuses with the unchanged message once the bound is exhausted',async()=>{
+  const {run,calls,sleeps}=capture([()=>listed([])]);
+  await assert.rejects(run,refusal('actual deployment UUID/source/channel mismatch'));
+  assert.equal(calls.length,CAPTURE_DELAYS.length+1);
+  assert.deepEqual(sleeps,CAPTURE_DELAYS);
+ });
+ it('refuses more than one match immediately',async()=>{
+  const {run,calls,sleeps}=capture([()=>listed([entry,entry])]);
+  await assert.rejects(run,refusal('actual deployment UUID/source/channel mismatch'));
+  assert.equal(calls.length,1);assert.deepEqual(sleeps,[]);
+ });
+ it('refuses a malformed id immediately',async()=>{
+  const {run,calls}=capture([()=>listed([{...entry,id:'12345678'}])]);
+  await assert.rejects(run,refusal('actual deployment UUID/source/channel mismatch'));
+  assert.equal(calls.length,1);
+ });
+ for(const status of [400,401,403,404])it(`refuses a ${status} immediately`,async()=>{
+  const {run,calls,sleeps}=capture([()=>new Response(null,{status})]);
+  await assert.rejects(run,refusal('deployment UUID lookup failed'));
+  assert.equal(calls.length,1);assert.deepEqual(sleeps,[]);
+ });
 });
