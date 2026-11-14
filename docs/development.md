@@ -23,13 +23,13 @@ side (`@mdbase-dev/sdk-lab`, `@mdbase-dev/sdk-staging`, `@mdbase-dev/sdk`) and
 `apps/writer/scripts/writer-sdk.mjs` aliases the build to the verified original for its
 environment. A Connect URL that disagrees with the environment is refused, and every targeted
 build ends with `scripts/verify-connect-target.mjs`, which fails unless the bundle's only Connect
-origin is that environment's. Only demo/test fixture builds (`VITE_WRITER_DEMO=1`) may omit the
-environment.
+origin is that environment's.
 
-The `?demo` collection runs on the SDK's in-memory record authority
-(`@mdbase-dev/connect-testing`), so record sessions, autosave, conflicts, and recovery use the
-same SDK paths as a real collection. It is enabled in development and LAB builds, not staging
-or production. Demo changes are not durable collection data.
+`index.html` loads `src/main.tsx`, which constructs the SDK application for the selected environment. `App` renders `SdkWriterRoot`, then `NativeWriterView` / `NativeWriterBackend`. Sign-in, collection selection and approval belong to the SDK and shared UI. There is no legacy Connect client entry.
+
+The `?demo` collection uses `createTestApp` / `MemoryReplica` from `@mdbase-dev/sdk/testing`, with the same NativeWriterBackend and SDK sessions as real collections. It is enabled in local development and explicit test builds (`VITE_WRITER_DEMO=1`); ordinary LAB, staging and production builds compile the demo import out. `?demo=large` adds the generated perf collection in development only. Demo changes reset on reload. Local development without `?demo` uses the LAB SDK entry.
+
+Writer retains the direct `@mdbase-dev/connect-protocol` file pin solely for the publisher's authenticated-original comparison and cloud-ops repin ownership. Application and manifest validation imports use the SDK. Cloud-ops `tools/sdk-repin/archive.mjs` currently requires Writer's direct protocol pin and advances it with the SDK's bundled protocol bytes; removing it requires updating that automation and the publisher together. The publisher tests intentionally keep verifying this byte identity.
 
 The browser suite needs Chromium plus the `pandoc` and `unzip` CLIs to inspect downloaded
 Word and bundle exports. CI installs all three; install the CLIs with your system package
@@ -102,17 +102,7 @@ its feedback endpoint is loopback, and it is not connected-collection acceptance
 
 ## Against a real collection
 
-The hosted mdbase Connect service accepts applications served over HTTPS only, so a localhost
-build cannot use it. Either run Connect's local environment (`pnpm dev:environment:up` in the
-`mdbase-connect` checkout, then open Writer with `?server=<local connect URL>`), or deploy a build
-to an HTTPS origin and set `MDBASE_WRITER_ORIGIN` when writing the manifest:
-
-```sh
-MDBASE_WRITER_ORIGIN=https://writer.example pnpm --filter @mdbase-writer/app build
-```
-
-`VITE_MDBASE_CONNECT_URL` and `VITE_MDBASE_CONNECT_LOOPBACK_URL` select the Connect service
-and local connector (defaults: production and port 28485).
+Use an environment-specific HTTPS build (`build:lab`, `build:staging` or `build:production`). The verified SDK original owns Connect trust and connector routing; URL parameters and `VITE_MDBASE_CONNECT_*` overrides do not retarget it. Real collection acceptance belongs in an isolated registered LAB deployment.
 
 Use a disposable test collection and review Writer's access and collection setup before approval.
 
@@ -173,7 +163,7 @@ This command needs a local Pandoc installation.
 | Path                 | Purpose                                                                                                                                                                            |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packages/core`      | Markdown dialect (Lezer), per-record Typst translation with source maps, incremental citeproc with a Typst output format, manuscript assembly, and Pandoc materialisation. No DOM. |
-| `apps/writer`        | Web app: Connect session, record-session workspace, compile worker, CodeMirror editor, and canvas preview.                                                                         |
+| `apps/writer`        | Web app: SDK application, record-session workspace, compile worker, CodeMirror editor, and canvas preview.                                                                         |
 | `apps/writer/typst`  | Typst runtime: helper library and the `article` and `thesis` templates.                                                                                                            |
 | `apps/writer/mdbase` | Type pack: the `dev.mdbase.writer.manuscript` contract and starter type, Reader's source contract and type, and the comment pack.                                                  |
 

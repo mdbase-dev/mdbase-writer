@@ -1,6 +1,6 @@
-// What the writer needs from a collection. Two implementations: Connect (real
-// collections) and a demo on the SDK's in-memory record authority.
-import type { JsonObject } from "@mdbase-dev/connect";
+// Writer domain operations over the public SDK.
+import type { JsonObject, RecordSession as SdkRecordSession, RecordOpenOptions as SdkRecordOpenOptions } from "@mdbase-dev/sdk";
+export type { RecordSessionSnapshot } from "@mdbase-dev/sdk";
 import type { CslItem, StyleId, TemplateName } from "@mdbase-writer/core";
 import type { SourceAnnotation } from "@mdbase-writer/core/annotations";
 import type { CommentChange, CommentRecord } from "@mdbase-dev/ui/comments";
@@ -93,42 +93,14 @@ export interface NewManuscript {
   readonly intent?: string;
 }
 
-// This is the workspace's application port, not a concrete SDK class. The
-// current Connect sessions satisfy it unchanged; the new SDK adapter must keep
-// receipt confirmation, drafts, conflict and exact-recovery behavior intact.
-export type RecordSessionState = "saved" | "saved_on_device" | "unsaved" | "saving" | "conflict" | "recovery" | "error" | "deleted";
-
+/** A result problem may also describe a Writer view that has closed. */
 export interface SessionProblem {
   readonly code: string;
   readonly message?: string;
 }
 
-export interface SessionRecord {
-  readonly path: string;
-  readonly revision: string;
-  readonly types: readonly string[];
-  readonly frontmatter: JsonObject;
-  readonly body?: string;
-}
-
-export interface RecordSessionSnapshot {
-  readonly state: RecordSessionState;
-  readonly body: string;
-  readonly frontmatter: JsonObject;
-  readonly record: SessionRecord;
-  readonly remote: SessionRecord | null;
-  readonly dirty: boolean;
-  readonly problem: SessionProblem | null;
-}
-
-export type RecordResolution = { readonly keep: "mine" | "theirs" } | { readonly body: string };
-
-export interface RecordSession {
-  getSnapshot(): RecordSessionSnapshot;
-  subscribe(listener: () => void): () => void;
-  setBody(body: string): void;
-  patchFrontmatter(patch: JsonObject): void;
-  resolve(choice: RecordResolution): void;
+export interface RecordSession extends Pick<SdkRecordSession, "getSnapshot" | "subscribe" | "setBody" | "resolve"> {
+  patchFrontmatter(patch: Partial<JsonObject>): void;
   /** Flush until acknowledged, or preserve the draft with an actionable problem. */
   flush(options?: { timeoutMs?: number }): Promise<{ readonly ok: true } | { readonly ok: false; readonly problem: SessionProblem }>;
 }
@@ -138,10 +110,7 @@ export interface RecordLease {
   release(): void;
 }
 
-export interface RecordOpenOptions {
-  readonly autosave?: { readonly idleMs: number } | false;
-  readonly timeoutMs?: number;
-}
+export type RecordOpenOptions = Pick<SdkRecordOpenOptions, "autosave" | "timeoutMs">;
 
 export interface WriterRecords {
   open(path: string, options?: RecordOpenOptions): Promise<{ readonly ok: true; readonly value: RecordLease } | { readonly ok: false; readonly problem: SessionProblem }>;
@@ -157,7 +126,7 @@ export interface WriterBackend {
   readonly records: WriterRecords;
   listManuscripts(): Promise<Result<ManuscriptSummary[]>>;
   createManuscript(input: NewManuscript): Promise<Result<string>>;
-  /** Marks an existing note as a manuscript (adds the manuscript type; keeps its other types). */
+  /** Promotes an untyped note to a manuscript, preserving its text, metadata and location. */
   adoptManuscript(path: string): Promise<Result<string>>;
   /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path.
    * `intent` names this one creation; a retry with the same `intent` lands once. */
@@ -232,16 +201,6 @@ export function manuscriptSlug(title: string): string {
     .replace(/^-|-$/g, "")
     .slice(0, 60);
   return slug || "untitled";
-}
-
-/**
- * The explicit type value after adding `typeName`: a note that already has a
- * type keeps it (mdbase allows a list of types).
- */
-export function withType(existing: unknown, typeName: string): string | string[] {
-  const list = Array.isArray(existing) ? existing.filter((t): t is string => typeof t === "string") : typeof existing === "string" && existing ? [existing] : [];
-  if (list.some((t) => t.toLowerCase() === typeName.toLowerCase())) return list.length === 1 ? (list[0] as string) : list;
-  return list.length ? [...list, typeName] : typeName;
 }
 
 /** A title for a note that has none: its first heading, else its file name. */

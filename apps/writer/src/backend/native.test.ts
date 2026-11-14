@@ -406,6 +406,15 @@ describe("native Writer domain backend", () => {
     expect(update).toHaveBeenCalledTimes(1);
     expect(update.mock.calls[0]?.[1]).toMatchObject({contract: {id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2", type: "native-manuscript"}, promote: true, patch: {title: "A chapter"}, ifRevision: original.revision});
   });
+  it("refuses typed-note adoption clearly before submitting any write", async () => {
+    const h = await fixture();
+    const note = h.replica.seed({path: "notes/typed.md", types: ["note"], frontmatter: {type: "note", custom: "keep"}, body: "# Typed note\n"});
+    const original = await h.client.get(note.id, {include: {body: true, document: true}});
+    const update = vi.spyOn(h.client, "update");
+    expect(await h.backend.adoptManuscript(note.path)).toEqual({ok: false, message: "Writer can only use notes with no type as manuscripts. This note already has a type."});
+    expect(update).not.toHaveBeenCalled();
+    expect(await h.client.get(note.id, {include: {body: true, document: true}})).toEqual(original);
+  });
   it("reads native files by original file UUID/digest and keeps upload unavailable", async () => {
     const h = await fixture(); const bytes = new Uint8Array([1, 2, 3]);
     const original = await h.client.files.upload("figures/image.png", bytes); await original.confirmed;

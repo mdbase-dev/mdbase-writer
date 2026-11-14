@@ -164,7 +164,7 @@ describe("NextWriterRecords SDK lease value translation (stand-in, not native/ru
     const f = await fixture();
     const lease = await open(f);
     for (const invalid of [NaN, Infinity, new Date(), 1n]) {
-      expect(() => lease.session.patchFrontmatter({ title: "Must not change", bad: invalid })).toThrow("plain JSON values");
+      expect(() => lease.session.patchFrontmatter({ title: "Must not change", bad: invalid } as unknown as Parameters<typeof lease.session.patchFrontmatter>[0])).toThrow("plain JSON values");
       expect(lease.session.getSnapshot()).toMatchObject({ state: "saved", dirty: false, frontmatter: { title: "Draft" } });
     }
     lease.session.patchFrontmatter({ custom: undefined });

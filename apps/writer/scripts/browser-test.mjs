@@ -128,22 +128,26 @@ await step("home lists the demo manuscripts", async () => {
   assert.deepEqual(titles, ["Patient Observation", "Small Agents, Large Effects: Darwin and the Science of Slow Change"]);
 });
 
-await step("an existing note becomes a manuscript, keeping its type and fields", async () => {
+await step("typed-note adoption explains the restriction and preserves the original record", async () => {
+  try {
+  const original = await page.evaluate(() => window.writer.backend.fixture.client().get({ path: "drafts/on-worm-stones.md" }, { include: { body: true, document: true } }));
   await page.getByRole("button", { name: "New manuscript" }).click();
   await page.getByRole("button", { name: "Use a note you already have…" }).click();
   await page.locator(".adopt-note input").fill("worm stones");
   await page.locator(".note-option", { hasText: "On worm stones" }).click();
   await page.getByRole("button", { name: "Use as manuscript" }).click();
-  await page.locator(".bar-title", { hasText: "On worm stones" }).waitFor();
-  await waitFor(() => document.querySelectorAll(".preview-pages canvas.page").length > 0, null);
-  const fm = await page.evaluate(() => window.writer.workspace.getSnapshot().records.get("drafts/on-worm-stones.md").snapshot.frontmatter);
-  assert.deepEqual(fm.type, ["note", "writer-manuscript"]);
-  assert.deepEqual(fm.tags, ["draft"]);
-  assert.equal(fm.title, "On worm stones");
-  await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
-  await page.locator('.home [data-path="drafts/on-worm-stones.md"]').waitFor();
-  const titles = await page.locator(".manuscript-title, .continue-title").allTextContents();
-  assert.ok(titles.includes("On worm stones"), titles.join(", "));
+  await page.getByRole("alert").filter({ hasText: "Writer can only use notes with no type as manuscripts. This note already has a type." }).waitFor();
+  assert.equal(await page.getByRole("dialog", { name: "New manuscript" }).isVisible(), true);
+  const unchanged = await page.evaluate(() => window.writer.backend.fixture.client().get({ path: "drafts/on-worm-stones.md" }, { include: { body: true, document: true } }));
+  assert.deepEqual(unchanged, original);
+  const manuscripts = await page.evaluate(() => window.writer.backend.listManuscripts());
+  assert.equal(manuscripts.ok, true);
+  assert.ok(manuscripts.value.every(manuscript => manuscript.path !== original.path));
+  } finally {
+    // Keep later independent scenarios reachable if this SDK operation refuses.
+    await page.goto(`${base}?demo`);
+    await page.locator(".home [data-path]").first().waitFor();
+  }
 });
 
 await step("opening a paper typesets it with no problems", async () => {
@@ -165,7 +169,7 @@ await step("typing autosaves and updates the preview", async () => {
   keystrokeMs = Date.now() - started;
   assert.notEqual(await previewFingerprint("manuscripts/slow-change.md"), shownBefore, "the preview did not change");
   await waitFor(() => Object.values(Object.fromEntries([...window.writer.workspace.getSnapshot().records].map(([p, r]) => [p, r.snapshot.state]))).every((s) => s === "saved"), null, 10_000);
-  const saved = await page.evaluate(() => window.writer.backend.authority.writes.at(-1)?.body ?? window.writer.backend.authority.writes.at(-1));
+  const saved = await page.evaluate(() => window.writer.backend.fixture.client().get({path: "manuscripts/slow-change.md"}, {include: {body: true}}).then(record => record.body));
   assert.match(JSON.stringify(saved), /Indeed\./);
 });
 
@@ -444,7 +448,7 @@ await step("editing a chapter re-typesets the whole manuscript", async () => {
 await step("an edit made elsewhere during typing becomes a resolvable conflict", async () => {
   await typeAtEndOfParagraph("Worms swallow earth", " Mine.");
   await page.evaluate(() => {
-    const a = window.writer.backend.authority;
+    const a = window.writer.backend.replica;
     const current = window.writer.workspace.getSnapshot().records.get("chapters/worms.md").snapshot.record;
     a.editElsewhere("chapters/worms.md", { body: current.body.replace("# Earthworms", "# Earthworms (theirs)") });
   });

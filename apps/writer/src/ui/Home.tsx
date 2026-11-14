@@ -470,7 +470,7 @@ function NewManuscriptDialog({ backend, open, onClose, onOpen, candidates }: {
                 {adopting ? t`Updating…` : t`Use as manuscript`}
               </button>
             </form>
-            <p className="muted small"><Trans>Adds the manuscript type to the note. Its other types, text and location stay as they are.</Trans></p>
+            <p className="muted small"><Trans>Adds the manuscript type to a note with no type. Its text and location stay as they are.</Trans></p>
           </>
         ) : (
           candidates.length > 0 && (

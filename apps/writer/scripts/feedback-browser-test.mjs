@@ -1,9 +1,11 @@
 // Demo-data acceptance only. Intercepts every feedback POST; never sends mail.
 import assert from "node:assert/strict";
+import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
 const origin = process.env.WRITER_FEEDBACK_TEST_ORIGIN ?? "http://127.0.0.1:8892";
 if (!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(origin)) throw new Error("Feedback acceptance requires a loopback preview.");
+mkdirSync("out/feedback", { recursive: true });
 const browser = await chromium.launch();
 try {
   for (const width of [1440, 390]) {
@@ -34,7 +36,7 @@ try {
     assert.equal(await dialog.locator("details").evaluate((element) => element.open), false);
     assert.equal(await page.evaluate(() => window.feedbackCaptures), 0);
     await message.fill("A private sample draft");
-    await page.screenshot({ path: `/tmp/shared-feedback-writer-form-${width}.png` });
+    await page.screenshot({ path: `out/feedback/form-${width}.png` });
     await message.press("Control+k");
     await message.press("F8");
     assert.equal(await page.locator("dialog[open]").count(), 1);
@@ -61,7 +63,7 @@ try {
     assert.ok(payload.diagnostics.events.some((event) => event.code === "preview_failed"));
     assert.ok(!JSON.stringify(payload).includes("PRIVATE"));
     for (const key of ["context", "screenshot", "reply_email"]) assert.equal(payload[key], undefined);
-    await page.screenshot({ path: `/tmp/shared-feedback-writer-${width}.png` });
+    await page.screenshot({ path: `out/feedback/sent-${width}.png` });
     await context.close();
   }
   console.log("Writer feedback desktop/mobile acceptance passed; all delivery intercepted.");

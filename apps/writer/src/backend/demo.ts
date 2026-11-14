@@ -1,248 +1,46 @@
-// A self-contained demo collection on the SDK's in-memory record authority:
-// real record sessions (autosave, conflicts, recovery) without an account.
-// Loaded only in development builds.
-import type { JsonObject } from "@mdbase-dev/connect";
-import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
+// Explicit development/LAB fixture. Collection operations use NativeWriterBackend.
+import type { JsonObject } from "@mdbase-dev/sdk";
 import type { CslItem } from "@mdbase-writer/core";
-import { changeFields, commentFromRecord, commentPath, newCommentFields, personKey, recordLink, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
-import { CollectionStore, starterSchema, type CollectionRow } from "./collection.js";
-
-import { type People } from "./comments.js";
-import { manuscriptBody, bodySummary, fail, manuscriptSlug, numberedPath, ok, sourceAnnotation, titleFromNote, withType, type CollectionDelta, type CollectionIndex, type ManuscriptSummary, type NewManuscript, type Result, type WriterBackend } from "./types.js";
+import { createDemoApp, DemoWriterBackend, demoRecord } from "./demo-fixture.js";
+import { bodySummary, ok } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
 const relative = (key: string) => key.replace(/^\.\.\/\.\.\/demo\//, "");
 
-export async function createDemoBackend(): Promise<WriterBackend> {
-  const authority = createRecordTestAuthority();
-  const paths = new Set<string>();
-  for (const [key, text] of Object.entries(markdown)) {
+class SampleWriterBackend extends DemoWriterBackend {
+  private readonly lastWritten = new Map<string, { body: string; modified: string }>();
+  override async listManuscripts() {
+    const result = await super.listManuscripts();
+    if (!result.ok) return result;
+    const manuscripts = await Promise.all(result.value.map(async manuscript => {
+      const record = await this.fixture.client().get({ path: manuscript.path }, { include: { body: true } });
+      const body = record.body ?? "";
+      let written = this.lastWritten.get(manuscript.path);
+      if (!written || written.body !== body) {
+        written = { body, modified: new Date(Date.now() - (written ? 0 : (this.lastWritten.size * 4 + 2) * 86_400_000)).toISOString() };
+        this.lastWritten.set(manuscript.path, written);
+      }
+      return { ...manuscript, ...bodySummary(body), modified: written.modified };
+    }));
+    return ok(manuscripts);
+  }
+}
+
+export async function createDemoBackend() {
+  const records = new Map(Object.entries(markdown).map(([key, text]) => {
     const { body, frontmatter } = splitFrontmatter(text);
-    authority.seed(relative(key), { body, frontmatter: frontmatter as JsonObject });
-    paths.add(relative(key));
-  }
-  const stopFollowing = authority.records.follow(authority.watch);
-  // Only the sources the demo manuscripts cite (the demo ships with public builds).
+    return [relative(key), demoRecord(relative(key), frontmatter as JsonObject, body)];
+  }));
   const library = (await import("../../demo/library.json")).default as CslItem[];
-  const store = new CollectionStore(starterSchema());
-  // Give the demo's CSL-only sources ordinary rows, like the large/Connect demo.
   for (const item of library) {
-    const path = `sources/${item.id}.md`, existing = authority.get(path);
-    authority.seed(path, { body: existing?.body ?? "", frontmatter: { ...existing?.frontmatter, type: "reader-source", csl: item as JsonObject } });
-    paths.add(path);
+    const path = `sources/${item.id}.md`, existing = records.get(path);
+    records.set(path, demoRecord(path, { ...existing?.frontmatter, type: "reader-source", csl: item as JsonObject }, existing?.body ?? ""));
   }
-  const rowAt = (path: string): CollectionRow | undefined => {
-    const record = authority.get(path);
-    if (!record) return undefined;
-    const type = record.frontmatter["type"];
-    const types = Array.isArray(type) ? type.filter((t): t is string => typeof t === "string") : typeof type === "string" ? [type] : [];
-    return { ...record, types };
-  };
-  store.upsert([...paths].map((p) => rowAt(p)!));
-  const files = new Map(Object.entries(assets).map(([key, url]) => [relative(key), url]));
-  const listeners = new Set<(paths: readonly string[]) => void>();
-  const dataListeners = new Set<(delta: CollectionDelta) => void>();
-  const changed = new Set<string>();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  store.files([...files.keys()]);
-  const queue = (at: readonly string[]) => {
-    for (const path of at) changed.add(path);
-    clearTimeout(timer);
-    timer = setTimeout(() => void flush(), 50);
-  };
-  const flush = async (): Promise<Result<void>> => {
-    clearTimeout(timer);
-    if (!changed.size) return ok(undefined);
-    const at = [...changed]; changed.clear();
-    const rows: CollectionRow[] = [], missing: string[] = [];
-    for (const path of at) {
-      const row = rowAt(path);
-      if (row) { paths.add(path); rows.push(row); } else { paths.delete(path); missing.push(path); }
-    }
-    const upsert = store.upsert(rows), removed = store.remove(missing);
-    for (const listener of dataListeners) listener({ ...upsert, ...removed, paths: at });
-    return ok(undefined);
-  };
-  const stopWatch = authority.watch.subscribe((change) => {
-    const at = change.kind === "record.renamed" ? [change.from, change.to]
-      : change.kind === "record.created" || change.kind === "record.updated" || change.kind === "record.deleted" ? [change.path] : [];
-    for (const listener of listeners) listener(at);
-    queue(at);
-  });
-  const names = store.people;
-  // The demo is written by the manuscript's author.
-  const me = [...paths].find((p) => names.get(personKey(p)) === "Jordan Ellis");
-  const people: People = { names, ...(me ? { me: { link: recordLink(me), name: "Jordan Ellis" }, signing: { kind: "linked" } } : { signing: { kind: "unlinked" } }) };
-  const readComment = async (path: string): Promise<CommentRecord | null> => {
-    const opened = await authority.records.open(path, { autosave: false });
-    if (!opened.ok) return null;
-    const { frontmatter, body } = opened.value.session.getSnapshot();
-    opened.value.release();
-    return commentFromRecord(path, frontmatter, body);
-  };
-
-  // When each manuscript was last written, for the list: a few days before the
-  // demo opened, and then when this demo last changed its text.
-  const lastWritten = new Map<string, { body: string; modified: string }>();
-  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
-
-  const backend: WriterBackend & { authority: typeof authority } = {
-    /** Exposed so browser tests can simulate other applications' edits. */
-    authority,
-    kind: "demo",
-    collectionName: "Demo collection",
-    draftNamespace: "demo",
-
-    records: authority.records,
-    async listManuscripts() {
-      const out: ManuscriptSummary[] = [];
-      for (const m of store.manuscripts) {
-        // The body as it is now, edits in this demo included.
-        const opened = await authority.records.open(m.path, { autosave: false });
-        if (!opened.ok) {
-          out.push(m);
-          continue;
-        }
-        const { body, frontmatter } = opened.value.session.getSnapshot();
-        opened.value.release();
-        let written = lastWritten.get(m.path);
-        if (!written || written.body !== body) {
-          written = { body, modified: written ? new Date().toISOString() : daysAgo(lastWritten.size * 4 + 2) };
-          lastWritten.set(m.path, written);
-        }
-        out.push({ ...m, title: typeof frontmatter["title"] === "string" ? frontmatter["title"] : m.title, ...(typeof frontmatter["template"] === "string" ? { template: frontmatter["template"] } : {}), ...(typeof frontmatter["csl"] === "string" ? { style: frontmatter["csl"] } : {}), ...bodySummary(body), modified: written.modified });
-      }
-      return ok(out.sort((a, b) => a.title.localeCompare(b.title)));
-    },
-    async createManuscript(input: NewManuscript): Promise<Result<string>> {
-      let path = `manuscripts/${manuscriptSlug(input.title)}.md`;
-      for (let n = 2; paths.has(path); n++) path = `manuscripts/${manuscriptSlug(input.title)}-${n}.md`;
-      const body = manuscriptBody(input.starter, store.library[0]?.key);
-      authority.seed(path, {
-        body,
-        frontmatter: { type: "writer-manuscript", title: input.title, template: input.template, csl: input.style },
-      });
-      paths.add(path);
-      store.upsert([rowAt(path)!]);
-      lastWritten.set(path, { body, modified: new Date().toISOString() });
-      return ok(path);
-    },
-    async adoptManuscript(path: string): Promise<Result<string>> {
-      const opened = await authority.records.open(path, { autosave: false });
-      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
-      const { session, release } = opened.value;
-      const { frontmatter, body } = session.getSnapshot();
-      const title = typeof frontmatter["title"] === "string" && frontmatter["title"] ? frontmatter["title"] : titleFromNote(path, body);
-      session.patchFrontmatter({ type: withType(frontmatter["type"], "writer-manuscript"), title });
-      const flushed = await session.flush();
-      release();
-      if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
-      store.upsert([rowAt(path)!]);
-      lastWritten.set(path, { body, modified: new Date().toISOString() });
-      return ok(path);
-    },
-    async createRecord(path: string, body: string) {
-      let at = path;
-      for (let n = 2; paths.has(at); n++) at = numberedPath(path, n);
-      authority.seed(at, { body, frontmatter: {} });
-      paths.add(at);
-      queue([at]);
-      return ok(at);
-    },
-    async index(): Promise<Result<CollectionIndex>> { return ok(store.index); },
-    async readBody(path: string) {
-      const opened = await authority.records.open(path, { autosave: false });
-      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
-      const { body } = opened.value.session.getSnapshot();
-      opened.value.release();
-      return ok(body);
-    },
-    async library() {
-      return ok(store.library);
-    },
-    async annotationPaths() {
-      return ok([...store.annotations.keys()]);
-    },
-    async annotationsForSource(source) {
-      const out = [];
-      for (const path of store.annotationsForSource(source).keys()) {
-        const record = authority.get(path);
-        if (!record) continue;
-        const a = sourceAnnotation(path, record.frontmatter, record.body ?? "");
-        if (a) out.push(a);
-      }
-      return ok(out);
-    },
-    async readFile(path: string) {
-      const url = files.get(path);
-      if (!url) return fail(`No file at ${path}.`);
-      return ok(new Uint8Array(await (await fetch(url)).arrayBuffer()));
-    },
-    async writeFile(path: string, bytes: Uint8Array, mediaType?: string) {
-      let target = path;
-      for (let n = 2; files.has(target) && n <= 50; n++) target = numberedPath(path, n);
-      files.set(target, URL.createObjectURL(new Blob([bytes as BlobPart], mediaType ? { type: mediaType } : {})));
-      const delta = store.files([target]);
-      for (const listener of dataListeners) listener({ ...delta, paths: [target] });
-      return ok(target);
-    },
-    async comments(scope) {
-      const out: CommentRecord[] = [];
-      for (const path of store.commentScope(scope)) {
-        const c = await readComment(path);
-        if (c) out.push(c);
-      }
-      return ok(out);
-    },
-    async createComment(input) {
-      const now = new Date();
-      const path = commentPath(now);
-      const fields = newCommentFields(input, now, people.me?.link);
-      authority.seed(path, { frontmatter: { type: "comment", ...fields }, body: input.text.trim() ? `${input.text.trim()}\n` : "" });
-      paths.add(path);
-      queue([path]);
-      const comment = commentFromRecord(path, fields, input.text);
-      return comment ? ok(comment) : fail("The comment could not be read back.");
-    },
-    async changeComment(comment, change) {
-      const opened = await authority.records.open(comment.path, { autosave: false });
-      if (!opened.ok) return fail(opened.problem.message ?? opened.problem.code);
-      const { session, release } = opened.value;
-      const { fields, body } = changeFields(comment, change, new Date(), people.me?.link);
-      session.patchFrontmatter(fields);
-      if (body !== undefined) session.setBody(body);
-      const flushed = await session.flush();
-      release();
-      if (!flushed.ok) return fail(flushed.problem.message ?? flushed.problem.code);
-      const next = await readComment(comment.path);
-      return next ? ok(next) : fail("The comment could not be read back.");
-    },
-    async people() {
-      return people;
-    },
-    onCollectionChange(listener) { dataListeners.add(listener); return () => dataListeners.delete(listener); },
-    flushChanges: flush,
-    async reconcile() {
-      store.reset();
-      store.upsert([...paths].flatMap((p) => { const row = rowAt(p); return row ? [row] : []; }));
-      store.files([...files.keys()]);
-      for (const listener of dataListeners) listener({ paths: [], reset: true });
-      return ok(undefined);
-    },
-    onExternalChange(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    dispose() {
-      clearTimeout(timer);
-      dataListeners.clear();
-      stopWatch();
-      stopFollowing();
-      authority.watch.close();
-      listeners.clear();
-    },
-  };
-  return backend;
+  // Match the fake account createTestApp supplies, so demo comments keep their author.
+  const author = records.get("people/Jordan Ellis.md");
+  if (!author) throw new Error("Missing demo author");
+  author.frontmatter["identities"] = [{ issuer: "https://connect.test", subject: "person-0" }];
+  return new SampleWriterBackend(await createDemoApp({ name: "Demo collection", records: [...records.values()] }), new Map(Object.entries(assets).map(([key, url]) => [relative(key), url])), "demo");
 }
