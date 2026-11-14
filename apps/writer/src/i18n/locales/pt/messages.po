@@ -268,8 +268,8 @@ msgid "Adding…"
 msgstr "Adicionando…"
 
 #: src/ui/Home.tsx
-msgid "Adds the manuscript type to the note. Its other types, text and location stay as they are."
-msgstr "Adiciona o tipo manuscrito à nota. Os outros tipos, o texto e a localização permanecem como estão."
+msgid "Adds the manuscript type to a note with no type. Its text and location stay as they are."
+msgstr "Adiciona o tipo manuscrito a uma nota sem tipo. O texto e a localização permanecem inalterados."
 
 #: src/ui/Settings.tsx
 msgid "Affiliation"

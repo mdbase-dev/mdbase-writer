@@ -126,7 +126,7 @@ export interface WriterBackend {
   readonly records: WriterRecords;
   listManuscripts(): Promise<Result<ManuscriptSummary[]>>;
   createManuscript(input: NewManuscript): Promise<Result<string>>;
-  /** Marks an existing note as a manuscript (adds the manuscript type; keeps its other types). */
+  /** Promotes an untyped note to a manuscript, preserving its text, metadata and location. */
   adoptManuscript(path: string): Promise<Result<string>>;
   /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path.
    * `intent` names this one creation; a retry with the same `intent` lands once. */

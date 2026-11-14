@@ -268,8 +268,8 @@ msgid "Adding…"
 msgstr "正在添加…"
 
 #: src/ui/Home.tsx
-msgid "Adds the manuscript type to the note. Its other types, text and location stay as they are."
-msgstr "向笔记添加手稿类型。其他类型、文本和位置均保持不变。"
+msgid "Adds the manuscript type to a note with no type. Its text and location stay as they are."
+msgstr "为没有类型的笔记添加稿件类型。其文本和位置保持不变。"
 
 #: src/ui/Settings.tsx
 msgid "Affiliation"

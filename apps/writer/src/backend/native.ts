@@ -556,6 +556,7 @@ export class NativeWriterBackend implements WriterBackend {
       const binding = await this.binding("manuscript");
       const original = await this.client.get({path}, {include: {body: true, document: true}, signal: this.signal}); this.check();
       if (!unprotected(original) || original.document === undefined) throw new Error("Writer's note is protected or lacks its full source.");
+      if (original.types.length && !original.types.includes(binding.name)) throw new Error("Writer can only use notes with no type as manuscripts. This note already has a type.");
       const contract = {...manuscriptContract, type: binding.name};
       const patch = {title: titleFromNote(path, original.body ?? "")};
       const write = await this.nativeWrite(ids => this.client.update(original, {contract, promote: true, patch, ifRevision: original.revision}, {...ids, signal: this.signal, include: {body: true, document: true}}));
