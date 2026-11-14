@@ -1,19 +1,20 @@
 // Run from apps/writer: pnpm exec vitest run --config scripts/perf/vitest.config.ts
-// No LAB, accounts, network, or product changes. Real backend/workspace/SDK sessions;
-// synthetic query/file transport. Timings are Node proxies, NOT browser paint times.
+// No LAB, accounts or network. Real NativeWriterBackend/workspace/SDK sessions
+// over MemoryReplica. Timings are Node proxies, NOT browser paint times.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { cpus } from "node:os";
 import { performance } from "node:perf_hooks";
-import type { CollectionDescription, CollectionFileDescriptor, JsonObject, MdbaseConnection, QueryInput, QueryMetadataInput, QueryMetadataResult, QueryRecord, QueryResult, ConnectOutcome, CollectionQueryProblemCode } from "@mdbase-dev/connect";
-import { MdbaseCollectionClient, connectFailure, connectProblem, connectSuccess } from "@mdbase-dev/connect/advanced";
-import { createRecordTestAuthority } from "@mdbase-dev/connect-testing";
+import { createTestApp } from "@mdbase-dev/sdk/testing";
+import type { JsonObject } from "@mdbase-dev/sdk";
+import manifest from "../../src/generated/mdbase-app.json";
+import { demoContracts, demoRecord } from "../../src/backend/demo-fixture.js";
+import { NativeWriterBackend } from "../../src/backend/native.js";
 import { PathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
 import { commentFromRecord, commentThreads } from "@mdbase-dev/ui/comments";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { expect, it, vi } from "vitest";
-import { ConnectBackend, annotationContract, commentContract, manuscriptContract, sourceContract } from "../../src/backend/connect.js";
 import { authorYear, searchLibrary } from "../../src/editor/library-search.js";
 import { writerCompletions } from "../../src/editor/completions.js";
 import { CompletionContext } from "@codemirror/autocomplete";
@@ -21,12 +22,13 @@ import { EditorState } from "@codemirror/state";
 import { placeThreads, ThreadPlacement } from "../../src/ui/comments.js";
 import { CommentsPanel } from "@mdbase-dev/ui/comments-panel";
 import { SourcesPanel } from "../../src/ui/SourcesPanel.js";
+import { AppI18nProvider } from "../../src/i18n/provider.js";
 import { ManuscriptWorkspace } from "../../src/workspace/workspace.js";
 import { labelTargets, referenceKeys } from "../../src/editor/insight.js";
 import { wordCount } from "../../src/words.js";
 
 const compiler = vi.hoisted(() => ({ initAt: 0, messages: [] as { type: string; bytes: number; cloneMs: number }[] }));
-vi.mock("../../src/compile/client.js", () => ({ CompileClient: class {
+vi.mock("../../src/compile/client.js", () => { class CompileClient {
   ready = Promise.resolve(0);
   send(message: { type: string }) {
     const start = performance.now();
@@ -38,16 +40,13 @@ vi.mock("../../src/compile/client.js", () => ({ CompileClient: class {
   onResult = () => () => {};
   onFailure = () => () => {};
   terminate() {}
-} }));
+} return { CompileClient, takeCompileClient: () => new CompileClient() }; });
 vi.mock("../../src/export/pandoc.js", () => ({ toDocx: vi.fn() }));
 
 import { counts, generateCollection, main } from "./generator.js";
 const latencyMs = Number(process.env["PERF_LATENCY_MS"] ?? 20);
 const runs = Number(process.env["PERF_RUNS"] ?? 3);
 const filePageSize = Number(process.env["PERF_FILE_PAGE_SIZE"] ?? 500);
-const strictContracts = process.env["PERF_STRICT_CONTRACTS"] !== "0";
-const authorityFeatures = process.env["PERF_AUTHORITY_FEATURES"] !== "0";
-const supports = async (id: string) => connectSuccess(authorityFeatures && ["query-metadata-v1", "read-many-documents-v1"].includes(id));
 for (const [name, value] of Object.entries({ latencyMs, runs, filePageSize })) {
   if (!Number.isFinite(value) || value < (name === "latencyMs" ? 0 : 1)) throw new Error(`Invalid ${name}`);
 }
@@ -55,162 +54,52 @@ const delay = () => latencyMs ? new Promise<void>((resolve) => setTimeout(resolv
 const pad = (n: number) => String(n).padStart(5, "0");
 type Transfer = { operation: string; records: number; bodyBytes: number; jsonBytes: number };
 
-function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
-  const authority = createRecordTestAuthority();
-  const rows: QueryRecord<JsonObject>[] = [];
-  const byPath = new Map<string, QueryRecord<JsonObject>>();
-  const byType = new Map<string, QueryRecord<JsonObject>[]>();
-  const transfers: Transfer[] = [];
-  const seed = (path: string, type: string, frontmatter: JsonObject, body: string) => {
-    const fm = { type, ...frontmatter };
-    authority.seed(path, { frontmatter: fm, body });
-    const row = { path, types: [type], revision: authority.get(path)!.revision, frontmatter: fm, body, file: { path, mtime: "2026-01-01T00:00:00Z", size: Buffer.byteLength(body) } };
-    rows.push(row);
-    byPath.set(path, row);
-    if (!byType.has(type)) byType.set(type, []);
-    byType.get(type)!.push(row);
-  };
-  const body = generateCollection(seed, highlightsPerBook);
-  const contracts = [
-    [manuscriptContract, "writer-manuscript", ["title", "csl", "template"]],
-    [sourceContract, "reader-source", ["title", "csl"]],
-    [annotationContract, "reader-annotation", ["source", "locator"]],
-    [commentContract, "comment", ["document", "created_at", "status", "motivation", "target"]],
-  ] as const;
-  const description: CollectionDescription = {
-    authorityCapabilities: authorityFeatures ? ["query-metadata-v1", "read-many-documents-v1", "query-record-revisions-v1"] : [],
-    protocolVersion: 1, collectionId: "synthetic-perf", displayName: "Synthetic benchmark", specVersion: "0.3", operations: [], changeCursor: 0, types: [],
-    contracts: contracts.map(([contract, typeName, fields]) => ({ ...contract, contractType: "record", digest: "test", schema: {}, implementations: [{ typeName, typeVersion: 1, digest: "test", fields: Object.fromEntries(fields.map((f) => [f, f])) }] })),
-  };
-  const account = (operation: string, data: unknown, records = 0, bodyBytes = 0) => {
-    const text = JSON.stringify(data);
-    transfers.push({ operation, records, bodyBytes, jsonBytes: Buffer.byteLength(text) });
-    return JSON.parse(text) as typeof data;
-  };
-  // Inherit SDK queryPages: real page-size/offset logic and independent page budgets.
-  // Only the authority query evaluator is synthetic (not a full mdbase type engine).
-  class SyntheticClient extends MdbaseCollectionClient<JsonObject> {
-    constructor() { super({ async operation<Result>(operation: string, payload: JsonObject): Promise<Result> {
-      await delay();
-      if (operation === "read") {
-        if (!authorityFeatures || !Array.isArray(payload["paths"])) throw new Error("Unexpected document batch");
-        const paths = payload["paths"] as string[];
-        const items = paths.map((path) => {
-          const r = byPath.get(path);
-          if (!r) return { path, status: "missing" };
-          return { path, status: "found", record: {
-            path, types: r.types, revision: authority.get(path)!.revision,
-            frontmatter: r.frontmatter, effective_frontmatter: r.frontmatter, file: r.file,
-            ...(payload["include_body"] ? { body: r.body } : {}),
-          } };
-        });
-        const bodyBytes = items.reduce((n, item) => n + Buffer.byteLength(item.record?.body ?? ""), 0);
-        const type = byPath.get(paths[0]!)?.types[0] ?? "documents";
-        return account(`read:${type}`, { valid: true, result: { items } }, items.length, bodyBytes) as Result;
-      }
-      if (operation !== "describe") throw new Error("Unexpected raw operation");
-      // Exercise SDK description caching, not a synthetic describe override.
-      account("describe", description);
-      return {
-        authority_capabilities: description.authorityCapabilities,
-        protocol_version: description.protocolVersion, collection_id: description.collectionId,
-        display_name: description.displayName, spec_version: description.specVersion,
-        operations: description.operations, change_cursor: description.changeCursor, types: description.types,
-        contracts: description.contracts.map((c) => ({ ...c, contract_type: c.contractType,
-          implementations: c.implementations.map((i) => ({ ...i, type_name: i.typeName, type_version: i.typeVersion })),
-        })),
-      } as Result;
-    } }, undefined, supports); }
-    override query(input: QueryMetadataInput): Promise<ConnectOutcome<QueryMetadataResult, CollectionQueryProblemCode>>;
-    override query(input?: QueryInput): Promise<ConnectOutcome<QueryResult<JsonObject>, CollectionQueryProblemCode>>;
-    override query(input: QueryInput | QueryMetadataInput): Promise<ConnectOutcome<QueryResult<JsonObject> | QueryMetadataResult, CollectionQueryProblemCode>>;
-    override async query(input: QueryInput | QueryMetadataInput = {}): Promise<ConnectOutcome<QueryResult<JsonObject> | QueryMetadataResult, CollectionQueryProblemCode>> {
-      if (input.output === "metadata" && !authorityFeatures) throw new Error("Unsupported metadata request");
-      for (let n = 0; n < (input.types?.includes("reader-annotation") && !input.includeBody ? annotationLatencyFactor : 1); n++) await delay();
-      if (strictContracts && input.contract && (input.includeBody || input.where || input.select)) {
-        const problem = connectProblem<"operation_invalid">("operation_invalid", "Contract views cannot include bodies, filters or selections.", { details: { diagnostics: [] } });
-        account("rejected-contract", problem);
-        return connectFailure<"operation_invalid">(problem);
-      }
-      // Fail loudly rather than report optimistic timings for an unsupported future query.
-      let paths: Set<string> | undefined;
-      if (input.where) {
-        const list = /^file\.path in (\[.*\])$/.exec(input.where)?.[1];
-        if (!list) throw new Error("Unsupported synthetic where clause");
-        const parsed: unknown = JSON.parse(list);
-        if (!Array.isArray(parsed) || !parsed.every((p) => typeof p === "string")) throw new Error("Expected an exact path list");
-        paths = new Set(parsed);
-      }
-      if (input.cursor || input.groupBy || input.orderBy || input.summaryFunctions || input.summaries) throw new Error("Extend synthetic evaluator for the new query shape before comparing results.");
-      const type = input.contract ? contracts.find(([c]) => c.id === input.contract!.id)?.[1] : undefined;
-      const candidates = type ? byType.get(type)! : input.types ? input.types.flatMap((t) => byType.get(t) ?? []) : rows;
-      const matching = paths ? candidates.filter((r) => paths.has(r.path)) : candidates;
-      const offset = input.offset ?? 0;
-      const limit = input.limit ?? 200;
-      const results = matching.slice(offset, offset + limit).map((r) => ({
-        path: r.path, types: r.types, file: r.file,
-        ...(authorityFeatures ? { revision: r.revision! } : {}),
-        ...(input.frontmatterMode === "effective" ? { effectiveFrontmatter: r.frontmatter! } : input.frontmatterMode === "both" ? { frontmatter: r.frontmatter!, effectiveFrontmatter: r.frontmatter! } : { frontmatter: r.frontmatter! }),
-        ...(input.includeBody ? { body: r.body } : {}),
-      }));
-      const label = (type ?? input.types?.join(",") ?? (input.where ? "changed-paths" : "all-records"))
-        + (input.where && input.select ? ":selection" : "");
-      const meta = { hasMore: offset + limit < matching.length, totalCount: matching.length };
-      const values = (r: QueryRecord<JsonObject>) => Object.fromEntries((input.select ?? []).flatMap((s) => {
-        const expression = typeof s === "string" ? s : s.expression;
-        const name = typeof s === "string" ? s : s.name;
-        const field = /^record\[(.*)\]$/.exec(expression)?.[1];
-        const value = field ? r.frontmatter?.[JSON.parse(field) as string]
-          : expression === "file.path" ? r.path : expression === "file.mtime" ? r.file.mtime : undefined;
-        if (!field && expression !== "file.path" && expression !== "file.mtime") throw new Error(`Unsupported synthetic select: ${expression}`);
-        return value === undefined ? [] : [[name, value]];
-      })) as JsonObject;
-      if (input.output === "metadata") {
-        const value: QueryMetadataResult = { output: "metadata", results: results.map((r) => ({
-          path: r.path, types: r.types, revision: r.revision!, values: values(r),
-        })), meta };
-        return connectSuccess(account(`query:${label}`, value, results.length) as typeof value);
-      }
-      const value = { results: input.select ? results.map((r) => ({ ...r, values: values(r) })) : results, meta };
-      return connectSuccess(account(`query:${label}`, value, results.length, results.reduce((n, r) => n + Buffer.byteLength(r.body ?? ""), 0)) as typeof value);
-    }
+async function fixture(highlightsPerBook?: number, annotationLatencyFactor = 1) {
+  const rows: ReturnType<typeof demoRecord>[] = [];
+  const body = generateCollection((path, type, frontmatter, text) => rows.push(demoRecord(path, { type, ...frontmatter }, text)), highlightsPerBook);
+  const app = await createTestApp({
+    declaration: { id: "writer.perf", name: "Writer benchmark", origin: "https://lab.mdbase-writer.pages.dev", environment: "lab", manifest },
+    collections: [{ name: "Synthetic benchmark", records: rows, contracts: demoContracts }],
+  });
+  const replica = app.replica(), client = app.client();
+  // Actual SDK file operations on the in-memory replica, outside measured startup.
+  for (let i = 0; i < counts.files; i++) {
+    const write = await client.files.upload(`files/image-${pad(i)}.png`, new Uint8Array([0]));
+    await write.confirmed;
   }
-  const client = new SyntheticClient();
-  const files: CollectionFileDescriptor[] = Array.from({ length: counts.files }, (_, i) => ({ path: `files/image-${pad(i)}.png`, fileId: `file-${i}`, revision: "1", contentDigest: `sha256:${"0".repeat(64)}`, size: 10_000, mediaClass: "image", mediaType: "image/png", modifiedAt: "2026-01-01T00:00:00Z" }));
-  const watch = { ...authority.watch, status: { state: "connected" as const, cursor: 0, recovered: false }, problem: null };
-  const connection = {
-    info: () => ({ displayName: "Synthetic benchmark", collectionId: "synthetic-perf" }),
-    describe: client.describe.bind(client), queryPages: client.queryPages.bind(client), queryAll: client.queryAll.bind(client), readMany: client.readMany.bind(client),
-    supportsAuthorityFeature: supports,
-    read: async ({ path }: { path: string }) => {
-      await delay();
-      const record = authority.get(path);
-      if (!record) throw new Error(`Missing benchmark record: ${path}`);
-      return connectSuccess(account("record:read", record, 1, Buffer.byteLength(record.body ?? "")) as typeof record);
-    },
-    watch: async () => connectSuccess(watch),
-    records: {
-      follow: authority.records.follow.bind(authority.records),
-      open: async (...args: Parameters<typeof authority.records.open>) => {
-        await delay();
-        const result = await authority.records.open(...args);
-        if (result.ok) account("record:open", result.value.session.getSnapshot().record, 1, Buffer.byteLength(result.value.session.getSnapshot().body));
-        return result;
-      },
-    },
-    people: { directory: async () => { await delay(); account("people", {}); return connectSuccess({ people: [], account: {}, me: { status: "unlinked" } }); } },
-    files: { async *list() {
-      for (let i = 0; i < files.length; i += filePageSize) {
-        await delay();
-        const page = files.slice(i, i + filePageSize);
-        const copied = account("files:list", page, page.length) as CollectionFileDescriptor[];
-        yield* copied;
-      }
-    } },
+  const transfers: Transfer[] = [];
+  const account = (operation: string, data: unknown, records = 0, bodyBytes = 0) => {
+    transfers.push({ operation, records, bodyBytes, jsonBytes: Buffer.byteLength(JSON.stringify(data)) });
+    return data;
   };
-  // Deliberately narrow facade: unsupported connection methods cannot be used silently.
-  const backend = new ConnectBackend(connection as unknown as MdbaseConnection<JsonObject>);
-  return { authority, backend, rows, transfers, body, seed };
+  const describe = client.describe.bind(client);
+  client.describe = async (...args) => { await delay(); const result = await describe(...args); account("describe", result); return result; };
+  const pages = client.pages.bind(client);
+  client.pages = async function* (...args) {
+    for await (const page of pages(...args)) { await delay(); account("query:all-records", page, page.records.length); yield page; }
+  };
+  const queryContract = client.queryContract.bind(client);
+  client.queryContract = async (...args) => {
+    const type = demoContracts.find(contract => contract.id === args[0].id)?.type;
+    for (let i = 0; i < (type === "reader-annotation" ? annotationLatencyFactor : 1); i++) await delay();
+    const page = await queryContract(...args); account(`query:${type}`, page, page.records.length); return page;
+  };
+  const get = client.get.bind(client);
+  client.get = async (...args) => {
+    await delay(); const record = await get(...args);
+    account(`read:${record.types[0] ?? "note"}`, record, 1, Buffer.byteLength(record.body ?? "")); return record;
+  };
+  const listPage = client.files.listPage.bind(client.files);
+  client.files.listPage = async options => {
+    await delay(); const page = await listPage({ ...options, limit: Math.min(options?.limit ?? filePageSize, filePageSize) });
+    account("files:list", page, page.files.length); return page;
+  };
+  const connection = app.mdbase.connection(client.collection);
+  if (!connection) throw new Error("Missing benchmark SDK connection");
+  const lifetime = new AbortController();
+  const backend = new NativeWriterBackend(connection, { collectionName: connection.displayName, signal: lifetime.signal });
+  const seed = (path: string, type: string, frontmatter: JsonObject, text: string) => replica.seed(demoRecord(path, { type, ...frontmatter }, text));
+  return { replica, backend, rows, transfers, body, seed, close: async () => { backend.dispose(); lifetime.abort(); await app.close(); } };
 }
 
 function totals(events: Transfer[]) {
@@ -246,7 +135,7 @@ it("large collection baseline (opt-in)", async () => {
       compiler.messages.length = 0;
       compiler.initAt = 0;
       const seedStart = performance.now();
-      const f = fixture();
+      const f = await fixture();
       const seedMs = performance.now() - seedStart;
       let workspace: ManuscriptWorkspace | undefined;
       try {
@@ -338,15 +227,15 @@ it("large collection baseline (opt-in)", async () => {
           place3000CommentsFullPaths: measure(fullPathPlacement),
           place3000CommentsBareNames: measure(() => placeThreads(allComments.map((c) => ({ ...c, document: `[[${c.document.split("/").at(-1)}` })), [main], (p) => p === main ? f.body : undefined, snap.recordIndex), 1),
           oneThread3000Replies: measure(() => commentThreads([allComments[0]!, ...allComments.slice(1).map((c) => ({ ...c, inReplyTo: `[[${allComments[0]!.path}]]` }))])),
-          sourcePanelSSR: measure(() => renderToString(createElement(SourcesPanel, { library, cited, loadAnnotations: () => Promise.resolve(annotations), onInsert: noop, onStepCitation: noop, canInsert: true })), 3),
-          commentsPanelSSR: measure(() => renderToString(createElement(CommentsPanel, { threads: placed, people: snap.people, active: null, pending: null, recordTitle: (p) => p, onSelect: noop, onSubmit: ok, onCancel: noop, onReply: ok, onChange: ok, onAccept: ok, onStart: noop })), 3),
+          sourcePanelSSR: measure(() => renderToString(createElement(AppI18nProvider, null, createElement(SourcesPanel, { query: "", setQuery: noop, library, cited, loadAnnotations: () => Promise.resolve(annotations), onInsert: noop, onStepCitation: noop, canInsert: true }))), 3),
+          commentsPanelSSR: measure(() => renderToString(createElement(AppI18nProvider, null, createElement(CommentsPanel, { threads: placed, people: snap.people, active: null, pending: null, recordTitle: (p) => p, onSelect: noop, onSubmit: ok, onCancel: noop, onReply: ok, onChange: ok, onAccept: ok, onStart: noop }))), 3),
           annotationFilter6: measure(() => annotations.ok ? annotations.value.filter((a) => a.source === library[0]!.path || library[0]!.path.endsWith(`/${a.source}`)) : []),
           cloneLibrary5000: measure(() => structuredClone({ type: "library", library: library.map((e) => e.item) })),
         };
         const previousRecords = workspace.getSnapshot().recordPaths;
         const refreshMessagesStart = compiler.messages.length;
         const refreshStart = performance.now();
-        f.authority.editElsewhere("notes/note-00000.md", { body: "Changed in another app" });
+        f.replica.editElsewhere("notes/note-00000.md", { body: "Changed in another app" });
         await until(workspace, () => {
           const current = workspace!.getSnapshot();
           return current.indexLoad.phase === "ready" && current.libraryLoad.phase === "ready" && current.annotationsLoad.phase === "ready" && (current.recordPaths !== previousRecords || f.transfers.some((t) => t.operation === "query:changed-paths" || t.operation === "read:note"));
@@ -357,16 +246,16 @@ it("large collection baseline (opt-in)", async () => {
         f.seed("sources/new-source.md", "reader-source", { csl: { id: "newsource", type: "book", title: "A newly imported source" } }, "New source");
         const sourceChangeStart = performance.now();
         const sourceMessagesStart = compiler.messages.length;
-        f.authority.editElsewhere("sources/new-source.md", { body: "Updated source" });
+        f.replica.editElsewhere("sources/new-source.md", { body: "Updated source" });
         await until(workspace, () => workspace!.getSnapshot().library.some((e) => e.key === "newsource"));
         const newSourceMs = performance.now() - sourceChangeStart;
         const newSourceTransfers = totals(f.transfers.splice(0));
         const sourceWorkerMessages = compiler.messages.slice(sourceMessagesStart);
         output.push({ run: run + 1, seedMs, homeListMs, homeBackgroundMs, readyMs, sourcesUsableMs, sourcesFirstSearchMs, commentsUsableMs, annotationIndexMs, sourceAnnotationsMs, annotationsUsableMs, previewInitializedMs, externalRefreshMs, newSourceMs, newSourceTransfers, commentTransfers, annotationIdentityTransfers, returnHomeMs, returnHomeTransfers, navigationTransfers, noteWorkerMessages, sourceWorkerMessages, homeTransfers, readyTransfers, workspaceTransfers, externalTransfers, computations, workerMessages: [...compiler.messages] });
-      } finally { await workspace?.dispose(); f.backend.dispose(); f.authority.watch.close(); }
+      } finally { await workspace?.dispose(); await f.close(); }
       // Same collection size, redistributed highlights: one book has 300, not six.
       // Only its no-body annotation discovery pages are 6x slower, exposing preview gating.
-      const book = fixture(300, 6);
+      const book = await fixture(300, 6);
       let bookWorkspace: ManuscriptWorkspace | undefined;
       try {
         await book.backend.library();
@@ -384,9 +273,9 @@ it("large collection baseline (opt-in)", async () => {
         const annotations300Ms = performance.now() - readStart;
         expect(highlights.ok && highlights.value.length).toBe(300);
         Object.assign(output.at(-1)!, { slowAnnotationPreviewMs, slowAnnotationIndexMs, annotations300Ms, annotations300Transfers: totals(book.transfers) });
-      } finally { await bookWorkspace?.dispose(); book.backend.dispose(); book.authority.watch.close(); }
+      } finally { await bookWorkspace?.dispose(); await book.close(); }
     }
-    const report = { environment: { node: process.version, cpu: cpus()[0]?.model, platform: process.platform }, counts, latencyMs, filePageSize, strictContracts, authorityFeatures, runs, results: output };
+    const report = { environment: { node: process.version, cpu: cpus()[0]?.model, platform: process.platform }, counts, latencyMs, filePageSize, runs, results: output };
     const json = JSON.stringify(report, null, 2);
     const destination = process.env["PERF_OUTPUT"] ?? "out/perf/large-collection.json";
     mkdirSync(dirname(destination), { recursive: true });

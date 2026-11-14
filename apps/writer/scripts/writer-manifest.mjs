@@ -91,9 +91,7 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
     icon: new URL("favicon.svg", appUrl).href,
     redirect_uris: [appUrl],
     // Every environment's exact app origin, from the deployment table, so the
-    // same declaration can be installed in lab, staging and production. The
-    // Connect loopback ports in that table belong to the legacy Connect
-    // session only; they are never installation origins.
+    // same declaration can be installed in lab, staging and production.
     installation_origins: Object.fromEntries(
       Object.entries(writerDeployments).map(([environment, deployment]) => [
         environment,

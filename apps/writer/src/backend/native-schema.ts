@@ -1,5 +1,4 @@
-import type { DescribeResult, JsonValue } from "@mdbase-dev/sdk";
-import type { JsonObject } from "@mdbase-dev/connect";
+import type { DescribeResult, JsonValue, JsonObject } from "@mdbase-dev/sdk";
 import manifest from "../generated/mdbase-app.json";
 import { annotationContract, CollectionSchema, domainContract, unavailableTypeMessage, type Domain, type WriterSchemaDescription } from "./collection.js";
 import type { UnavailableType } from "./types.js";
@@ -12,9 +11,8 @@ function issuePath(details: JsonValue | undefined): string | null {
   return typeof path === "string" && path ? path : null;
 }
 
-export type NativeJson = null | boolean | number | string | NativeJson[] | { [key: string]: NativeJson };
 /** Application JSON display values only. Native witnesses stay in SDK RecordViews. */
-export function nativeJson(value: unknown): NativeJson {
+export function nativeJson(value: unknown): JsonValue {
   if (value === null || typeof value === "string" || typeof value === "boolean") return value;
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (value instanceof Date) return value.toISOString();
@@ -24,7 +22,7 @@ export function nativeJson(value: unknown): NativeJson {
   }
   throw new Error("Writer requires JSON-compatible native fields.");
 }
-export function nativeWriteFields(fields: JsonObject): { [key: string]: NativeJson } {
+export function nativeWriteFields(fields: Readonly<Record<string, unknown>>): JsonObject {
   return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, nativeJson(value)]));
 }
 export function nativeObject(value: JsonValue): JsonObject {
@@ -79,9 +77,7 @@ export function nativeWriterSchema(catalog: DescribeResult): CollectionSchema {
       }
       return [{typeName: type.name, fields: binding.fields}];
     })}));
-  const schema = new CollectionSchema({types: catalog.types.map(type => ({name: type.name})), contracts,
-    // A collection without settings reports null: that is no settings, not an error.
-    configuration: {settings: catalog.settings === null ? {} : nativeObject(catalog.settings)}, unavailableTypes}, false);
+  const schema = new CollectionSchema({contracts, unavailableTypes});
   const manuscripts = schema.bindings("manuscript", true);
   if (!manuscripts.ok && !schema.unavailableMessage("manuscript")) throw new Error(manuscripts.message);
   return schema;

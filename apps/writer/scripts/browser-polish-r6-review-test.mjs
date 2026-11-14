@@ -237,7 +237,7 @@ try {
     await page.evaluate(() => {
       const backend = window.writer.backend, original = backend.records.open.bind(backend.records);
       const readBody = backend.readBody.bind(backend);
-      backend.readBody = path => path === "chapters/worms.md" ? Promise.resolve({ ok: true, value: backend.authority.get(path).body }) : readBody(path);
+      backend.readBody = path => path === "chapters/worms.md" ? Promise.resolve({ ok: true, value: backend.replica.allRecords.find(record => record.path === path).body }) : readBody(path);
       window.titleRefused = 0;
       backend.records.open = (path, options) => {
         if (path === "chapters/worms.md" && options?.autosave === false && window.titleRefused < 2) { window.titleRefused++; return Promise.resolve({ ok: false, problem: { code: "lease_options_conflict" } }); }

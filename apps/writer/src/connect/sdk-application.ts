@@ -8,8 +8,7 @@ export type WriterBuildEnvironment = "lab" | "staging" | "production";
  * table in scripts/deployment-environment.mjs, whose origins the manifest
  * builder declares as installation_origins. Production is held to its exact
  * HTTPS origin; a build for one environment is never retargeted to another.
- * (The 127.0.0.1 ports in that table are the legacy Connect session's local
- * daemon loopback, not app origins, and play no part here.) */
+ */
 const WRITER_ORIGINS: Record<WriterBuildEnvironment, string> = {
   lab: "https://lab.mdbase-writer.pages.dev",
   staging: "https://staging.mdbase-writer.pages.dev",
@@ -30,11 +29,10 @@ export interface WriterEnvironmentSelection {
 }
 
 /** Native selection for an explicit build environment. An absent environment
- * selects nothing (local development keeps its existing entries); an unknown
+ * selects nothing (the local entry explicitly selects LAB); an unknown
  * one refuses. A known environment refuses unless the bundled manifest
  * declares that environment's exact origin as its own homepage origin and as
- * its installation origin, so staging/production can never fall back to the
- * legacy entry or borrow another environment's build. */
+ * its installation origin, so each deployment uses its own build. */
 export function selectWriterBuildEnvironment(
   environment: string | undefined,
   candidate: WriterManifestOrigins = manifest as WriterManifestOrigins,
@@ -74,7 +72,7 @@ export function createWriterMdbase(input: {
 }
 
 /** The native entry for an explicit lab, staging or production build.
- * Refusals from selectWriterBuildEnvironment propagate: no legacy fallback. */
+ * Refusals from selectWriterBuildEnvironment propagate. */
 export function writerMdbaseForBuild(environment: string | undefined): Mdbase | undefined {
   const selection = selectWriterBuildEnvironment(environment);
   return selection ? createWriterMdbase({environment: selection.environment}) : undefined;
@@ -83,7 +81,7 @@ const usesSdk = (environment: string | undefined): boolean => isWriterBuildEnvir
 
 /** The SDK's Private-collection consent popup lands back on the manifest's
  * redirect URI (the app root) with `state` and `code` or `error`. Only the SDK
- * entry uses that popup; the legacy entry's own callback is left alone. */
+ * entry uses that popup. */
 export function isWriterGrantReturn(environment: string | undefined, href: string): boolean {
   if (!usesSdk(environment)) return false;
   const url = new URL(href);
