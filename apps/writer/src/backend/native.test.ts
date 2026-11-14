@@ -293,6 +293,50 @@ describe("native Writer domain backend", () => {
     });
     expect(await h.backend.index()).toMatchObject({ok: false, message: expect.stringContaining(failure === "changed snapshot" ? "snapshot changed" : "cursor repeated")});
   });
+  // Connect #1502: a save's acknowledgement changes the view mid-load. The replica ends
+  // the continuation (`cursor_stale`) or a later page reports another snapshot; Writer
+  // starts the whole load over instead of showing an error until Retry.
+  it("restarts the load when a save mid-load ends a contract continuation with cursor_stale", async () => {
+    const h = await fixture();
+    for (let index = 0; index < 129; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
+    const original = h.client.queryContract.bind(h.client);
+    let saved = false; const refusals: unknown[] = [];
+    vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
+      // The second manuscript page follows a save: the actual replica refuses it.
+      if (!saved && options?.cursor && contract.id === "dev.mdbase.writer.manuscript") {saved = true; h.replica.editElsewhere("notes/chapter.md", {body: "Saved\n"});}
+      try {return await original(contract, options);}
+      catch (error) {refusals.push(error); throw error;}
+    });
+    const manuscripts = await h.backend.listManuscripts();
+    expect(refusals).toEqual([expect.objectContaining({code: "invalid_request", reason: "cursor_stale"})]);
+    expect(manuscripts.ok && manuscripts.value).toHaveLength(130);
+    expect(await h.backend.readBody("notes/chapter.md")).toEqual({ok: true, value: "Saved\n"});
+  });
+  it("restarts the load once when the record pages' snapshot advances between pages", async () => {
+    const h = await fixture(); const actual = await h.client.query({}, {include: {effective: true}});
+    const pages = h.client.pages.bind(h.client);
+    const spy = vi.spyOn(h.client, "pages").mockImplementationOnce(async function* () {
+      yield {...actual, records: [], complete: false, cursor: "first-cursor"};
+      yield {...actual, records: [], complete: false, asOf: actual.asOf + 1, cursor: "next-cursor"};
+      throw new Error("The repository must stop before requesting another page of a changed snapshot");
+    }).mockImplementation((...args) => pages(...args));
+    expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+  it("surfaces persistent staleness after a bounded number of restarts", async () => {
+    const h = await fixture();
+    const describe = vi.mocked(h.client.describe); describe.mockClear();
+    const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "invalid_request", recovery: "fix_request", message: "restart from the first query page", reason: "cursor_stale"}));
+    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "The native collection operation could not complete (invalid_request: cursor_stale)."});
+    expect(query).toHaveBeenCalledTimes(3);
+    expect(describe).toHaveBeenCalledTimes(3);
+  });
+  it("does not restart the load for other refusals", async () => {
+    const h = await fixture();
+    const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "invalid_request", recovery: "fix_request", message: "Bad request", reason: "bad_selector"}));
+    expect((await h.backend.listManuscripts()).ok).toBe(false);
+    expect(query).toHaveBeenCalledTimes(1);
+  });
   it.each(["protected", "wrong identity"]) ("does not expose a lazy body from %s native readback", async failure => {
     const h = await fixture(); await h.backend.index();
     const get = h.client.get.bind(h.client);

@@ -29,6 +29,17 @@ const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000;
 const CONTRACT_PAGE_SIZE = 128;
 /** Pauses before each further account check after a transient failure. */
 const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
+/** A metadata load the collection changed under starts over at most this many times
+ * in all; each further try first waits up to its pause for the change to arrive. */
+const METADATA_ATTEMPTS = 3;
+const METADATA_RESTART_MS = [200, 500];
+/** The collection's view changed while Writer was reading it page by page: the pages
+ * no longer form one snapshot, and the whole load starts over. */
+class SnapshotChanged extends Error {}
+/** A continuation the replica ended because the view changed (any change does). */
+function staleContinuation(error: unknown): boolean {
+  return isMdbaseError(error) && error.code === "invalid_request" && (error.reason === "cursor_stale" || error.reason === "cursor_expired");
+}
 function unprotected(record: RecordView): boolean {
   return record.state.state === "confirmed" && readable(record);
 }
@@ -66,6 +77,8 @@ export class NativeWriterBackend implements WriterBackend {
   /** The page size each domain's contract metadata last loaded at, so a reload
    * does not repeat the refused sizes. */
   private readonly contractPageSizes = new Map<Domain, number>();
+  /** Metadata restarts waiting for the next collection change. */
+  private readonly changeWaiters = new Set<() => void>();
   private peopleJob: Promise<People> | undefined;
   private peopleFailed = false;
   private writing = false;
@@ -144,7 +157,7 @@ export class NativeWriterBackend implements WriterBackend {
   private check(generation?: number): void {
     this.signal.throwIfAborted();
     if (this.disposed || !this.connection.isCurrent()) throw new Error("Writer's collection has changed.");
-    if (generation !== undefined && generation !== this.generation) throw new Error("Writer's collection discovery has changed. Retry the read.");
+    if (generation !== undefined && generation !== this.generation) throw new SnapshotChanged("Writer's collection discovery has changed. Retry the read.");
   }
   private async safely<T>(operation: () => Promise<T>): Promise<Result<T>> {
     try {this.check(); const value = await operation(); this.check(); return ok(value);}
@@ -161,6 +174,7 @@ export class NativeWriterBackend implements WriterBackend {
   private invalidate(paths: readonly string[]): void {
     if (this.disposed) return;
     ++this.generation; this.cached = undefined; this.peopleJob = undefined;
+    for (const waiter of [...this.changeWaiters]) waiter();
     for (const listener of this.external) listener(paths);
     for (const listener of this.collection) listener({paths, reset: true});
   }
@@ -173,7 +187,30 @@ export class NativeWriterBackend implements WriterBackend {
     void job.then(() => {if (this.metadataJob === job) this.metadataJob = undefined;}, () => {if (this.metadataJob === job) this.metadataJob = undefined;});
     return job;
   }
+  /** A save's acknowledgement changes the view: the replica then ends a continuation
+   * (`cursor_stale`/`cursor_expired`), or a later page reports another snapshot. Neither
+   * is a failure of the collection, so the load starts over from its first page under
+   * a fresh generation, a bounded number of times. Other errors surface at once. */
   private async loadMetadata(): Promise<NativeMetadata> {
+    for (let attempt = 1; ; attempt++) {
+      const before = this.generation;
+      try {return await this.loadMetadataOnce();}
+      catch (error) {
+        if (attempt >= METADATA_ATTEMPTS || this.signal.aborted || this.disposed || !(error instanceof SnapshotChanged || staleContinuation(error))) throw error;
+      }
+      await this.nextChange(before, METADATA_RESTART_MS[attempt - 1] ?? 0); this.check();
+    }
+  }
+  /** Resolves once the collection changes after `generation`, or after `ms`. */
+  private nextChange(generation: number, ms: number): Promise<void> {
+    if (generation !== this.generation) return Promise.resolve();
+    return new Promise(resolve => {
+      const done = () => {clearTimeout(timer); this.changeWaiters.delete(done); this.signal.removeEventListener("abort", done); resolve();};
+      const timer = setTimeout(done, ms);
+      this.changeWaiters.add(done); this.signal.addEventListener("abort", done, {once: true});
+    });
+  }
+  private async loadMetadataOnce(): Promise<NativeMetadata> {
     const watch = this.discoveryWatch();
     await watch.ready; this.check();
     const generation = this.generation;
@@ -189,7 +226,7 @@ export class NativeWriterBackend implements WriterBackend {
     let complete = false;
     for await (const page of this.client.pages({limit: 500}, {include: {effective: true}, signal: this.signal})) {
       this.check(generation);
-      if (asOf !== undefined && asOf !== page.asOf) throw new Error("Writer's native query snapshot changed.");
+      if (asOf !== undefined && asOf !== page.asOf) throw new SnapshotChanged("Writer's native query snapshot changed.");
       asOf = page.asOf;
       if (page.cursor) {
         if (recordCursors.has(page.cursor)) throw new Error("Writer's native record cursor repeated.");
@@ -256,7 +293,7 @@ export class NativeWriterBackend implements WriterBackend {
     let cursor: string | undefined;
     do {
       const result = await this.client.queryContract(contract, {pageSize, ...(cursor ? {cursor} : {}), signal: this.signal}); this.check(generation);
-      if (!sameDigest(result.contractDigest, digest) || result.page.asOf !== asOf) throw new Error("Writer's contract metadata snapshot or digest changed.");
+      if (!sameDigest(result.contractDigest, digest) || result.page.asOf !== asOf) throw new SnapshotChanged("Writer's contract metadata snapshot or digest changed.");
       const witnesses = new Map(result.page.records.map(record => [record.id, record]));
       if (witnesses.size !== result.page.records.length) throw new Error("Writer's contract query repeated a record identity.");
       for (const projected of result.records) {
