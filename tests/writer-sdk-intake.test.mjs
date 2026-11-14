@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
+import { productionPin } from '../scripts/publisher/originals.mjs';
 
 const root=resolve('.');
 const read=path=>readFile(resolve(root,path));
@@ -13,14 +14,14 @@ const metadata=bytes=>JSON.parse(/^const metadata = (\{.*\});$/m.exec(bytes.toSt
 const member=(archive,path)=>execFileSync('tar',['-xOf',resolve(root,'vendor',archive),`package/dist/${path}`],{maxBuffer:8_000_000});
 
 test('production npm archive and installed SDK match the authenticated release',async()=>{
- const pin=JSON.parse(await read('vendor/sdk-production-beta212.json'));
- assert.equal(pin.sha256,'663ae01a63eb0fd348e0c164fd4e8d8f530218107caa0538aa0c37924c3609e6');
- assert.equal(pin.sourceCommit,'147416ca5eb2df443f01c1bf75bbfee6d6cc9abe');
+ const {pin}=await productionPin(root);
+ const provenance=JSON.parse(member(pin.artifact,'native/provenance.json'));
+ assert.equal(pin.sourceCommit,provenance.commit);
  assert.equal(hash(await read(`vendor/${pin.artifact}`)),pin.sha256);
  const pkg=JSON.parse(await read('apps/writer/package.json'));
  const target=process.env.VITE_MDBASE_ENV==='staging'?'staging':'production';
  const archive=pin.artifact;
- assert.equal(pkg.dependencies['@mdbase-dev/sdk'],'0.1.0-beta.212');
+ assert.equal(pkg.dependencies['@mdbase-dev/sdk'],pin.version);
  const original=member(pin.artifact,'application/packaged-trust.js');
  assert.equal(hash(original),pin.packagedTrustModuleSha256);
  assert.deepEqual(await read('apps/writer/node_modules/@mdbase-dev/sdk/dist/application/packaged-trust.js'),member(archive,'application/packaged-trust.js'));
@@ -28,7 +29,7 @@ test('production npm archive and installed SDK match the authenticated release',
  assert.equal(release.environment,'production');
  assert.equal(release.cpOrigin,'https://connect.mdbase.dev');
  assert.equal(release.logOrigin,'https://log.mdbase.dev');
- assert.equal(release.assetSha256,'7912e40838213e60b65848350d319a48019021317b112e3326429b250f0133d7');
+ assert.equal(release.assetSha256,pin.trust.sha256);
  const sdk=path=>'apps/writer/node_modules/@mdbase-dev/sdk/dist/'+path;
  const {appReleaseTrust}=await import(pathToFileURL(resolve(root,sdk('application/packaged-trust.js'))));
  const {selectAppEnvironment}=await import(pathToFileURL(resolve(root,sdk('app-host/app-environment.js'))));
