@@ -83,6 +83,44 @@ it("retries unsettled saves on focus as well as reconnect and removes both liste
 });
 
 describe("workspace reliability", () => {
+  it.each([{ paths: [] }, { paths: ["annotations/quote.md"] }])("invalidates quotation content on reset with $paths even when membership stays the same", async ({ paths }) => {
+    const { backend, open } = await fixture();
+    let changed!: (delta: CollectionDelta) => void;
+    backend.onCollectionChange = listener => { changed = listener; return () => {}; };
+    backend.annotationPaths = vi.fn(async () => ok(["annotations/quote.md"]));
+    backend.readBody = vi.fn(backend.readBody);
+    const workspace = open();
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().annotationsLoad.phase).toBe("ready"));
+    const version = workspace.getSnapshot().annotationVersion;
+    changed({ paths, reset: true });
+    await workspace["metadataJobs"].annotationsLoad;
+    expect(workspace.getSnapshot().annotationPaths).toEqual(new Set(["annotations/quote.md"]));
+    expect(workspace.getSnapshot().annotationVersion).toBe(version + 1);
+    expect(backend.annotationPaths).toHaveBeenCalledTimes(2);
+    expect(backend.readBody).not.toHaveBeenCalled();
+  });
+
+  it("keeps quotation content cached for an unrelated reset and refreshes a content-only annotation delta", async () => {
+    const { backend, open } = await fixture();
+    let changed!: (delta: CollectionDelta) => void;
+    backend.onCollectionChange = listener => { changed = listener; return () => {}; };
+    backend.annotationPaths = vi.fn(async () => ok(["annotations/quote.md"]));
+    backend.index = vi.fn(backend.index);
+    const workspace = open();
+    await ready(workspace);
+    await vi.waitFor(() => expect(workspace.getSnapshot().annotationsLoad.phase).toBe("ready"));
+    const version = workspace.getSnapshot().annotationVersion;
+    changed({ paths: ["main.md"], reset: true });
+    await workspace["metadataJobs"].annotationsLoad;
+    expect(workspace.getSnapshot().annotationVersion).toBe(version);
+    changed({ paths: ["annotations/quote.md"], annotations: true });
+    await workspace["metadataJobs"].annotationsLoad;
+    expect(workspace.getSnapshot().annotationVersion).toBe(version + 1);
+    expect(backend.annotationPaths).toHaveBeenCalledTimes(3);
+    expect(backend.index).toHaveBeenCalledTimes(2);
+  });
+
   it("refuses chapter creation before the main record session is open", async () => {
     const { backend, open } = await fixture();
     const recordOpen = backend.records.open.bind(backend.records);
