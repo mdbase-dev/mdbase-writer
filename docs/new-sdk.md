@@ -1,5 +1,10 @@
 # New SDK migration
 
+These are historical migration and intake notes. Current dependencies are pinned
+in `apps/writer/package.json`. Vendor folders keep only the current production,
+LAB and staging originals and their verification metadata; superseded archives
+and intake records are recoverable from the commits that used them.
+
 ## Current declared Private setup SDK intake — 2026-10-15
 
 SDK `9a033b252860ec8624da0abb5ffdecbac56332d2` replaces the prior
@@ -38,7 +43,7 @@ native ID. An optional explicit registered ID must match that SDK binding. SDK
 startup, authorization, collection selection, configuration, foreground state and
 physical shutdown stay SDK-owned.
 
-The collection screens come from `@mdbase-dev/ui/collections`, vendored as
+The collection screens came from `@mdbase-dev/ui/collections`, then vendored as
 `vendor/mdbase-dev-ui-dev-9553ad66.tgz` (pin: `vendor/mdbase-ui-dev.json`). Its
 optional `@mdbase-dev/sdk` peer resolves to Writer's own SDK dependency.
 `SdkWriterRoot` calls `start()` and renders the shared `CollectionGate`, which
@@ -111,7 +116,7 @@ A reconnected watch reloads the collection, and it never closes the borrowed cli
 
 The normal original development archive from source
 `3f417b6d941a42444f17568d7489071d23fcb141`, original cut
-`sdk-dev-3f417b6d`, is pinned in `vendor/mdbase-next-sdk.json` (4346749 bytes,
+`sdk-dev-3f417b6d`, was pinned in `vendor/mdbase-next-sdk.json` (4346749 bytes,
 SHA256 `0c5f04c6adad67d747055ebe12963403e374aefde0999861d759f35e4e118ba6`).
 The SDK bundles the original beta129 `c280cd194ffd` protocol archive; Writer's
 ordinary direct `d765e675c3da` legacy protocol dependency is unchanged. This
@@ -119,7 +124,7 @@ archive has no vendor warnings; the earlier unused-protocol exception is not
 carried forward.
 Both SHA256 and SHA512 were checked independently, followed by ordinary and frozen
 installation. There are no aliases, package rewrites, private SDK imports or
-installed-module swaps. Earlier SDK/native archives remain preserved. This cut
+installed-module swaps. Earlier SDK/native archives are preserved in git history. This cut
 includes atomic contract body updates/promotion and public explicit-digest
 `MemoryContract` fixtures, public error/status helpers and portable/native-origin
 sign-in APIs in one pin; no application loader workaround is supplied. The `41c`

@@ -7,8 +7,9 @@
 // `@mdbase-dev/sdk-staging`, `@mdbase-dev/sdk`), as in mdbase Reader. A build
 // for one environment refuses an SDK packaged for another; it never falls back.
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { readFile, realpath } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { installedMembers, originalMembers } from "../../../scripts/publisher/originals.mjs";
@@ -16,12 +17,14 @@ import { writerDeployments } from "./deployment-environment.mjs";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
+const { dependencies } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 /** Intake pins (under vendor/) for each environment's SDK original. */
 export const writerSdkPins = Object.freeze({
-  lab: "sdk-lab-beta188.json",
-  staging: "sdk-staging-beta188.json",
-  production: "sdk-production-beta209.json",
+  lab: `${basename(dependencies["@mdbase-dev/sdk-lab"], ".tgz")}.json`,
+  staging: `${basename(dependencies["@mdbase-dev/sdk-staging"], ".tgz")}.json`,
+  // Matches the production intake filename written by sdk-repin.
+  production: `sdk-production-${dependencies["@mdbase-dev/sdk"].replace(/^0\.1\.0-beta\./u, "beta")}.json`,
 });
 
 /** Installed package names to try, in order. The plain name comes first so a
