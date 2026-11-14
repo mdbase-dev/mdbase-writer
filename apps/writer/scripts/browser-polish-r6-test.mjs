@@ -246,7 +246,19 @@ try {
     const citation = page.locator(".cm-lp-footnote .is-cite").filter({ hasText: "Darwin" });
     await citation.waitFor();
     assert.match(await citation.textContent(), /Darwin/);
-    await citation.evaluate(element => element.parentElement.classList.add("cm-comment"));
+    // Comment on the passage through the footnote with a real thread. CodeMirror
+    // owns its line DOM and redraws a class added by hand, so a hand-added
+    // highlight was sometimes gone before axe ran and sometimes still present.
+    await page.waitForFunction(() => [...window.writer.workspace.getSnapshot().records.values()].every(record => record.snapshot.state === "saved"));
+    await page.evaluate(async () => {
+      const workspace = window.writer.workspace;
+      const [record, { snapshot: { body } }] = [...workspace.getSnapshot().records].find(([, view]) => view.snapshot.body.includes("[^r6]: "));
+      const from = body.indexOf("A note[^r6].");
+      const created = await workspace.addComment({ record, body, from, to: body.indexOf("\n", body.indexOf("[^r6]: ")) }, "Round six contrast");
+      if (!created.ok) throw new Error(created.message);
+    });
+    await page.locator(".cm-lp-footnote .cm-comment .cm-lp-fn-number").waitFor();
+    await page.locator(".cm-lp-footnote .cm-comment .cm-lp-chip.is-cite").filter({ hasText: "Darwin" }).waitFor();
     await page.evaluate(axe.source);
     const contrast = await page.evaluate(() => window.axe.run(".cm-lp-footnote", { runOnly: ["color-contrast"] }));
     assert.deepEqual(contrast.violations, []);

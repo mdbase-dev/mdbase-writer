@@ -605,6 +605,8 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .cm-lp-quiet { color: var(--faint); }
 .cm-lp-fn-ref { color: var(--accent); font-size: 0.72em; font-weight: 700; line-height: 0; cursor: text; }
 .cm-lp-fn-number { color: var(--muted); font-size: 0.85em; font-variant-numeric: tabular-nums; margin-right: 0.35em; }
+/* Muted falls under 4.5:1 on a comment's highlight; match the footnote's own text there. */
+.cm-comment .cm-lp-fn-number { color: var(--ink-soft); }
 .editor .cm-lp-footnote { font-size: 0.92em; color: var(--ink-soft); }
 .editor .cm-lp-block { margin: 0.35rem 0; font-family: var(--sans); cursor: text; }
 .editor .cm-lp-block-kind { margin-bottom: 0.25rem; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
