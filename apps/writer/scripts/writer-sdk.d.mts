@@ -2,6 +2,8 @@ import type { writerDeployments } from "./deployment-environment.mjs";
 
 export type WriterBuildTarget = keyof typeof writerDeployments;
 
+export declare function productionSdkPinName(version: string): string;
+
 export declare const writerSdkPins: Readonly<Record<WriterBuildTarget, string>>;
 
 export declare function writerSdkTarget(environment: Record<string, string | undefined>): WriterBuildTarget | undefined;

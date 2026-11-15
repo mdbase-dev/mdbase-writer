@@ -13,18 +13,28 @@ import { basename, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { installedMembers, originalMembers } from "../../../scripts/publisher/originals.mjs";
+import { parseSdkVersion, sdkVersionSlug } from "../../../scripts/publisher/sdk-version.mjs";
 import { writerDeployments } from "./deployment-environment.mjs";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const { dependencies } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
+/**
+ * The production intake filename sdk-repin writes for an SDK version:
+ * `sdk-production-beta<N>.json` for 0.1.0-beta.N and the full version for a
+ * plain one (`sdk-production-0.1.0.json`). Any other specifier, such as the
+ * staging publisher's `file:` original, keeps its text and matches no intake.
+ */
+export function productionSdkPinName(version) {
+  return `sdk-production-${parseSdkVersion(version) ? sdkVersionSlug(version) : version}.json`;
+}
+
 /** Intake pins (under vendor/) for each environment's SDK original. */
 export const writerSdkPins = Object.freeze({
   lab: `${basename(dependencies["@mdbase-dev/sdk-lab"], ".tgz")}.json`,
   staging: `${basename(dependencies["@mdbase-dev/sdk-staging"], ".tgz")}.json`,
-  // Matches the production intake filename written by sdk-repin.
-  production: `sdk-production-${dependencies["@mdbase-dev/sdk"].replace(/^0\.1\.0-beta\./u, "beta")}.json`,
+  production: productionSdkPinName(dependencies["@mdbase-dev/sdk"]),
 });
 
 /** Installed package names to try, in order. The plain name comes first so a

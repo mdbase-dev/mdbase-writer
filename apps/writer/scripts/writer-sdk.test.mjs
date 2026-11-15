@@ -6,7 +6,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { writerDeployments } from "./deployment-environment.mjs";
-import { verifiedWriterSdk, writerSdkTarget } from "./writer-sdk.mjs";
+import { productionSdkPinName, verifiedWriterSdk, writerSdkTarget } from "./writer-sdk.mjs";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const app = fileURLToPath(new URL("../", import.meta.url));
@@ -22,6 +22,14 @@ test("selects only an explicit, consistent build environment", () => {
   assert.throws(() => writerSdkTarget({ VITE_MDBASE_ENV: "staging", VITE_MDBASE_CONNECT_URL: "https://connect.mdbase.dev" }), /requires Connect https:\/\/connect-staging/);
   assert.throws(() => writerSdkTarget({ MDBASE_ENV: "production", MDBASE_CONNECT_URL: "https://connect-staging.mdbase.dev" }), /requires Connect https:\/\/connect\.mdbase/);
   assert.throws(() => writerSdkTarget({ VITE_MDBASE_CONNECT_URL: "https://connect.mdbase.dev" }), /without VITE_MDBASE_ENV/);
+});
+
+test("names the production SDK intake for beta and plain versions", () => {
+  assert.equal(productionSdkPinName("0.1.0-beta.212"), "sdk-production-beta212.json");
+  assert.equal(productionSdkPinName("0.1.0"), "sdk-production-0.1.0.json");
+  assert.equal(productionSdkPinName("0.2.3"), "sdk-production-0.2.3.json");
+  // The staging publisher's file: specifier must not stop the module loading.
+  assert.doesNotThrow(() => productionSdkPinName("file:../../vendor/sdk-staging.tgz"));
 });
 
 test("each environment builds against its own verified SDK original and Connect origin", async () => {
