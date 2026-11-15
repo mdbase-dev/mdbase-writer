@@ -64,10 +64,10 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@callumalpass/mdbase": "0.3.0-rc.5",
     "@lingui/cli": "6.9.0",
     "@lingui/format-po": "6.9.0",
     "@lingui/vite-plugin": "6.9.0",
+    "@mdbase-dev/mdbase": "0.5.0",
     "@testing-library/react": "16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
