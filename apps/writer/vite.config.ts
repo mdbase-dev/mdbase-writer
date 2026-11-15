@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import react from "@vitejs/plugin-react";
 import { lingui } from "@lingui/vite-plugin";
+import { mdbaseOpeningPage } from "@mdbase-dev/ui/opening-page";
 import { defineConfig, loadEnv, type UserConfig } from "vite";
 
 import type * as SdkOfflineShell from "@mdbase-dev/sdk/offline-shell/build";
@@ -29,7 +30,13 @@ export default defineConfig(async ({ command, mode }): Promise<UserConfig> => {
   const appUrls = writerAppUrlsFor(target ?? "lab", environment);
   const { offlineShellPlugin } = (await import(sdk.offlineShellUrl)) as typeof SdkOfflineShell;
   return {
-    plugins: [react({ babel: { plugins: ["macros"] } }), lingui(), offlineShellPlugin()],
+    plugins: [
+      react({ babel: { plugins: ["macros"] } }),
+      lingui(),
+      // Paints the shared opening screen from index.html, with the saved theme, before any script runs.
+      mdbaseOpeningPage({ app: "writer", title: "Opening mdbase writer", themeColor: { light: "#fcfcfd", dark: "#131314" } }),
+      offlineShellPlugin(),
+    ],
     worker: { format: "es" },
     define: {
       __PANDOC_WASM_VERSION__: JSON.stringify(pandocVersion),
