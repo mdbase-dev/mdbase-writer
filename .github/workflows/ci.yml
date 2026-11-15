@@ -36,10 +36,37 @@ jobs:
           pnpm i18n:check
           git diff --exit-code -- apps/writer/src/i18n/locales
       - run: pnpm check
+      - run: node --test scripts/performance-report.test.mjs
       # Demo is development/LAB-only, so verify the production build separately.
       # Each targeted build fails unless its bundle's only Connect origin is
       # that environment's (scripts/verify-connect-target.mjs).
       - run: pnpm build:production
+      - name: Record production bundle sizes
+        id: performance_sizes
+        continue-on-error: true
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: node scripts/performance-report.mjs apps/writer/dist "$RUNNER_TEMP/writer-sizes.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.performance_sizes.outcome == 'success'
+        continue-on-error: true
+        with:
+          name: performance-writer-sizes
+          path: ${{ runner.temp }}/writer-sizes.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publish size history
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.performance_sizes.outcome == 'success'
+        continue-on-error: true
+        env:
+          OPS_BENCHMARK_TOKEN: ${{ secrets.OPS_BENCHMARK_TOKEN }}
+        run: |
+          if [ -z "$OPS_BENCHMARK_TOKEN" ]; then
+            echo '::warning::Performance upload skipped: OPS_BENCHMARK_TOKEN is not configured.'
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 20 --output /dev/null \
+            -H "Authorization: Bearer $OPS_BENCHMARK_TOKEN" -H 'Content-Type: application/json' \
+            --data-binary "@$RUNNER_TEMP/writer-sizes.json" https://ops-ingest.mdbase.dev/v1/benchmarks
       - name: Verify the staging build targets staging Connect
         run: pnpm --filter @mdbase-writer/app build:staging
       - name: Install export inspection tools
