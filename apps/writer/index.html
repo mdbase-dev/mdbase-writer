@@ -6,17 +6,10 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#fcfcfd" />
     <title>mdbase writer</title>
-    <script>
-      try {
-        const t = localStorage.getItem("mdbase:theme");
-        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
-      } catch {}
-    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--mdbase-opening--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
