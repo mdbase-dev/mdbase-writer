@@ -2,13 +2,11 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { test } from "node:test";
 
-import { Collection, V03Operations } from "@callumalpass/mdbase";
-import { parse as parseYaml } from "yaml";
+import { loadCatalog, validateRecord } from "@mdbase-dev/mdbase";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 import { buildWriterManifest, COMMENT_PACK, packResources } from "./writer-manifest.mjs";
 
@@ -172,41 +170,31 @@ test("starter types neither declare nor require the type key", async () => {
 });
 
 for (const typeKeys of ["[type]", "[mdbase_type]"]) {
-  test(`records created by type name are valid where explicit_type_keys is ${typeKeys}`, async (t) => {
-    // Connect's engine installs the packs (and applies the seed upgrades); this writes the
-    // Writer pack's resources directly so @callumalpass/mdbase can validate records
+  test(`records created by type name are valid where explicit_type_keys is ${typeKeys}`, async () => {
+    // Connect's engine installs the packs (and applies the seed upgrades); this loads the
+    // Writer pack's resources at their targets so the mdbase helpers can validate records
     // against them. The comment starter is mdbase contracts' to test.
-    const collectionRoot = await mkdtemp(join(tmpdir(), "writer-pack-"));
-    t.after(() => rm(collectionRoot, { recursive: true, force: true }));
     const pack = await writerPack();
     const documents = new Map(pack.resources.map(({ source, document }) => [source, document]));
-    for (const resource of pack.manifest.resources) {
-      await mkdir(dirname(join(collectionRoot, resource.target)), { recursive: true });
-      await writeFile(join(collectionRoot, resource.target), documents.get(resource.source));
-    }
-    await writeFile(join(collectionRoot, "mdbase.yaml"), `spec_version: 0.3.0\nsettings:\n  explicit_type_keys: ${typeKeys}\n`);
-    const opened = await Collection.open(collectionRoot);
-    assert.ok(opened.collection, opened.error?.message);
-    const operations = new V03Operations(opened.collection);
-    const created = [];
-    try {
-      created.push(
-        await operations.create({
-          path: "sources/example.md",
-          type: "reader-source",
-          frontmatter: {
-            id: "src_example",
-            title: "Example source",
-            kind: "document",
-            saved_at: "2026-08-09T14:21:00+10:00",
-            // In a [mdbase_type] collection `type` is ordinary data, such as a CSL type.
-            ...(typeKeys === "[mdbase_type]" ? { type: "article-journal" } : {}),
-          },
-        }),
-      );
-    } finally {
-      await opened.collection.close();
-    }
-    for (const result of created) assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+    const resources = {
+      "mdbase.yaml": `spec_version: 0.3.0\nsettings:\n  explicit_type_keys: ${typeKeys}\n`,
+      ...Object.fromEntries(pack.manifest.resources.map(({ source, target }) => [target, documents.get(source)])),
+    };
+    const catalog = await loadCatalog(resources);
+    assert.equal(catalog.valid, true, JSON.stringify(catalog.issues));
+    // Writer creates a record by sending its fields with the selected type; Connect's runtime
+    // records that type under the collection's first explicit type key.
+    const fields = {
+      id: "src_example",
+      title: "Example source",
+      kind: "document",
+      saved_at: "2026-08-09T14:21:00+10:00",
+      // In a [mdbase_type] collection `type` is ordinary data, such as a CSL type.
+      ...(typeKeys === "[mdbase_type]" ? { type: "article-journal" } : {}),
+    };
+    const source = `---\n${stringifyYaml({ ...fields, [catalog.settings.explicit_type_keys[0]]: "reader-source" })}---\n`;
+    const result = await validateRecord({ resources, path: "sources/example.md", source });
+    assert.deepEqual(result.types, ["reader-source"]);
+    assert.deepEqual(result.issues, []);
   });
 }

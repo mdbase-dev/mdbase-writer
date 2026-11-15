@@ -27,7 +27,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { dataContractDigest } from "@callumalpass/mdbase";
+import { contractDigest } from "@mdbase-dev/mdbase";
 import { parse as parseYaml } from "yaml";
 
 import { writerDeployments } from "./deployment-environment.mjs";
@@ -72,7 +72,7 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
         digest: sha256(document),
         document,
         ...(baselines.length === 0 ? {} : { upgrade_from: baselines }),
-        ...(resource.kind === "contract" ? { contractDigest: dataContractDigest(parseFrontmatter(document)) } : {}),
+        ...(resource.kind === "contract" ? { contractDigest: (await contractDigest({ source: document, path: resource.target })).digest } : {}),
       };
     }),
   );
