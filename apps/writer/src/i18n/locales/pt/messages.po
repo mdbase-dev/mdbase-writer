@@ -2459,8 +2459,8 @@ msgstr "Ampliação"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom in"
-msgstr "Aumentar zoom"
+msgstr "Aumentar o zoom"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Zoom out"
-msgstr "Diminuir zoom"
+msgstr "Diminuir o zoom"
