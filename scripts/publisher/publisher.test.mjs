@@ -13,6 +13,7 @@ import { assertDispatch, assertCheckout, assertAncestor, deploymentFor } from '.
 import { sourceRoot } from './publisher.mjs';
 import { loadOriginals, productionPin, compareInstalled, protectedHashes } from './originals.mjs';
 import { authenticateProduction, stagingArchive } from './authentication.mjs';
+import {sdkReleaseIsPrerelease} from './sdk-version.mjs';
 import { prepareInstall } from './install-inputs.mjs';
 import { capturePrevious, rollback } from './rollback.mjs';
 import { assertArtifactMetadata, assertArtifactRun, assertArtifactDirectory } from './artifact.mjs';
@@ -106,7 +107,7 @@ it('checks exact npm integrity and authenticated publisher source before accepti
 it('pins staging to the production version and verifies both release digests and the repository/workflow/source attestation',async()=>{
  const {pin}=await productionPin(repoRoot),bytes=Buffer.from('staging'),proof=Buffer.from('{}');
  const prefix=`https://github.com/mdbase-dev/mdbase-connect/releases/download/sdk-v${pin.version}/`;
- const release={tag_name:'sdk-v'+pin.version,prerelease:true,draft:false,assets:[
+ const release={tag_name:'sdk-v'+pin.version,prerelease:sdkReleaseIsPrerelease(pin.version),draft:false,assets:[
   {name:'sdk-staging.tgz',digest:'sha256:'+sha(bytes),browser_download_url:prefix+'sdk-staging.tgz'},
   {name:'sdk-staging.tgz.sigstore.json',digest:'sha256:'+sha(proof),browser_download_url:prefix+'sdk-staging.tgz.sigstore.json'}]};
  let called=false;
