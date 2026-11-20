@@ -5,7 +5,7 @@ packages:
 minimumReleaseAgeExclude:
   - '@mdbase-dev/ui@0.1.0'
   - '@mdbase-dev/i18n@0.1.0'
-  - '@mdbase-dev/sdk@0.1.21'
+  - '@mdbase-dev/sdk@0.1.22'
   - '@mdbase-dev/mdbase@0.5.0'
 
 onlyBuiltDependencies:
