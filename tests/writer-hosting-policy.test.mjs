@@ -6,6 +6,7 @@ import { inventoryDirectory } from '../scripts/lib/native-publish-bytes.mjs';
 import { assertRuntimeOriginals, deriveRuntimeOriginals, runtimeSourcePins } from '../scripts/lib/writer-runtime-originals.mjs';
 import { sourceHostingPolicy, uploadConfiguration, readHostingMetadata, assertHostingMetadata } from '../scripts/lib/writer-hosting-policy.mjs';
 import { assertInventoryCoverage } from '../scripts/publisher/checks.mjs';
+import { verifyPublication } from '../scripts/publisher/hosting.mjs';
 import { verifyServedAssets } from '../apps/writer/scripts/verify-served.mjs';
 import { hostingFixture } from './writer-hosting-fixture.mjs';
 const origin='https://staging.mdbase-writer.pages.dev';
@@ -153,4 +154,74 @@ test('self-consistent metadata cannot swap staging onto the production Pages cha
  const f=await hostingFixture(t),policy=await sourceHostingPolicy(f.repoRoot);
  const plan={...f.plan,pagesBranch:'main'},deployment={...f.deployment,pagesBranch:'main'},metadata={...f.metadata,deployment:{...f.metadata.deployment,pagesBranch:'main'}};
  assert.throws(()=>assertHostingMetadata(policy,metadata,plan,deployment),/source target/);
+});
+test('runtime behavior probes retry transient edge propagation failures within attempts and still refuse persistent failures',async t=>{
+ const f=await hostingFixture(t);
+ const seen=new Map(),sleeps=[];
+ const transient=async(url,init={})=>{
+  const path=new URL(url).pathname;
+  if(new Headers(init.headers).has('if-none-match')&&path.includes('typst')){
+   const n=(seen.get('typst-304')??0)+1;seen.set('typst-304',n);
+   if(n<3)return new Response('<html>404</html>',{status:404});
+  }
+  if(path.endsWith('native-publisher-invalid.txt')){
+   const n=(seen.get('invalid')??0)+1;seen.set('invalid',n);
+   if(n<2)return new Response('<html>edge not propagated</html>',{status:404});
+  }
+  return f.fetch(url,init);
+ };
+ const recovered=await verifyServedAssets({origin,inventory:f.inventory,publication:f.publication,fetch:transient,attempts:3,retryDelayMs:5,sleep:async ms=>{sleeps.push(ms);}});
+ assert.equal(recovered.ok,true,JSON.stringify(recovered));
+ assert.equal(recovered.policyEvidence.coveredControls.length,2);
+ assert.equal(seen.get('typst-304'),3);
+ assert.equal(seen.get('invalid'),2);
+ assert.equal(sleeps.length,3);
+
+ let persistentCalls=0;
+ const persistent=async(url,init={})=>{
+  if(new URL(url).pathname.endsWith('native-publisher-invalid.txt')){persistentCalls++;return new Response('<html>still wrong</html>',{status:404});}
+  return f.fetch(url,init);
+ };
+ const refused=await verifyServedAssets({origin,inventory:f.inventory,publication:f.publication,fetch:persistent,attempts:3,retryDelayMs:5,sleep:async()=>{}});
+ assert.equal(refused.ok,false);
+ assert.equal(persistentCalls,3);
+ assert.equal(refused.policyEvidence.coveredControls.length,0);
+ assert.deepEqual(refused.policyFailures,[{path:'wasm/native-publisher-invalid.txt',reason:'runtime-route-conditional-behavior-refused'}]);
+});
+test('verifyPublication polls the immutable deployment URL within its bound before checking the alias',async t=>{
+ const f=await hostingFixture(t);
+ const prevRoot=process.env.WRITER_SOURCE_ROOT;
+ process.env.WRITER_SOURCE_ROOT=f.repoRoot;
+ try {
+  let clock=0;const calls=[],sleeps=[];
+  const now=()=>clock,sleep=async ms=>{sleeps.push(ms);clock+=ms;};
+  let immutableTries=0,aliasTries=0;
+  const ok=await verifyPublication(f.plan,f.inventory,f.deployment,f.artifactRoot,{
+   sleep,now,immutableWindowMs:30,immutableIntervalMs:10,aliasWindowMs:45,aliasIntervalMs:15,
+   readMetadata:async()=>f.metadata,
+   verify:async({origin:o})=>{
+    calls.push(o);
+    if(o===f.deployment.url)return {ok:++immutableTries>=2};
+    return {ok:++aliasTries>=2};
+   }
+  });
+  assert.equal(ok.ok,true);
+  assert.deepEqual(ok.immutableAttempts,[{ok:false},{ok:true}]);
+  assert.deepEqual(ok.aliasAttempts,[{ok:false},{ok:true}]);
+  assert.deepEqual(calls,[f.deployment.url,f.deployment.url,f.plan.origin,f.plan.origin]);
+  assert.deepEqual(sleeps,[10,15]);
+
+  clock=0;const failCalls=[];
+  const fail=await verifyPublication(f.plan,f.inventory,f.deployment,f.artifactRoot,{
+   sleep:async ms=>{clock+=ms;},now,immutableWindowMs:30,immutableIntervalMs:10,aliasWindowMs:45,aliasIntervalMs:15,
+   readMetadata:async()=>f.metadata,
+   verify:async({origin:o})=>{failCalls.push(o);return {ok:false};}
+  });
+  assert.equal(fail.ok,false);
+  assert.equal(fail.origins.length,1);
+  assert.deepEqual(fail.immutableAttempts,[{ok:false},{ok:false},{ok:false}]);
+  assert.ok(failCalls.every(o=>o===f.deployment.url),'never checks alias when immutable deployment never settles');
+ }finally{
+  if(prevRoot===undefined)delete process.env.WRITER_SOURCE_ROOT;else process.env.WRITER_SOURCE_ROOT=prevRoot;
+ }
 });
