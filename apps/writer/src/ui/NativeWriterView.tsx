@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ConnectLayout } from "@mdbase-dev/ui/screens";
 import { NativeWriterBackend } from "../backend/native.js";
 import { Manuscripts } from "./Manuscripts.js";
+import { CollectionAccessActions } from "./writer-collections.js";
 import type { WriterNativeScope } from "./SdkWriterRoot.js";
 
 /** Existing Writer UI behind the domain interface, not a legacy client facade. */
@@ -27,5 +28,5 @@ export function NativeWriterView({scope}: {scope: WriterNativeScope}) {
   }, [scope]);
   if (failed) return <ConnectLayout app="writer" title={t`Writer could not open this collection`}><p role="alert"><Trans>This collection view could not be opened. Choose another collection from the bar above, or reload to retry.</Trans></p></ConnectLayout>;
   if (!view || view.scope !== scope) return <ConnectLayout app="writer" title={t`Opening Writer`}><p role="status"><Trans>Opening Writer…</Trans></p></ConnectLayout>;
-  return <Manuscripts backend={view.backend} />;
+  return <Manuscripts backend={view.backend} accessActions={<CollectionAccessActions mdbase={scope.mdbase} collectionId={scope.connection.id} />} />;
 }

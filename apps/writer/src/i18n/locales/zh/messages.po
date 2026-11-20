@@ -309,6 +309,10 @@ msgstr "文章"
 msgid "as it should appear"
 msgstr "按预期显示"
 
+#: src/ui/writer-collections.tsx
+msgid "Ask for access again"
+msgstr "重新申请访问权限"
+
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} affiliation"
@@ -2426,6 +2430,10 @@ msgstr "Writer 无法加载资料库。请重试。"
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "Writer 无法打开此集合"
+
+#: src/backend/native.ts
+msgid "Writer no longer has access to this collection."
+msgstr "Writer 已无权访问此集合。"
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."

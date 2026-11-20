@@ -165,6 +165,9 @@ export class NativeWriterBackend implements WriterBackend {
       if (this.signal.aborted || this.disposed) return fail("Writer's collection view has closed.");
       if (scope === "index" && (error instanceof SnapshotChanged || isMdbaseError(error))) {
         const details = error instanceof SnapshotChanged ? error.message : [error.code, error.reason].filter(Boolean).join(": ");
+        if (isMdbaseError(error) && (error.code === "unauthenticated" || error.reason === "access_removed" || error.reason === "installation_scope_removed")) {
+          return {ok: false, message: t`Writer no longer has access to this collection.`, recovery: "reauthorize", details};
+        }
         const message = error instanceof SnapshotChanged || staleContinuation(error) ? t`The library changed while loading. Try again.`
           : error.code === "too_large" ? t`This library is too large to index at once.`
           : error.code === "upgrade_required" ? t`Update mdbase Connect, then try again.` : t`Writer could not load the library. Try again.`;

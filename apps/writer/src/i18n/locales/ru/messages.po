@@ -309,6 +309,10 @@ msgstr "Статья"
 msgid "as it should appear"
 msgstr "как должно отображаться"
 
+#: src/ui/writer-collections.tsx
+msgid "Ask for access again"
+msgstr "Запросить доступ снова"
+
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} affiliation"
@@ -2426,6 +2430,10 @@ msgstr "Writer не удалось загрузить библиотеку. По
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "mdbase writer не удалось открыть эту коллекцию"
+
+#: src/backend/native.ts
+msgid "Writer no longer has access to this collection."
+msgstr "У Writer больше нет доступа к этой коллекции."
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."

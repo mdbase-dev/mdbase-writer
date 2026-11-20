@@ -39,7 +39,19 @@ const UNTYPED_SHOWN = 20;
 const templateOptions = () => TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const styleOptions = () => STYLES.map((s) => ({ value: s.id, label: styleName(s.id) }));
 
-export function Home({ backend, onOpen, collectionPicker, returnPath, opening = false, initialCreate = false }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null; opening?: boolean; initialCreate?: boolean }) {
+interface HomeProps { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null; opening?: boolean; initialCreate?: boolean }
+
+export function Home({accessActions, ...props}: HomeProps & {accessActions?: ReactNode}) {
+  const [refusal, setRefusal] = useState<ReadProblem | null>(null);
+  if (refusal) return <main className="home"><section role="alert">
+    <h1>{refusal.message}</h1>
+    {accessActions}
+    {refusal.details && <TechnicalDetails details={refusal.details} />}
+  </section></main>;
+  return <ManuscriptList {...props} onAccessRemoved={setRefusal} />;
+}
+
+function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening = false, initialCreate = false, onAccessRemoved }: HomeProps & {onAccessRemoved(problem: ReadProblem): void}) {
   useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
   const [problem, setProblem] = useState<ReadProblem | null>(null);
@@ -84,6 +96,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
     void pending.then(() => backend.listManuscripts()).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
+      else if (r.recovery === "reauthorize") onAccessRemoved(r);
       else setProblem(r);
     }).catch((error: unknown) => { if (live) setProblem({message: errorMessage(error)}); });
     void pending.then(() => backend.library()).then((r) => {
@@ -102,7 +115,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
     return () => {
       live = false;
     };
-  }, [backend, remembered.revision]);
+  }, [backend, remembered.revision, onAccessRemoved]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;

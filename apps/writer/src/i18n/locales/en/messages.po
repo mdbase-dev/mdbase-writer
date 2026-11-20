@@ -309,6 +309,10 @@ msgstr "Article"
 msgid "as it should appear"
 msgstr "as it should appear"
 
+#: src/ui/writer-collections.tsx
+msgid "Ask for access again"
+msgstr "Ask for access again"
+
 #. placeholder {0}: i + 1
 #: src/ui/Settings.tsx
 msgid "Author {0} affiliation"
@@ -2426,6 +2430,10 @@ msgstr "Writer could not load the library. Try again."
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "Writer could not open this collection"
+
+#: src/backend/native.ts
+msgid "Writer no longer has access to this collection."
+msgstr "Writer no longer has access to this collection."
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
