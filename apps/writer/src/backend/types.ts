@@ -11,7 +11,7 @@ import type { NewComment, People } from "./comments.js";
 
 export { sourceAnnotation, type SourceAnnotation } from "@mdbase-writer/core/annotations";
 
-export interface ReadProblem { readonly message: string; readonly details?: string }
+export interface ReadProblem { readonly message: string; readonly details?: string; readonly recovery?: "reauthorize" }
 export type Result<T> = { readonly ok: true; readonly value: T } | ({ readonly ok: false } & ReadProblem);
 
 export const ok = <T>(value: T): Result<T> => ({ ok: true, value });

@@ -4,6 +4,7 @@ import { render } from "../test/render.js";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createTestApp, type TestApp, type TestAppOptions } from "@mdbase-dev/sdk/testing";
+import { MdbaseError } from "@mdbase-dev/sdk";
 import manifest from "../generated/mdbase-app.json";
 import { App } from "../App.js";
 import { SdkWriterRoot, type WriterNativeScope } from "./SdkWriterRoot.js";
@@ -21,7 +22,7 @@ function readyFixture() {
   const contracts = manifest.requirements.contracts.map((contract, index) => ({id: contract.id, version: contract.version, contractDigest: contract.digest, type: ["manuscript", "source", "comment"][index] ?? "unknown", fields: {title: "title", template: "template", csl: "csl"}}));
   return fixture({collections: [
     {name: "Writing", contracts, records: [{path: "writing/main.md", frontmatter: {title: "Original manuscript"}, body: "Original manuscript", types: ["manuscript"]}]},
-    {name: "Archive", role: "editor"},
+    {name: "Archive", role: "editor", contracts, records: [{path: "archive/main.md", frontmatter: {title: "Archived manuscript"}, types: ["manuscript"]}]},
   ]});
 }
 const dialogClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "close");
@@ -87,6 +88,25 @@ it("opens the manuscript list with the shared collection switcher in the top bar
   if (!archive) throw new Error("No Archive row in the switcher");
   fireEvent.click(archive);
   await waitFor(() => expect(h.count("select")).toBe(1));
+});
+
+it("replaces the revoked collection's list and opens an approved collection without reloading", async () => {
+  const h = await readyFixture();
+  render(<App sdk={h.mdbase} />);
+  await screen.findByRole("button", {name: /Original manuscript/});
+  vi.spyOn(h.client(), "describe").mockRejectedValue(new MdbaseError({code: "unauthenticated", recovery: "reauthorize", message: "Collection read refused"}));
+  act(() => h.replica().editElsewhere("writing/main.md", {body: "Changed"}));
+
+  await screen.findByRole("heading", {name: "Writer no longer has access to this collection."});
+  expect(screen.queryByText("Original manuscript")).toBeNull();
+  expect(screen.queryByRole("button", {name: /Retry/})).toBeNull();
+  expect(screen.getByText("unauthenticated").closest("details")?.open).toBe(false);
+  expect(screen.getByRole("button", {name: "Ask for access again"})).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", {name: "Choose a different collection"}));
+  fireEvent.click(screen.getByRole("radio", {name: /Archive/}));
+  await screen.findByRole("button", {name: /Archived manuscript/});
+  expect(h.count("select")).toBe(1);
+  expect(h.count("approve")).toBe(0);
 });
 
 it("signs out with signOut and never closes the shared entry", async () => {
