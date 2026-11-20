@@ -327,11 +327,11 @@ describe("workspace reliability", () => {
     expect(workspace.getSnapshot().annotationPaths).toEqual(new Set(["annotations/new.md"]));
     expect(states.every(phases => !phases.includes("loading"))).toBe(true);
     const latest = workspace.getSnapshot();
-    backend.index = async () => fail("Discovery unavailable");
+    backend.index = async () => ({ok: false, message: "The library changed while loading. Try again.", details: "invalid_request: cursor_stale"});
     backend.library = async () => ok([source]);
     backend.annotationPaths = async () => ok(["annotations/new.md"]);
     changed({ paths: [], reset: true });
-    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad).toEqual({ phase: "failed", problem: "Discovery unavailable" }));
+    await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad).toEqual({ phase: "failed", problem: "The library changed while loading. Try again.", details: "invalid_request: cursor_stale" }));
     expect(workspace.getSnapshot().recordIndex).toBe(latest.recordIndex);
     expect(states.every(phases => !phases.includes("loading"))).toBe(true);
     backend.index = async () => ok({ recordPaths: ["main.md"], filePaths: [], notePaths: [] });

@@ -1,4 +1,5 @@
 import { Trans, Plural } from "@lingui/react/macro";
+import { TechnicalDetails } from "./TechnicalDetails.js";
 import { t as translate, plural as icuPlural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { personName, when } from "@mdbase-dev/ui/comments";
@@ -1158,6 +1159,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           const name = domain === "indexLoad" ? translate`Collection index` : domain === "libraryLoad" ? translate`Sources` : translate`Annotation index`;
           return state.phase === "ready" ? null : <div key={domain} className="banner" role={state.phase === "failed" ? "alert" : "status"}>
             <span>{state.phase === "loading" ? translate`${name} loading; you can keep writing.` : translate`${name} unavailable: ${state.problem ?? ""}`}</span>
+            {state.phase === "failed" && state.details && <TechnicalDetails details={state.details} />}
             {state.phase === "failed" && <button type="button" className="mdbase-button" onClick={() => void workspace.retryMetadata().catch(() => {})}><Trans>Retry loading</Trans></button>}
           </div>;
         })}

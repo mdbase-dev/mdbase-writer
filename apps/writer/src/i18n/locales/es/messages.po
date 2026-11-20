@@ -2103,6 +2103,10 @@ msgstr "Sistema"
 msgid "Table"
 msgstr "Tabla"
 
+#: src/ui/TechnicalDetails.tsx
+msgid "Technical details"
+msgstr "Detalles técnicos"
+
 #: src/workspace/workspace.ts
 msgid "That chapter is not open."
 msgstr "Ese capítulo no está abierto."
@@ -2156,6 +2160,10 @@ msgstr "La etiqueta {value} se usa más de una vez."
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "No se pudo cargar el idioma. No se ha cambiado el idioma actual. Inténtalo de nuevo."
+
+#: src/backend/native.ts
+msgid "The library changed while loading. Try again."
+msgstr "La biblioteca cambió mientras se cargaba. Vuelve a intentarlo."
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
@@ -2234,6 +2242,10 @@ msgstr "Esta colección no acepta archivos de Writer."
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "No se pudo abrir esta vista de colección. Elige otra colección en la barra superior o vuelve a cargar para reintentarlo."
+
+#: src/backend/native.ts
+msgid "This library is too large to index at once."
+msgstr "Esta biblioteca es demasiado grande para indexarla de una sola vez."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2317,6 +2329,10 @@ msgstr "Bloque Markdown no compatible: {value}."
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
 msgstr "Figura sin título"
+
+#: src/backend/native.ts
+msgid "Update mdbase Connect, then try again."
+msgstr "Actualiza mdbase Connect y vuelve a intentarlo."
 
 #: src/ui/Home.tsx
 msgid "Updating…"
@@ -2402,6 +2418,10 @@ msgstr "Writer no puede solicitar acceso aquí."
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Comandos de Writer"
+
+#: src/backend/native.ts
+msgid "Writer could not load the library. Try again."
+msgstr "Writer no pudo cargar la biblioteca. Vuelve a intentarlo."
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"

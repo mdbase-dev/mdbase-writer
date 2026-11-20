@@ -1,6 +1,7 @@
 // Writer's domain repository over one borrowed public SDK connection. No
 // legacy backend facade, SDK runtime/setup engine, copied client or app journal.
 import { isMdbaseError, type JsonObject, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type DescribeResult, type FileView, type Receipt, type RecordView, type Write } from "@mdbase-dev/sdk";
+import { t } from "@lingui/core/macro";
 import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
@@ -158,11 +159,18 @@ export class NativeWriterBackend implements WriterBackend {
     if (this.disposed || !this.connection.isCurrent()) throw new Error("Writer's collection has changed.");
     if (generation !== undefined && generation !== this.generation) throw new SnapshotChanged("Writer's collection discovery has changed. Retry the read.");
   }
-  private async safely<T>(operation: () => Promise<T>): Promise<Result<T>> {
+  private async safely<T>(operation: () => Promise<T>, scope?: "index"): Promise<Result<T>> {
     try {this.check(); const value = await operation(); this.check(); return ok(value);}
     catch (error) {
-      return fail(this.signal.aborted || this.disposed ? "Writer's collection view has closed."
-        : isMdbaseError(error) ? `The native collection operation could not complete (${error.reason ? `${error.code}: ${error.reason}` : error.code}).`
+      if (this.signal.aborted || this.disposed) return fail("Writer's collection view has closed.");
+      if (scope === "index" && (error instanceof SnapshotChanged || isMdbaseError(error))) {
+        const details = error instanceof SnapshotChanged ? error.message : [error.code, error.reason].filter(Boolean).join(": ");
+        const message = error instanceof SnapshotChanged || staleContinuation(error) ? t`The library changed while loading. Try again.`
+          : error.code === "too_large" ? t`This library is too large to index at once.`
+          : error.code === "upgrade_required" ? t`Update mdbase Connect, then try again.` : t`Writer could not load the library. Try again.`;
+        return {ok: false, message, details};
+      }
+      return fail(isMdbaseError(error) ? `The native collection operation could not complete (${error.reason ? `${error.code}: ${error.reason}` : error.code}).`
         : error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
   }
@@ -329,16 +337,16 @@ export class NativeWriterBackend implements WriterBackend {
     if (!first) throw new Error("Writer has no native type for this operation.");
     return first;
   }
-  listManuscripts(): Promise<Result<ManuscriptSummary[]>> {return this.safely(async () => this.available(await this.metadata(), "manuscript").store.manuscripts);}
+  listManuscripts(): Promise<Result<ManuscriptSummary[]>> {return this.safely(async () => this.available(await this.metadata(), "manuscript").store.manuscripts, "index");}
   /** Fails with plain copy when every Writer type for the domain is unusable. */
   private available(metadata: NativeMetadata, domain: Domain): NativeMetadata {
     const message = metadata.schema.unavailableMessage(domain);
     if (message) throw new Error(message);
     return metadata;
   }
-  index(): Promise<Result<CollectionIndex>> {return this.safely(async () => (await this.metadata()).store.index);}
-  library(): Promise<Result<LibraryEntry[]>> {return this.safely(async () => (await this.metadata()).store.library);}
-  annotationPaths(): Promise<Result<readonly string[]>> {return this.safely(async () => [...(await this.metadata()).store.annotations.keys()]);}
+  index(): Promise<Result<CollectionIndex>> {return this.safely(async () => (await this.metadata()).store.index, "index");}
+  library(): Promise<Result<LibraryEntry[]>> {return this.safely(async () => (await this.metadata()).store.library, "index");}
+  annotationPaths(): Promise<Result<readonly string[]>> {return this.safely(async () => [...(await this.metadata()).store.annotations.keys()], "index");}
   annotationFields(path: string, types: readonly string[] = []): Readonly<Record<string, string>> {
     return this.cached?.store.annotations.get(path)?.fields ?? this.cached?.schema.annotationFields(types) ?? {};
   }

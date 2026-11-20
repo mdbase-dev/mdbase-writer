@@ -11,7 +11,8 @@ import { signalMdbaseMark } from "@mdbase-dev/ui/mark-activity";
 import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { bodySummary, fail, type ManuscriptSummary, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
+import { bodySummary, fail, type ManuscriptSummary, type ReadProblem, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
+import { TechnicalDetails } from "./TechnicalDetails.js";
 import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
@@ -41,8 +42,8 @@ const styleOptions = () => STYLES.map((s) => ({ value: s.id, label: styleName(s.
 export function Home({ backend, onOpen, collectionPicker, returnPath, opening = false, initialCreate = false }: { backend: WriterBackend; onOpen(path: string): void; collectionPicker?: ReactNode; returnPath?: string | null; opening?: boolean; initialCreate?: boolean }) {
   useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
-  const [backgroundProblem, setBackgroundProblem] = useState<string | null>(null);
+  const [problem, setProblem] = useState<ReadProblem | null>(null);
+  const [backgroundProblem, setBackgroundProblem] = useState<ReadProblem | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   const [recordPaths, setRecordPaths] = useState<readonly string[] | null>(null);
   const [untyped, setUntyped] = useState<readonly string[]>([]);
@@ -83,21 +84,21 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
     void pending.then(() => backend.listManuscripts()).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
-      else setProblem(r.message);
-    }).catch((error: unknown) => { if (live) setProblem(errorMessage(error)); });
+      else setProblem(r);
+    }).catch((error: unknown) => { if (live) setProblem({message: errorMessage(error)}); });
     void pending.then(() => backend.library()).then((r) => {
       if (!live) return;
       if (r.ok) setSources(r.value.length);
-      else setBackgroundProblem(t`Sources could not be loaded: ${r.message}`);
-    }).catch((error: unknown) => { if (live) setBackgroundProblem(errorMessage(error)); });
+      else setBackgroundProblem({...r, message: t`Sources could not be loaded: ${r.message}`});
+    }).catch((error: unknown) => { if (live) setBackgroundProblem({message: errorMessage(error)}); });
     void pending.then(() => backend.index()).then((r) => {
       if (!live) return;
-      if (!r.ok) { setBackgroundProblem(t`Index could not be loaded: ${r.message}`); return; }
+      if (!r.ok) { setBackgroundProblem({...r, message: t`Index could not be loaded: ${r.message}`}); return; }
       setNotes([...r.value.notePaths].sort());
       setUntyped([...r.value.untypedPaths ?? []].sort());
       setUnavailable(r.value.unavailableTypes ?? []);
       setRecordPaths(r.value.recordPaths);
-    }).catch((error: unknown) => { if (live) setBackgroundProblem(errorMessage(error)); });
+    }).catch((error: unknown) => { if (live) setBackgroundProblem({message: errorMessage(error)}); });
     return () => {
       live = false;
     };
@@ -112,7 +113,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
     };
     const stop = backend.onCollectionChange
       ? backend.onCollectionChange((delta) => {
-        if (delta.problem) { setBackgroundProblem(delta.problem); return; }
+        if (delta.problem) { setBackgroundProblem({message: delta.problem}); return; }
         if (delta.reset) { bodyCache.current.clear(); setSummaries(new Map()); }
         refresh(delta.paths);
       })
@@ -233,7 +234,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
           {manuscripts && manuscripts.length > 0 && newButton}
         </header>
         {!backgroundProblem && (sources === null || recordPaths === null) && <p className="muted small" role="status"><Trans>Loading collection data…</Trans></p>}
-        {backgroundProblem && <p className="muted" role="alert">{backgroundProblem} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}><Trans>Retry background data</Trans></button></p>}
+        {backgroundProblem && <div className="muted" role="alert">{backgroundProblem.message} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}><Trans>Retry background data</Trans></button>{backgroundProblem.details && <TechnicalDetails details={backgroundProblem.details} />}</div>}
         {manuscripts === null && !problem && <p className="muted" role="status"><Trans>Loading…</Trans></p>}
         {manuscripts?.length === 0 && (
           <div className="first-run">
@@ -333,7 +334,7 @@ export function Home({ backend, onOpen, collectionPicker, returnPath, opening = 
           </ul>
           {!allUntyped && untypedShown.length > UNTYPED_SHOWN && <button type="button" className="sidebar-more" onClick={() => setAllUntyped(true)}><Trans>Show all {untypedShown.length} notes without a type</Trans></button>}
         </section>}
-        {problem && !dialog && !unavailable.some((t) => t.message === problem) && <div role="alert"><p className="problem">{problem}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}><Trans>Retry loading</Trans></button></div>}
+        {problem && !dialog && !unavailable.some((t) => t.message === problem.message) && <div role="alert"><p className="problem">{problem.message}</p><button type="button" className="mdbase-button" onClick={() => { bodyCache.current.clear(); setReload((value) => value + 1); }}><Trans>Retry loading</Trans></button>{problem.details && <TechnicalDetails details={problem.details} />}</div>}
       </section>
 
       <NewManuscriptDialog backend={backend} open={dialog} onClose={() => setDialog(false)} onOpen={onOpen} candidates={candidates} />

@@ -2103,6 +2103,10 @@ msgstr "系统"
 msgid "Table"
 msgstr "表格"
 
+#: src/ui/TechnicalDetails.tsx
+msgid "Technical details"
+msgstr "技术详情"
+
 #: src/workspace/workspace.ts
 msgid "That chapter is not open."
 msgstr "该章节未打开。"
@@ -2156,6 +2160,10 @@ msgstr "标签 {value} 被多次使用。"
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "无法加载语言。当前语言保持不变。请重试。"
+
+#: src/backend/native.ts
+msgid "The library changed while loading. Try again."
+msgstr "加载过程中资料库发生了变化。请重试。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
@@ -2234,6 +2242,10 @@ msgstr "此集合不接受来自 Writer 的文件。"
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "无法打开此集合视图。请从上方栏中选择其他集合，或重新加载后重试。"
+
+#: src/backend/native.ts
+msgid "This library is too large to index at once."
+msgstr "资料库太大，无法一次性建立索引。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2317,6 +2329,10 @@ msgstr "不支持的 Markdown 块：{value}。"
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
 msgstr "无标题插图"
+
+#: src/backend/native.ts
+msgid "Update mdbase Connect, then try again."
+msgstr "请更新 mdbase Connect，然后重试。"
 
 #: src/ui/Home.tsx
 msgid "Updating…"
@@ -2402,6 +2418,10 @@ msgstr "Writer 无法在此处请求访问权限。"
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer 命令"
+
+#: src/backend/native.ts
+msgid "Writer could not load the library. Try again."
+msgstr "Writer 无法加载资料库。请重试。"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"

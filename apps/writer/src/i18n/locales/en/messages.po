@@ -2103,6 +2103,10 @@ msgstr "System"
 msgid "Table"
 msgstr "Table"
 
+#: src/ui/TechnicalDetails.tsx
+msgid "Technical details"
+msgstr "Technical details"
+
 #: src/workspace/workspace.ts
 msgid "That chapter is not open."
 msgstr "That chapter is not open."
@@ -2156,6 +2160,10 @@ msgstr "The label {value} is used more than once."
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "The language could not be loaded. Your current language is unchanged. Try again."
+
+#: src/backend/native.ts
+msgid "The library changed while loading. Try again."
+msgstr "The library changed while loading. Try again."
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
@@ -2234,6 +2242,10 @@ msgstr "This collection does not accept files from Writer."
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
+
+#: src/backend/native.ts
+msgid "This library is too large to index at once."
+msgstr "This library is too large to index at once."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2317,6 +2329,10 @@ msgstr "Unsupported Markdown block: {value}."
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
 msgstr "Untitled figure"
+
+#: src/backend/native.ts
+msgid "Update mdbase Connect, then try again."
+msgstr "Update mdbase Connect, then try again."
 
 #: src/ui/Home.tsx
 msgid "Updating…"
@@ -2402,6 +2418,10 @@ msgstr "Writer cannot ask for access here."
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer commands"
+
+#: src/backend/native.ts
+msgid "Writer could not load the library. Try again."
+msgstr "Writer could not load the library. Try again."
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
