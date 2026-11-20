@@ -52,7 +52,7 @@ function controlledWatch(initialState: ChangesWatch["state"] = "active", ready: 
   let state = initialState;
   const listeners = new Set<Parameters<ChangesWatch["subscribe"]>[0]>();
   const stop = vi.fn(() => {state = "closed";});
-  const watch: ChangesWatch = Object.assign(stop, {ready, state, error: null,
+  const watch: ChangesWatch = Object.assign(stop, {ready, state, error: null, cursor: undefined,
     subscribe: (listener: Parameters<ChangesWatch["subscribe"]>[0]) => {listeners.add(listener); return () => {listeners.delete(listener);};}});
   Object.defineProperty(watch, "state", {get: () => state});
   return {watch, stop, listeners, publish(next: ChangesWatch["state"]) {state = next; for (const listener of listeners) listener(next, null);}};
