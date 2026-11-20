@@ -238,7 +238,7 @@ describe("native Writer domain backend", () => {
   it("refuses unsupported contract metadata without projecting raw fields locally", async () => {
     const h = await fixture();
     const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "upgrade_required", recovery: "upgrade", message: "Contract queries unsupported", reason: "contract_query_unsupported"}));
-    expect(await h.backend.listManuscripts()).toMatchObject({ok: false, message: expect.stringContaining("upgrade_required")});
+    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "Update mdbase Connect, then try again.", details: "upgrade_required: contract_query_unsupported"});
     expect(query).toHaveBeenCalledWith({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, expect.objectContaining({pageSize: 128, signal: expect.any(AbortSignal)}));
   });
   it("discovers all records across actual SDK pages rather than truncating the native index", async () => {
@@ -281,7 +281,7 @@ describe("native Writer domain backend", () => {
   it("reports the refusal reason when a single record exceeds the producer's contract budget", async () => {
     const h = await fixture();
     const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"}));
-    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "The native collection operation could not complete (too_large: contract_projection_budget)."});
+    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "This library is too large to index at once.", details: "too_large: contract_projection_budget"});
     expect(query.mock.calls.map(call => call[1]?.pageSize)).toEqual([128, 64, 32, 16, 8, 4, 2, 1]);
   });
   it.each(["changed snapshot", "repeated cursor"]) ("refuses unsafe metadata pagination: %s", async failure => {
@@ -291,7 +291,9 @@ describe("native Writer domain backend", () => {
       yield {...actual, records: [], complete: false, ...(failure === "changed snapshot" ? {asOf: actual.asOf + 1, cursor: "next-cursor"} : {cursor: "original-cursor"})};
       throw new Error("The repository must stop before requesting another unsafe page");
     });
-    expect(await h.backend.index()).toMatchObject({ok: false, message: expect.stringContaining(failure === "changed snapshot" ? "snapshot changed" : "cursor repeated")});
+    expect(await h.backend.index()).toMatchObject(failure === "changed snapshot"
+      ? {ok: false, message: "The library changed while loading. Try again.", details: "Writer's native query snapshot changed."}
+      : {ok: false, message: expect.stringContaining("cursor repeated")});
   });
   // Connect #1502: a save's acknowledgement changes the view mid-load. The replica ends
   // the continuation (`cursor_stale`) or a later page reports another snapshot; Writer
@@ -327,14 +329,14 @@ describe("native Writer domain backend", () => {
     const h = await fixture();
     const describe = vi.mocked(h.client.describe); describe.mockClear();
     const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "invalid_request", recovery: "fix_request", message: "restart from the first query page", reason: "cursor_stale"}));
-    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "The native collection operation could not complete (invalid_request: cursor_stale)."});
+    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "The library changed while loading. Try again.", details: "invalid_request: cursor_stale"});
     expect(query).toHaveBeenCalledTimes(3);
     expect(describe).toHaveBeenCalledTimes(3);
   });
   it("does not restart the load for other refusals", async () => {
     const h = await fixture();
     const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "invalid_request", recovery: "fix_request", message: "Bad request", reason: "bad_selector"}));
-    expect((await h.backend.listManuscripts()).ok).toBe(false);
+    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "Writer could not load the library. Try again.", details: "invalid_request: bad_selector"});
     expect(query).toHaveBeenCalledTimes(1);
   });
   it.each(["protected", "wrong identity"]) ("does not expose a lazy body from %s native readback", async failure => {

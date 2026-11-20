@@ -2103,6 +2103,10 @@ msgstr "システム"
 msgid "Table"
 msgstr "表"
 
+#: src/ui/TechnicalDetails.tsx
+msgid "Technical details"
+msgstr "技術的な詳細"
+
 #: src/workspace/workspace.ts
 msgid "That chapter is not open."
 msgstr "その章は開かれていません。"
@@ -2156,6 +2160,10 @@ msgstr "ラベル{value}が複数回使われています。"
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "言語を読み込めませんでした。現在の言語は変更されていません。もう一度お試しください。"
+
+#: src/backend/native.ts
+msgid "The library changed while loading. Try again."
+msgstr "読み込み中にライブラリが変更されました。もう一度お試しください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
@@ -2234,6 +2242,10 @@ msgstr "このコレクションは Writer からのファイルを受け付け�
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "このコレクションビューを開けませんでした。上のバーから別のコレクションを選択するか、再読み込みして再試行してください。"
+
+#: src/backend/native.ts
+msgid "This library is too large to index at once."
+msgstr "ライブラリが大きすぎるため、一度に索引を作成できません。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2317,6 +2329,10 @@ msgstr "サポートされていないMarkdownブロック: {value}。"
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
 msgstr "無題の図"
+
+#: src/backend/native.ts
+msgid "Update mdbase Connect, then try again."
+msgstr "mdbase Connect を更新して、もう一度お試しください。"
 
 #: src/ui/Home.tsx
 msgid "Updating…"
@@ -2402,6 +2418,10 @@ msgstr "Writer はここでアクセスを要求できません。"
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer コマンド"
+
+#: src/backend/native.ts
+msgid "Writer could not load the library. Try again."
+msgstr "Writer はライブラリを読み込めませんでした。もう一度お試しください。"
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"

@@ -61,7 +61,7 @@ export interface RecordView {
   readonly localSaved?: boolean;
 }
 
-export type LoadState = { readonly phase: "loading" | "ready" | "failed"; readonly problem?: string };
+export type LoadState = { readonly phase: "loading" | "ready" | "failed"; readonly problem?: string; readonly details?: string | undefined };
 const LOADING: LoadState = { phase: "loading" };
 const READY: LoadState = { phase: "ready" };
 type MetadataDomain = "indexLoad" | "libraryLoad" | "annotationsLoad";
@@ -281,7 +281,7 @@ export class ManuscriptWorkspace {
       const index = await this.backend.index();
       if (generation !== this.metadataGeneration || this.disposed) return;
       if (recordPaths !== this.current.recordPaths || filePaths !== this.current.filePaths) return;
-      if (!index.ok) throw new Error(index.message);
+      if (!index.ok) return this.update({indexLoad: {phase: "failed", problem: index.message, details: index.details}});
       this.update({ ...(index.value.recordPaths !== this.current.recordPaths ? { recordPaths: index.value.recordPaths } : {}), ...(index.value.filePaths !== this.current.filePaths ? { filePaths: index.value.filePaths } : {}), indexLoad: READY });
       this.sendCollection();
       for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);
@@ -292,7 +292,7 @@ export class ManuscriptWorkspace {
     try {
       const library = await this.backend.library();
       if (generation !== this.metadataGeneration || this.disposed) return;
-      if (!library.ok) throw new Error(library.message);
+      if (!library.ok) return this.update({libraryLoad: {phase: "failed", problem: library.message, details: library.details}});
       this.update({ library: library.value, libraryLoad: READY });
       this.sendLibrary();
       this.sendQuotations();
@@ -416,7 +416,7 @@ export class ManuscriptWorkspace {
     try {
       const annotations = await this.backend.annotationPaths();
       if (this.disposed || generation !== this.metadataGeneration || annotationGeneration !== this.annotationGeneration) return;
-      if (!annotations.ok) throw new Error(annotations.message);
+      if (!annotations.ok) return this.update({annotationsLoad: {phase: "failed", problem: annotations.message, details: annotations.details}});
       const paths = new Set(annotations.value);
       const changed = paths.size !== this.current.annotationPaths.size || [...paths].some((p) => !this.current.annotationPaths.has(p));
       this.update({ annotationPaths: paths, annotationVersion: this.current.annotationVersion + Number(changed), annotationsLoad: READY });

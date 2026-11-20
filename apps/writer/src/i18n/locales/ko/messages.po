@@ -2103,6 +2103,10 @@ msgstr "시스템"
 msgid "Table"
 msgstr "표"
 
+#: src/ui/TechnicalDetails.tsx
+msgid "Technical details"
+msgstr "기술 세부 정보"
+
 #: src/workspace/workspace.ts
 msgid "That chapter is not open."
 msgstr "해당 장이 열려 있지 않습니다."
@@ -2156,6 +2160,10 @@ msgstr "레이블 {value}이(가) 두 번 이상 사용되었습니다."
 #: src/i18n/provider.tsx
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "언어를 불러오지 못했습니다. 현재 언어는 변경되지 않았습니다. 다시 시도하세요."
+
+#: src/backend/native.ts
+msgid "The library changed while loading. Try again."
+msgstr "불러오는 동안 라이브러리가 변경되었습니다. 다시 시도하세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "The line being typed is checked once typing pauses"
@@ -2234,6 +2242,10 @@ msgstr "이 컬렉션은 Writer에서 파일을 받지 않습니다."
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "이 컬렉션 뷰를 열지 못했습니다. 위쪽 표시줄에서 다른 컬렉션을 선택하거나 새로고침하여 다시 시도하세요."
+
+#: src/backend/native.ts
+msgid "This library is too large to index at once."
+msgstr "라이브러리가 너무 커서 한 번에 색인을 만들 수 없습니다."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2317,6 +2329,10 @@ msgstr "지원하지 않는 Markdown 블록입니다: {value}."
 #: src/editor/live-preview.ts
 msgid "Untitled figure"
 msgstr "제목 없는 그림"
+
+#: src/backend/native.ts
+msgid "Update mdbase Connect, then try again."
+msgstr "mdbase Connect를 업데이트한 후 다시 시도하세요."
 
 #: src/ui/Home.tsx
 msgid "Updating…"
@@ -2402,6 +2418,10 @@ msgstr "Writer는 여기에서 접근을 요청할 수 없습니다."
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer 명령"
+
+#: src/backend/native.ts
+msgid "Writer could not load the library. Try again."
+msgstr "Writer에서 라이브러리를 불러오지 못했습니다. 다시 시도하세요."
 
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"

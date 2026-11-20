@@ -101,3 +101,14 @@ it("names an unavailable type plainly, once, without blocking the rest", async (
   expect(screen.getAllByText(message)).toHaveLength(1);
   expect(screen.queryByRole("button", {name: "Retry loading"})).toBeNull();
 });
+
+it("keeps an index refusal out of the banner text until its details are opened", async () => {
+  const fixture = backend({recordPaths: [], filePaths: [], notePaths: []});
+  fixture.index = async () => ({ok: false, message: "This library is too large to index at once.", details: "too_large: query_budget_exceeded"});
+  render(<Home backend={fixture} onOpen={vi.fn()} />);
+  expect(await screen.findByText("Index could not be loaded: This library is too large to index at once.")).toBeTruthy();
+  const details = screen.getByText("too_large: query_budget_exceeded").closest("details");
+  expect(details?.open).toBe(false);
+  fireEvent.click(screen.getByText("Technical details"));
+  expect(details?.open).toBe(true);
+});
