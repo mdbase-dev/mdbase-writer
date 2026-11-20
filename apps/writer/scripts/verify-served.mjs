@@ -9,7 +9,7 @@ import { sourceHostingPolicy, assertHostingMetadata, coveredHostingControls } fr
 import { assertInventoryCoverage } from '../../../scripts/publisher/checks.mjs';
 export const isFetchableAsset=path=>!['_routes.json','_headers','_redirects'].includes(path.split('/').at(-1))&&path!=='_worker.js'&&!path.startsWith('_worker.js/');
 export function servedUrlFor(origin,path){return origin+'/'+(path==='index.html'?'':path.endsWith('.html')?path.slice(0,-5):path);}
-async function probe(transport,url,headers,expectedStatus,expectedBody,remaining) {
+async function probe(transport,url,headers,expectedStatus,expectedBody,remaining,timeoutMs=10000) {
  if(remaining<=0)throw Error('publication-timeout');
  const controller=new AbortController();let timer,response,reader;
  try {
@@ -20,7 +20,7 @@ async function probe(transport,url,headers,expectedStatus,expectedBody,remaining
    if(reader)try{for(;;){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>64)throw Error('probe-body-limit');chunks.push(value);}}finally{Promise.resolve(reader.cancel()).catch(()=>{});}
    if(Buffer.concat(chunks).toString()!==expectedBody)throw Error('route-body');
    return response;
-  })(),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('probe-timeout'));},Math.min(10000,remaining));})]);
+  })(),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('probe-timeout'));},Math.min(timeoutMs,remaining));})]);
  } finally {clearTimeout(timer);controller.abort();try{Promise.resolve(reader?reader.cancel():response?.body?.cancel()).catch(()=>{});}catch{}}
 
 }
@@ -62,14 +62,34 @@ export async function verifyServedAssets({origin,inventory,publication, ...optio
  result.verified=result.verified.filter(r=>!runtimeNames.has(r.path));
  result.unverified.push(...worker.map(a=>({...a,reason:'executing-worker-requires-trusted-runtime-policy-check'})));
  const behavior=[];
+ const probeAttempts=options.attempts??3,probeRetryDelayMs=options.retryDelayMs??1000,probeTimeoutMs=options.timeoutMs??10000;
+ const sleep=options.sleep??(ms=>new Promise(r=>setTimeout(r,ms)));
  if(runtime.length===2&&result.failures.length===0&&headerFailures.length===0){
   const probes=[...runtime.map(r=>({path:r.path,headers:{'If-None-Match':etags.get(r.path)},status:304,body:'',etag:etags.get(r.path)})),{path:'wasm/native-publisher-invalid.txt',status:404,body:'Not found'},{path:`wasm/native-publisher-missing-${publication.plan.sha}.wasm`,status:404,body:'Not found'}];
-  for(const p of probes)try{
-   const response=await probe(transport,origin+'/'+p.path,p.headers,p.status,p.body,left());
-   if(p.etag&&response.headers.get('etag')!==p.etag)throw Error('conditional-etag');
-   if(left()<=0)throw Error('publication-timeout');
-   behavior.push({path:p.path,status:p.status,check:p.etag?'conditional-etag-empty-304':'invalid-or-missing-404-body'});
-  }catch{policyFailures.push({path:p.path,reason:'runtime-route-conditional-behavior-refused'});}
+  for(const p of probes){
+   let passed=false;
+   for(let attempt=1;attempt<=probeAttempts;attempt++){
+    try{
+     const response=await probe(transport,origin+'/'+p.path,p.headers,p.status,p.body,left(),probeTimeoutMs);
+     if(p.etag&&response.headers.get('etag')!==p.etag)throw Error('conditional-etag');
+     if(left()<=0)throw Error('publication-timeout');
+     behavior.push({path:p.path,status:p.status,check:p.etag?'conditional-etag-empty-304':'invalid-or-missing-404-body'});
+     passed=true;
+     break;
+    }catch{
+     if(attempt===probeAttempts||left()<=0)break;
+     const delayBudget=left();
+     let timer;
+     try{
+      await Promise.race([
+       Promise.resolve().then(()=>sleep(Math.min(probeRetryDelayMs,delayBudget))),
+       new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('retry-delay-timeout')),Math.min(probeTimeoutMs,delayBudget));})
+      ]);
+     }catch{break;}finally{clearTimeout(timer);}
+    }
+   }
+   if(!passed)policyFailures.push({path:p.path,reason:'runtime-route-conditional-behavior-refused'});
+  }
  }
  if(runtimeVerified.length!==2||behavior.length!==4||headerFailures.length||result.failures.length)coveredControls=[];
  const covered=new Set(coveredControls.map(r=>r.path));
