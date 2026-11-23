@@ -61,11 +61,18 @@ try {
       const after = await primary.evaluate(element => getComputedStyle(element).backgroundColor);
       assert.notEqual(before, after);
       assert.equal(await primary.evaluate(element => {
-        const canvas = document.createElement('canvas').getContext('2d');
-        canvas.fillStyle = getComputedStyle(element).getPropertyValue('--color-accent-strong');
-        const expected = canvas.fillStyle;
-        canvas.fillStyle = getComputedStyle(element).backgroundColor;
-        return canvas.fillStyle === expected;
+        const probe = document.createElement('span');
+        probe.style.backgroundColor = 'var(--color-accent-strong)';
+        element.parentElement.appendChild(probe);
+        try {
+          const canvas = document.createElement('canvas').getContext('2d');
+          canvas.fillStyle = getComputedStyle(probe).backgroundColor;
+          const expected = canvas.fillStyle;
+          canvas.fillStyle = getComputedStyle(element).backgroundColor;
+          return canvas.fillStyle === expected;
+        } finally {
+          probe.remove();
+        }
       }), true, "Hover reaches the distinct shared strong accent, not a transition serialization change");
       return { before, after };
     });
