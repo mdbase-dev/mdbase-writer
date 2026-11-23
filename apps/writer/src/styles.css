@@ -1,4 +1,4 @@
-/* mdbase visual language (see mdbase-connect DESIGN.md). Role values come from
+/* mdbase visual language. Role values come from
    @mdbase-dev/ui/tokens.css; these short names are Writer's aliases for them. */
 :root {
   --canvas: var(--color-canvas);
