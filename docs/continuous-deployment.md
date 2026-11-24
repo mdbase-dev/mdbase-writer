@@ -70,9 +70,9 @@ executes candidate Functions during upload, provisions a project or records raw
 API/Wrangler payloads. Existing `mdbase-writer` must use production channel main.
 
 Immediately before upload, a workflow-owned compatibility step takes the
-**authenticated SDK producer** and proves it is an ancestor of both actual live
-production revisions: `connect.mdbase.dev/health.revision` and
-`sync.mdbase.dev/ready.provider.revision`. Semver or desired release pins are not
+**authenticated SDK producer** and proves it is an ancestor of the actual live
+production Connect revision, `connect.mdbase.dev/health.revision`. The retired
+hosted provider is not consulted. Semver or desired release pins are not
 a proof. A mismatch or unavailable read records `production-contract-wait`,
 skips upload/smoke and lets ops quietly wait. Ops repeats the same gate before
 staging and production, and requires its own same-run staging smoke receipt.
