@@ -7,6 +7,8 @@ export const writerDeployments = Object.freeze({
     origin: "https://lab.mdbase-writer.pages.dev",
     editorUrl: "https://editor-lab.mdbase.dev",
     readerUrl: "https://lab.mdbase-reader.pages.dev",
+    journalUrl: "https://lab.mdbase-journal-lab.pages.dev",
+    tasknotesUrl: "https://lab.tasknotes-app.pages.dev",
     connectUrl: "https://connect-lab.mdbase.dev",
     branch: "lab",
     // Explicit test builds may include the in-memory demo.
@@ -16,6 +18,8 @@ export const writerDeployments = Object.freeze({
     origin: "https://staging.mdbase-writer.pages.dev",
     editorUrl: "https://editor-staging.mdbase.dev",
     readerUrl: "https://staging.mdbase-reader.pages.dev",
+    journalUrl: "https://staging.mdbase-journal.pages.dev",
+    tasknotesUrl: "https://staging.tasknotes-app.pages.dev",
     connectUrl: "https://connect-staging.mdbase.dev",
     branch: "staging",
     demo: false,
@@ -24,6 +28,8 @@ export const writerDeployments = Object.freeze({
     origin: "https://writer.mdbase.dev",
     editorUrl: "https://editor.mdbase.dev",
     readerUrl: "https://reader.mdbase.dev",
+    journalUrl: "https://journal.mdbase.dev",
+    tasknotesUrl: "https://app.tasknotes.dev",
     connectUrl: "https://connect.mdbase.dev",
     branch: "main",
     demo: false,
@@ -36,7 +42,13 @@ export const assetsBucket = "mdbase-writer-assets";
 export function writerAppUrlsFor(target, environment = {}) {
   const deployment = writerDeployments[target];
   if (!deployment) throw new Error(`Unsupported writer deployment target: ${target}.`);
-  return Object.fromEntries(Object.entries({ editor: deployment.editorUrl, reader: deployment.readerUrl, writer: deployment.origin }).map(([app, expected]) => {
+  return Object.fromEntries(Object.entries({
+    editor: deployment.editorUrl,
+    reader: deployment.readerUrl,
+    writer: deployment.origin,
+    journal: deployment.journalUrl,
+    tasknotes: deployment.tasknotesUrl,
+  }).map(([app, expected]) => {
     const key = `VITE_MDBASE_${app.toUpperCase()}_URL`;
     const url = environment[key] ?? expected;
     if (!url || new URL(url).origin !== expected || new URL(url).pathname !== "/" || new URL(url).search || new URL(url).hash || new URL(url).username || new URL(url).password) {

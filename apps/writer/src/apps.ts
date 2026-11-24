@@ -5,6 +5,8 @@ export const appUrls = {
   editor: import.meta.env.VITE_MDBASE_EDITOR_URL,
   reader: import.meta.env.VITE_MDBASE_READER_URL,
   writer: import.meta.env.VITE_MDBASE_WRITER_URL,
+  journal: import.meta.env.VITE_MDBASE_JOURNAL_URL,
+  tasknotes: import.meta.env.VITE_MDBASE_TASKNOTES_URL,
 };
 
 /**
