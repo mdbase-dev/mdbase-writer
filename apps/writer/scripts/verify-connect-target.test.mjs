@@ -35,13 +35,13 @@ test("refuses the observed staging bundle that packages production trust", () =>
 });
 
 test("refuses sibling-app fallbacks and cross-environment handoffs", () => {
-  for (const [target, connect, editor, reader] of [
-    ["lab", "https://connect-lab.mdbase.dev", "https://editor-lab.mdbase.dev", "https://lab.mdbase-reader.pages.dev"],
-    ["staging", "https://connect-staging.mdbase.dev", "https://editor-staging.mdbase.dev", "https://staging.mdbase-reader.pages.dev"],
+  for (const [target, connect, editor, reader, journal, tasknotes] of [
+    ["lab", "https://connect-lab.mdbase.dev", "https://editor-lab.mdbase.dev", "https://lab.mdbase-reader.pages.dev", "https://lab.mdbase-journal-lab.pages.dev", "https://lab.tasknotes-app.pages.dev"],
+    ["staging", "https://connect-staging.mdbase.dev", "https://editor-staging.mdbase.dev", "https://staging.mdbase-reader.pages.dev", "https://staging.mdbase-journal.pages.dev", "https://staging.tasknotes-app.pages.dev"],
   ]) {
-    const sources = [trust(target, connect), `editor='${editor}'; reader='${reader}'`];
+    const sources = [trust(target, connect), `editor='${editor}'; reader='${reader}'; journal='${journal}'; tasknotes='${tasknotes}'`];
     assert.doesNotThrow(() => assertConnectTarget(target, sources));
-    for (const origin of ["https://editor.mdbase.dev", "https://reader.mdbase.dev", "https://writer.mdbase.dev", "https://foreign.mdbase-reader.pages.dev"]) {
+    for (const origin of ["https://editor.mdbase.dev", "https://reader.mdbase.dev", "https://writer.mdbase.dev", "https://journal.mdbase.dev", "https://app.tasknotes.dev", "https://foreign.mdbase-reader.pages.dev"]) {
       assert.throws(() => assertConnectTarget(target, [...sources, origin]), /foreign apps/);
     }
   }

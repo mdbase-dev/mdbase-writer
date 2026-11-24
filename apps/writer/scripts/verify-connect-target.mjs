@@ -18,7 +18,7 @@ import { writerDeployments } from "./deployment-environment.mjs";
 import { writerSdkTarget } from "./writer-sdk.mjs";
 
 const connectLiteral = /https:\/\/connect(?:-[a-z0-9]+)?\.mdbase\.dev(?![a-z0-9.-])/gu;
-const appLiteral = /https:\/\/(?:(?:editor|reader|writer)(?:-[a-z0-9]+)?\.mdbase\.dev|(?:[a-z0-9]+\.)?mdbase-(?:editor|reader|writer)\.pages\.dev)(?![a-z0-9.-])/gu;
+const appLiteral = /https:\/\/(?:(?:editor|reader|writer|journal)(?:-[a-z0-9]+)?\.mdbase\.dev|(?:[a-z0-9]+\.)?mdbase-(?:editor|reader|writer|journal(?:-lab)?)\.pages\.dev|(?:app|staging)\.tasknotes\.dev|(?:[a-z0-9]+\.)?tasknotes-app\.pages\.dev)(?![a-z0-9.-])/gu;
 // The SDK's compiled release trust, e.g. environment:`staging`,cpOrigin:`https://…`.
 const packagedTrust = /environment:\s*["'`]([a-z]+)["'`]\s*,\s*cpOrigin:\s*["'`]([^"'`]+)["'`]/gu;
 
@@ -56,7 +56,7 @@ export function assertConnectTarget(target, sources) {
   }
   const foreign = origins.filter((origin) => origin !== expected);
   if (foreign.length > 0) throw new Error(`${target} Writer bundle references Connect ${foreign.join(", ")}; only ${expected} is allowed.`);
-  const allowedApps = new Set([deployment.origin, deployment.editorUrl, deployment.readerUrl]);
+  const allowedApps = new Set([deployment.origin, deployment.editorUrl, deployment.readerUrl, deployment.journalUrl, deployment.tasknotesUrl]);
   const destinations = sources.map(source => source.replace(installationDeclaration, "").replace(originDeclaration, ""));
   const foreignApps = [...new Set(destinations.flatMap(source => [...source.matchAll(appLiteral)].map(([origin]) => origin)))].filter(origin => !allowedApps.has(origin));
   if (foreignApps.length > 0) throw new Error(`${target} Writer bundle references foreign apps ${foreignApps.join(", ")}.`);

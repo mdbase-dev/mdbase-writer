@@ -16,6 +16,8 @@ test("each environment binds every sibling app and rejects missing or foreign UR
     assert.equal(urls.writer, writerDeployments[target].origin);
     assert.equal(urls.editor, writerDeployments[target].editorUrl);
     assert.equal(urls.reader, writerDeployments[target].readerUrl);
+    assert.equal(urls.journal, writerDeployments[target].journalUrl);
+    assert.equal(urls.tasknotes, writerDeployments[target].tasknotesUrl);
     for (const app of Object.keys(urls)) {
       const key = `VITE_MDBASE_${app.toUpperCase()}_URL`;
       assert.throws(() => writerAppUrlsFor(target, { [key]: "" }), /missing or foreign/);
