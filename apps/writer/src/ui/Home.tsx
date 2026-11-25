@@ -54,6 +54,7 @@ export function Home({accessActions, ...props}: HomeProps & {accessActions?: Rea
 function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening = false, initialCreate = false, onAccessRemoved }: HomeProps & {onAccessRemoved(problem: ReadProblem): void}) {
   useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
+  const [manuscriptsReady, setManuscriptsReady] = useState<{backend: WriterBackend; revision: number} | null>(null);
   const [problem, setProblem] = useState<ReadProblem | null>(null);
   const [backgroundProblem, setBackgroundProblem] = useState<ReadProblem | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
@@ -96,15 +97,30 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
     void pending.then(() => backend.listManuscripts()).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
-      else if (r.recovery === "reauthorize") onAccessRemoved(r);
+      else if (r.recovery === "reauthorize") { onAccessRemoved(r); return; }
       else setProblem(r);
-    }).catch((error: unknown) => { if (live) setProblem({message: errorMessage(error)}); });
-    void pending.then(() => backend.library()).then((r) => {
+      setManuscriptsReady({backend, revision: remembered.revision});
+    }).catch((error: unknown) => {
+      if (!live) return;
+      setProblem({message: errorMessage(error)});
+      setManuscriptsReady({backend, revision: remembered.revision});
+    });
+    return () => {
+      live = false;
+    };
+  }, [backend, remembered.revision, onAccessRemoved]);
+
+  // Background collection data (source counts, untyped notes, chapter-count index)
+  // loads only after Home has rendered the manuscript list.
+  useEffect(() => {
+    if (manuscriptsReady?.backend !== backend || manuscriptsReady.revision !== remembered.revision) return;
+    let live = true;
+    void backend.library().then((r) => {
       if (!live) return;
       if (r.ok) setSources(r.value.length);
       else setBackgroundProblem({...r, message: t`Sources could not be loaded: ${r.message}`});
     }).catch((error: unknown) => { if (live) setBackgroundProblem({message: errorMessage(error)}); });
-    void pending.then(() => backend.index()).then((r) => {
+    void backend.index().then((r) => {
       if (!live) return;
       if (!r.ok) { setBackgroundProblem({...r, message: t`Index could not be loaded: ${r.message}`}); return; }
       setNotes([...r.value.notePaths].sort());
@@ -115,7 +131,7 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
     return () => {
       live = false;
     };
-  }, [backend, remembered.revision, onAccessRemoved]);
+  }, [backend, remembered.revision, manuscriptsReady]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;

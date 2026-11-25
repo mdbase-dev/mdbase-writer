@@ -75,16 +75,58 @@ describe("native Writer domain backend", () => {
     expect(get).not.toHaveBeenCalled(); expect(h.metadata).not.toHaveBeenCalled();
     expect("writeFile" in h.backend).toBe(false);
   });
+  it("lists manuscripts by paging the manuscript contract alone without scanning the full collection", async () => {
+    const h = await fixture();
+    const second = h.replica.seed({path: "manuscripts/second.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "Second"]]), layout: "thesis", style: "chicago-author-date"}, body: "Second\n"});
+    const upload = await h.client.files.upload("figures/chart.png", new Uint8Array([1, 2, 3]));
+    await upload.confirmed;
+    const times = new Map([[h.manuscript.id, Date.parse("2026-01-01T00:00:00Z")], [second.id, Date.parse("2026-02-01T00:00:00Z")]]);
+    const describeSpy = vi.mocked(h.client.describe); describeSpy.mockClear();
+    const pages = vi.spyOn(h.client, "pages");
+    const query = vi.spyOn(h.client, "query");
+    const listPage = vi.spyOn(h.client.files, "listPage");
+    const originalContract = h.client.queryContract.bind(h.client);
+    const queryContract = vi.spyOn(h.client, "queryContract").mockImplementation(async (...args) => {
+      const result = await originalContract(...args);
+      return {...result, page: {...result.page, records: result.page.records.map(record => ({...record, ...(times.has(record.id) ? {mtime: times.get(record.id)!} : {})}))}};
+    });
+
+    expect((await h.backend.flushChanges()).ok).toBe(true);
+    const manuscripts = await h.backend.listManuscripts();
+    expect(manuscripts).toEqual({ok: true, value: [
+      {path: "manuscripts/original.md", title: "Original", template: "article", style: "apa", modified: "2026-01-01T00:00:00.000Z"},
+      {path: "manuscripts/second.md", title: "Second", template: "thesis", style: "chicago-author-date", modified: "2026-02-01T00:00:00.000Z"},
+    ]});
+    expect(byRecentlyEdited(manuscripts.ok ? manuscripts.value : []).map(m => m.path)).toEqual(["manuscripts/second.md", "manuscripts/original.md"]);
+    expect(h.backend.setupStatus).toEqual({sources: true, annotations: false, comments: true});
+    expect(describeSpy).toHaveBeenCalledTimes(1);
+    expect(queryContract).toHaveBeenCalledTimes(1);
+    expect(queryContract).toHaveBeenCalledWith({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, expect.objectContaining({pageSize: 200, signal: expect.any(AbortSignal)}));
+    expect(pages).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
+    expect(listPage).not.toHaveBeenCalled();
+
+    // Loading the rest of the collection afterwards reuses the catalog and never re-queries manuscripts.
+    const index = await h.backend.index();
+    const library = await h.backend.library();
+    expect(index.ok && index.value.filePaths).toContain("figures/chart.png");
+    expect(library.ok && library.value.map(entry => entry.key)).toEqual(["paper"]);
+    expect(describeSpy).toHaveBeenCalledTimes(1);
+    expect(pages).toHaveBeenCalledTimes(1);
+    expect(listPage).toHaveBeenCalledTimes(1);
+    expect(queryContract.mock.calls.map(call => call[0].id)).toEqual(["dev.mdbase.writer.manuscript", "dev.mdbase.reader.source"]);
+  });
   it("keeps per-record SDK modification times through projection and refreshes after local and synced edits", async () => {
     const h = await fixture();
     const second = h.replica.seed({path: "manuscripts/second.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "A second paper"]])}, body: "Second\n"});
     // MemoryReplica does not supply mtime. Stand in only for that public query
     // metadata; edits, sessions, projections and watch delivery use the SDK.
     const times = new Map([[h.manuscript.id, Date.parse("2026-01-01T00:00:00Z")], [second.id, Date.parse("2026-02-01T00:00:00Z")]]);
-    const query = h.client.query.bind(h.client);
-    vi.spyOn(h.client, "query").mockImplementation(async (...args) => {
-      const page = await query(...args);
-      return {...page, records: page.records.map(record => ({...record, ...(times.has(record.id) ? {mtime: times.get(record.id)!} : {})}))};
+    const pages = vi.spyOn(h.client, "pages");
+    const queryContract = h.client.queryContract.bind(h.client);
+    vi.spyOn(h.client, "queryContract").mockImplementation(async (...args) => {
+      const result = await queryContract(...args);
+      return {...result, page: {...result.page, records: result.page.records.map(record => ({...record, ...(times.has(record.id) ? {mtime: times.get(record.id)!} : {})}))}};
     });
     const listed = async () => {
       const result = await h.backend.listManuscripts();
@@ -94,6 +136,7 @@ describe("native Writer domain backend", () => {
     expect((await listed()).map(record => [record.path, record.modified])).toEqual([
       [second.path, "2026-02-01T00:00:00.000Z"], [h.manuscript.path, "2026-01-01T00:00:00.000Z"],
     ]);
+    expect(pages).not.toHaveBeenCalled();
     const changed = vi.fn(); h.backend.onCollectionChange(changed);
     const opened = await h.backend.records.open(h.manuscript.path, {autosave: false});
     if (!opened.ok) throw new Error("Missing native lease");
@@ -112,6 +155,7 @@ describe("native Writer domain backend", () => {
     h.replica.editElsewhere("notes/chapter.md", {body: "Unrelated sync\n"});
     await vi.waitFor(() => expect(changed).toHaveBeenCalled());
     await vi.waitFor(async () => expect((await listed()).map(record => record.modified)).toEqual(["2026-04-01T00:00:00.000Z", "2026-03-01T00:00:00.000Z"]));
+    expect(pages).not.toHaveBeenCalled();
     opened.value.release();
   });
   it("unrelated invalid definitions do not hide Writer records or untyped notes", async () => {
@@ -239,50 +283,50 @@ describe("native Writer domain backend", () => {
     const h = await fixture();
     const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "upgrade_required", recovery: "upgrade", message: "Contract queries unsupported", reason: "contract_query_unsupported"}));
     expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "Update mdbase Connect, then try again.", details: "upgrade_required: contract_query_unsupported"});
-    expect(query).toHaveBeenCalledWith({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, expect.objectContaining({pageSize: 128, signal: expect.any(AbortSignal)}));
+    expect(query).toHaveBeenCalledWith({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, expect.objectContaining({pageSize: 200, signal: expect.any(AbortSignal)}));
   });
   it("discovers all records across actual SDK pages rather than truncating the native index", async () => {
     const h = await fixture();
     for (let index = 0; index < 501; index++) h.replica.seed({path: `notes/page-${index}.md`, body: `Note ${index}`});
-    for (let index = 0; index < 129; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
+    for (let index = 0; index < 201; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
     const query = vi.spyOn(h.client, "queryContract");
     const result = await h.backend.index();
-    expect(result.ok && result.value.recordPaths).toHaveLength(633);
+    expect(result.ok && result.value.recordPaths).toHaveLength(705);
     expect(result.ok && result.value.recordPaths).toContain("notes/page-500.md");
     const manuscripts = await h.backend.listManuscripts();
-    expect(manuscripts.ok && manuscripts.value).toHaveLength(130);
-    expect(manuscripts.ok && manuscripts.value.some(book => book.path === "manuscripts/page-128.md" && book.title === "Book 128")).toBe(true);
+    expect(manuscripts.ok && manuscripts.value).toHaveLength(202);
+    expect(manuscripts.ok && manuscripts.value.some(book => book.path === "manuscripts/page-200.md" && book.title === "Book 200")).toBe(true);
     expect(query.mock.calls.some(call => call[1]?.cursor !== undefined)).toBe(true);
   });
   it("asks for smaller contract pages when the producer refuses a page as over its budget", async () => {
     const h = await fixture();
-    for (let index = 0; index < 129; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
+    for (let index = 0; index < 201; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
     const original = h.client.queryContract.bind(h.client);
     const sizes: number[] = [];
     vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
-      const size = options?.pageSize ?? 128;
+      const size = options?.pageSize ?? 200;
       if (contract.id === "dev.mdbase.writer.manuscript") sizes.push(size);
-      // The second page is the over-budget one until pages hold 32 records.
-      if (size > 32 && options?.cursor) throw new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"});
+      // The second page is the over-budget one until pages hold 50 records.
+      if (size > 50 && options?.cursor) throw new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"});
       return original(contract, options);
     });
     const manuscripts = await h.backend.listManuscripts();
-    expect(manuscripts.ok && manuscripts.value).toHaveLength(130);
-    expect(manuscripts.ok && manuscripts.value.some(book => book.path === "manuscripts/page-128.md" && book.title === "Book 128")).toBe(true);
+    expect(manuscripts.ok && manuscripts.value).toHaveLength(202);
+    expect(manuscripts.ok && manuscripts.value.some(book => book.path === "manuscripts/page-200.md" && book.title === "Book 200")).toBe(true);
     // Each refusal restarts the domain at half the size: a cursor is bound to its page size.
-    expect(sizes).toEqual([128, 128, 64, 64, 32, 32, 32, 32, 32]);
+    expect(sizes).toEqual([200, 200, 100, 100, 50, 50, 50, 50, 50]);
     // A reload starts from the size that worked.
     sizes.length = 0;
     h.replica.seed({path: "manuscripts/later.md", types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", "Later"]])}});
-    await vi.waitFor(async () => {const reloaded = await h.backend.listManuscripts(); expect(reloaded.ok && reloaded.value).toHaveLength(131);});
+    await vi.waitFor(async () => {const reloaded = await h.backend.listManuscripts(); expect(reloaded.ok && reloaded.value).toHaveLength(203);});
     expect(sizes.length).toBeGreaterThan(0);
-    expect(new Set(sizes)).toEqual(new Set([32]));
+    expect(new Set(sizes)).toEqual(new Set([50]));
   });
   it("reports the refusal reason when a single record exceeds the producer's contract budget", async () => {
     const h = await fixture();
     const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"}));
     expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "This library is too large to index at once.", details: "too_large: contract_projection_budget"});
-    expect(query.mock.calls.map(call => call[1]?.pageSize)).toEqual([128, 64, 32, 16, 8, 4, 2, 1]);
+    expect(query.mock.calls.map(call => call[1]?.pageSize)).toEqual([200, 100, 50, 25, 13, 7, 4, 2, 1]);
   });
   it.each(["changed snapshot", "repeated cursor"]) ("refuses unsafe metadata pagination: %s", async failure => {
     const h = await fixture(); const actual = await h.client.query({}, {include: {effective: true}});
@@ -300,7 +344,7 @@ describe("native Writer domain backend", () => {
   // starts the whole load over instead of showing an error until Retry.
   it("restarts the load when a save mid-load ends a contract continuation with cursor_stale", async () => {
     const h = await fixture();
-    for (let index = 0; index < 129; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
+    for (let index = 0; index < 201; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
     const original = h.client.queryContract.bind(h.client);
     let saved = false; const refusals: unknown[] = [];
     vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
@@ -317,8 +361,27 @@ describe("native Writer domain backend", () => {
     });
     const manuscripts = await h.backend.listManuscripts();
     expect(refusals).toEqual([expect.objectContaining({code: "invalid_request", reason: "cursor_stale"})]);
-    expect(manuscripts.ok && manuscripts.value).toHaveLength(130);
+    expect(manuscripts.ok && manuscripts.value).toHaveLength(202);
     expect(await h.backend.readBody("notes/chapter.md")).toEqual({ok: true, value: "Saved\n"});
+  });
+  it("restarts manuscript loading once when the contract snapshot advances between pages", async () => {
+    const h = await fixture();
+    for (let index = 0; index < 201; index++) h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Book ${index}`]])}});
+    const pages = vi.spyOn(h.client, "pages");
+    const original = h.client.queryContract.bind(h.client);
+    let shifted = false;
+    const spy = vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
+      const result = await original(contract, options);
+      if (!shifted && options?.cursor && contract.id === "dev.mdbase.writer.manuscript") {
+        shifted = true;
+        return {...result, page: {...result.page, asOf: result.page.asOf + 1}};
+      }
+      return result;
+    });
+    const manuscripts = await h.backend.listManuscripts();
+    expect(manuscripts.ok && manuscripts.value).toHaveLength(202);
+    expect(spy).toHaveBeenCalledTimes(4);
+    expect(pages).not.toHaveBeenCalled();
   });
   it("restarts the load once when the record pages' snapshot advances between pages", async () => {
     const h = await fixture(); const actual = await h.client.query({}, {include: {effective: true}});
@@ -328,7 +391,7 @@ describe("native Writer domain backend", () => {
       yield {...actual, records: [], complete: false, asOf: actual.asOf + 1, cursor: "next-cursor"};
       throw new Error("The repository must stop before requesting another page of a changed snapshot");
     }).mockImplementation((...args) => pages(...args));
-    expect(await h.backend.listManuscripts()).toMatchObject({ok: true, value: [{path: "manuscripts/original.md"}]});
+    expect(await h.backend.index()).toMatchObject({ok: true, value: {recordPaths: expect.arrayContaining(["manuscripts/original.md"])}});
     expect(spy).toHaveBeenCalledTimes(2);
   });
   it("surfaces persistent staleness after a bounded number of restarts", async () => {
