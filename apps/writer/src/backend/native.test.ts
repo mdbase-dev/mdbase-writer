@@ -304,8 +304,14 @@ describe("native Writer domain backend", () => {
     const original = h.client.queryContract.bind(h.client);
     let saved = false; const refusals: unknown[] = [];
     vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
-      // The second manuscript page follows a save: the actual replica refuses it.
-      if (!saved && options?.cursor && contract.id === "dev.mdbase.writer.manuscript") {saved = true; h.replica.editElsewhere("notes/chapter.md", {body: "Saved\n"});}
+      // The second manuscript page follows a save. Connect's replica binds a contract
+      // cursor to its view version (replica-client-api §4.1.1) and refuses it; the SDK's
+      // MemoryReplica stopped modelling that in 0.2.13, so the refusal is stated here.
+      if (!saved && options?.cursor && contract.id === "dev.mdbase.writer.manuscript") {
+        saved = true; h.replica.editElsewhere("notes/chapter.md", {body: "Saved\n"});
+        const stale = new MdbaseError({code: "invalid_request", recovery: "fix_request", message: "restart from the first query page", reason: "cursor_stale"});
+        refusals.push(stale); throw stale;
+      }
       try {return await original(contract, options);}
       catch (error) {refusals.push(error); throw error;}
     });
