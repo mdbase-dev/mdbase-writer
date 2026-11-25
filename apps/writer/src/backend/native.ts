@@ -17,6 +17,15 @@ export interface NativeWriterOptions {
   /** Reuses the SDK's original authorize gesture, never an app popup engine. */
   readonly authorize?: () => Promise<unknown>;
 }
+interface NativeSchema {
+  readonly catalog: DescribeResult;
+  readonly schema: CollectionSchema;
+  readonly generation: number;
+}
+interface NativeManuscripts {
+  readonly manuscripts: ManuscriptSummary[];
+  readonly generation: number;
+}
 interface NativeMetadata {
   readonly schema: CollectionSchema;
   readonly store: CollectionStore;
@@ -24,9 +33,18 @@ interface NativeMetadata {
   readonly files: ReadonlyMap<string, FileView>;
   readonly generation: number;
 }
+interface DomainScope {
+  readonly asOf: number;
+  readonly selected: ReadonlyMap<string, CollectionRow>;
+  readonly identities: ReadonlyMap<string, {readonly id: string; readonly revision: string}>;
+}
 const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000;
-/** The producer's largest contract page; a refused page is asked for again at half. */
+/** The producer's default contract page; a refused page is asked for again at half. */
 const CONTRACT_PAGE_SIZE = 128;
+/** Manuscripts carry small projections (title, template, csl), so 200 stays within
+ * the replica's 1 MiB projection budget; a refused page still halves like any domain. */
+const MANUSCRIPT_PAGE_SIZE = 200;
+const COLLECTION_DOMAINS = ["source", "annotation", "comment", "person"] as const;
 /** Pauses before each further account check after a transient failure. */
 const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
 /** A metadata load the collection changed under starts over at most this many times
@@ -72,6 +90,11 @@ export class NativeWriterBackend implements WriterBackend {
   private readonly abort = () => this.dispose();
   private disposed = false;
   private generation = 0;
+  private cachedSchema: NativeSchema | undefined;
+  private schemaAttempt: {generation: number; promise: Promise<NativeSchema>} | undefined;
+  private schemaJob: Promise<NativeSchema> | undefined;
+  private cachedManuscripts: NativeManuscripts | undefined;
+  private manuscriptsJob: Promise<NativeManuscripts> | undefined;
   private cached: NativeMetadata | undefined;
   private metadataJob: Promise<NativeMetadata> | undefined;
   /** The page size each domain's contract metadata last loaded at, so a reload
@@ -103,7 +126,7 @@ export class NativeWriterBackend implements WriterBackend {
     this.signal.addEventListener("abort", this.abort, {once: true});
     if (this.signal.aborted) this.dispose();
   }
-  get setupStatus() {return this.cached?.schema.setupStatus;}
+  get setupStatus() {return this.cachedSchema?.schema.setupStatus;}
   private startWatch(reconnecting = false, background = false): ReturnType<MdbaseClient["watchChanges"]> {
     const epoch = ++this.watchEpoch;
     // A failed replacement does not invalidate again (no recursive reload
@@ -183,31 +206,85 @@ export class NativeWriterBackend implements WriterBackend {
   }
   private invalidate(paths: readonly string[]): void {
     if (this.disposed) return;
-    ++this.generation; this.cached = undefined; this.peopleJob = undefined;
+    ++this.generation;
+    this.cachedSchema = undefined;
+    this.cachedManuscripts = undefined;
+    this.cached = undefined;
+    this.peopleJob = undefined;
     for (const waiter of [...this.changeWaiters]) waiter();
     for (const listener of this.external) listener(paths);
     for (const listener of this.collection) listener({paths, reset: true});
   }
+  private async readyWatch(): Promise<{watch: ReturnType<MdbaseClient["watchChanges"]>; generation: number}> {
+    const watch = this.discoveryWatch();
+    await watch.ready; this.check();
+    const generation = this.generation;
+    if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
+    return {watch, generation};
+  }
+  private runShared<T>(current: () => Promise<T> | undefined, assign: (job: Promise<T> | undefined) => void, load: () => Promise<T>): Promise<T> {
+    const existing = current();
+    if (existing) return existing;
+    let job!: Promise<T>;
+    job = (async () => {
+      try {return await this.withRestarts(load);}
+      finally {if (current() === job) assign(undefined);}
+    })();
+    assign(job);
+    return job;
+  }
+  private schema(): Promise<NativeSchema> {
+    this.check();
+    if (this.cachedSchema && this.cachedSchema.generation === this.generation && this.watch.state === "active") return Promise.resolve(this.cachedSchema);
+    this.cachedSchema = undefined;
+    return this.runShared(() => this.schemaJob, job => {this.schemaJob = job;}, async () => {
+      const {watch, generation} = await this.readyWatch();
+      return this.loadSchemaAt(watch, generation);
+    });
+  }
+  private async loadSchemaAt(watch: ReturnType<MdbaseClient["watchChanges"]>, generation: number): Promise<NativeSchema> {
+    if (this.cachedSchema && this.cachedSchema.generation === generation && watch === this.watch && watch.state === "active") return this.cachedSchema;
+    if (this.schemaAttempt?.generation === generation) return this.schemaAttempt.promise;
+    let attempt!: {generation: number; promise: Promise<NativeSchema>};
+    const promise = (async () => {
+      try {
+        const catalog = await this.client.describe({signal: this.signal}); this.check(generation);
+        const schema = nativeWriterSchema(catalog);
+        this.check(generation);
+        if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
+        return this.cachedSchema = {catalog, schema, generation};
+      } finally {
+        if (this.schemaAttempt === attempt) this.schemaAttempt = undefined;
+      }
+    })();
+    attempt = {generation, promise};
+    this.schemaAttempt = attempt;
+    return promise;
+  }
+  private manuscripts(): Promise<NativeManuscripts> {
+    this.check();
+    if (this.cachedManuscripts && this.cachedManuscripts.generation === this.generation && this.watch.state === "active") return Promise.resolve(this.cachedManuscripts);
+    this.cachedManuscripts = undefined;
+    return this.runShared(() => this.manuscriptsJob, job => {this.manuscriptsJob = job;}, () => this.loadManuscriptsOnce());
+  }
   private metadata(): Promise<NativeMetadata> {
     this.check();
-    if (this.cached && this.watch.state === "active") return Promise.resolve(this.cached);
+    if (this.cached && this.cached.generation === this.generation && this.watch.state === "active") return Promise.resolve(this.cached);
     this.cached = undefined;
-    if (this.metadataJob) return this.metadataJob;
-    const job = this.loadMetadata(); this.metadataJob = job;
-    void job.then(() => {if (this.metadataJob === job) this.metadataJob = undefined;}, () => {if (this.metadataJob === job) this.metadataJob = undefined;});
-    return job;
+    return this.runShared(() => this.metadataJob, job => {this.metadataJob = job;}, () => this.loadMetadataOnce());
   }
   /** A save's acknowledgement changes the view: the replica then ends a continuation
    * (`cursor_stale`/`cursor_expired`), or a later page reports another snapshot. Neither
    * is a failure of the collection, so the load starts over from its first page under
    * a fresh generation, a bounded number of times. Other errors surface at once. */
-  private async loadMetadata(): Promise<NativeMetadata> {
+  private async withRestarts<T>(load: () => Promise<T>): Promise<T> {
     for (let attempt = 1; ; attempt++) {
       const before = this.generation;
-      try {return await this.loadMetadataOnce();}
+      try {return await load();}
       catch (error) {
         if (attempt >= METADATA_ATTEMPTS || this.signal.aborted || this.disposed || !(error instanceof SnapshotChanged || staleContinuation(error))) throw error;
       }
+      this.cachedSchema = undefined;
       await this.nextChange(before, METADATA_RESTART_MS[attempt - 1] ?? 0); this.check();
     }
   }
@@ -220,13 +297,20 @@ export class NativeWriterBackend implements WriterBackend {
       this.changeWaiters.add(done); this.signal.addEventListener("abort", done, {once: true});
     });
   }
-  private async loadMetadataOnce(): Promise<NativeMetadata> {
-    const watch = this.discoveryWatch();
-    await watch.ready; this.check();
-    const generation = this.generation;
+  private async loadManuscriptsOnce(): Promise<NativeManuscripts> {
+    const {watch, generation} = await this.readyWatch();
+    const {catalog, schema} = await this.loadSchemaAt(watch, generation);
+    this.available(schema, "manuscript");
+    const rows = await this.loadContractDomain("manuscript", catalog, schema, generation);
+    const store = new CollectionStore(schema);
+    store.upsert([...rows.values()], true);
+    this.check(generation);
     if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
-    const catalog = await this.client.describe({signal: this.signal}); this.check(generation);
-    const schema = nativeWriterSchema(catalog);
+    return this.cachedManuscripts = {manuscripts: store.manuscripts, generation};
+  }
+  private async loadMetadataOnce(): Promise<NativeMetadata> {
+    const {watch, generation} = await this.readyWatch();
+    const {catalog, schema} = await this.loadSchemaAt(watch, generation);
     const store = new CollectionStore(schema);
     const rows = new Map<string, CollectionRow>();
     const identities = new Map<string, {id: string; revision: string}>();
@@ -276,50 +360,76 @@ export class NativeWriterBackend implements WriterBackend {
     return this.cached = {schema, store, identities, files, generation};
   }
   private async projectMetadata(catalog: DescribeResult, schema: CollectionSchema, rows: Map<string, CollectionRow>, identities: ReadonlyMap<string, {id: string; revision: string}>, asOf: number, generation: number): Promise<void> {
-    for (const domain of ["manuscript", "source", "annotation", "comment", "person"] as const) {
+    for (const domain of COLLECTION_DOMAINS) {
       const selected = new Map([...rows].filter(([, row]) => schema.roles(row.types).get(domain)?.active));
       if (!selected.size) continue;
-      const contract = domainContract(domain);
-      const declared = catalog.contracts.find(candidate => candidate.id === contract.id && candidate.version === contract.version);
-      if (!declared) throw new Error("Writer's metadata lost its exact contract.");
-      // The producer refuses a page whose projection exceeds its fixed budget
-      // (`too_large`), and only it knows record sizes: ask again for fewer.
-      // A cursor is bound to its page size, so the domain restarts.
-      let pageSize = this.contractPageSizes.get(domain) ?? CONTRACT_PAGE_SIZE;
-      for (;;) {
-        try {await this.projectDomain(domain, contract, declared.digest, pageSize, selected, schema, rows, identities, asOf, generation); break;}
-        catch (error) {
-          if (pageSize === 1 || !isMdbaseError(error) || error.code !== "too_large") throw error;
-          this.check(generation);
-          pageSize = Math.ceil(pageSize / 2);
-        }
-      }
-      this.contractPageSizes.set(domain, pageSize);
+      const projected = await this.loadContractDomain(domain, catalog, schema, generation, {asOf, selected, identities});
+      for (const [id, row] of projected) rows.set(id, row);
     }
   }
-  private async projectDomain(domain: Domain, contract: ReturnType<typeof domainContract>, digest: DescribeResult["contracts"][number]["digest"], pageSize: number, selected: ReadonlyMap<string, CollectionRow>, schema: CollectionSchema, rows: Map<string, CollectionRow>, identities: ReadonlyMap<string, {id: string; revision: string}>, asOf: number, generation: number): Promise<void> {
+  private async loadContractDomain(domain: Domain, catalog: DescribeResult, schema: CollectionSchema, generation: number, scope?: DomainScope): Promise<Map<string, CollectionRow>> {
+    const contract = domainContract(domain);
+    const declared = catalog.contracts.find(candidate => candidate.id === contract.id && candidate.version === contract.version);
+    if (!declared) throw new Error("Writer's metadata lost its exact contract.");
+    // The producer refuses a page whose projection exceeds its fixed budget
+    // (`too_large`), and only it knows record sizes: ask again for fewer.
+    // A cursor is bound to its page size, so the domain restarts.
+    let pageSize = this.contractPageSizes.get(domain) ?? (domain === "manuscript" ? MANUSCRIPT_PAGE_SIZE : CONTRACT_PAGE_SIZE);
+    for (;;) {
+      try {
+        const rows = await this.pageContractDomain(domain, contract, declared.digest, pageSize, schema, generation, scope);
+        this.contractPageSizes.set(domain, pageSize);
+        return rows;
+      } catch (error) {
+        if (pageSize === 1 || !isMdbaseError(error) || error.code !== "too_large") throw error;
+        this.check(generation);
+        pageSize = Math.ceil(pageSize / 2);
+      }
+    }
+  }
+  /** Pages one contract domain from `queryContract`. Without `scope` (manuscripts),
+   * rows come straight from each page's `RecordView`s and projections without a full
+   * collection scan; future ordered paging (`orderBy`) plugs into this one query call. */
+  private async pageContractDomain(domain: Domain, contract: ReturnType<typeof domainContract>, digest: DescribeResult["contracts"][number]["digest"], pageSize: number, schema: CollectionSchema, generation: number, scope?: DomainScope): Promise<Map<string, CollectionRow>> {
+    const rows = new Map<string, CollectionRow>();
     const seen = new Set<string>();
+    const seenPaths = new Set<string>();
     const cursors = new Set<string>();
+    let asOf = scope?.asOf;
     let cursor: string | undefined;
     do {
       const result = await this.client.queryContract(contract, {pageSize, ...(cursor ? {cursor} : {}), signal: this.signal}); this.check(generation);
-      if (!sameDigest(result.contractDigest, digest) || result.page.asOf !== asOf) throw new SnapshotChanged("Writer's contract metadata snapshot or digest changed.");
+      if (!sameDigest(result.contractDigest, digest) || (asOf !== undefined && result.page.asOf !== asOf)) throw new SnapshotChanged("Writer's contract metadata snapshot or digest changed.");
+      asOf = result.page.asOf;
       const witnesses = new Map(result.page.records.map(record => [record.id, record]));
       if (witnesses.size !== result.page.records.length) throw new Error("Writer's contract query repeated a record identity.");
       for (const projected of result.records) {
-        const row = selected.get(projected.id);
         const witness = witnesses.get(projected.id);
-        const identity = row && identities.get(row.path);
-        if (!row || !witness || !identity || witness.path !== row.path || witness.revision !== identity.revision || seen.has(projected.id)) throw new Error("Writer's contract metadata identity changed or repeated.");
+        if (!witness || seen.has(projected.id) || seenPaths.has(witness.path)) throw new Error("Writer's contract metadata identity changed or repeated.");
+        let row: CollectionRow;
+        if (scope) {
+          const existing = scope.selected.get(projected.id);
+          const identity = existing && scope.identities.get(existing.path);
+          if (!existing || !identity || witness.path !== existing.path || witness.revision !== identity.revision) throw new Error("Writer's contract metadata identity changed or repeated.");
+          row = existing;
+        } else {
+          row = {path: witness.path, types: witness.types,
+            ...(witness.mtime !== undefined ? {modified: new Date(witness.mtime).toISOString()} : {})};
+        }
         const binding = schema.roles(row.types).get(domain);
-        const implementations = projected.implementations.filter(candidate => candidate.typeName === binding?.name);
+        if (!binding?.active) {
+          if (!scope && row.types.some(type => schema.isUnavailableType(type))) {seen.add(projected.id); seenPaths.add(witness.path); continue;}
+          throw new Error("Writer's contract metadata projection is ambiguous.");
+        }
+        const implementations = projected.implementations.filter(candidate => candidate.typeName === binding.name);
         const implementation = implementations[0];
         if (implementations.length !== 1 || !implementation) throw new Error("Writer's contract metadata projection is ambiguous.");
-        seen.add(projected.id);
+        seen.add(projected.id); seenPaths.add(witness.path);
         // One invalid record stays listed without its projected fields;
         // it never blocks the rest of the collection.
-        if (implementation.issues.some(issue => issue.severity === "error")) continue;
-        rows.set(projected.id, {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
+        rows.set(projected.id, implementation.issues.some(issue => issue.severity === "error")
+          ? row
+          : {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
       }
       cursor = result.page.cursor;
       if (cursor) {
@@ -327,31 +437,31 @@ export class NativeWriterBackend implements WriterBackend {
         cursors.add(cursor);
       } else if (!result.page.complete) throw new Error("Writer's contract metadata query is incomplete.");
     } while (cursor);
-    if (seen.size !== selected.size) throw new Error("Writer's contract metadata omitted an original record.");
+    if (scope && seen.size !== scope.selected.size) throw new Error("Writer's contract metadata omitted an original record.");
+    return rows;
   }
-  manuscriptBindings(): Promise<Result<readonly Binding[]>> {return this.safely(async () => this.bindingList((await this.metadata()).schema, "manuscript"));}
+  manuscriptBindings(): Promise<Result<readonly Binding[]>> {return this.safely(async () => this.bindingList((await this.schema()).schema, "manuscript"));}
   private bindingList(schema: CollectionSchema, domain: Domain): Binding[] {
     const found = schema.bindings(domain, true);
     if (!found.ok) throw new Error(found.message);
     return found.value;
   }
   private async binding(domain: Domain): Promise<Binding> {
-    const first = this.bindingList((await this.metadata()).schema, domain)[0];
+    const first = this.bindingList((await this.schema()).schema, domain)[0];
     if (!first) throw new Error("Writer has no native type for this operation.");
     return first;
   }
-  listManuscripts(): Promise<Result<ManuscriptSummary[]>> {return this.safely(async () => this.available(await this.metadata(), "manuscript").store.manuscripts, "index");}
+  listManuscripts(): Promise<Result<ManuscriptSummary[]>> {return this.safely(async () => (await this.manuscripts()).manuscripts, "index");}
   /** Fails with plain copy when every Writer type for the domain is unusable. */
-  private available(metadata: NativeMetadata, domain: Domain): NativeMetadata {
-    const message = metadata.schema.unavailableMessage(domain);
+  private available(schema: CollectionSchema, domain: Domain): void {
+    const message = schema.unavailableMessage(domain);
     if (message) throw new Error(message);
-    return metadata;
   }
   index(): Promise<Result<CollectionIndex>> {return this.safely(async () => (await this.metadata()).store.index, "index");}
   library(): Promise<Result<LibraryEntry[]>> {return this.safely(async () => (await this.metadata()).store.library, "index");}
   annotationPaths(): Promise<Result<readonly string[]>> {return this.safely(async () => [...(await this.metadata()).store.annotations.keys()], "index");}
   annotationFields(path: string, types: readonly string[] = []): Readonly<Record<string, string>> {
-    return this.cached?.store.annotations.get(path)?.fields ?? this.cached?.schema.annotationFields(types) ?? {};
+    return this.cached?.store.annotations.get(path)?.fields ?? this.cachedSchema?.schema.annotationFields(types) ?? {};
   }
   private bodies(metadata: NativeMetadata): CollectionBodies {
     return new CollectionBodies(() => metadata.store, selected => this.safely(async () => {
@@ -370,7 +480,8 @@ export class NativeWriterBackend implements WriterBackend {
   }
   comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>> {
     return this.safelyResult(async () => {
-      const metadata = this.available(await this.metadata(), "comment");
+      const metadata = await this.metadata();
+      this.available(metadata.schema, "comment");
       const result = await this.bodies(metadata).commentsForScope(scope); this.check(metadata.generation);
       return result;
     });
@@ -500,7 +611,7 @@ export class NativeWriterBackend implements WriterBackend {
   }
   private async contractRecord(original: RecordView, contract: ContractSelector, usable: (record: RecordView) => boolean = unprotected): Promise<ContractRecordView> {
     const projected = await this.client.getContract(original.id, contract, {signal: this.signal}); this.check();
-    const expected = (await this.metadata()).schema.description.contracts.find(candidate => candidate.id === contract.id);
+    const expected = (await this.schema()).schema.description.contracts.find(candidate => candidate.id === contract.id);
     const digest = manifestContractDigest(contract.id, contract.version);
     if (!expected || projected.id !== original.id || projected.path !== original.path || projected.revision !== original.revision
       || projected.contract.id !== contract.id || projected.contract.version !== contract.version || projected.contract.type !== contract.type
@@ -613,13 +724,14 @@ export class NativeWriterBackend implements WriterBackend {
   }
   onExternalChange(listener: (paths: readonly string[]) => void): () => void {this.external.add(listener); return () => {this.external.delete(listener);};}
   onCollectionChange(listener: (delta: CollectionDelta) => void): () => void {this.collection.add(listener); return () => {this.collection.delete(listener);};}
-  flushChanges(): Promise<Result<void>> {return this.safely(async () => {await this.metadata();});}
+  flushChanges(): Promise<Result<void>> {return this.safely(async () => {await this.readyWatch();});}
   reconcile(): Promise<Result<void>> {this.invalidate([]); return this.flushChanges();}
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true; ++this.watchEpoch; clearTimeout(this.reconnectTimer); this.reconnectTimer = undefined;
     this.signal.removeEventListener("abort", this.abort); this.stopWatchState(); this.watch();
     this.lifetime.abort(); if (this.ownedRecords) this.records.dispose();
-    this.external.clear(); this.collection.clear(); this.cached = undefined;
+    this.external.clear(); this.collection.clear();
+    this.cachedSchema = undefined; this.cachedManuscripts = undefined; this.cached = undefined;
   }
 }
