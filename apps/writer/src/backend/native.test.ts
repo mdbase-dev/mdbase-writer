@@ -637,4 +637,66 @@ describe("native Writer domain backend", () => {
     h.caller.abort(); expect((await h.backend.readBody("manuscripts/original.md")).ok).toBe(false);
     expect(close).not.toHaveBeenCalled(); expect(h.client.link).toBe("open");
   });
+  it("deletes a document via SDK with revision CAS and updates manuscripts and index (#210)", async () => {
+    const h = await fixture();
+    const second = h.replica.seed({path: "manuscripts/delete-me.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "Delete Me"]]), layout: "article", style: "apa"}, body: "Draft\n"});
+    const del = vi.spyOn(h.client, "delete");
+    const result = await h.backend.deleteDocument(second.path);
+    expect(result).toEqual({ok: true, value: undefined});
+    expect(del).toHaveBeenCalledWith(expect.objectContaining({id: second.id, path: second.path}), expect.objectContaining({ifRevision: expect.any(String), signal: expect.any(AbortSignal)}));
+    const manuscripts = await h.backend.listManuscripts();
+    expect(manuscripts.ok && manuscripts.value.map(m => m.path)).toEqual(["manuscripts/original.md"]);
+    const index = await h.backend.index();
+    expect(index.ok && index.value.recordPaths).not.toContain(second.path);
+  });
+  it("surfaces clear errors when deleting without permission or on conflict without wedging later writes (#210)", async () => {
+    const h = await fixture();
+    vi.spyOn(h.client, "delete")
+      .mockRejectedValueOnce(new MdbaseError({code: "forbidden", recovery: "reauthorize", message: "missing delete", reason: "capability_missing"}))
+      .mockRejectedValueOnce(new MdbaseError({code: "conflict", recovery: "none", message: "changed", reason: "revision"}));
+    expect(await h.backend.deleteDocument("manuscripts/original.md")).toEqual({
+      ok: false, message: "Writer does not have permission to delete documents in this collection.",
+    });
+    expect(await h.backend.deleteDocument("manuscripts/original.md")).toEqual({
+      ok: false, message: "This document changed elsewhere. Reload and try again.",
+    });
+    expect(await h.backend.deleteDocument("manuscripts/missing.md")).toEqual({
+      ok: false, message: "This document has already been deleted.",
+    });
+    // Subsequent writes still succeed cleanly.
+    expect((await h.backend.createRecord("notes/after-delete-error.md", "Still works\n")).ok).toBe(true);
+  });
+  it("recovers a lost delete reply by the original SDK MID without deleting twice (#210)", async () => {
+    const h = await fixture();
+    const original = h.client.delete.bind(h.client);
+    const submitted: string[] = [];
+    vi.spyOn(h.client, "delete").mockImplementationOnce(async (target, options) => {
+      if (!options?.mutationId) throw new Error("Missing original MID");
+      submitted.push(options.mutationId);
+      const write = await original(target, options); await write.confirmed;
+      throw new Error("Lost original reply");
+    });
+    const lost = await h.backend.deleteDocument("notes/chapter.md");
+    expect(lost.ok).toBe(false);
+    const receipt = vi.spyOn(h.client, "awaitReceipt");
+    const recover = await h.backend.createRecord("notes/after-recovery.md", "Fresh write\n");
+    expect(recover).toMatchObject({ok: false, message: expect.stringContaining("recovered the original operation")});
+    expect(receipt).toHaveBeenCalledWith(submitted[0], {timeoutMs: 5_000, signal: expect.any(AbortSignal)});
+    expect(h.client.delete).toHaveBeenCalledOnce();
+  });
+  it("reports incremental manuscript pages as multi-page contract queries arrive (#211)", async () => {
+    const h = await fixture();
+    for (let index = 0; index < 205; index++) {
+      h.replica.seed({path: `manuscripts/page-${index}.md`, types: ["native-manuscript"], frontmatter: {meta: new Map([["heading", `Paper ${index}`]])}});
+    }
+    const progressCounts: number[] = [];
+    const result = await h.backend.listManuscripts({
+      onProgress: (progress) => {
+        progressCounts.push(progress.loaded);
+        expect(progress.manuscripts).toHaveLength(progress.loaded);
+      },
+    });
+    expect(result.ok && result.value).toHaveLength(206);
+    expect(progressCounts).toEqual([200]);
+  });
 });

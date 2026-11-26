@@ -183,6 +183,10 @@ msgstr "{sources, plural, one {Из mdbase Reader можно цитироват�
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
 msgstr "{sources, plural, one {# источник для цитирования из mdbase Reader} few {# источника для цитирования из mdbase Reader} many {# источников для цитирования из mdbase Reader} other {# источника для цитирования из mdbase Reader}}"
 
+#: src/ui/Home.tsx
+msgid "{streamingCount, plural, one {Loading manuscripts… # loaded} other {Loading manuscripts… # loaded}}"
+msgstr "{streamingCount, plural, one {Загрузка рукописей… загружена #} few {Загрузка рукописей… загружены #} many {Загрузка рукописей… загружено #} other {Загрузка рукописей… загружено #}}"
+
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
 msgstr "{uses, plural, one {Цитируется один раз} few {Цитируется # раза} many {Цитируется # раз} other {Цитируется # раза}}"
@@ -593,6 +597,10 @@ msgstr "Не удалось проверить проблемы рукописи
 msgid "Could not create the manuscript. Please try again."
 msgstr "Не удалось создать рукопись. Повторите попытку."
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Could not delete the document. Please try again."
+msgstr "Не удалось удалить документ. Попробуйте ещё раз."
+
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
 msgstr "Не удалось использовать заметку как рукопись. Повторите попытку."
@@ -622,6 +630,20 @@ msgstr "Тёмная"
 msgid "Date"
 msgstr "Дата"
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete “{expectedName}”?"
+msgstr "Удалить «{expectedName}»?"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete document"
+msgstr "Удалить документ"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Delete document…"
+msgstr "Удалить документ…"
+
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "Удалено"
@@ -629,6 +651,10 @@ msgstr "Удалено"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "Удалена в другом месте"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Deleting…"
+msgstr "Удаление…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo"
@@ -657,6 +683,10 @@ msgstr "Закрыть"
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"
 msgstr "Закрыть текущее меню или диалог"
+
+#: src/ui/Home.tsx
+msgid "Document actions"
+msgstr "Действия с документом"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -1145,13 +1175,13 @@ msgstr "Загрузка аннотаций…"
 msgid "Loading collection data…"
 msgstr "Загрузка данных коллекции…"
 
+#: src/ui/Home.tsx
+msgid "Loading manuscripts…"
+msgstr "Загрузка рукописей…"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
 msgstr "Загрузка источников…"
-
-#: src/ui/Home.tsx
-msgid "Loading…"
-msgstr "Загрузка…"
 
 #: src/workspace/workspace.ts
 msgid "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails."
@@ -1165,6 +1195,7 @@ msgstr "Поиск источников…"
 msgid "Lower panel"
 msgstr "Нижняя панель"
 
+#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "Рукопись"
@@ -1693,6 +1724,10 @@ msgstr "Удалить"
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "Убрать автора {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "remove trash"
+msgstr "убрать корзина стереть"
 
 #: src/ui/Shortcuts.tsx
 msgid "Rename the focused chapter"
@@ -2247,6 +2282,19 @@ msgstr "Эта коллекция не принимает файлы от mdbase
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "Не удалось открыть представление этой коллекции. Выберите другую коллекцию на панели выше или перезагрузите страницу, чтобы повторить попытку."
 
+#. placeholder {0}: current.path
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "This deletes {0} from this collection. This cannot be undone here."
+msgstr "Это удалит {0} из этой коллекции. Отменить это действие здесь нельзя."
+
+#: src/backend/native.ts
+msgid "This document changed elsewhere. Reload and try again."
+msgstr "Этот документ был изменён в другом месте. Перезагрузите и попробуйте ещё раз."
+
+#: src/backend/native.ts
+msgid "This document has already been deleted."
+msgstr "Этот документ уже удалён."
+
 #: src/backend/native.ts
 msgid "This library is too large to index at once."
 msgstr "Эта библиотека слишком велика, чтобы проиндексировать её за один раз."
@@ -2268,6 +2316,10 @@ msgstr "Название, авторы, аннотация, стиль цити�
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "отслеживание изменений исправления правки"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Type <0>{expectedName}</0> to confirm"
+msgstr "Введите <0>{expectedName}</0> для подтверждения"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2430,6 +2482,10 @@ msgstr "Writer не удалось загрузить библиотеку. По
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "mdbase writer не удалось открыть эту коллекцию"
+
+#: src/backend/native.ts
+msgid "Writer does not have permission to delete documents in this collection."
+msgstr "У Writer нет разрешения на удаление документов в этой коллекции."
 
 #: src/backend/native.ts
 msgid "Writer no longer has access to this collection."

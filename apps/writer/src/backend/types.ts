@@ -117,6 +117,15 @@ export interface WriterRecords {
   open(path: string, options?: RecordOpenOptions): Promise<{ readonly ok: true; readonly value: RecordLease } | { readonly ok: false; readonly problem: SessionProblem }>;
 }
 
+export interface ManuscriptLoadProgress {
+  readonly manuscripts: readonly ManuscriptSummary[];
+  readonly loaded: number;
+}
+
+export interface ManuscriptListOptions {
+  readonly onProgress?: (progress: ManuscriptLoadProgress) => void;
+}
+
 export interface WriterBackend {
   readonly setupStatus?: { readonly sources: boolean; readonly annotations: boolean; readonly comments: boolean } | undefined;
   readonly kind: "connect" | "demo";
@@ -125,8 +134,10 @@ export interface WriterBackend {
   readonly draftNamespace?: string;
   manuscriptBindings?(): Promise<Result<readonly ManuscriptBinding[]>>;
   readonly records: WriterRecords;
-  listManuscripts(): Promise<Result<ManuscriptSummary[]>>;
+  listManuscripts(options?: ManuscriptListOptions): Promise<Result<ManuscriptSummary[]>>;
   createManuscript(input: NewManuscript): Promise<Result<string>>;
+  /** Deletes a document record from the collection after explicit user confirmation. */
+  deleteDocument(path: string): Promise<Result<void>>;
   /** Promotes an untyped note to a manuscript, preserving its text, metadata and location. */
   adoptManuscript(path: string): Promise<Result<string>>;
   /** Creates a plain Markdown record at `path`, or at `path` numbered when that is taken; resolves to its path.

@@ -996,6 +996,15 @@ export class ManuscriptWorkspace {
     this.update({ recoveredDrafts });
   }
 
+  async deleteDocument(): Promise<Result<void>> {
+    const result = await this.backend.deleteDocument(this.main);
+    if (result.ok) {
+      this.stagedSettings.delete(this.main);
+      this.drafts.remove(this.main);
+    }
+    return result;
+  }
+
   localDrafts(): readonly [string, string][] {
     const paths = new Set([...this.current.records.keys(), ...this.current.recoveredDrafts.keys()]);
     return [...paths].map((path) => {

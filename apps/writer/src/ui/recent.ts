@@ -55,6 +55,17 @@ export function recordOpened(namespace: string, path: string, store: Pick<Storag
   }
 }
 
+/** Removes `path` from the browser's recent list (e.g. after deleting the document). */
+export function removeRecent(namespace: string, path: string, store: Pick<Storage, "getItem" | "setItem"> | undefined = storage()): void {
+  try {
+    const previous = recentManuscripts(namespace, store);
+    const next = previous.filter((e) => e.path !== path);
+    if (next.length !== previous.length) store?.setItem(recentKey(namespace), JSON.stringify(next));
+  } catch {
+    // Storage may be unavailable.
+  }
+}
+
 /** A manuscript's word goal in this browser, or null. */
 export function wordGoal(namespace: string, path: string, store: Pick<Storage, "getItem"> | undefined = storage()): number | null {
   try {

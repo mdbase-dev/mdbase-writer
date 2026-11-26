@@ -3,7 +3,7 @@ import type { JsonObject } from "@mdbase-dev/sdk";
 import type { CslItem } from "@mdbase-writer/core";
 import { splitFrontmatter } from "@mdbase-writer/core/records";
 import { createDemoApp, DemoWriterBackend, demoRecord } from "./demo-fixture.js";
-import { bodySummary, ok } from "./types.js";
+import { bodySummary, ok, type ManuscriptListOptions } from "./types.js";
 
 const markdown = import.meta.glob("../../demo/**/*.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const assets = import.meta.glob("../../demo/**/*.{svg,png,jpg}", { query: "?url", import: "default", eager: true }) as Record<string, string>;
@@ -11,8 +11,8 @@ const relative = (key: string) => key.replace(/^\.\.\/\.\.\/demo\//, "");
 
 class SampleWriterBackend extends DemoWriterBackend {
   private readonly lastWritten = new Map<string, { body: string; modified: string }>();
-  override async listManuscripts() {
-    const result = await super.listManuscripts();
+  override async listManuscripts(options?: ManuscriptListOptions) {
+    const result = await super.listManuscripts(options);
     if (!result.ok) return result;
     const manuscripts = await Promise.all(result.value.map(async manuscript => {
       const record = await this.fixture.client().get({ path: manuscript.path }, { include: { body: true } });

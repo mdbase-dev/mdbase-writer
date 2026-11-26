@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { recentManuscripts, recordOpened, setWordGoal, wordGoal } from "./recent.js";
+import { recentManuscripts, recordOpened, removeRecent, setWordGoal, wordGoal } from "./recent.js";
 
 function memory(): Storage {
   const map = new Map<string, string>();
@@ -44,6 +44,13 @@ describe("what the home screen remembers", () => {
     expect(wordGoal("demo", "a.md", store)).toBe(8000);
     setWordGoal("demo", "a.md", null, store);
     expect(wordGoal("demo", "a.md", store)).toBeNull();
+  });
+  it("removes a deleted manuscript from recent history without affecting others", () => {
+    const store = memory();
+    recordOpened("demo", "a.md", store, new Date("2026-10-01T00:00:00Z"));
+    recordOpened("demo", "b.md", store, new Date("2026-10-02T00:00:00Z"));
+    removeRecent("demo", "b.md", store);
+    expect(recentManuscripts("demo", store).map((e) => e.path)).toEqual(["a.md"]);
   });
   it("ignores unreadable stored values", () => {
     const store = memory();

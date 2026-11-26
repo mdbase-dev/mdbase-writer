@@ -43,6 +43,7 @@ export function Settings({
   focus,
   livePreview = true,
   onLivePreview,
+  onDelete,
 }: {
   workspace: ManuscriptWorkspace;
   view: RecordView | undefined;
@@ -54,6 +55,7 @@ export function Settings({
   focus: SettingsFocus | null;
   livePreview?: boolean;
   onLivePreview?(): void;
+  onDelete?(): void;
 }) {
   useLingui();
   const titleId = useId();
@@ -186,6 +188,16 @@ export function Settings({
             <span><Trans>Read as the manuscript<span className="muted small">Off shows the Markdown as written</span></Trans></span>
           </label>
           <p className="muted small dialog-note"><Trans>This applies in this browser, to every manuscript.</Trans></p>
+        </section>
+      )}
+      {onDelete && view.snapshot.state !== "deleted" && (
+        <section className="editor-prefs">
+          <h2><Trans>Manuscript</Trans></h2>
+          <div>
+            <button type="button" className="mdbase-button is-danger" onClick={onDelete}>
+              <Trans>Delete document…</Trans>
+            </button>
+          </div>
         </section>
       )}
     </dialog></div>
