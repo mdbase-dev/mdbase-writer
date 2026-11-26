@@ -28,7 +28,7 @@ test("the manifest declares exactly the contracts its pack provides", async () =
   const manifest = await buildWriterManifest();
   assert.deepEqual(manifest.requirements.contracts.map((c) => c.id), ["dev.mdbase.writer.manuscript", "dev.mdbase.reader.source", "mdbase.comment"]);
   assert.deepEqual(manifest.provisions.type_packs.flatMap((p) => p.provides), manifest.requirements.contracts);
-  assert.deepEqual(manifest.requirements.capabilities.required, ["collection.read", "records.create", "records.edit"]);
+  assert.deepEqual(manifest.requirements.capabilities.required, ["collection.read", "records.create", "records.edit", "records.delete"]);
 });
 
 const publishedCommentPack = resolve(root, "../../../mdbase-contracts/dist", COMMENT_PACK.replace("packs/mdbase.comment-", "packs/mdbase.comment/"));
@@ -64,7 +64,7 @@ test("identity is optional: comments are unsigned without it", async () => {
 test("image insertion declares add OPTIONAL without widening startup file access", async () => {
   const manifest = await buildWriterManifest();
   assert.deepEqual(manifest.requirements.files, {
-    required: ["list", "read", "replace", "move"], optional: ["add"], scope: { kind: "collection" },
+    required: ["list", "read", "replace", "move", "delete"], optional: ["add"], scope: { kind: "collection" },
   });
 });
 

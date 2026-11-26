@@ -56,6 +56,7 @@ import { readerSourceHref } from "../apps.js";
 import { errorMessage } from "../async.js";
 import { zip } from "../export/zip.js";
 import { CompareDialog, type Comparison } from "./CompareDialog.js";
+import { DeleteDocumentDialog } from "./DeleteDocumentDialog.js";
 import { ExportReview, type PendingExport } from "./ExportReview.js";
 import { clampSidebar, clampSplit, DEFAULT_LAYOUT, gridFor, loadLayout, nextZoom, saveLayout, SIDEBAR_MAX, SIDEBAR_MIN, type Layout, type SidebarTab, type View } from "./layout.js";
 import { styleName, templateName } from "./names.js";
@@ -79,7 +80,7 @@ import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar, ThemeChoice } from "./topbar.js";
 import { signalFailure, signalResult } from "./mark.js";
-import { recentManuscripts, recordOpened, type WritingPosition } from "./recent.js";
+import { recentManuscripts, recordOpened, removeRecent, setWordGoal, type WritingPosition } from "./recent.js";
 import { Shortcuts } from "./Shortcuts.js";
 
 /** Which part a phone shows. */
@@ -210,6 +211,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<ExportFormat>(loadExportFormat);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const themeChoice = useContext(ThemeChoice);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sourcesRequest, setSourcesRequest] = useState<SourcesRequest | null>(null);
@@ -980,6 +982,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "previous-problem", group: translate`Manuscript`, label: translate`Previous problem`, shortcut: "shift+F8", run: () => stepProblem(-1) },
     { id: "manuscripts", group: translate`Manuscript`, label: translate`All manuscripts`, keywords: translate`back home close`, run: () => void requestClose() },
     { id: "new-manuscript", group: translate`Manuscript`, label: translate`New manuscript`, run: () => void requestClose(true) },
+    ...(snap.records.get(workspace.main)?.snapshot.state !== "deleted" ? [{ id: "delete-document", group: translate`Manuscript`, label: translate`Delete document…`, keywords: translate`remove trash`, run: () => setDeleteOpen(true) }] : []),
     { id: "problems", group: translate`Manuscript`, label: problemsOpen ? translate`Hide problems` : translate`Show problems`, keywords: translate`errors warnings list`, run: () => setProblemsOpen(!problemsOpen) },
     { id: "bold", group: translate`Format`, label: translate`Bold`, shortcut: "mod+b", run: () => editor.current?.format("bold") },
     { id: "italic", group: translate`Format`, label: translate`Italic`, shortcut: "mod+i", run: () => editor.current?.format("italic") },
@@ -1093,6 +1096,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
             onFind={findInChapter}
             onExport={runExport}
             canExport={snap.phase === "ready" && !(notice?.tone === "busy" || Boolean(pendingExport))}
+            onDelete={() => setDeleteOpen(true)}
+            canDelete={snap.records.get(workspace.main)?.snapshot.state !== "deleted"}
             {...(themeChoice ? { theme: themeChoice.theme, onTheme: themeChoice.setTheme } : {})}
           />
         </div>
@@ -1338,6 +1343,23 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         focus={settingsFocus}
         livePreview={layout.livePreview}
         onLivePreview={toggleLivePreview}
+        onDelete={() => {
+          setSettingsOpen(false);
+          setSettingsFocus(null);
+          setDeleteOpen(true);
+        }}
+      />
+      <DeleteDocumentDialog
+        target={{ path: workspace.main, title: manuscriptTitle }}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDelete={() => workspace.deleteDocument()}
+        onDeleted={(path) => {
+          removeRecent(workspace.namespace, path);
+          setWordGoal(workspace.namespace, path, null);
+          cancelExport();
+          onClose(true);
+        }}
       />
       <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} commands={commands} />
       <CommandPalette
@@ -1598,7 +1620,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
 }
 
 /** Commands, keyboard shortcuts and the theme, out of the bar's way; on a phone, export too. */
-function MoreMenu({ open, setOpen, onCommands, onShortcuts, onSettings, onFind, onExport, canExport, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; onSettings(): void; onFind(): void; onExport(format: ExportFormat): void; canExport: boolean; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
+function MoreMenu({ open, setOpen, onCommands, onShortcuts, onSettings, onFind, onExport, canExport, onDelete, canDelete, theme, onTheme }: { open: boolean; setOpen(open: boolean): void; onCommands(): void; onShortcuts(): void; onSettings(): void; onFind(): void; onExport(format: ExportFormat): void; canExport: boolean; onDelete(): void; canDelete: boolean; theme?: ThemePreference; onTheme?(theme: ThemePreference): void }) {
   useLingui();
   const trigger = useRef<HTMLButtonElement>(null);
   const id = useId();
@@ -1658,6 +1680,11 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onSettings, onFind, 
               ))}
             </div>
           )}
+          <div role="group" aria-label={translate`Manuscript`} className="menu-group">
+            <button type="button" role="menuitem" className="menu-item is-danger" disabled={!canDelete} onClick={run(onDelete)}>
+              <Trans>Delete document…</Trans>
+            </button>
+          </div>
         </Popover>
     </>
   );

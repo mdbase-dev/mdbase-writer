@@ -183,6 +183,10 @@ msgstr "{sources, plural, other {mdbase Readerの資料#件をここで引用で
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
 msgstr "{sources, plural, other {mdbase Readerから引用する資料#件}}"
 
+#: src/ui/Home.tsx
+msgid "{streamingCount, plural, one {Loading manuscripts… # loaded} other {Loading manuscripts… # loaded}}"
+msgstr "{streamingCount, plural, other {原稿を読み込み中… # 件読み込み済み}}"
+
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
 msgstr "{uses, plural, other {#回引用済み}}"
@@ -593,6 +597,10 @@ msgstr "原稿の問題を確認できませんでした"
 msgid "Could not create the manuscript. Please try again."
 msgstr "原稿を作成できませんでした。もう一度お試しください。"
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Could not delete the document. Please try again."
+msgstr "ドキュメントを削除できませんでした。もう一度お試しください。"
+
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
 msgstr "ノートを原稿として使用できませんでした。もう一度お試しください。"
@@ -622,6 +630,20 @@ msgstr "ダーク"
 msgid "Date"
 msgstr "日付"
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete “{expectedName}”?"
+msgstr "「{expectedName}」を削除しますか？"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete document"
+msgstr "ドキュメントを削除"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Delete document…"
+msgstr "ドキュメントを削除…"
+
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "削除済み"
@@ -629,6 +651,10 @@ msgstr "削除済み"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "別の場所で削除されました"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Deleting…"
+msgstr "削除中…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo"
@@ -657,6 +683,10 @@ msgstr "閉じる"
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"
 msgstr "現在のメニューまたはダイアログを閉じる"
+
+#: src/ui/Home.tsx
+msgid "Document actions"
+msgstr "ドキュメントの操作"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -1145,13 +1175,13 @@ msgstr "注釈を読み込み中…"
 msgid "Loading collection data…"
 msgstr "コレクションデータを読み込み中…"
 
+#: src/ui/Home.tsx
+msgid "Loading manuscripts…"
+msgstr "原稿を読み込み中…"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
 msgstr "出典を読み込み中…"
-
-#: src/ui/Home.tsx
-msgid "Loading…"
-msgstr "読み込み中…"
 
 #: src/workspace/workspace.ts
 msgid "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails."
@@ -1165,6 +1195,7 @@ msgstr "出典を検索中…"
 msgid "Lower panel"
 msgstr "下部パネル"
 
+#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "原稿"
@@ -1693,6 +1724,10 @@ msgstr "削除"
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "著者{0}を削除"
+
+#: src/ui/WorkspaceView.tsx
+msgid "remove trash"
+msgstr "削除 ゴミ箱 破棄"
 
 #: src/ui/Shortcuts.tsx
 msgid "Rename the focused chapter"
@@ -2247,6 +2282,19 @@ msgstr "このコレクションは Writer からのファイルを受け付け�
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "このコレクションビューを開けませんでした。上のバーから別のコレクションを選択するか、再読み込みして再試行してください。"
 
+#. placeholder {0}: current.path
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "This deletes {0} from this collection. This cannot be undone here."
+msgstr "この操作により {0} がこのコレクションから削除されます。ここでは元に戻せません。"
+
+#: src/backend/native.ts
+msgid "This document changed elsewhere. Reload and try again."
+msgstr "このドキュメントは別の場所で変更されました。再読み込みしてからもう一度お試しください。"
+
+#: src/backend/native.ts
+msgid "This document has already been deleted."
+msgstr "このドキュメントはすでに削除されています。"
+
 #: src/backend/native.ts
 msgid "This library is too large to index at once."
 msgstr "ライブラリが大きすぎるため、一度に索引を作成できません。"
@@ -2268,6 +2316,10 @@ msgstr "タイトル、著者、要旨、引用スタイル、レイアウト、
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "変更履歴"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Type <0>{expectedName}</0> to confirm"
+msgstr "確認のため <0>{expectedName}</0> と入力してください"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2430,6 +2482,10 @@ msgstr "Writer はライブラリを読み込めませんでした。もう一�
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "Writer はこのコレクションを開けませんでした"
+
+#: src/backend/native.ts
+msgid "Writer does not have permission to delete documents in this collection."
+msgstr "Writer にはこのコレクションのドキュメントを削除する権限がありません。"
 
 #: src/backend/native.ts
 msgid "Writer no longer has access to this collection."

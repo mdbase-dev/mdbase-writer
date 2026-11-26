@@ -183,6 +183,10 @@ msgstr "{sources, plural, other {此处可以引用来自 mdbase Reader 的 # �
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
 msgstr "{sources, plural, other {# 个可从 mdbase Reader 引用的来源}}"
 
+#: src/ui/Home.tsx
+msgid "{streamingCount, plural, one {Loading manuscripts… # loaded} other {Loading manuscripts… # loaded}}"
+msgstr "{streamingCount, plural, other {正在加载手稿…已加载 # 篇}}"
+
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
 msgstr "{uses, plural, other {已引用 # 次}}"
@@ -593,6 +597,10 @@ msgstr "无法检查稿件问题"
 msgid "Could not create the manuscript. Please try again."
 msgstr "无法创建手稿，请重试。"
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Could not delete the document. Please try again."
+msgstr "无法删除文档。请重试。"
+
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
 msgstr "无法将此笔记用作手稿，请重试。"
@@ -622,6 +630,20 @@ msgstr "深色"
 msgid "Date"
 msgstr "日期"
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete “{expectedName}”?"
+msgstr "删除“{expectedName}”？"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete document"
+msgstr "删除文档"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Delete document…"
+msgstr "删除文档…"
+
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "已删除"
@@ -629,6 +651,10 @@ msgstr "已删除"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "已在其他位置删除"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Deleting…"
+msgstr "正在删除…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo"
@@ -657,6 +683,10 @@ msgstr "关闭"
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"
 msgstr "关闭当前菜单或对话框"
+
+#: src/ui/Home.tsx
+msgid "Document actions"
+msgstr "文档操作"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -1145,13 +1175,13 @@ msgstr "正在加载注释…"
 msgid "Loading collection data…"
 msgstr "正在加载集合数据…"
 
+#: src/ui/Home.tsx
+msgid "Loading manuscripts…"
+msgstr "正在加载手稿…"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
 msgstr "正在加载来源…"
-
-#: src/ui/Home.tsx
-msgid "Loading…"
-msgstr "正在加载…"
 
 #: src/workspace/workspace.ts
 msgid "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails."
@@ -1165,6 +1195,7 @@ msgstr "正在查找来源…"
 msgid "Lower panel"
 msgstr "下方面板"
 
+#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "手稿"
@@ -1693,6 +1724,10 @@ msgstr "移除"
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "移除作者 {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "remove trash"
+msgstr "移除 回收站 废纸篓"
 
 #: src/ui/Shortcuts.tsx
 msgid "Rename the focused chapter"
@@ -2247,6 +2282,19 @@ msgstr "此集合不接受来自 Writer 的文件。"
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "无法打开此集合视图。请从上方栏中选择其他集合，或重新加载后重试。"
 
+#. placeholder {0}: current.path
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "This deletes {0} from this collection. This cannot be undone here."
+msgstr "这将从此集合中删除 {0}。此操作在此处无法撤销。"
+
+#: src/backend/native.ts
+msgid "This document changed elsewhere. Reload and try again."
+msgstr "此文档已在别处更改。请重新加载后再试。"
+
+#: src/backend/native.ts
+msgid "This document has already been deleted."
+msgstr "此文档已被删除。"
+
 #: src/backend/native.ts
 msgid "This library is too large to index at once."
 msgstr "资料库太大，无法一次性建立索引。"
@@ -2268,6 +2316,10 @@ msgstr "标题、作者、摘要、引文格式、版式和语言（{0}）"
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "修订"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Type <0>{expectedName}</0> to confirm"
+msgstr "输入 <0>{expectedName}</0> 以确认"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2430,6 +2482,10 @@ msgstr "Writer 无法加载资料库。请重试。"
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "Writer 无法打开此集合"
+
+#: src/backend/native.ts
+msgid "Writer does not have permission to delete documents in this collection."
+msgstr "Writer 没有权限删除此集合中的文档。"
 
 #: src/backend/native.ts
 msgid "Writer no longer has access to this collection."

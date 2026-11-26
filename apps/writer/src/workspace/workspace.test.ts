@@ -51,7 +51,7 @@ async function fixture() {
     kind: "demo", collectionName: "Tests", draftNamespace: `test-${serial++}`,
     records: new NextWriterRecords(client, scope.signal),
     manuscriptBindings: async () => ok([{ name: "custom", fields: { title: "local_title", csl: "local_style", authors: "local_authors" } }]),
-    listManuscripts: async () => ok([]), createManuscript: async () => fail("unused"), adoptManuscript: async () => fail("unused"), createRecord: async () => fail("unused"),
+    listManuscripts: async () => ok([]), createManuscript: async () => fail("unused"), deleteDocument: async () => fail("unused"), adoptManuscript: async () => fail("unused"), createRecord: async () => fail("unused"),
     index: async () => ok({ recordPaths: ["main.md", "chapters/one.md", "chapters/two.md"], filePaths: ["chapters/image.svg"], notePaths: [] }),
     library: async () => ok([]), annotationPaths: async () => ok([]), annotationsForSource: async () => ok([]), readBody: async (path) => ok((await client.get({path}, {include: {body: true}})).body ?? ""),
     readFile: vi.fn(async () => ok(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/>'))),
@@ -80,6 +80,20 @@ it("retries unsettled saves on focus as well as reconnect and removes both liste
   events.dispatchEvent(new Event("focus"));
   events.dispatchEvent(new Event("online"));
   expect(save).toHaveBeenCalledTimes(2);
+});
+
+it("deletes the open manuscript through the backend and clears its local draft (#210)", async () => {
+  const { backend, open } = await fixture();
+  const deleteDocument = vi.fn<WriterBackend["deleteDocument"]>(async () => ok(undefined));
+  backend.deleteDocument = deleteDocument;
+  const workspace = open();
+  await ready(workspace);
+  workspace.setBody("main.md", "Unsaved local edit");
+  const drafts = new DraftStore(workspace.namespace);
+  expect(drafts.read("main.md")).not.toBeNull();
+  expect(await workspace.deleteDocument()).toEqual(ok(undefined));
+  expect(deleteDocument).toHaveBeenCalledWith("main.md");
+  expect(drafts.read("main.md")).toBeNull();
 });
 
 describe("workspace reliability", () => {

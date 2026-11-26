@@ -183,6 +183,10 @@ msgstr "{sources, plural, one {# source de mdbase Reader peut être citée ici.}
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
 msgstr "{sources, plural, one {# source à citer depuis mdbase Reader} other {# sources à citer depuis mdbase Reader}}"
 
+#: src/ui/Home.tsx
+msgid "{streamingCount, plural, one {Loading manuscripts… # loaded} other {Loading manuscripts… # loaded}}"
+msgstr "{streamingCount, plural, one {Chargement des manuscrits… # chargé} other {Chargement des manuscrits… # chargés}}"
+
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
 msgstr "{uses, plural, one {Citée une fois} other {Citée # fois}}"
@@ -593,6 +597,10 @@ msgstr "Impossible de vérifier les problèmes du manuscrit"
 msgid "Could not create the manuscript. Please try again."
 msgstr "Impossible de créer le manuscrit. Veuillez réessayer."
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Could not delete the document. Please try again."
+msgstr "Impossible de supprimer le document. Veuillez réessayer."
+
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
 msgstr "Impossible d’utiliser la note comme manuscrit. Veuillez réessayer."
@@ -622,6 +630,20 @@ msgstr "Sombre"
 msgid "Date"
 msgstr "Date"
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete “{expectedName}”?"
+msgstr "Supprimer « {expectedName} » ?"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete document"
+msgstr "Supprimer le document"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Delete document…"
+msgstr "Supprimer le document…"
+
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "Supprimé"
@@ -629,6 +651,10 @@ msgstr "Supprimé"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "Supprimé ailleurs"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Deleting…"
+msgstr "Suppression…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo"
@@ -657,6 +683,10 @@ msgstr "Ignorer"
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"
 msgstr "Fermer le menu ou la boîte de dialogue"
+
+#: src/ui/Home.tsx
+msgid "Document actions"
+msgstr "Actions du document"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -1145,13 +1175,13 @@ msgstr "Chargement des annotations…"
 msgid "Loading collection data…"
 msgstr "Chargement des données de la collection…"
 
+#: src/ui/Home.tsx
+msgid "Loading manuscripts…"
+msgstr "Chargement des manuscrits…"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
 msgstr "Chargement des sources…"
-
-#: src/ui/Home.tsx
-msgid "Loading…"
-msgstr "Chargement…"
 
 #: src/workspace/workspace.ts
 msgid "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails."
@@ -1165,6 +1195,7 @@ msgstr "Recherche de sources…"
 msgid "Lower panel"
 msgstr "Panneau inférieur"
 
+#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "Manuscrit"
@@ -1693,6 +1724,10 @@ msgstr "Retirer"
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "Retirer l’auteur {0}"
+
+#: src/ui/WorkspaceView.tsx
+msgid "remove trash"
+msgstr "retirer corbeille effacer"
 
 #: src/ui/Shortcuts.tsx
 msgid "Rename the focused chapter"
@@ -2247,6 +2282,19 @@ msgstr "Cette collection n’accepte pas les fichiers provenant de Writer."
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "Cette vue de la collection n’a pas pu être ouverte. Choisissez une autre collection dans la barre ci-dessus, ou rechargez la page pour réessayer."
 
+#. placeholder {0}: current.path
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "This deletes {0} from this collection. This cannot be undone here."
+msgstr "Cela supprime {0} de cette collection. Cette action ne peut pas être annulée ici."
+
+#: src/backend/native.ts
+msgid "This document changed elsewhere. Reload and try again."
+msgstr "Ce document a été modifié ailleurs. Rechargez et réessayez."
+
+#: src/backend/native.ts
+msgid "This document has already been deleted."
+msgstr "Ce document a déjà été supprimé."
+
 #: src/backend/native.ts
 msgid "This library is too large to index at once."
 msgstr "Cette bibliothèque est trop volumineuse pour être indexée en une seule fois."
@@ -2268,6 +2316,10 @@ msgstr "Titre, auteurs, résumé, style de citation, mise en page et langue ({0}
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "suivi des modifications"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Type <0>{expectedName}</0> to confirm"
+msgstr "Saisissez <0>{expectedName}</0> pour confirmer"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2430,6 +2482,10 @@ msgstr "Writer n’a pas pu charger la bibliothèque. Réessayez."
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "Writer n’a pas pu ouvrir cette collection"
+
+#: src/backend/native.ts
+msgid "Writer does not have permission to delete documents in this collection."
+msgstr "Writer n’a pas l’autorisation de supprimer des documents dans cette collection."
 
 #: src/backend/native.ts
 msgid "Writer no longer has access to this collection."

@@ -183,6 +183,10 @@ msgstr "{sources, plural, other {mdbase Reader 자료 #개를 여기에 인용�
 msgid "{sources, plural, one {# source to cite from mdbase Reader} other {# sources to cite from mdbase Reader}}"
 msgstr "{sources, plural, other {mdbase Reader에서 인용할 자료 #개}}"
 
+#: src/ui/Home.tsx
+msgid "{streamingCount, plural, one {Loading manuscripts… # loaded} other {Loading manuscripts… # loaded}}"
+msgstr "{streamingCount, plural, other {원고 불러오는 중… #개 불러옴}}"
+
 #: src/ui/SourcesPanel.tsx
 msgid "{uses, plural, one {Cited once} other {Cited # times}}"
 msgstr "{uses, plural, other {#회 인용됨}}"
@@ -593,6 +597,10 @@ msgstr "원고의 문제를 확인할 수 없습니다"
 msgid "Could not create the manuscript. Please try again."
 msgstr "원고를 만들지 못했습니다. 다시 시도하세요."
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Could not delete the document. Please try again."
+msgstr "문서를 삭제하지 못했습니다. 다시 시도하세요."
+
 #: src/ui/Home.tsx
 msgid "Could not use the note as a manuscript. Please try again."
 msgstr "메모를 원고로 사용하지 못했습니다. 다시 시도하세요."
@@ -622,6 +630,20 @@ msgstr "어두운 테마"
 msgid "Date"
 msgstr "날짜"
 
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete “{expectedName}”?"
+msgstr "“{expectedName}”을(를) 삭제하시겠습니까?"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Delete document"
+msgstr "문서 삭제"
+
+#: src/ui/Home.tsx
+#: src/ui/Settings.tsx
+#: src/ui/WorkspaceView.tsx
+msgid "Delete document…"
+msgstr "문서 삭제…"
+
 #: src/ui/records.ts
 msgid "Deleted"
 msgstr "삭제됨"
@@ -629,6 +651,10 @@ msgstr "삭제됨"
 #: src/ui/records.ts
 msgid "Deleted elsewhere"
 msgstr "다른 곳에서 삭제됨"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Deleting…"
+msgstr "삭제 중…"
 
 #: src/ui/WorkspaceView.tsx
 msgid "Demo"
@@ -657,6 +683,10 @@ msgstr "닫기"
 #: src/ui/Shortcuts.tsx
 msgid "Dismiss the current menu or dialog"
 msgstr "현재 메뉴 또는 대화상자 닫기"
+
+#: src/ui/Home.tsx
+msgid "Document actions"
+msgstr "문서 작업"
 
 #: src/ui/OutlinePanel.tsx
 msgid "Double-click or F2 to rename"
@@ -1145,13 +1175,13 @@ msgstr "주석 불러오는 중…"
 msgid "Loading collection data…"
 msgstr "컬렉션 데이터 불러오는 중…"
 
+#: src/ui/Home.tsx
+msgid "Loading manuscripts…"
+msgstr "원고 불러오는 중…"
+
 #: src/ui/SourcesPanel.tsx
 msgid "Loading sources…"
 msgstr "출처 불러오는 중…"
-
-#: src/ui/Home.tsx
-msgid "Loading…"
-msgstr "불러오는 중…"
 
 #: src/workspace/workspace.ts
 msgid "Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails."
@@ -1165,6 +1195,7 @@ msgstr "출처 검색 중…"
 msgid "Lower panel"
 msgstr "아래쪽 패널"
 
+#: src/ui/Settings.tsx
 #: src/ui/WorkspaceView.tsx
 msgid "Manuscript"
 msgstr "원고"
@@ -1693,6 +1724,10 @@ msgstr "삭제"
 #: src/ui/Settings.tsx
 msgid "Remove author {0}"
 msgstr "저자 {0} 삭제"
+
+#: src/ui/WorkspaceView.tsx
+msgid "remove trash"
+msgstr "제거 휴지통 삭제"
 
 #: src/ui/Shortcuts.tsx
 msgid "Rename the focused chapter"
@@ -2247,6 +2282,19 @@ msgstr "이 컬렉션은 Writer에서 파일을 받지 않습니다."
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "이 컬렉션 뷰를 열지 못했습니다. 위쪽 표시줄에서 다른 컬렉션을 선택하거나 새로고침하여 다시 시도하세요."
 
+#. placeholder {0}: current.path
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "This deletes {0} from this collection. This cannot be undone here."
+msgstr "이 컬렉션에서 {0}이(가) 삭제됩니다. 여기서는 되돌릴 수 없습니다."
+
+#: src/backend/native.ts
+msgid "This document changed elsewhere. Reload and try again."
+msgstr "이 문서는 다른 곳에서 변경되었습니다. 새로고침한 후 다시 시도하세요."
+
+#: src/backend/native.ts
+msgid "This document has already been deleted."
+msgstr "이 문서는 이미 삭제되었습니다."
+
 #: src/backend/native.ts
 msgid "This library is too large to index at once."
 msgstr "라이브러리가 너무 커서 한 번에 색인을 만들 수 없습니다."
@@ -2268,6 +2316,10 @@ msgstr "제목, 저자, 초록, 인용 스타일, 레이아웃 및 언어({0})"
 #: src/ui/WorkspaceView.tsx
 msgid "track changes"
 msgstr "변경 내용 추적"
+
+#: src/ui/DeleteDocumentDialog.tsx
+msgid "Type <0>{expectedName}</0> to confirm"
+msgstr "확인하려면 <0>{expectedName}</0>을(를) 입력하세요"
 
 #: src/ui/Home.tsx
 msgid "Type to find others."
@@ -2430,6 +2482,10 @@ msgstr "Writer에서 라이브러리를 불러오지 못했습니다. 다시 시
 #: src/ui/NativeWriterView.tsx
 msgid "Writer could not open this collection"
 msgstr "Writer에서 이 컬렉션을 열지 못했습니다."
+
+#: src/backend/native.ts
+msgid "Writer does not have permission to delete documents in this collection."
+msgstr "Writer에 이 컬렉션의 문서를 삭제할 권한이 없습니다."
 
 #: src/backend/native.ts
 msgid "Writer no longer has access to this collection."

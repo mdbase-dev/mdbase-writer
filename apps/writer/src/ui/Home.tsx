@@ -21,11 +21,13 @@ import { Shortcuts } from "./Shortcuts.js";
 import type { Command } from "@mdbase-dev/ui/command-palette";
 import { chapterEmbeds } from "../workspace/chapters.js";
 import { wordCount } from "../words.js";
-import { PlusIcon, SearchIcon } from "./icons.js";
+import { PlusIcon, SearchIcon, MoreIcon } from "./icons.js";
 import { byRecentlyEdited, noteName, relativeTime, styleName, templateName } from "./names.js";
 import { DraftStore } from "../workspace/drafts.js";
-import { localNamespace, recentManuscripts, setWordGoal, wordGoal } from "./recent.js";
+import { localNamespace, recentManuscripts, removeRecent, setWordGoal, wordGoal } from "./recent.js";
 import { ChevronRight, PenIcon } from "./icons.js";
+import { DeleteDocumentDialog, type DeleteTarget } from "./DeleteDocumentDialog.js";
+import { Popover } from "./Popover.js";
 import { recordTitle } from "./records.js";
 import { warmCompiler } from "../compile/client.js";
 import { warmPreviewRenderer } from "../preview/Preview.js";
@@ -36,6 +38,8 @@ const SEARCH_FROM = 6;
 const NOTES_SHOWN = 8;
 /** Notes without a type listed before "Show all". */
 const UNTYPED_SHOWN = 20;
+/** Placeholder rows shown immediately while a collection's manuscripts are loading. */
+const SKELETON_ROWS = [[46, 28], [62, 34], [38, 24], [54, 30], [42, 26], [58, 32]] as const;
 const templateOptions = () => TEMPLATES.map((t) => ({ value: t, label: templateName(t) }));
 const styleOptions = () => STYLES.map((s) => ({ value: s.id, label: styleName(s.id) }));
 
@@ -54,7 +58,10 @@ export function Home({accessActions, ...props}: HomeProps & {accessActions?: Rea
 function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening = false, initialCreate = false, onAccessRemoved }: HomeProps & {onAccessRemoved(problem: ReadProblem): void}) {
   useLingui();
   const [manuscripts, setManuscripts] = useState<ManuscriptSummary[] | null>(null);
+  const [loadingManuscripts, setLoadingManuscripts] = useState(true);
+  const [streamingCount, setStreamingCount] = useState<number | null>(null);
   const [manuscriptsReady, setManuscriptsReady] = useState<{backend: WriterBackend; revision: number} | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [problem, setProblem] = useState<ReadProblem | null>(null);
   const [backgroundProblem, setBackgroundProblem] = useState<ReadProblem | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
@@ -91,18 +98,30 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
 
   useEffect(() => {
     let live = true;
+    setLoadingManuscripts(true);
+    setStreamingCount(null);
     const pending = (backend.flushChanges?.() ?? Promise.resolve()).then(() => {
       if (live) {setProblem(null); setBackgroundProblem(null);}
     });
-    void pending.then(() => backend.listManuscripts()).then((r) => {
+    void pending.then(() => backend.listManuscripts({
+      onProgress: (progress) => {
+        if (!live) return;
+        setManuscripts([...progress.manuscripts]);
+        setStreamingCount(progress.loaded);
+      },
+    })).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
       else if (r.recovery === "reauthorize") { onAccessRemoved(r); return; }
       else setProblem(r);
+      setLoadingManuscripts(false);
+      setStreamingCount(null);
       setManuscriptsReady({backend, revision: remembered.revision});
     }).catch((error: unknown) => {
       if (!live) return;
       setProblem({message: errorMessage(error)});
+      setLoadingManuscripts(false);
+      setStreamingCount(null);
       setManuscriptsReady({backend, revision: remembered.revision});
     });
     return () => {
@@ -262,9 +281,30 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
           </div>
           {manuscripts && manuscripts.length > 0 && newButton}
         </header>
-        {!backgroundProblem && (sources === null || recordPaths === null) && <p className="muted small" role="status"><Trans>Loading collection data…</Trans></p>}
+        {!loadingManuscripts && manuscripts !== null && !backgroundProblem && (sources === null || recordPaths === null) && <p className="muted small" role="status"><Trans>Loading collection data…</Trans></p>}
         {backgroundProblem && <div className="muted" role="alert">{backgroundProblem.message} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}><Trans>Retry background data</Trans></button>{backgroundProblem.details && <TechnicalDetails details={backgroundProblem.details} />}</div>}
-        {manuscripts === null && !problem && <p className="muted" role="status"><Trans>Loading…</Trans></p>}
+        {manuscripts === null && !problem && (
+          <>
+            <div className="home-loading" role="status">
+              <span className="spinner" aria-hidden="true" />
+              <span><Trans>Loading manuscripts…</Trans></span>
+            </div>
+            <ul className="manuscript-skeletons" aria-hidden="true">
+              {SKELETON_ROWS.map((widths, index) => (
+                <li key={index} className="manuscript-skeleton-row">
+                  <span className="skeleton-bar is-title" style={{ width: `${widths[0]}%` }} />
+                  <span className="skeleton-bar is-meta" style={{ width: `${widths[1]}%` }} />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {manuscripts !== null && loadingManuscripts && streamingCount !== null && !problem && (
+          <div className="home-loading" role="status">
+            <span className="spinner" aria-hidden="true" />
+            <span>{icuPlural(streamingCount, { one: "Loading manuscripts… # loaded", other: "Loading manuscripts… # loaded" })}</span>
+          </div>
+        )}
         {manuscripts?.length === 0 && (
           <div className="first-run">
             <ol>
@@ -325,9 +365,10 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
               goal={wordGoal(namespace, continuing.path)}
               onGoal={(goal) => { setWordGoal(namespace, continuing.path, goal); setReload((v) => v + 1); }}
               onOpen={() => onOpen(continuing.path)}
+              onDelete={() => setDeleteTarget({ path: continuing.path, title: continuing.title })}
             /></li>}
             {listed.slice(0, limit).map((m) => (
-              <li key={m.path}>
+              <li key={m.path} className="manuscript-item">
                 <button type="button" className="manuscript-row" data-path={m.path} onClick={() => onOpen(m.path)} title={m.path}>
                   <span className="manuscript-title">{m.title}</span>
                   <span className="manuscript-meta">
@@ -342,6 +383,7 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
                       .join(" · ")}
                   </span>
                 </button>
+                <DocumentRowMenu onDelete={() => setDeleteTarget({ path: m.path, title: m.title })} />
               </li>
             ))}
           </ul>
@@ -354,11 +396,12 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
         {backend.kind !== "demo" && untypedShown.length > 0 && <section className="home-untyped" aria-label={t`Other notes`}>
           <h2><Trans>Other notes</Trans></h2>
           <ul className="manuscripts">
-            {(allUntyped ? untypedShown : untypedShown.slice(0, UNTYPED_SHOWN)).map((path) => <li key={path}>
+            {(allUntyped ? untypedShown : untypedShown.slice(0, UNTYPED_SHOWN)).map((path) => <li key={path} className="manuscript-item">
               <button type="button" className="manuscript-row" onClick={() => onOpen(path)} title={path}>
                 <span className="manuscript-title">{noteName(path)}</span>
                 <span className="manuscript-meta">{t`No type · ${path}`}</span>
               </button>
+              <DocumentRowMenu onDelete={() => setDeleteTarget({ path, title: noteName(path) })} />
             </li>)}
           </ul>
           {!allUntyped && untypedShown.length > UNTYPED_SHOWN && <button type="button" className="sidebar-more" onClick={() => setAllUntyped(true)}><Trans>Show all {untypedShown.length} notes without a type</Trans></button>}
@@ -367,6 +410,29 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
       </section>
 
       <NewManuscriptDialog backend={backend} open={dialog} onClose={() => setDialog(false)} onOpen={onOpen} candidates={candidates} />
+      <DeleteDocumentDialog
+        target={deleteTarget}
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onDelete={(path) => backend.deleteDocument(path)}
+        onDeleted={(path) => {
+          removeRecent(namespace, path);
+          setWordGoal(namespace, path, null);
+          new DraftStore(namespace).remove(path);
+          bodyCache.current.delete(path);
+          setManuscripts((prev) => prev ? prev.filter((m) => m.path !== path) : prev);
+          setNotes((prev) => prev.filter((p) => p !== path));
+          setUntyped((prev) => prev.filter((p) => p !== path));
+          setRecordPaths((prev) => prev ? prev.filter((p) => p !== path) : prev);
+          setSummaries((prev) => {
+            if (!prev.has(path)) return prev;
+            const next = new Map(prev);
+            next.delete(path);
+            return next;
+          });
+          setReload((v) => v + 1);
+        }}
+      />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} label={t`Writer commands`} />
       <Shortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} commands={commands} />
     </main>
@@ -578,8 +644,59 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
   );
 }
 
+/** Row overflow menu with destructive document actions. */
+function DocumentRowMenu({ onDelete }: { onDelete(): void }) {
+  useLingui();
+  const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className="mdbase-icon-button is-small manuscript-row-more"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        aria-label={t`Document actions`}
+        title={t`Document actions`}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <MoreIcon />
+      </button>
+      <Popover
+        open={open}
+        id={id}
+        trigger={trigger}
+        width={200}
+        label={t`Document actions`}
+        align="end"
+        focus={`[role="menuitem"]:not(:disabled)`}
+        onClose={(refocus) => {
+          setOpen(false);
+          if (refocus) trigger.current?.focus();
+        }}
+      >
+        <button
+          type="button"
+          role="menuitem"
+          className="menu-item is-danger"
+          onClick={() => {
+            setOpen(false);
+            trigger.current?.focus();
+            onDelete();
+          }}
+        >
+          <Trans>Delete document…</Trans>
+        </button>
+      </Popover>
+    </>
+  );
+}
+
 /** The manuscript opened last: pick up where writing stopped, and see how far it is against a goal. */
-function ContinueCard({ backend, manuscript, words, chapter, goal, onGoal, onOpen }: { backend: WriterBackend; manuscript: ManuscriptSummary; words: number | undefined; chapter?: string | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void }) {
+function ContinueCard({ backend, manuscript, words, chapter, goal, onGoal, onOpen, onDelete }: { backend: WriterBackend; manuscript: ManuscriptSummary; words: number | undefined; chapter?: string | undefined; goal: number | null; onGoal(goal: number | null): void; onOpen(): void; onDelete(): void }) {
   useLingui();
   const [chapterTitle, setChapterTitle] = useState<string>();
   useEffect(() => {
@@ -641,11 +758,14 @@ function ContinueCard({ backend, manuscript, words, chapter, goal, onGoal, onOpe
           <button type="button" className="text-button is-quiet continue-goal" onClick={() => setEditing(true)}>{goal ? t`Change the word goal` : t`Set a word goal`}</button>
         )}
       </div>
-      <button type="button" className="mdbase-button is-primary" data-path={manuscript.path} onClick={onOpen}><Trans>
-        <PenIcon />
-        Continue
-        <ChevronRight className="chevron" />
-      </Trans></button>
+      <div className="continue-actions">
+        <button type="button" className="mdbase-button is-primary" data-path={manuscript.path} onClick={onOpen}><Trans>
+          <PenIcon />
+          Continue
+          <ChevronRight className="chevron" />
+        </Trans></button>
+        <DocumentRowMenu onDelete={onDelete} />
+      </div>
     </section>
   );
 }

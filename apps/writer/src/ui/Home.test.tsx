@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { render } from "../test/render.js";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { MdbasePeopleClient, type DescribeResult, type MdbaseApplicationConnection } from "@mdbase-dev/sdk";
 import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { NativeWriterBackend } from "../backend/native.js";
-import { fail, ok, type CollectionIndex, type ManuscriptSummary, type Result, type WriterBackend } from "../backend/types.js";
+import { fail, ok, type CollectionIndex, type ManuscriptListOptions, type ManuscriptSummary, type Result, type WriterBackend } from "../backend/types.js";
+import { DraftStore } from "../workspace/drafts.js";
 import { Home } from "./Home.js";
-import { recordOpened } from "./recent.js";
+import { recentManuscripts, recordOpened, setWordGoal, wordGoal } from "./recent.js";
 
 beforeAll(() => {
   globalThis.matchMedia ??= () => ({ matches: true, media: "", onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => true });
@@ -57,7 +58,7 @@ function backend(index: CollectionIndex, manuscripts: Result<ManuscriptSummary[]
     kind: "connect", collectionName: "Writing", draftNamespace: "home-test",
     records: {open: async () => {throw new Error("This Home fixture cannot open record leases.");}},
     listManuscripts: async () => manuscripts, library: async () => ok([]), index: async () => ok(index),
-    createManuscript: unsupported, adoptManuscript: unsupported, createRecord: unsupported,
+    createManuscript: unsupported, deleteDocument: unsupported, adoptManuscript: unsupported, createRecord: unsupported,
     annotationPaths: unsupported, annotationsForSource: unsupported, readFile: unsupported,
     comments: unsupported, createComment: unsupported, changeComment: unsupported,
     people: async () => ({names: new Map()}),
@@ -220,4 +221,103 @@ it("paints manuscripts from the manuscript contract before scanning the full col
     lifetime.abort();
     client.close();
   }
+});
+
+it("deletes a manuscript from its row menu after exact title confirmation and clears local state (#210)", async () => {
+  let manuscripts: ManuscriptSummary[] = [
+    { path: "manuscripts/keep.md", title: "Keep This" },
+    { path: "manuscripts/remove.md", title: "Remove Me" },
+  ];
+  const deleteDocument = vi.fn(async (path: string) => {
+    manuscripts = manuscripts.filter(m => m.path !== path);
+    return ok(undefined);
+  });
+  recordOpened("home-test", "manuscripts/remove.md");
+  setWordGoal("home-test", "manuscripts/remove.md", 5000);
+  new DraftStore("home-test").write("manuscripts/remove.md", {
+    version: 1, body: "unsaved", frontmatter: {}, baseBody: "", baseFrontmatter: {}, revision: "1", updated: "2026-11-26T00:00:00Z",
+  });
+
+  const fixture: WriterBackend = {
+    ...backend({ recordPaths: manuscripts.map(m => m.path), filePaths: [], notePaths: [] }),
+    listManuscripts: async () => ok(manuscripts),
+    deleteDocument,
+  };
+  const view = render(<Home backend={fixture} onOpen={vi.fn()} />);
+
+  const card = (await screen.findByRole("heading", { name: "Remove Me" })).closest("section")!;
+  fireEvent.click(within(card).getByRole("button", { name: "Document actions" }));
+  // jsdom treats [popover] as hidden because it lacks top-layer showPopover().
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Delete document…", hidden: true }));
+
+  const dialog = await screen.findByRole("dialog", { name: "Delete “Remove Me”?" });
+  const confirm = within(dialog).getByRole("button", { name: "Delete document" }) as HTMLButtonElement;
+  expect(confirm.disabled).toBe(true);
+
+  const input = within(dialog).getByRole("textbox");
+  fireEvent.change(input, { target: { value: "Wrong Title" } });
+  expect(confirm.disabled).toBe(true);
+
+  fireEvent.change(input, { target: { value: "Remove Me" } });
+  expect(confirm.disabled).toBe(false);
+  fireEvent.click(confirm);
+
+  await waitFor(() => expect(deleteDocument).toHaveBeenCalledWith("manuscripts/remove.md"));
+  await waitFor(() => expect(view.container.querySelector('[data-path="manuscripts/remove.md"]')).toBeNull());
+  expect(screen.getByText("Keep This")).toBeTruthy();
+  expect(recentManuscripts("home-test").some(entry => entry.path === "manuscripts/remove.md")).toBe(false);
+  expect(wordGoal("home-test", "manuscripts/remove.md")).toBeNull();
+  expect(new DraftStore("home-test").read("manuscripts/remove.md")).toBeNull();
+
+  // Also verify deleting from a regular manuscript row menu.
+  const row = screen.getByText("Keep This").closest("li")!;
+  fireEvent.click(within(row).getByRole("button", { name: "Document actions" }));
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Delete document…", hidden: true }));
+  const rowDialog = await screen.findByRole("dialog", { name: "Delete “Keep This”?" });
+  fireEvent.change(within(rowDialog).getByRole("textbox"), { target: { value: "Keep This" } });
+  fireEvent.click(within(rowDialog).getByRole("button", { name: "Delete document" }));
+  await waitFor(() => expect(deleteDocument).toHaveBeenCalledWith("manuscripts/keep.md"));
+  await waitFor(() => expect(view.container.querySelector('[data-path="manuscripts/keep.md"]')).toBeNull());
+});
+
+it("shows skeleton placeholder rows immediately and renders incremental pages with progress count (#211)", async () => {
+  let resolveList!: (result: Result<ManuscriptSummary[]>) => void;
+  let emitProgress: NonNullable<ManuscriptListOptions["onProgress"]> | undefined;
+  const fixture: WriterBackend = {
+    ...backend({ recordPaths: [], filePaths: [], notePaths: [] }),
+    listManuscripts: (options) => {
+      emitProgress = options?.onProgress;
+      return new Promise<Result<ManuscriptSummary[]>>((resolve) => { resolveList = resolve; });
+    },
+  };
+
+  const view = render(<Home backend={fixture} onOpen={vi.fn()} />);
+
+  // Before the first page arrives: prompt loading status + skeleton rows, no empty onboarding state.
+  expect(screen.getByRole("status").textContent).toContain("Loading manuscripts…");
+  expect(view.container.querySelectorAll(".manuscript-skeleton-row").length).toBeGreaterThan(0);
+  expect(view.container.querySelector(".first-run")).toBeNull();
+
+  // First page arrives incrementally while more pages remain in flight.
+  await waitFor(() => expect(emitProgress).toBeTypeOf("function"));
+  const pageOne: ManuscriptSummary[] = [
+    { path: "manuscripts/one.md", title: "Paper One", modified: "2026-11-26T00:00:00Z" },
+    { path: "manuscripts/two.md", title: "Paper Two", modified: "2026-11-25T00:00:00Z" },
+  ];
+  act(() => emitProgress!({ manuscripts: pageOne, loaded: pageOne.length }));
+
+  expect(await screen.findByText("Paper One")).toBeTruthy();
+  expect(screen.getByText("Paper Two")).toBeTruthy();
+  expect(view.container.querySelectorAll(".manuscript-skeleton-row")).toHaveLength(0);
+  expect(screen.getByRole("status").textContent).toContain("Loading manuscripts… 2 loaded");
+
+  // Final page finishes: loading progress clears and all manuscripts are shown.
+  const all: ManuscriptSummary[] = [
+    ...pageOne,
+    { path: "manuscripts/three.md", title: "Paper Three", modified: "2026-11-24T00:00:00Z" },
+  ];
+  act(() => resolveList(ok(all)));
+
+  expect(await screen.findByText("Paper Three")).toBeTruthy();
+  await waitFor(() => expect(view.container.querySelector(".home-loading")).toBeNull());
 });

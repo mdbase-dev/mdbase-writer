@@ -102,17 +102,17 @@ export async function buildWriterManifest({ origin = "https://writer.mdbase.dev"
       access: "full_collection",
       contracts: [...contracts, ...commentPack.provides],
       // Capability groups (v2). The writer reads the collection, creates
-      // manuscripts and comments and edits records; it never deletes or
-      // renames them (a withdrawn comment is kept, emptied).
+      // manuscripts and comments, edits records and deletes documents on
+      // explicit user confirmation (a withdrawn comment is kept, emptied).
       capabilities: {
         contract_version: 2,
-        required: ["collection.read", "records.create", "records.edit"],
+        required: ["collection.read", "records.create", "records.edit", "records.delete"],
       },
       // Add is requested only at image insertion through SDK incremental consent.
       // Native upload stays disabled until that public capability is available.
       // Next accounts approve each record capability together with its file
-      // actions, so editing records also declares replace and move.
-      files: { required: ["list", "read", "replace", "move"], optional: ["add"], scope: { kind: "collection" } },
+      // actions, so editing and deleting records also declare replace, move and delete.
+      files: { required: ["list", "read", "replace", "move", "delete"], optional: ["add"], scope: { kind: "collection" } },
       // The signed-in account, to sign comments with its person record. Optional:
       // without it, comments are unsigned.
       people: { version: 1, optional: ["identity"] },

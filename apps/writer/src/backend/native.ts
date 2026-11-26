@@ -8,7 +8,7 @@ import { CollectionStore, annotationContract, commentContract, domainContract, m
 import { NO_PEOPLE, peopleFromDirectory, type NewComment, type People } from "./comments.js";
 import { manifestContractDigest, nativeObject, sameDigest, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
 import { NextWriterRecords } from "./next-records.js";
-import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";
+import { fail, manuscriptBody, manuscriptSlug, numberedPath, ok, titleFromNote, type CollectionDelta, type CollectionIndex, type LibraryEntry, type ManuscriptListOptions, type ManuscriptLoadProgress, type ManuscriptSummary, type NewManuscript, type Result, type SourceAnnotation, type WriterBackend } from "./types.js";
 
 export interface NativeWriterOptions {
   readonly collectionName: string;
@@ -54,6 +54,12 @@ const METADATA_RESTART_MS = [200, 500];
 /** The collection's view changed while Writer was reading it page by page: the pages
  * no longer form one snapshot, and the whole load starts over. */
 class SnapshotChanged extends Error {}
+/** A user-facing operation refusal whose message is already safe and localized. */
+class OperationMessage extends Error {}
+interface ContractPageProgress {
+  readonly onReset?: () => void;
+  readonly onPage: (rows: readonly CollectionRow[], hasMore: boolean) => void;
+}
 /** A continuation the replica ended because the view changed (any change does). */
 function staleContinuation(error: unknown): boolean {
   return isMdbaseError(error) && error.code === "invalid_request" && (error.reason === "cursor_stale" || error.reason === "cursor_expired");
@@ -87,6 +93,7 @@ export class NativeWriterBackend implements WriterBackend {
   private reconnectDelay = RECONNECT_MIN_MS;
   private readonly external = new Set<(paths: readonly string[]) => void>();
   private readonly collection = new Set<(delta: CollectionDelta) => void>();
+  private readonly manuscriptProgress = new Set<(progress: ManuscriptLoadProgress) => void>();
   private readonly abort = () => this.dispose();
   private disposed = false;
   private generation = 0;
@@ -110,6 +117,8 @@ export class NativeWriterBackend implements WriterBackend {
   private unresolvedMutation: string | undefined;
   /** The SDK intent `unresolvedMutation` was submitted under, if any. */
   private unresolvedIntent: string | undefined;
+  /** The record ID of an unresolved delete mutation, for receipt recovery. */
+  private unresolvedDeleteId: string | undefined;
   /** Each user creation action's first submit (record ID, path, SDK intent), so its
    * retry re-sends the same create. A rejected attempt renews the SDK intent. */
   private readonly creations = new Map<string, {attempt: number; id?: string; target?: string}>();
@@ -196,6 +205,7 @@ export class NativeWriterBackend implements WriterBackend {
           : error.code === "upgrade_required" ? t`Update mdbase Connect, then try again.` : t`Writer could not load the library. Try again.`;
         return {ok: false, message, details};
       }
+      if (error instanceof OperationMessage) return fail(error.message);
       return fail(isMdbaseError(error) ? `The native collection operation could not complete (${error.reason ? `${error.code}: ${error.reason}` : error.code}).`
         : error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
@@ -301,8 +311,18 @@ export class NativeWriterBackend implements WriterBackend {
     const {watch, generation} = await this.readyWatch();
     const {catalog, schema} = await this.loadSchemaAt(watch, generation);
     this.available(schema, "manuscript");
-    const rows = await this.loadContractDomain("manuscript", catalog, schema, generation);
-    const store = new CollectionStore(schema);
+    let store = new CollectionStore(schema);
+    const rows = await this.loadContractDomain("manuscript", catalog, schema, generation, undefined, {
+      onReset: () => { store = new CollectionStore(schema); },
+      onPage: (pageRows, hasMore) => {
+        if (!hasMore || this.manuscriptProgress.size === 0) return;
+        store.upsert(pageRows, true);
+        const manuscripts = store.manuscripts;
+        const progress: ManuscriptLoadProgress = {manuscripts, loaded: manuscripts.length};
+        for (const listener of [...this.manuscriptProgress]) listener(progress);
+      },
+    });
+    store = new CollectionStore(schema);
     store.upsert([...rows.values()], true);
     this.check(generation);
     if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
@@ -367,7 +387,7 @@ export class NativeWriterBackend implements WriterBackend {
       for (const [id, row] of projected) rows.set(id, row);
     }
   }
-  private async loadContractDomain(domain: Domain, catalog: DescribeResult, schema: CollectionSchema, generation: number, scope?: DomainScope): Promise<Map<string, CollectionRow>> {
+  private async loadContractDomain(domain: Domain, catalog: DescribeResult, schema: CollectionSchema, generation: number, scope?: DomainScope, progress?: ContractPageProgress): Promise<Map<string, CollectionRow>> {
     const contract = domainContract(domain);
     const declared = catalog.contracts.find(candidate => candidate.id === contract.id && candidate.version === contract.version);
     if (!declared) throw new Error("Writer's metadata lost its exact contract.");
@@ -377,7 +397,8 @@ export class NativeWriterBackend implements WriterBackend {
     let pageSize = this.contractPageSizes.get(domain) ?? (domain === "manuscript" ? MANUSCRIPT_PAGE_SIZE : CONTRACT_PAGE_SIZE);
     for (;;) {
       try {
-        const rows = await this.pageContractDomain(domain, contract, declared.digest, pageSize, schema, generation, scope);
+        progress?.onReset?.();
+        const rows = await this.pageContractDomain(domain, contract, declared.digest, pageSize, schema, generation, scope, progress);
         this.contractPageSizes.set(domain, pageSize);
         return rows;
       } catch (error) {
@@ -390,7 +411,7 @@ export class NativeWriterBackend implements WriterBackend {
   /** Pages one contract domain from `queryContract`. Without `scope` (manuscripts),
    * rows come straight from each page's `RecordView`s and projections without a full
    * collection scan; future ordered paging (`orderBy`) plugs into this one query call. */
-  private async pageContractDomain(domain: Domain, contract: ReturnType<typeof domainContract>, digest: DescribeResult["contracts"][number]["digest"], pageSize: number, schema: CollectionSchema, generation: number, scope?: DomainScope): Promise<Map<string, CollectionRow>> {
+  private async pageContractDomain(domain: Domain, contract: ReturnType<typeof domainContract>, digest: DescribeResult["contracts"][number]["digest"], pageSize: number, schema: CollectionSchema, generation: number, scope?: DomainScope, progress?: ContractPageProgress): Promise<Map<string, CollectionRow>> {
     const rows = new Map<string, CollectionRow>();
     const seen = new Set<string>();
     const seenPaths = new Set<string>();
@@ -403,6 +424,7 @@ export class NativeWriterBackend implements WriterBackend {
       asOf = result.page.asOf;
       const witnesses = new Map(result.page.records.map(record => [record.id, record]));
       if (witnesses.size !== result.page.records.length) throw new Error("Writer's contract query repeated a record identity.");
+      const pageRows: CollectionRow[] = [];
       for (const projected of result.records) {
         const witness = witnesses.get(projected.id);
         if (!witness || seen.has(projected.id) || seenPaths.has(witness.path)) throw new Error("Writer's contract metadata identity changed or repeated.");
@@ -427,15 +449,18 @@ export class NativeWriterBackend implements WriterBackend {
         seen.add(projected.id); seenPaths.add(witness.path);
         // One invalid record stays listed without its projected fields;
         // it never blocks the rest of the collection.
-        rows.set(projected.id, implementation.issues.some(issue => issue.severity === "error")
+        const classified = implementation.issues.some(issue => issue.severity === "error")
           ? row
-          : {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}});
+          : {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}};
+        rows.set(projected.id, classified);
+        pageRows.push(classified);
       }
       cursor = result.page.cursor;
       if (cursor) {
         if (cursors.has(cursor)) throw new Error("Writer's contract metadata cursor repeated.");
         cursors.add(cursor);
       } else if (!result.page.complete) throw new Error("Writer's contract metadata query is incomplete.");
+      progress?.onPage(pageRows, Boolean(cursor));
     } while (cursor);
     if (scope && seen.size !== scope.selected.size) throw new Error("Writer's contract metadata omitted an original record.");
     return rows;
@@ -451,7 +476,13 @@ export class NativeWriterBackend implements WriterBackend {
     if (!first) throw new Error("Writer has no native type for this operation.");
     return first;
   }
-  listManuscripts(): Promise<Result<ManuscriptSummary[]>> {return this.safely(async () => (await this.manuscripts()).manuscripts, "index");}
+  listManuscripts(options?: ManuscriptListOptions): Promise<Result<ManuscriptSummary[]>> {
+    const onProgress = options?.onProgress;
+    if (onProgress) this.manuscriptProgress.add(onProgress);
+    return this.safely(async () => (await this.manuscripts()).manuscripts, "index").finally(() => {
+      if (onProgress) this.manuscriptProgress.delete(onProgress);
+    });
+  }
   /** Fails with plain copy when every Writer type for the domain is unusable. */
   private available(schema: CollectionSchema, domain: Domain): void {
     const message = schema.unavailableMessage(domain);
@@ -562,11 +593,11 @@ export class NativeWriterBackend implements WriterBackend {
           const receipt = await this.client.awaitReceipt(this.unresolvedMutation, {timeoutMs: 5_000, signal: this.signal}); this.check();
           if (receipt.mutation !== this.unresolvedMutation) throw new Error("Writer lost the original receipt identity.");
           if (receipt.state === "rejected") {
-            this.unresolvedMutation = this.unresolvedIntent = undefined;
+            this.unresolvedMutation = this.unresolvedIntent = this.unresolvedDeleteId = undefined;
             throw new Error("Writer's original operation was rejected. Review it before starting another.");
           }
           await this.recovered(this.unresolvedMutation, receipt);
-          this.unresolvedMutation = this.unresolvedIntent = undefined;
+          this.unresolvedMutation = this.unresolvedIntent = this.unresolvedDeleteId = undefined;
           throw new Error("Writer recovered the original operation. Review it before starting another.");
         }
         return operation();
@@ -574,7 +605,17 @@ export class NativeWriterBackend implements WriterBackend {
     } finally {this.writing = false;}
   }
   private async recovered(mutationId: string, receipt: Receipt): Promise<void> {
-    if (receipt.mutation !== mutationId || receipt.state !== "confirmed" || !receipt.records?.length) throw new Error("Writer must recover the original operation before starting another.");
+    if (receipt.mutation !== mutationId || receipt.state !== "confirmed") throw new Error("Writer must recover the original operation before starting another.");
+    if (this.unresolvedDeleteId !== undefined) {
+      try {
+        await this.client.get(this.unresolvedDeleteId, {signal: this.signal});
+      } catch (error) {
+        if (isMdbaseError(error) && error.code === "not_found") return;
+        throw error;
+      }
+      throw new Error("Writer's original operation is protected or changed.");
+    }
+    if (!receipt.records?.length) throw new Error("Writer must recover the original operation before starting another.");
     for (const witnessed of receipt.records) {
       const current = await this.client.get(witnessed.id, {include: {document: true}, signal: this.signal}); this.check();
       if (!unprotected(current) || current.id !== witnessed.id || current.path !== witnessed.path
@@ -632,7 +673,7 @@ export class NativeWriterBackend implements WriterBackend {
     if (!unprotected(current) || current.id !== id || current.path !== witnessed.path
       || (witnessed.state.state === "confirmed" && current.revision !== witnessed.revision)) throw new Error("Writer's confirmed record changed or is protected.");
     if (contract) await this.contractRecord(current, contract);
-    if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = this.unresolvedIntent = undefined;
+    if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = this.unresolvedIntent = this.unresolvedDeleteId = undefined;
     return current;
   }
   private sdkIntent(intent: string): string {
@@ -672,6 +713,51 @@ export class NativeWriterBackend implements WriterBackend {
   }
   createRecord(path: string, body: string, intent?: string): Promise<Result<string>> {
     return this.write(async () => {const created = await this.create(path, body, {}, undefined, intent); if (created.body !== body) throw new Error("Writer's record readback differs from the original operation."); return created.path;}, intent);
+  }
+  deleteDocument(path: string): Promise<Result<void>> {
+    return this.write(async () => {
+      let original: RecordView;
+      try {
+        original = await this.client.get({path}, {signal: this.signal});
+      } catch (error) {
+        if (isMdbaseError(error) && error.code === "not_found") throw new OperationMessage(t`This document has already been deleted.`);
+        throw error;
+      }
+      this.check();
+      if (!unprotected(original)) throw new Error("Writer's document is protected or has unresolved changes.");
+      this.unresolvedDeleteId = original.id;
+      let write: Write;
+      try {
+        write = await this.nativeWrite(ids => this.client.delete(original, {...ids, ifRevision: original.revision, signal: this.signal}));
+      } catch (error) {
+        if (isMdbaseError(error) && error.code !== "outcome_unknown" && !error.mutationId) {
+          this.unresolvedMutation = this.unresolvedIntent = this.unresolvedDeleteId = undefined;
+          if (error.code === "forbidden" || error.reason === "capability_missing") throw new OperationMessage(t`Writer does not have permission to delete documents in this collection.`);
+          if (error.code === "conflict") throw new OperationMessage(t`This document changed elsewhere. Reload and try again.`);
+          if (error.code === "not_found") throw new OperationMessage(t`This document has already been deleted.`);
+        }
+        throw error;
+      }
+      this.check();
+      try {
+        await write.confirmed;
+      } catch (error) {
+        if (write.state === "rejected") {
+          if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = this.unresolvedIntent = this.unresolvedDeleteId = undefined;
+          if (isMdbaseError(error)) {
+            if (error.code === "forbidden" || error.reason === "capability_missing") throw new OperationMessage(t`Writer does not have permission to delete documents in this collection.`);
+            if (error.code === "conflict") throw new OperationMessage(t`This document changed elsewhere. Reload and try again.`);
+            if (error.code === "not_found") throw new OperationMessage(t`This document has already been deleted.`);
+          }
+        }
+        throw error;
+      }
+      this.check();
+      if (write.receipt.mutation !== write.mutationId || write.receipt.state !== "confirmed") throw new Error("Writer lost the original confirmed receipt.");
+      if (this.unresolvedMutation === write.mutationId) this.unresolvedMutation = this.unresolvedIntent = this.unresolvedDeleteId = undefined;
+      this.cachedManuscripts = undefined;
+      this.cached = undefined;
+    });
   }
   adoptManuscript(path: string): Promise<Result<string>> {
     return this.write(async () => {
@@ -731,7 +817,7 @@ export class NativeWriterBackend implements WriterBackend {
     this.disposed = true; ++this.watchEpoch; clearTimeout(this.reconnectTimer); this.reconnectTimer = undefined;
     this.signal.removeEventListener("abort", this.abort); this.stopWatchState(); this.watch();
     this.lifetime.abort(); if (this.ownedRecords) this.records.dispose();
-    this.external.clear(); this.collection.clear();
+    this.external.clear(); this.collection.clear(); this.manuscriptProgress.clear();
     this.cachedSchema = undefined; this.cachedManuscripts = undefined; this.cached = undefined;
   }
 }
