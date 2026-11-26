@@ -45,7 +45,8 @@ try {
       await page.locator('.home [data-path][data-path="manuscripts/patient-observation.md"]').waitFor();
       await page.locator(".mdbase-app-switcher").click();
       const hrefs = await page.locator('a.mdbase-menu-item[role="menuitem"]').evaluateAll(elements => elements.map(element => element.href));
-      const appHrefs = hrefs.filter(href => href !== "https://mdbase.dev/apps/mcp/");
+      // mdbase.dev links (the SDK guide, MCP setup) are documentation, not apps.
+      const appHrefs = hrefs.filter(href => new URL(href).hostname !== "mdbase.dev");
       assert.ok(appHrefs.some(href => new URL(href).origin === "https://editor-lab.mdbase.dev"), JSON.stringify(hrefs));
       assert.ok(appHrefs.some(href => new URL(href).origin === "https://lab.mdbase-reader.pages.dev"), JSON.stringify(hrefs));
       assert.ok(appHrefs.some(href => new URL(href).origin === "https://lab.mdbase-journal-lab.pages.dev"), JSON.stringify(hrefs));
