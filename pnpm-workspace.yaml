@@ -3,8 +3,8 @@ packages:
   - packages/*
 
 minimumReleaseAgeExclude:
-  - '@mdbase-dev/ui@0.2.41'
-  - '@mdbase-dev/i18n@0.2.39'
+  - '@mdbase-dev/ui@0.2.42'
+  - '@mdbase-dev/i18n@0.2.42'
   - '@mdbase-dev/sdk@0.2.40'
   - '@mdbase-dev/mdbase@0.5.0'
 
