@@ -1,6 +1,6 @@
 // Writer's domain repository over one borrowed public SDK connection. No
 // legacy backend facade, SDK runtime/setup engine, copied client or app journal.
-import { isMdbaseError, type JsonObject, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type DescribeResult, type FileView, type Receipt, type RecordView, type Write } from "@mdbase-dev/sdk";
+import { isMdbaseError, type Change, type JsonObject, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type DescribeResult, type FileView, type Receipt, type RecordView, type Write } from "@mdbase-dev/sdk";
 import { t } from "@lingui/core/macro";
 import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
@@ -27,12 +27,19 @@ interface NativeManuscripts {
   readonly manuscripts: ManuscriptSummary[];
   readonly generation: number;
 }
+interface RecordIdentity {
+  readonly id: string;
+  readonly revision: string;
+  /** Ordinary Markdown whose types contribute no Writer contract metadata. */
+  readonly noteTypes?: readonly string[];
+}
 interface NativeMetadata {
   readonly schema: CollectionSchema;
   readonly store: CollectionStore;
-  readonly identities: ReadonlyMap<string, {readonly id: string; readonly revision: string}>;
+  readonly identities: ReadonlyMap<string, RecordIdentity>;
   readonly files: ReadonlyMap<string, FileView>;
   readonly generation: number;
+  readonly noteChanges: Map<string, number>;
 }
 interface DomainScope {
   readonly asOf: number;
@@ -66,6 +73,9 @@ function unprotected(record: RecordView): boolean {
  * rejected write is rolled back and arrives as another change. Writes need `unprotected`. */
 function readable(record: RecordView): boolean {
   return !record.state.hold && !(record.state.unresolved ?? 0);
+}
+function sameTypes(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((type, i) => type === b[i]);
 }
 
 export class NativeWriterBackend implements WriterBackend {
@@ -137,7 +147,9 @@ export class NativeWriterBackend implements WriterBackend {
     let notifyFailure = !reconnecting;
     const current = () => !this.disposed && epoch === this.watchEpoch;
     const watch = this.client.watchChanges(batch => {
-      if (current()) this.invalidate(batch.reset ? [] : batch.changes.map(change => change.path));
+      if (!current()) return;
+      if (batch.reset) this.invalidate([]);
+      else this.onChanges(batch.changes);
     });
     const ended = () => {
       if (notifyFailure) this.invalidate([]);
@@ -199,6 +211,25 @@ export class NativeWriterBackend implements WriterBackend {
     const result = await this.safely(operation, "index");
     return result.ok ? result.value : result;
   }
+  private onChanges(changes: readonly Change[]): void {
+    const paths = changes.map(change => change.path);
+    const cached = this.cached;
+    // An ordinary note edit leaves discovery intact. Require an explicit
+    // identity and type witness for every change in the batch. The record
+    // sessions follow content independently of this collection watch.
+    if (!cached || !changes.length || !changes.every(change => {
+      const known = cached.identities.get(change.path);
+      return change.kind === "put" && change.entity === "record" && change.types !== undefined
+        && known?.id === change.id && known.noteTypes !== undefined && sameTypes(known.noteTypes, change.types);
+    })) {
+      this.invalidate(paths);
+      return;
+    }
+    for (const change of changes) cached.noteChanges.set(change.path, change.version);
+    for (const listener of this.external) listener(paths);
+    for (const listener of this.collection) listener({paths});
+  }
+
   private invalidate(paths: readonly string[]): void {
     if (this.disposed) return;
     ++this.generation;
@@ -318,7 +349,7 @@ export class NativeWriterBackend implements WriterBackend {
     const {catalog, schema} = await this.loadSchemaAt(watch, generation);
     const store = new CollectionStore(schema);
     const rows = new Map<string, CollectionRow>();
-    const identities = new Map<string, {id: string; revision: string}>();
+    const identities = new Map<string, RecordIdentity>();
     const ids = new Set<string>();
     const recordCursors = new Set<string>();
     let asOf: number | undefined;
@@ -333,7 +364,10 @@ export class NativeWriterBackend implements WriterBackend {
       }
       for (const record of page.records) {
         if (identities.has(record.path) || ids.has(record.id)) throw new IndexDiagnostic("Writer's native query repeated a record identity.");
-        identities.set(record.path, {id: record.id, revision: record.revision}); ids.add(record.id);
+        const note = /\.md$/i.test(record.path) && schema.roles(record.types).size === 0
+          && !record.types.some(type => schema.isUnavailableType(type));
+        identities.set(record.path, {id: record.id, revision: record.revision, ...(note ? {noteTypes: record.types} : {})});
+        ids.add(record.id);
         rows.set(record.id, {path: record.path, types: record.types,
           ...(record.mtime !== undefined ? {modified: new Date(record.mtime).toISOString()} : {})});
       }
@@ -362,7 +396,7 @@ export class NativeWriterBackend implements WriterBackend {
     store.files([...files.keys()]);
     this.check(generation);
     if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
-    return this.cached = {schema, store, identities, files, generation};
+    return this.cached = {schema, store, identities, files, generation, noteChanges: new Map()};
   }
   private async projectMetadata(catalog: DescribeResult, schema: CollectionSchema, rows: Map<string, CollectionRow>, identities: ReadonlyMap<string, {id: string; revision: string}>, asOf: number, generation: number): Promise<void> {
     for (const domain of COLLECTION_DOMAINS) {
@@ -513,8 +547,15 @@ export class NativeWriterBackend implements WriterBackend {
     return this.safely(async () => {
       const metadata = await this.metadata(); const original = metadata.identities.get(path);
       if (!original) throw new Error("Writer cannot find this record in its native index.");
+      const change = metadata.noteChanges.get(path);
       const record = await this.client.get(original.id, {include: {body: true}, signal: this.signal}); this.check(metadata.generation);
-      if (record.id !== original.id || record.path !== path || record.revision !== original.revision || !unprotected(record)) throw new Error("Writer's record changed or is protected.");
+      // A note with a delivered edit has a newer revision than the index.
+      // Read its confirmed bytes by ID, and reject if another change arrived
+      // during the read or the record's path or types no longer match.
+      const matches = change === undefined
+        ? record.revision === original.revision && !metadata.noteChanges.has(path)
+        : original.noteTypes !== undefined && sameTypes(original.noteTypes, record.types) && metadata.noteChanges.get(path) === change;
+      if (record.id !== original.id || record.path !== path || !matches || !unprotected(record)) throw new Error("Writer's record changed or is protected.");
       return record.body ?? "";
     });
   }

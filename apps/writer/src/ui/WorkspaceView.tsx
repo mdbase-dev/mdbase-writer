@@ -415,7 +415,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   // Where each record's open threads are anchored, for the outline's quiet counts.
   const commentOffsets = useMemo(() => {
     const map = new Map<string, number[]>();
-    for (const p of placed) if (p.thread.root.status === "open" && p.at && p.at !== "whole") map.set(p.record, [...(map.get(p.record) ?? []), p.at.from]);
+    for (const p of placed) {
+      if (p.thread.root.status !== "open" || !p.at || p.at === "whole") continue;
+      const offsets = map.get(p.record);
+      if (offsets) offsets.push(p.at.from);
+      else map.set(p.record, [p.at.from]);
+    }
     return map;
   }, [placed]);
   const openThreads = useMemo(() => placed.filter((p) => p.thread.root.status === "open"), [placed]);

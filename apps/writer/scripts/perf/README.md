@@ -129,6 +129,28 @@ Both runs used `PROFILE_EDITOR_ONLY=1` on an AMD Ryzen 9 7940HS with Node 22.22.
 
 Both exports produced a 27,086-byte DOCX containing the Word document part. The two browser runs had long tasks above 20 seconds around export and source interactions. The browser measurements are single observations. The repeated Vitest runs establish the outline comparison.
 
+### Word export during a chapter save
+
+With `pnpm dev` running, use the dedicated Chromium benchmark to time a chapter
+save overlapping a Word download. Each run opens a fresh browser context, edits
+the first chapter with Outline and Comments open, starts a save, and uses the
+Word export menu. The browser fixture has 60 chapters, 300 manuscript comment
+records, and 5,000 sources.
+
+```sh
+PROFILE_OUTPUT=/tmp/writer-docx-before pnpm -C apps/writer exec node scripts/perf/docx-profile.mjs
+PROFILE_OUTPUT=/tmp/writer-docx-after PROFILE_REFERENCE=/tmp/writer-docx-before/run-1.docx \
+  pnpm -C apps/writer exec node scripts/perf/docx-profile.mjs
+```
+
+Run the first command with the benchmark and fixture on the baseline revision.
+The script takes three samples by default. It reports save-to-download time,
+time before the export handler starts, time inside the handler, and main-thread
+long-task time. Python checks the ZIP, all 480 chapter passages, the edit, the
+bibliography and the cited footnote. Every uncompressed package part is
+compared, with creation and modification timestamps normalized. Writer review
+threads stay in the collection.
+
 ### Earlier browser measurements
 
 On the fixture-corrected product comparison, cold preview went from 3,426 to

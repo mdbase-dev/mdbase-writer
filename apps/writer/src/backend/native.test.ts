@@ -158,6 +158,68 @@ describe("native Writer domain backend", () => {
     expect(pages).not.toHaveBeenCalled();
     opened.value.release();
   });
+  it("keeps collection metadata after a chapter edit and reads its latest confirmed body", async () => {
+    const h = await fixture();
+    const path = "chapters/typed.md";
+    const chapter = h.replica.seed({path, types: ["note"], body: "Original chapter"});
+    const pages = vi.spyOn(h.client, "pages");
+    const index = await h.backend.index();
+    const library = await h.backend.library();
+    if (!index.ok || !library.ok) throw new Error("Missing fixture metadata");
+    const changed = vi.fn(); h.backend.onCollectionChange(changed);
+
+    h.replica.editElsewhere(chapter.id, {body: "Edited chapter"});
+    await vi.waitFor(() => expect(changed).toHaveBeenCalledWith({paths: [path]}));
+    expect(await h.backend.readBody(path)).toEqual({ok: true, value: "Edited chapter"});
+    const currentIndex = await h.backend.index();
+    const currentLibrary = await h.backend.library();
+    expect(currentIndex.ok && currentIndex.value).toBe(index.value);
+    expect(currentLibrary.ok && currentLibrary.value).toBe(library.value);
+    expect(pages).toHaveBeenCalledOnce();
+
+    const get = h.client.get.bind(h.client);
+    const getSpy = vi.spyOn(h.client, "get");
+    getSpy.mockImplementationOnce(async (...args) => {
+      const record = await get(...args);
+      return {...record, state: {...record.state, unresolved: 1}};
+    });
+    expect((await h.backend.readBody(path)).ok).toBe(false);
+    getSpy.mockImplementationOnce(async (...args) => {
+      const record = await get(...args);
+      changed.mockClear();
+      h.replica.editElsewhere(chapter.id, {body: "Newer chapter"});
+      await vi.waitFor(() => expect(changed).toHaveBeenCalledWith({paths: [path]}));
+      return record;
+    });
+    expect((await h.backend.readBody(path)).ok).toBe(false);
+    getSpy.mockRestore();
+    expect(await h.backend.readBody(path)).toEqual({ok: true, value: "Newer chapter"});
+
+    h.replica.renameElsewhere(chapter.id, "chapters/renamed.md");
+    await vi.waitFor(() => expect(changed).toHaveBeenCalledWith({paths: [path], reset: true}));
+    const moved = await h.backend.index();
+    expect(moved.ok && moved.value.recordPaths).toContain("chapters/renamed.md");
+    expect(moved.ok && moved.value.recordPaths).not.toContain(path);
+    expect(pages).toHaveBeenCalledTimes(2);
+  });
+  it("reloads metadata when a watch batch has an unknown type, changed type or different identity", async () => {
+    const watch = controlledWatch();
+    const h = await fixture(client => {vi.spyOn(client, "watchChanges").mockReturnValue(watch.watch);});
+    const chapter = h.replica.seed({path: "chapters/typed.md", types: ["note"]});
+    const onChange = vi.mocked(h.client.watchChanges).mock.calls[0]?.[0];
+    if (!onChange) throw new Error("Missing watch callback");
+    const changed = vi.fn(); h.backend.onCollectionChange(changed);
+    const pages = vi.spyOn(h.client, "pages");
+    const put = {id: chapter.id, path: chapter.path, kind: "put", entity: "record", version: 1} as const;
+    await h.backend.index();
+
+    for (const uncertain of [put, {...put, types: ["native-source"]}, {...put, types: ["note"], id: crypto.randomUUID()}]) {
+      onChange({changes: [{...put, types: ["note"]}, uncertain], cursor: "change", reset: false});
+      expect(changed).toHaveBeenLastCalledWith({paths: [chapter.path, chapter.path], reset: true});
+      expect((await h.backend.index()).ok).toBe(true);
+    }
+    expect(pages).toHaveBeenCalledTimes(4);
+  });
   it("unrelated invalid definitions do not hide Writer records or untyped notes", async () => {
     const h = await fixture();
     h.description.issues.push({code: "type_invalid", severity: "error", message: "An unrelated custom type is invalid", details: {path: "_types/unrelated.md"}});

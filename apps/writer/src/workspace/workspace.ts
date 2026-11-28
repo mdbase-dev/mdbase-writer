@@ -691,7 +691,7 @@ export class ManuscriptWorkspace {
       void this.refreshCollection(); return;
     }
     const indexChanged = delta.index && (delta.index.recordPaths !== this.current.recordPaths || delta.index.filePaths !== this.current.filePaths);
-    this.update({ ...(delta.index ? { ...(indexChanged ? { recordPaths: delta.index.recordPaths, filePaths: delta.index.filePaths } : {}), indexLoad: READY } : {}), ...(delta.library ? { library: delta.library, libraryLoad: READY } : {}) });
+    if (delta.index || delta.library) this.update({ ...(delta.index ? { ...(indexChanged ? { recordPaths: delta.index.recordPaths, filePaths: delta.index.filePaths } : {}), indexLoad: READY } : {}), ...(delta.library ? { library: delta.library, libraryLoad: READY } : {}) });
     if (indexChanged) {
       this.sendCollection();
       for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);

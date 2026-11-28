@@ -14,7 +14,9 @@ export function generateCollection(seed: (path: string, type: string, fm: JsonOb
   const noteBody = "Ordinary collection note.\n".repeat(80);
   const commentBody = "A comment discussing the passage. ".repeat(16);
   const abstract = "Source metadata. ".repeat(40);
-  const mainBody = browserChapters.length ? `${body}${browserChapters.map(path => `![[${path}]]`).join("\n\n")}\n` : body;
+  const mainBody = browserChapters.length
+    ? `${body}The manuscript includes a footnote.[^fixture]\n\n[^fixture]: Footnote text with a citation [@source00000].\n\n${browserChapters.map(path => `![[${path}]]`).join("\n\n")}\n`
+    : body;
   for (let i = 0; i < counts.manuscripts; i++) seed(i === 0 ? main : `manuscripts/paper-${pad(i)}.md`, "writer-manuscript", { title: `Paper ${pad(i)}`, csl: "apa", template: "article" }, i === 0 ? mainBody : body);
   for (const [i, path] of browserChapters.entries()) {
     const sections = Array.from({ length: 8 }, (_, section) => `### Section ${section + 1}\n\nEvidence in chapter ${i + 1}, section ${section + 1}, supports the manuscript's argument. Further analysis puts the result in context.`);
