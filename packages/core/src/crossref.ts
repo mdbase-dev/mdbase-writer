@@ -10,6 +10,7 @@ import type { SyntaxNode } from "@lezer/common";
 
 import { parseCluster } from "./cite-items.js";
 import { CITEKEY, markdownParser } from "./markdown.js";
+import { applyTextEdits, type TextEdit } from "./text-edits.js";
 
 export type CrossRefKind = "section" | "figure" | "table" | "equation";
 
@@ -38,10 +39,21 @@ export function supplement(kind: CrossRefKind, lang: string): string {
 const ATTRS = /\{([^{}]*)\}\s*$/;
 const idOf = (attrs: string | undefined) => (attrs ? /(?:^|\s)#([\p{L}\p{N}_:.-]+)/u.exec(attrs)?.[1] : undefined);
 
+/** Call with match offsets in document order, as produced by matchAll. */
+function overlapScan(ranges: [number, number][]) {
+  ranges.sort(([a], [b]) => a - b);
+  let index = 0;
+  return (from: number, to: number) => {
+    let next = ranges[index];
+    while (next && next[1] <= from) next = ranges[++index];
+    return next !== undefined && next[0] < to;
+  };
+}
+
 /** Numbers every labelled target, and rewrites captions and equations to show their numbers. */
 export function resolveCrossReferences(markdown: string, lang: string): { markdown: string; targets: Map<string, CrossRefTarget> } {
   const targets = new Map<string, CrossRefTarget>();
-  const edits: { from: number; to: number; text: string }[] = [];
+  const edits: TextEdit[] = [];
   const skip: [number, number][] = [];
   const sections: number[] = [];
   let figures = 0;
@@ -119,36 +131,37 @@ export function resolveCrossReferences(markdown: string, lang: string): { markdo
     return t ? `[${supplement(t.kind, lang)} ${t.number}](#${key})` : undefined;
   };
   // References: bracketed clusters made only of labels, then bare @label.
-  // Footnote definitions keep their inline text unparsed, so this works on
-  // the text, skipping code and math.
-  const skipped = (from: number, to: number) => skip.some(([a, b]) => from < b && to > a) || edits.some((e) => e.to > e.from && from < e.to && to > e.from);
+  // Scan the text so references inside footnotes are included. Protected
+  // ranges keep code, math and content already being rewritten intact.
+  for (const { from, to } of edits) if (to > from) skip.push([from, to]);
+  const overlapsBlock = overlapScan(skip);
+  const clusters: [number, number][] = [];
   const cluster = new RegExp(`\\[([^\\[\\]]*?@${CITEKEY.source}[^\\[\\]]*)\\](?![({])`, "gu");
   for (const m of markdown.matchAll(cluster)) {
     const from = m.index ?? 0;
     const to = from + m[0].length;
-    if (skipped(from, to)) continue;
+    if (overlapsBlock(from, to)) continue;
     const items = parseCluster(m[1] ?? "");
-    if (!items.length || !items.every((i) => targets.has(i.key))) {
-      skip.push([from, to]); // a citation (or a mixed cluster, an error the preview reports): leave it whole
-      continue;
-    }
+    // Keep a citation (or mixed cluster) whole and avoid rewriting a resolved
+    // cluster again in the bare-reference pass.
+    clusters.push([from, to]);
+    if (!items.length || !items.every((i) => targets.has(i.key))) continue;
     edits.push({
       from,
       to,
       text: items.map((i) => `${i.prefix ? `${i.prefix} ` : ""}${reference(i.key)}${i.suffix}`).join(", "),
     });
   }
+  const overlapsProtected = overlapScan([...skip, ...clusters]);
   const bare = new RegExp(`(^|[^\\p{L}\\p{N}_@\\[-])@(${CITEKEY.source})`, "gu");
   for (const m of markdown.matchAll(bare)) {
     const from = (m.index ?? 0) + (m[1]?.length ?? 0);
     const key = m[2] ?? "";
     const to = from + 1 + key.length;
     const link = reference(key);
-    if (!link || skipped(from, to)) continue;
+    if (!link || overlapsProtected(from, to)) continue;
     edits.push({ from, to, text: link });
   }
 
-  let out = markdown;
-  for (const e of edits.sort((a, b) => b.from - a.from)) out = out.slice(0, e.from) + e.text + out.slice(e.to);
-  return { markdown: out, targets };
+  return { markdown: applyTextEdits(markdown, edits), targets };
 }

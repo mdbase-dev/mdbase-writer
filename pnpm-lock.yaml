@@ -6,6 +6,7 @@ settings:
 
 patchedDependencies:
   citeproc: f7e3d4ceb169ed26f620629251d1c4f625551c8e9355526267e43a91fc27a73e
+  pandoc-wasm@1.1.0: 1ba3916b68987e69c14b1c65ba8d94079ad9da27f633d26e79b132c59f222b87
 
 importers:
 
@@ -94,7 +95,7 @@ importers:
         version: 2.1.10(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       pandoc-wasm:
         specifier: 1.1.0
-        version: 1.1.0
+        version: 1.1.0(patch_hash=1ba3916b68987e69c14b1c65ba8d94079ad9da27f633d26e79b132c59f222b87)
       react:
         specifier: ^19.2.8
         version: 19.3.0
@@ -2837,7 +2838,7 @@ snapshots:
       stdin-discarder: 0.3.2
       string-width: 8.3.0
 
-  pandoc-wasm@1.1.0:
+  pandoc-wasm@1.1.0(patch_hash=1ba3916b68987e69c14b1c65ba8d94079ad9da27f633d26e79b132c59f222b87):
     dependencies:
       '@bjorn3/browser_wasi_shim': 0.4.2
 

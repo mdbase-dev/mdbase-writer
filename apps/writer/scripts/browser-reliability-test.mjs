@@ -2,6 +2,7 @@
 // Run with the development server: node scripts/browser-reliability-test.mjs [base URL]
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? process.env.BASE ?? "http://127.0.0.1:5320/";
@@ -479,7 +480,7 @@ try {
     assert.equal(await page.locator(".toast.tone-busy").count(), 0);
   });
 
-  await scenario("new manuscripts can include an actionable worked example", async (page) => {
+  await scenario("the worked example exports its collection image and cited footnote to Word", async (page) => {
     await page.goto(`${base}?demo`);
     await page.getByRole("button", { name: "New manuscript" }).click();
     await page.getByRole("textbox", { name: "Title", exact: true }).fill("[test] Worked example");
@@ -488,6 +489,45 @@ try {
     await page.waitForFunction(() => window.writer?.workspace?.getSnapshot().phase === "ready");
     const text = await page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; });
     assert.match(text, /fig-example/); assert.match(text, /Add chapter/); assert.match(text, /A cited claim \[@/);
+
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+    await page.evaluate(async bytes => {
+      const { backend, workspace } = window.writer;
+      // A collection client models the peer that adds the file. Export reads
+      // it through Writer's native descriptor and download checks.
+      const uploaded = await backend.fixture.client().files.upload("figures/example.png", new Uint8Array(bytes));
+      await uploaded.confirmed;
+      const snapshot = workspace.getSnapshot().records.get(workspace.main).snapshot;
+      const citekey = /A cited claim \[@([^,]+),/.exec(snapshot.body)[1];
+      workspace.setBody(workspace.main, `${snapshot.body}\nA worked note.[^example]\n\n[^example]: Footnote evidence [@${citekey}, p. 21].\n`);
+    }, [...png]);
+
+    const [outcome] = await Promise.all([
+      Promise.race([
+        page.waitForEvent("download", { timeout: 120_000 }).then(download => ({ download })),
+        page.getByRole("dialog", { name: "Review export problems", exact: true }).waitFor({ timeout: 120_000 })
+          .then(async () => ({ problems: await page.getByRole("dialog", { name: "Review export problems", exact: true }).innerText() })),
+      ]),
+      format(page, "Word (DOCX)"),
+    ]);
+    assert.ok(outcome.download, outcome.problems);
+    const path = "out/worked-example.docx";
+    await outcome.download.saveAs(path);
+    const part = name => execFileSync("unzip", ["-p", path, name]);
+    const relationships = part("word/_rels/document.xml.rels").toString();
+    const image = /relationships\/image" Id="([^"]+)" Target="(media\/[^"]+\.png)"/.exec(relationships);
+    assert.ok(image, "document contains an image relationship");
+    const doc = part("word/document.xml").toString();
+    assert.ok(doc.includes(`r:embed="${image[1]}"`));
+    assert.deepEqual(part(`word/${image[2]}`), png);
+    assert.match(doc, /w:footnoteReference/);
+    assert.match(doc, /Bibliography/);
+    const footnotes = part("word/footnotes.xml").toString();
+    assert.match(footnotes, /Footnote evidence/);
+    assert.match(footnotes, /21/);
+    assert.match(footnotes, /<w:hyperlink\b/);
+    assert.doesNotMatch(footnotes, /\[@|citation-not-found/);
+
   });
 } finally { await browser.close(); }
 process.exitCode = failures ? 1 : 0;

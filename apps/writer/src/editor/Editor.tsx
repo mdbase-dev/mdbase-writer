@@ -113,7 +113,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
   const translatedExtensions = () => [
     EditorState.phrases.of(phrases.current),
     placeholder(t`Start writing. Type / to insert or @ to cite.`),
-    EditorView.contentAttributes.of({ "aria-label": t`Markdown for ${path}`, spellcheck: "true", autocapitalize: "sentences" }),
+    EditorView.contentAttributes.of({ "aria-label": t`Markdown for ${path}`, tabindex: "0", spellcheck: "true", autocapitalize: "sentences" }),
   ];
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
