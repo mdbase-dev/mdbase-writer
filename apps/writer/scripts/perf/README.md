@@ -58,29 +58,35 @@ Result JSON is generated evidence: the default is `out/perf/large-collection.jso
 
 ## Paired interactive Chromium profile
 
-Start a DEV server for each revision on a separate port. Copy the benchmark's
-`interactive-profile.mjs`, `outline.bench.tsx`, `large-demo.ts` and `DemoRoot.tsx`
-to the same locations in the baseline checkout. The last two files enable
-the same fixture sizes on both revisions.
+Start a DEV server for each revision on a separate port. Use the same large
+demo fixture on both revisions and run the driver from the candidate checkout.
+Set the same SDK environment on both servers. The production SDK below
+negotiates larger contract pages with capable replicas. The default LAB SDK
+caps them at 128. Both use local demo data.
 
 ```sh
 # In separate shells, from each checkout
-pnpm -C apps/writer dev --port 5437  # baseline
-pnpm -C apps/writer dev --port 5438  # candidate
+VITE_MDBASE_ENV=production pnpm -C apps/writer dev --port 5437  # baseline
+VITE_MDBASE_ENV=production pnpm -C apps/writer dev --port 5438  # candidate
 
+# From the candidate checkout
 BASELINE=http://127.0.0.1:5437 BASE=http://127.0.0.1:5438 PROFILE_CHAPTERS=120 \
   pnpm -C apps/writer exec node scripts/perf/interactive-profile.mjs > paired.jsonl
 ```
 
 Each of seven rounds runs the two-chapter worked example and a large manuscript
 on both revisions. Revision order reverses each round. Each sample opens a fresh
-browser context, waits for the chapter count and bibliography revision, then
-uses the visible Sources panel, outline search, editor and citation completion.
-Typing must synchronously checkpoint the exact edit in local storage, and normal
-SDK autosave must confirm the same body. Startup timings include navigation,
-demo seeding and development module loading. The bibliography timing includes
-full preview rendering. Action timings include Playwright input and waiting for
-the result. Renderer CPU uses CDP thread ticks.
+browser context. `indexReady` records collection index readiness, `hydration`
+also waits for the expected chapter sessions, failures, library and outline
+word count, and `previewWithBibliography` waits for a drawn revision with the
+expected references. These timings start at navigation and include demo seeding
+and development module loading. Action timings include Playwright input and
+waiting for the visible result. The citation test accepts the matching
+completion, checks the exact citation in the chapter, and undoes it before the
+typing phase. Typing must synchronously checkpoint the exact edit in local storage,
+and SDK autosave must confirm the same body. Renderer CPU uses CDP thread ticks.
+For a separate diagnostic run, set `PROFILE_CPU=out/perf/cpu` to capture V8
+profiles through hydration and during the switch pair.
 
 The 120-chapter demo explicitly checks the pinned SDK's session limit. The
 workspace must discover all 120 chapters and report 57 failed opens alongside

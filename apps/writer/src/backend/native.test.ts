@@ -75,6 +75,28 @@ describe("native Writer domain backend", () => {
     expect(get).not.toHaveBeenCalled(); expect(h.metadata).not.toHaveBeenCalled();
     expect("writeFile" in h.backend).toBe(false);
   });
+  it("loads every source when a larger source page must be retried at a smaller size", async () => {
+    const h = await fixture();
+    for (let index = 0; index < 500; index++) {
+      const key = `source-${index}`;
+      h.replica.seed({path: `sources/${key}.md`, types: ["native-source"], frontmatter: {
+        type: "native-source", heading: key, citation: new Map([["id", key], ["type", "article-journal"], ["title", key]]),
+      }});
+    }
+    const original = h.client.queryContract.bind(h.client);
+    const requests: (number | undefined)[] = [];
+    vi.spyOn(h.client, "queryContract").mockImplementation(async (contract, options) => {
+      if (contract.id === "dev.mdbase.reader.source") {
+        requests.push(options?.pageSize);
+        if (options?.pageSize === 1_000) throw new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"});
+      }
+      return original(contract, options);
+    });
+
+    const library = await h.backend.library();
+    expect(library.ok && new Set(library.value.map(entry => entry.key))).toEqual(new Set(["paper", ...Array.from({length: 500}, (_, index) => `source-${index}`)]));
+    expect(requests).toEqual([1_000, 500, 500]);
+  });
   it("lists manuscripts by paging the manuscript contract alone without scanning the full collection", async () => {
     const h = await fixture();
     const second = h.replica.seed({path: "manuscripts/second.md", types: ["native-manuscript"], frontmatter: {type: "native-manuscript", meta: new Map([["heading", "Second"]]), layout: "thesis", style: "chicago-author-date"}, body: "Second\n"});

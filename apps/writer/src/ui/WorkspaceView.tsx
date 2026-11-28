@@ -490,11 +490,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     setLayout((l) => (l.view === "preview" ? { ...l, view: "both" } : l));
     setCursor({ record, offset });
     revealRequest.current = { record, offset, ...options };
-    if (record === active && editor.current) editor.current.reveal(offset, options);
+    if (record === citationNavRef.current.active && editor.current) editor.current.reveal(offset, options);
     else {
       setActive(record);
     }
-  }, [active, setLayout]);
+  }, [setLayout]);
   const selectThread = useCallback((p: PlacedThread) => {
     setActiveComment(p.thread.root.path);
     if (p.at && p.at !== "whole") jump(p.record, p.at.from);
@@ -597,7 +597,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
 
   // Where a source is cited, named by section, for the Sources panel.
   const sitesFor = useCallback((key: string): readonly CitationSite[] => {
-    const { order, snap } = citationNavRef.current;
     const out: CitationSite[] = [];
     const seen = new Set<string>();
     for (const record of order) {
@@ -612,7 +611,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       }
     }
     return out;
-  }, []);
+  }, [order, snap.records]);
 
   // The next or previous citation of a source, in reading order from the cursor.
   const stepCitation = useCallback((key: string, direction: 1 | -1) => {
@@ -904,6 +903,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     return () => window.removeEventListener("keydown", listener, true);
   }, []);
 
+  const retrySources = useCallback(() => { void workspace.retryMetadata(); }, [workspace]);
   const sourcesPanel = (
     <SourcesPanel
       query={sourceQuery}
@@ -916,7 +916,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       loading={snap.libraryLoad.phase === "loading"}
       problem={snap.libraryLoad.problem}
       details={snap.libraryLoad.details}
-      onRetry={() => void workspace.retryMetadata()}
+      onRetry={retrySources}
       notSetUp={workspace.setupStatus?.sources === false}
       annotationsNotSetUp={workspace.setupStatus?.annotations === false}
       canInsert={Boolean(activeView && activeView.snapshot.state !== "deleted" && !snap.recoveredDrafts.has(active))}

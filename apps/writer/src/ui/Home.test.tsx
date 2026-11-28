@@ -102,9 +102,10 @@ it("orders by record modification time and reorders on collection notifications"
 
 it("names an unavailable type plainly, once, without blocking the rest", async () => {
   render(<Home backend={backend({recordPaths: [], filePaths: [], notePaths: [], unavailableTypes: [{name: "native-comment", message}]}, fail(message))} onOpen={vi.fn()} />);
-  expect(await screen.findByText(message)).toBeTruthy();
-  expect(screen.getAllByText(message)).toHaveLength(1);
-  expect(screen.queryByRole("button", {name: "Retry loading"})).toBeNull();
+  await waitFor(() => {
+    expect(screen.getAllByText(message)).toHaveLength(1);
+    expect(screen.queryByRole("button", {name: "Retry loading"})).toBeNull();
+  });
 });
 
 it("keeps an index refusal out of the banner text until its details are opened", async () => {

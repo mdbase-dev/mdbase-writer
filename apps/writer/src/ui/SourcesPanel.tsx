@@ -59,7 +59,7 @@ export interface SourcesRequest {
   readonly nonce: number;
 }
 
-export function SourcesPanel({
+export const SourcesPanel = memo(function SourcesPanel({
   query,
   setQuery,
   library,
@@ -332,7 +332,7 @@ export function SourcesPanel({
       )}
     </section>
   );
-}
+});
 
 const SourceRow = memo(function SourceRow({
   locators,
