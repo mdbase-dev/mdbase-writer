@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { inventoryDirectory } from '../scripts/lib/native-publish-bytes.mjs';
 import { assertRuntimeOriginals, deriveRuntimeOriginals, runtimeSourcePins } from '../scripts/lib/writer-runtime-originals.mjs';
 import { sourceHostingPolicy, uploadConfiguration, readHostingMetadata, assertHostingMetadata } from '../scripts/lib/writer-hosting-policy.mjs';
 import { assertInventoryCoverage } from '../scripts/publisher/checks.mjs';
 import { verifyPublication } from '../scripts/publisher/hosting.mjs';
 import { verifyServedAssets } from '../apps/writer/scripts/verify-served.mjs';
-import { hostingFixture } from './writer-hosting-fixture.mjs';
+import { hash, hostingFixture } from './writer-hosting-fixture.mjs';
+const repoRoot=fileURLToPath(new URL('../',import.meta.url));
 const origin='https://staging.mdbase-writer.pages.dev';
 test('static bytes alone cannot bypass required source runtime/deployment policy',async t=>{
  const f=await hostingFixture(t);
@@ -224,4 +226,56 @@ test('verifyPublication polls the immutable deployment URL within its bound befo
  }finally{
   if(prevRoot===undefined)delete process.env.WRITER_SOURCE_ROOT;else process.env.WRITER_SOURCE_ROOT=prevRoot;
  }
+});
+test('repository runtime source pins validate against the real lockfile and committed patches',async()=>{
+ const pins=await runtimeSourcePins(repoRoot);
+ assert.deepEqual(pins.map(p=>p.name),['@myriaddreamin/typst-ts-web-compiler','pandoc-wasm']);
+ assert.ok(pins.every(p=>/^sha512-[A-Za-z0-9+/]{86}==$/.test(p.sri)));
+});
+test('patched runtime dependency accepts a verified non-WASM patch and refuses tampering or WASM/manifest patches',async t=>{
+ const f=await hostingFixture(t);
+ const patchBody='diff --git a/src/core.js b/src/core.js\n--- a/src/core.js\n+++ b/src/core.js\n@@ -1 +1 @@\n-a\n+b\n';
+ const patchDigest=hash(Buffer.from(patchBody));
+ const baseLock=await readFile(join(f.repoRoot,'pnpm-lock.yaml'),'utf8');
+ const writePatchedLock=async(digest=patchDigest,importerVersion=`1.1.0(patch_hash=${digest})`,includeHeader=true)=>{
+  const patchedHeader=includeHeader?`patchedDependencies:\n  pandoc-wasm@1.1.0: ${digest}\n`:'';
+  const lock=baseLock.replace('importers:\n',`${patchedHeader}importers:\n`).replace('      pandoc-wasm:\n        specifier: 1.1.0\n        version: 1.1.0\n',`      pandoc-wasm:\n        specifier: 1.1.0\n        version: ${importerVersion}\n`);
+  await writeFile(join(f.repoRoot,'pnpm-lock.yaml'),lock);
+ };
+ const patchFile=join(f.repoRoot,'patches/pandoc-wasm@1.1.0.patch');
+ await f.put(patchFile,patchBody);
+ await writePatchedLock();
+ assert.deepEqual(await assertRuntimeOriginals(f.repoRoot,f.artifactRoot),f.runtime);
+
+ await writePatchedLock(patchDigest,`1.1.0(patch_hash=${patchDigest})`,false);
+ await assert.rejects(runtimeSourcePins(f.repoRoot),/frozen patch digest/);
+
+ await writePatchedLock('f'.repeat(64),`1.1.0(patch_hash=${patchDigest})`,true);
+ await assert.rejects(runtimeSourcePins(f.repoRoot),/frozen patch digest/);
+
+ await writePatchedLock();
+ await writeFile(patchFile,patchBody+'\n');
+ await assert.rejects(runtimeSourcePins(f.repoRoot),/committed patch digest/);
+
+ await rm(patchFile);
+ const realTarget=join(f.repoRoot,'patches/other.patch');
+ await f.put(realTarget,patchBody);
+ await symlink(realTarget,patchFile);
+ await assert.rejects(runtimeSourcePins(f.repoRoot),/no symlinks/);
+ await rm(patchFile);
+
+ for(const badPatch of [
+  'diff --git a/src/pandoc.wasm b/src/pandoc.wasm\n--- a/src/pandoc.wasm\n+++ b/src/pandoc.wasm\n',
+  'diff --git a/package.json b/package.json\n--- a/package.json\n+++ b/package.json\n',
+  'diff --git a/src/core.js b/src/core.js\nGIT binary patch\nliteral 0\n',
+  'diff --git a/src/../src/core.js b/src/../src/core.js\n--- a/src/../src/core.js\n+++ b/src/../src/core.js\n',
+ ]) {
+  const badDigest=hash(Buffer.from(badPatch));
+  await f.put(patchFile,badPatch);
+  await writePatchedLock(badDigest);
+  await assert.rejects(runtimeSourcePins(f.repoRoot),/patch must not modify official WASM or package manifest/);
+ }
+
+ await writePatchedLock(patchDigest,'1.1.0(peer@1.0.0)',true);
+ await assert.rejects(runtimeSourcePins(f.repoRoot),/frozen importer pin/);
 });

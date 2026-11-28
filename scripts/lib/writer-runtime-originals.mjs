@@ -11,19 +11,43 @@ const definitions=[
 ];
 const hash=(b,algorithm='sha256')=>createHash(algorithm).update(b).digest(algorithm==='sha512'?'base64':'hex');
 const check=(ok,reason)=>{if(!ok)throw Error('Runtime original refusal: '+reason);};
+function patchTouchesRestrictedPath(patchText,targets) {
+ if(/^(?:GIT binary patch|Binary files )/m.test(patchText))return true;
+ for(const line of patchText.split(/\r?\n/)) {
+  if(!/^(?:diff --git |--- |\+\+\+ |rename (?:from|to) |copy (?:from|to) )/.test(line))continue;
+  if(/(?:^|[/\s"'])\.\.(?:[/\s"']|$)/.test(line))return true;
+  for(const target of targets)if(line.includes(target))return true;
+ }
+ return false;
+}
 export async function runtimeSourcePins(repoRoot) {
  const pkg=JSON.parse(await readFile(join(repoRoot,'apps/writer/package.json'),'utf8'));
  const lock=await readFile(join(repoRoot,'pnpm-lock.yaml'),'utf8');
  const importer=lock.split('\n  apps/writer:\n')[1]?.split(/\n  [^ ]/)[0];
- return definitions.map(d=>{
+ const patchedSection=lock.split('\nimporters:')[0].split('\npatchedDependencies:\n')[1]?.split(/\n[^ ]/)[0]??'';
+ const patchedLines=patchedSection.split('\n');
+ const pins=[];
+ for(const d of definitions) {
   const version=pkg.dependencies?.[d.name];check(/^\d+\.\d+\.\d+$/.test(version??''),'exact original version required');
   const quoted=d.name.startsWith('@')?`'${d.name}'`:d.name;
-  check(importer?.includes(`      ${quoted}:\n        specifier: ${version}\n        version: ${version}\n`),'frozen importer pin');
+  const pinPrefix=`      ${quoted}:\n        specifier: ${version}\n        version: `;
+  const pinIndex=importer?.indexOf(pinPrefix)??-1;
+  check(pinIndex!==-1&&importer.indexOf(pinPrefix,pinIndex+1)===-1,'frozen importer pin');
+  const resolved=importer.slice(pinIndex+pinPrefix.length).split('\n')[0];
+  const patchHash=resolved.startsWith(`${version}(patch_hash=`)&&resolved.endsWith(')')?resolved.slice(version.length+12,-1):null;
+  check(resolved===version||/^[a-f0-9]{64}$/.test(patchHash??''),'frozen importer pin');
   const key=d.name.startsWith('@')?`'${d.name}@${version}'`:`${d.name}@${version}`;
+  if(patchHash) {
+   check(patchedLines.includes(`  ${key}: ${patchHash}`),'frozen patch digest');
+   const patchBytes=await originalFile(repoRoot,`patches/${d.name.replace('/','__')}@${version}.patch`);
+   check(hash(patchBytes)===patchHash,'committed patch digest');
+   check(!patchTouchesRestrictedPath(patchBytes.toString('utf8'),[d.member,'package.json']),'patch must not modify official WASM or package manifest');
+  }
   const record=lock.split(`\n  ${key}:\n    resolution: {integrity: `)[1]?.split('}')[0];
   check(/^sha512-[A-Za-z0-9+/]{86}==$/.test(record??''),'independent root lock SHA512 integrity');
-  return {...d,version,sri:record,url:`https://registry.npmjs.org/${d.name}/-/${d.basename}-${version}.tgz`};
- });
+  pins.push({...d,version,sri:record,url:`https://registry.npmjs.org/${d.name}/-/${d.basename}-${version}.tgz`});
+ }
+ return pins;
 }
 async function originalFile(root,path) {
  const full=join(root,path);check((await lstat(full)).isFile()&&await realpath(full)===full,'regular original, no symlinks');
