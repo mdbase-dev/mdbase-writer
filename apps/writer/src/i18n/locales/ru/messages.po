@@ -1291,7 +1291,7 @@ msgstr "Перейти к следующему элементу"
 msgid "Move up"
 msgstr "Переместить вверх"
 
-#. placeholder {0}: recordTitle(records.get(path), path)
+#. placeholder {0}: recordTitle(view, path)
 #. placeholder {1}: to + 1
 #. placeholder {2}: chapters.length
 #: src/ui/OutlinePanel.tsx

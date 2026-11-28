@@ -9,7 +9,7 @@ import { applySuggestion, bodyHash, linkPath, targetFor, type CommentChange, typ
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
 import type { JsonObject } from "@mdbase-dev/sdk";
-import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput } from "@mdbase-writer/core";
+import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput, type AssemblyInspection } from "@mdbase-writer/core";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";
 import { IMAGE_EXTENSION, PathIndex, pathIndex, resolveLinkTarget } from "@mdbase-writer/core/records";
@@ -123,6 +123,7 @@ export class ManuscriptWorkspace {
   private compileCleanups: (() => void)[] = [];
   private bindings: readonly ManuscriptBinding[] = [];
   private readonly drafts: DraftStore;
+  private readonly deviceDrafts = new Map<string, LocalDraft>();
   private readonly stagedSettings = new Map<string, JsonObject>();
   private readonly assetBytes = new Map<string, Uint8Array>();
   /** Object URLs of images shown in the editor, revoked when the manuscript closes. */
@@ -137,6 +138,7 @@ export class ManuscriptWorkspace {
   private readonly commentIntents = new Map<string, string>();
   private readonly translations = new Map<string, { body: string; translated: ReturnType<typeof translateRecord> }>();
   private lastOrder: readonly string[] = [];
+  private lastChapters: readonly (string | null)[] = [];
   private readonly requestedAssets = new Set<string>();
   /** Collection text files loaded for the settings (a .csl style, a .typ template). */
   private readonly texts = new Map<string, string>();
@@ -495,7 +497,13 @@ export class ManuscriptWorkspace {
       const { session } = opened.value;
       if (recovered) {
         const saved = session.getSnapshot();
-        if (saved.body === recovered.body && JSON.stringify(saved.frontmatter) === JSON.stringify(recovered.frontmatter)) this.discardDraft(path);
+        if (saved.body === recovered.body && JSON.stringify(saved.frontmatter) === JSON.stringify(recovered.frontmatter)) {
+          if (saved.state === "saved") this.discardDraft(path);
+          else if (saved.state === "saved_on_device") {
+            this.deviceDrafts.set(path, recovered);
+            this.clearRecoveredDraft(path);
+          }
+        }
       }
       const unsubscribe = session.subscribe(() => this.onSession(path, session.getSnapshot()));
       this.leases.set(path, { lease: opened.value, unsubscribe });
@@ -589,12 +597,55 @@ export class ManuscriptWorkspace {
   private persistDraft(path: string, raw: SessionSnapshot): boolean {
     if (this.current.recoveredDrafts.has(path)) return false;
     const staged = this.stagedSettings.get(path);
+    let onDevice = this.deviceDrafts.get(path);
+    if (raw.state === "saved_on_device") {
+      const prior = this.current.records.get(path)?.snapshot;
+      if (!onDevice && !prior?.dirty) return false;
+      const base = onDevice ?? this.drafts.read(path);
+      const previousRecord = prior?.record ?? raw.record;
+      const draft: LocalDraft = {
+        version: 1, body: raw.body, frontmatter: { ...raw.frontmatter, ...staged },
+        baseBody: base?.baseBody ?? previousRecord.body ?? "", baseFrontmatter: base?.baseFrontmatter ?? previousRecord.frontmatter,
+        revision: base?.revision ?? previousRecord.revision, updated: new Date().toISOString(),
+      };
+      this.deviceDrafts.set(path, draft);
+      return this.storeDraft(path, draft);
+    }
+    if (onDevice && raw.state === "saved") {
+      this.deviceDrafts.delete(path);
+      // The SDK can adopt a new confirmed body after a pending write rolls
+      // back. Give the writer both versions before clearing the local backup.
+      const localBodyChanged = onDevice.body !== onDevice.baseBody;
+      const fieldsChangedElsewhere = Object.entries(draftPatch(onDevice)).some(([key, value]) => JSON.stringify(value) !== JSON.stringify(raw.frontmatter[key]));
+      if ((localBodyChanged && onDevice.body !== raw.body) || fieldsChangedElsewhere) {
+        const recovered = { ...onDevice, body: localBodyChanged ? onDevice.body : raw.body };
+        const stored = this.storeDraft(path, recovered);
+        this.update({ recoveredDrafts: new Map(this.current.recoveredDrafts).set(path, recovered) });
+        return stored;
+      }
+    }
+    if (raw.state === "conflict" && raw.dirty) {
+      this.deviceDrafts.delete(path);
+      onDevice = undefined;
+    }
+    if (onDevice && !raw.dirty && raw.state !== "saved") return this.storeDraft(path, onDevice);
     if (staged || raw.dirty || raw.state === "conflict" || raw.state === "error" || raw.state === "deleted" && raw.body !== raw.record.body) {
-      const stored = this.drafts.write(path, { version: 1, body: raw.body, frontmatter: { ...raw.frontmatter, ...staged }, baseBody: raw.record.body ?? "", baseFrontmatter: raw.record.frontmatter, revision: raw.record.revision, updated: new Date().toISOString() });
-      if (!stored) this.update({ draftProblem: t`Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails.` });
-      return stored;
-    } else this.drafts.remove(path);
+      const draft: LocalDraft = {
+        version: 1, body: raw.body, frontmatter: { ...raw.frontmatter, ...staged },
+        baseBody: onDevice?.baseBody ?? raw.record.body ?? "", baseFrontmatter: onDevice?.baseFrontmatter ?? raw.record.frontmatter,
+        revision: onDevice?.revision ?? raw.record.revision, updated: new Date().toISOString(),
+      };
+      if (onDevice && raw.state !== "saved") this.deviceDrafts.set(path, draft);
+      return this.storeDraft(path, draft);
+    }
+    this.drafts.remove(path);
     return false;
+  }
+
+  private storeDraft(path: string, draft: LocalDraft): boolean {
+    const stored = this.drafts.write(path, draft);
+    if (!stored) this.update({ draftProblem: t`Local draft backup is unavailable (browser storage may be full or blocked). Download your draft before leaving if saving fails.` });
+    return stored;
   }
 
   private onResult(result: CompileResult): void {
@@ -761,10 +812,15 @@ export class ManuscriptWorkspace {
   };
 
   /** The record each of the manuscript's chapter embeds resolves to (null when none does), in order. */
-  chapterPaths(): (string | null)[] {
+  chapterPaths(): readonly (string | null)[] {
     const body = this.current.records.get(this.main)?.snapshot.body ?? "";
     const candidates = this.current.recordIndex;
-    return chapterEmbeds(body, this.isChapter).map((e) => resolveLinkTarget(e.target, this.main, candidates));
+    const chapters = chapterEmbeds(body).flatMap(({ target }) => {
+      const path = resolveLinkTarget(target, this.main, candidates);
+      return path && this.isQuotation(path) ? [] : [path];
+    });
+    if (chapters.length !== this.lastChapters.length || chapters.some((path, index) => path !== this.lastChapters[index])) this.lastChapters = chapters;
+    return this.lastChapters;
   }
 
   /** Moves the manuscript's chapter embed at index `from` to index `to`. */
@@ -996,7 +1052,12 @@ export class ManuscriptWorkspace {
   }
 
   discardDraft(path: string): void {
+    this.deviceDrafts.delete(path);
     this.drafts.remove(path);
+    this.clearRecoveredDraft(path);
+  }
+
+  private clearRecoveredDraft(path: string): void {
     const recoveredDrafts = new Map(this.current.recoveredDrafts);
     recoveredDrafts.delete(path);
     this.update({ recoveredDrafts });
@@ -1006,6 +1067,7 @@ export class ManuscriptWorkspace {
     const result = await this.backend.deleteDocument(this.main);
     if (result.ok) {
       this.stagedSettings.delete(this.main);
+      this.deviceDrafts.delete(this.main);
       this.drafts.remove(this.main);
     }
     return result;
@@ -1015,17 +1077,17 @@ export class ManuscriptWorkspace {
     const paths = new Set([...this.current.records.keys(), ...this.current.recoveredDrafts.keys()]);
     return [...paths].map((path) => {
       const view = this.current.records.get(path);
-      const recovered = this.current.recoveredDrafts.get(path);
       const raw = this.leases.get(path)?.lease.session.getSnapshot();
-      const frontmatter = recovered?.frontmatter ?? { ...(raw?.frontmatter ?? view?.snapshot.frontmatter ?? {}), ...this.stagedSettings.get(path) };
-      return [path, `---\n${JSON.stringify(frontmatter, null, 2)}\n---\n\n${recovered?.body ?? view?.snapshot.body ?? ""}`];
+      const draft = this.current.recoveredDrafts.get(path) ?? (raw?.dirty ? undefined : this.deviceDrafts.get(path));
+      const frontmatter = draft?.frontmatter ?? { ...(raw?.frontmatter ?? view?.snapshot.frontmatter ?? {}), ...this.stagedSettings.get(path) };
+      return [path, `---\n${JSON.stringify(frontmatter, null, 2)}\n---\n\n${draft?.body ?? view?.snapshot.body ?? ""}`];
     });
   }
 
   annotationsForSource = (path: string): ReturnType<WriterBackend["annotationsForSource"]> => this.backend.annotationsForSource(path);
 
   /** Independent of preview timing: discover and await all embeds, styles and images. */
-  private async preflight(signal?: AbortSignal) {
+  private async preflight<T extends AssemblyInspection>(inspect: (input: AssemblyInput) => T, signal?: AbortSignal) {
     const check = () => {
       signal?.throwIfAborted();
       if (this.disposed) throw new Error(t`The manuscript was closed.`);
@@ -1038,7 +1100,6 @@ export class ManuscriptWorkspace {
     await this.metadata();
     check();
     const { styles, locales } = await loadStyles();
-    const assembler = new ManuscriptAssembler();
     const attemptedRecords = new Set<string>();
     const attemptedAssets = new Set<string>();
     for (let pass = 0; pass < 100; pass++) {
@@ -1050,7 +1111,7 @@ export class ManuscriptWorkspace {
         library: new Map(snap.library.map((entry) => [entry.key, entry.item])), styles, locales,
         texts: new Map(this.texts), annotationPaths: snap.annotationPaths, sourceKeys: sourceKeys(snap.library),
       };
-      const assembly = assembler.assemble(input);
+      const assembly = inspect(input);
       const records = assembly.unloaded.filter((path) => !attemptedRecords.has(path));
       const assets = assembly.assets.filter((path) => !attemptedAssets.has(path));
       if (!records.length && !assets.length) {
@@ -1074,7 +1135,8 @@ export class ManuscriptWorkspace {
   }
 
   async exportPdf(signal?: AbortSignal): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {
-    const { assembly, problems } = await this.preflight(signal);
+    const assembler = new ManuscriptAssembler();
+    const { assembly, problems } = await this.preflight(input => assembler.assemble(input), signal);
     if (this.current.previewProblem) await this.retryPreview();
     await this.compile.ready;
     signal?.throwIfAborted();
@@ -1083,7 +1145,8 @@ export class ManuscriptWorkspace {
   }
 
   private async materialize(crossReferences: "quarto" | "resolved", signal?: AbortSignal) {
-    const prepared = await this.preflight(signal);
+    const assembler = new ManuscriptAssembler();
+    const prepared = await this.preflight(input => assembler.inspect(input), signal);
     const out = materialize({ ...prepared.input, crossReferences, formatProblem: diagnosticMessage });
     const problems = [...new Set([...prepared.problems, ...out.problems])];
     const media: [string, Uint8Array][] = [];

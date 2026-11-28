@@ -1,4 +1,4 @@
-# Large collection benchmark (opt-in, local only)
+# Large collection benchmarks (opt-in)
 
 From the repository root:
 
@@ -8,7 +8,7 @@ rpnpm --filter @mdbase-writer/app typecheck:perf
 pnpm -C apps/writer typecheck
 ```
 
-Run both benchmarks with `rpnpm --filter @mdbase-writer/app test:perf-fixture`. This uses one zero-latency run of the collection fixture.
+Run all Vitest benchmarks with `rpnpm --filter @mdbase-writer/app test:perf-fixture`. This uses one zero-latency run of the collection fixture.
 
 Run just the mounted outline benchmark from the repository root:
 
@@ -57,6 +57,50 @@ Readiness/content assertions fail the run rather than emit a successful baseline
 Result JSON is generated evidence: the default is `out/perf/large-collection.json` (gitignored). The scripts/config are outside normal test discovery; `generator.ts` is shared with the DEV-only large browser demo and compiled out of ordinary deployment builds.
 
 ## Recorded outcomes
+
+### Source lookup, long-chapter typing and Word export
+
+The baseline is `d10c4ef` (#246). Copy `citations.bench.ts`, `citation-typing-profile.mjs`, `docx-profile.mjs` and `generator.ts` from this revision into the matching `apps/writer/scripts/perf` directory of a baseline checkout. Also copy `apps/writer/src/backend/large-demo.ts` and `apps/writer/src/ui/DemoRoot.tsx` to enable the long chapter in the baseline demo.
+
+```sh
+rpnpm --filter @mdbase-writer/app test:perf-fixture scripts/perf/citations.bench.ts
+pnpm dev
+```
+
+Run the Chromium profiles in a separate shell. Set `BASE` if the development server uses a different port. Use separate output directories on each revision and point the second DOCX run at the first revision's `run-1.docx`.
+
+```sh
+pnpm -C apps/writer exec node scripts/perf/citation-typing-profile.mjs
+PROFILE_OUTPUT=/tmp/writer-docx-before pnpm -C apps/writer exec node scripts/perf/docx-profile.mjs
+PROFILE_OUTPUT=/tmp/writer-docx-after PROFILE_REFERENCE=/tmp/writer-docx-before/run-1.docx \
+  pnpm -C apps/writer exec node scripts/perf/docx-profile.mjs
+```
+
+Vitest used Node 22.22.0 on the remote builder (AMD EPYC 9B14) and took seven measurements after two warmups. It loads 5,000 sources and builds the real APA preview bibliography for 100 cited entries. Warm lookup timings average 100 calls per sample.
+
+| Vitest median | Before | After |
+|---|---:|---:|
+| Cold source index and broad lookup | 8.82 ms | 6.74 ms |
+| Warm broad source lookup | 0.399 ms | 0.114 ms |
+| Warm precise citekey lookup | 0.508 ms | 0.521 ms |
+| Cold APA bibliography | 390.0 ms | 413.4 ms |
+| Cached APA bibliography | 0.066 ms | 0.066 ms |
+
+Chromium 149.0.7827.55 ran on an AMD Ryzen 9 7940HS with Node 22.22.0. Each sample uses a fresh context and waits for the collection and preview assembly. The typing run clears source search, opens the Outline and inserts 22 characters into a 78,762-byte chapter. Picker timing includes Playwright round trips and React rendering. Typing timing measures from `beforeinput` to the next animation-frame callback. CDP reports renderer main-thread CPU time for the typing phase. `PROFILE_CPU` can capture a DevTools profile for each run.
+
+| Chromium median | Before | After |
+|---|---:|---:|
+| Sources query to matching row, 5 contexts | 29.6 ms | 26.3 ms |
+| Typing input to animation frame, 5 contexts | 23.2 ms | 14.5 ms |
+| Typing p90 input to animation frame, 5 contexts | 37.0 ms | 24.4 ms |
+| Renderer main-thread CPU for 22 inputs, 5 contexts | 1,139 ms | 516 ms |
+| Word export preflight, 3 contexts | 371 ms | 81 ms |
+| Inside Word export handler, 3 contexts | 2,008 ms | 1,789 ms |
+| Chapter save to Word download, 3 contexts | 3,518 ms | 3,236 ms |
+
+The Word run uses 60 chapters, 480 chapter passages, 100 cited sources and 5,000 available sources. All three DOCX files match the baseline package parts after timestamp normalization. Warm broad lookup benefits from stopping after the top metadata matches are known. Word preflight now reuses dependency and diagnostic analysis while Pandoc formats the citations and bibliography. Fetching and converting with Pandoc accounts for 1.67 seconds of the after median. These are development fixture timings using the SDK's in-memory replica on a shared host.
+
+### Earlier collection and outline measurements
 
 Outline comparison on the remote builder (AMD EPYC 9B14, Node 22.22.0). The two revisions ran the same outline benchmark three times each, with Writer at `ba47bda` for the control. The p50 columns are medians of the three runs. The p95 columns show the spread across runs.
 

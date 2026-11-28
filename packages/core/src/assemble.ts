@@ -81,6 +81,8 @@ export interface Assembly {
   readonly debug: { readonly citations: readonly string[]; readonly bibliography: readonly { key: string; text: string }[] };
 }
 
+export type AssemblyInspection = Pick<Assembly, "meta" | "order" | "unloaded" | "assets" | "diagnostics">;
+
 type Plan =
   | { kind: "text"; text: string }
   | {
@@ -128,6 +130,17 @@ export class ManuscriptAssembler {
   }
 
   assemble(input: AssemblyInput): Assembly {
+    return this.build(input, true);
+  }
+
+  /** Discover and validate dependencies for a Markdown export that renders its own citations. */
+  inspect(input: AssemblyInput): AssemblyInspection {
+    return this.build(input, false);
+  }
+
+  private build(input: AssemblyInput, renderTypst: true): Assembly;
+  private build(input: AssemblyInput, renderTypst: false): AssemblyInspection;
+  private build(input: AssemblyInput, renderTypst: boolean): AssemblyInspection | Assembly {
     const diagnostics: AssemblyDiagnostic[] = [];
     const mainRecord = input.records.get(input.main);
     const { meta, problems, needs } = manuscriptMeta(mainRecord?.frontmatter ?? {}, {
@@ -197,7 +210,7 @@ export class ManuscriptAssembler {
     }
 
     // Citations: walk every record's events in document order.
-    const cp = this.engine(input, meta);
+    const cp = renderTypst ? this.engine(input, meta) : undefined;
     const plans = new Map<string, Plan[]>();
     const requests: CitationRequest[] = [];
     let note = 0;
@@ -221,7 +234,7 @@ export class ManuscriptAssembler {
         if (!cl) continue;
         const refs = cl.items.filter((i) => labels.has(i.key));
         if (refs.length && refs.length === cl.items.length) {
-          plan[ev.index] = {
+          if (cp) plan[ev.index] = {
             kind: "text",
             text: cl.items
               .map((i) => `${i.prefix ? `${looseEscape(i.prefix)} ` : ""}#ref(<${typstLabel(i.key)}>);${i.suffix ? looseEscape(i.suffix) : ""}`)
@@ -229,7 +242,7 @@ export class ManuscriptAssembler {
           };
           continue;
         }
-        for (const m of cl.items.filter((i) => !labels.has(i.key) && !cp.has(i.key))) {
+        for (const m of cl.items.filter((i) => !labels.has(i.key) && !input.library.has(i.key))) {
           const looksLikeXref = /^(sec|fig|tbl|eq|lst|thm|lem|def)-/.test(m.key);
           diagnostics.push({
             record: recordOf(path),
@@ -242,14 +255,15 @@ export class ManuscriptAssembler {
             ...(looksLikeXref ? {} : { metadata: "library" as const }),
           });
         }
-        const items = cl.items.filter((i) => cp.has(i.key));
+        const items = cl.items.filter((i) => input.library.has(i.key));
         if (!items.length || refs.length) {
           if (refs.length && items.length) {
             diagnostics.push({ record: recordOf(path), from: cl.from, to: cl.to, severity: "error", message: "A citation cannot mix cross-references and citekeys.", copy: { code: "citation-mixed" } });
           }
-          plan[ev.index] = { kind: "text", text: cl.items.map((i) => `#missing(${typstString(i.key)});`).join(", ") };
+          if (cp) plan[ev.index] = { kind: "text", text: cl.items.map((i) => `#missing(${typstString(i.key)});`).join(", ") };
           continue;
         }
+        if (!cp) continue;
         const inNote = inFootnote !== null;
         const footnote = cp.isNoteStyle && !inNote;
         if (footnote) note++;
@@ -276,26 +290,6 @@ export class ManuscriptAssembler {
         };
       }
     }
-    const result = cp.process(requests);
-
-    // `marked` puts source markers in a generated note, so a click on it in the preview finds its sources.
-    const render = (p: Plan | undefined, marked = false): Rendered => {
-      if (!p) return { text: "" };
-      if (p.kind === "text") return { text: p.text };
-      const note = (body: string) => (marked ? `${noteMarker(p.keys, p.from)}${body}${END_MARKER}` : body);
-      let s = result.strings[p.request] ?? "";
-      // Inside a note the surrounding sentence supplies punctuation.
-      if (p.inNote) s = s.replace(/\.$/, "");
-      if (p.narrative) {
-        const author = cp.authorOnly(p.narrative.key, p.first ?? false);
-        if (cp.isNoteStyle) return { text: `${author}#footnote[${note(s)}];` };
-        return { text: author ? `${author} ${s}` : s };
-      }
-      if (p.inNote && p.bracketed) return { text: `(${s})` };
-      if (p.footnote) return { text: `#footnote[${note(s.replace(/^[a-z]/, (c) => c.toUpperCase()))}];`, note: true };
-      return { text: s };
-    };
-
     // Images: resolve against the collection's files.
     const assets = new Set<string>(needs);
     if (meta.customTemplate) assets.add(meta.template);
@@ -318,6 +312,36 @@ export class ManuscriptAssembler {
       }
       assets.add(resolved);
       return `image(${typstString(`/${resolved}`)}${ref.width ? `, width: ${ref.width}` : ""})`;
+    };
+
+    if (!cp) {
+      for (const [path, tr] of translated) {
+        if (!tr.images.length) continue;
+        for (const token of tr.typst.matchAll(PLACEHOLDERS)) {
+          if (token[1] === PLACEHOLDER.image[0]) imageExpression(path, Number(token[2]));
+        }
+      }
+      return { meta, order, unloaded, assets: [...assets], diagnostics };
+    }
+
+    const result = cp.process(requests);
+
+    // `marked` puts source markers in a generated note, so a click on it in the preview finds its sources.
+    const render = (p: Plan | undefined, marked = false): Rendered => {
+      if (!p) return { text: "" };
+      if (p.kind === "text") return { text: p.text };
+      const note = (body: string) => (marked ? `${noteMarker(p.keys, p.from)}${body}${END_MARKER}` : body);
+      let s = result.strings[p.request] ?? "";
+      // Inside a note the surrounding sentence supplies punctuation.
+      if (p.inNote) s = s.replace(/\.$/, "");
+      if (p.narrative) {
+        const author = cp.authorOnly(p.narrative.key, p.first ?? false);
+        if (cp.isNoteStyle) return { text: `${author}#footnote[${note(s)}];` };
+        return { text: author ? `${author} ${s}` : s };
+      }
+      if (p.inNote && p.bracketed) return { text: `(${s})` };
+      if (p.footnote) return { text: `#footnote[${note(s.replace(/^[a-z]/, (c) => c.toUpperCase()))}];`, note: true };
+      return { text: s };
     };
 
     const sources = new Map<string, string>();

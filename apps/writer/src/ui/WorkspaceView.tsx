@@ -325,9 +325,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   useLayoutEffect(() => {
     if (narrow && pane === "write") editor.current?.focus();
   }, [pane, narrow]);
-  const dependencyDiagnostics = workspace.dependencyDiagnostics();
-  const allDiagnostics = useMemo(() => [...discoveredDiagnostics(snap.result?.diagnostics ?? NO_DIAGNOSTICS, snap), ...dependencyDiagnostics]
-    .map(d => ({ ...d, message: diagnosticMessage(d.message, d.copy) })), [snap, dependencyDiagnostics, interfaceLocale]);
+  const { indexLoad, libraryLoad, annotationsLoad, assetProblems, recordProblems } = snap;
+  const compileDiagnostics = snap.result?.diagnostics ?? NO_DIAGNOSTICS;
+  const dependencyDiagnostics = useMemo(() => assetProblems.size || recordProblems.size ? workspace.dependencyDiagnostics() : NO_DIAGNOSTICS,
+    [workspace, indexLoad, assetProblems, recordProblems, snap.records, snap.recordIndex, snap.fileIndex, interfaceLocale]);
+  const allDiagnostics = useMemo(() => [...discoveredDiagnostics(compileDiagnostics, { indexLoad, libraryLoad, annotationsLoad }), ...dependencyDiagnostics]
+    .map(d => ({ ...d, message: diagnosticMessage(d.message, d.copy) })), [compileDiagnostics, indexLoad, libraryLoad, annotationsLoad, dependencyDiagnostics, interfaceLocale]);
   // A citation or label half typed is not a problem yet: problems on the line
   // being typed wait until typing pauses or the cursor leaves the line.
   const diagnostics = useMemo(() => {
@@ -354,19 +357,20 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const records = useDeferredValue(snap.records);
   const [statsCache] = useState(() => new ManuscriptStats());
   const stats = useMemo(() => statsCache.derive(order, records, snap.library), [statsCache, records, snap.library, order]);
+  const libraryByKey = useMemo(() => new Map(snap.library.map(entry => [entry.key, entry])), [snap.library]);
   const completion = useMemo(
     () => ({ library: snap.library, labels: snap.result?.labels ?? [], recordPaths: snap.recordPaths, cited: stats.cited }),
     [snap.library, snap.result?.labels, snap.recordPaths, stats.cited],
   );
   const insight = useMemo<EditorInsight>(
     () => ({
-      library: new Map(snap.library.map((e) => [e.key, e])),
+      library: libraryByKey,
       references: new Map((snap.result?.references ?? []).map((r) => [r.key, r.text])),
       labels: stats.labels,
       image: (target) => workspace.imageUrl(target, active),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- images redraw as their bytes load (assetVersion) and resolve from the active record
-    [workspace, snap.library, snap.result?.references, stats.labels, snap.assetVersion, snap.fileIndex, active],
+    [workspace, libraryByKey, snap.result?.references, stats.labels, snap.assetVersion, snap.fileIndex, active],
   );
 
   // Threads on the manuscript's records, placed in their (slightly deferred) text.
@@ -499,6 +503,13 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     showComments();
   }, [showComments]);
   const onPreviewJump = useCallback((p: BlockPosition) => jump(p.record, p.offset), [jump]);
+  const openChapter = useCallback((path: string) => {
+    revealRequest.current = null;
+    setActive(path);
+    setPane("write");
+  }, []);
+  const moveChapter = useCallback((from: number, to: number) => workspace.moveChapter(from, to), [workspace]);
+  const renameChapter = useCallback((path: string, title: string) => signalFailure(workspace.renameChapter(path, title)), [workspace]);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const retryPreview = useCallback(() => { void workspace.retryPreview(); }, [workspace]);
   const closeShortcuts = useCallback(() => setShortcutsOpen(false), []);
@@ -610,7 +621,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const recordSet = snap.recordIndex;
   const cards = useMemo<ChapterCards>(() => {
     const keys = sourceKeys(snap.library);
-    const entries = new Map(snap.library.map((e) => [e.key, e]));
     return {
       card(target) {
         const path = resolveLinkTarget(target, active, recordSet);
@@ -621,7 +631,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         if (annotation?.quote) {
           const sourcePath = annotationSourcePath(annotation, keys);
           const key = sourcePath ? (keys.get(sourcePath) ?? null) : null;
-          const entry = key ? entries.get(key) : undefined;
+          const entry = key ? libraryByKey.get(key) : undefined;
           const cite = entry ? [authorYear(entry) || entry.key, annotation.locator].filter(Boolean).join(", ") : "";
           const href = sourcePath && workspace.kind === "connect" ? readerSourceHref(sourcePath, path) : undefined;
           return { quotation: true, path, quote: annotation.quote, cite, detached: blockQuotation(key, annotation), ...(href ? { href } : {}) };
@@ -634,7 +644,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- isQuotation reads the annotations the snapshot holds
-  }, [active, recordSet, records, byRecord, snap.library, snap.annotationPaths]);
+  }, [active, recordSet, records, byRecord, snap.library, libraryByKey, snap.annotationPaths]);
   const insertSource = useCallback((text: string) => {
     setPane("write");
     const at = editor.current?.selection();
@@ -915,15 +925,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               byRecord={byRecord}
               active={active}
               cursor={cursor}
-              onOpen={(path) => {
-                revealRequest.current = null;
-                setActive(path);
-                setPane("write");
-              }}
+              onOpen={openChapter}
               onJump={jump}
-              onMove={(from, to) => workspace.moveChapter(from, to)}
+              onMove={moveChapter}
               onAdd={async (title, intent) => signalFailure(await workspace.addChapter(title, intent))}
-              onRename={(path, title) => signalFailure(workspace.renameChapter(path, title))}
+              onRename={renameChapter}
               commentOffsets={commentOffsets}
             />
           )}
@@ -978,7 +984,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   const timings = snap.result?.timings;
   const { columns, areas } = gridFor(layout);
-  const commands: Command[] = [
+  const commands: Command[] = paletteOpen || shortcutsOpen ? [
     ...order.map(path => ({ id: `chapter-${path}`, group: translate`Chapters`, label: recordTitle(snap.records.get(path), path), keywords: path, run: () => { setActive(path); setPane("write"); } })),
     { id: "find-chapter", group: translate`Manuscript`, label: translate`Find in chapter`, shortcut: "mod+f", run: findInChapter },
     { id: "save", group: translate`Manuscript`, label: translate`Save now`, shortcut: "mod+s", run: () => { void workspace.retrySave().then(signalResult); } },
@@ -1022,7 +1028,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "export-bundle", group: translate`Export`, label: translate`Export Pandoc bundle (zip)`, run: () => runExport("bundle") },
     { id: "export-menu", group: translate`Export`, label: translate`Choose export format`, shortcut: "mod+shift+s", run: () => setExportOpen(true) },
     { id: "shortcuts", group: translate`Help`, label: translate`Keyboard shortcuts`, shortcut: "mod+/", run: () => setShortcutsOpen(true) },
-  ];
+  ] : [];
 
 
   return (

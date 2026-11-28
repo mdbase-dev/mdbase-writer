@@ -89,6 +89,20 @@ describe("ManuscriptAssembler", () => {
     ]);
   });
 
+  it("inspects export dependencies and warnings without rendering Typst", () => {
+    const records = new Map([
+      ["book.md", record("book.md", "# Book {#sec-book}\n\n![[chapter]]\n\n![[unloaded]]\n\nSee [@sec-book; @badiouBeing07] and [@unknown].\n")],
+      ["chapter.md", record("chapter.md", "![Available](a.png)\n\nFootnote.[^note]\n\n[^note]: ![Missing](b.png)\n")],
+    ]);
+    const project = { ...input(records, "book.md", new Set(["a.png"])), recordPaths: new Set([...records.keys(), "unloaded.md"]) };
+    const assembler = new ManuscriptAssembler();
+    const { meta, order, unloaded, assets, diagnostics } = assembler.assemble(project);
+    expect(assembler.inspect(project)).toEqual({ meta, order, unloaded, assets, diagnostics });
+    expect(unloaded).toEqual(["unloaded.md"]);
+    expect(assets).toEqual(["a.png"]);
+    expect(diagnostics.map(d => d.copy?.code)).toEqual(["citation-mixed", "citekey-missing", "image-missing"]);
+  });
+
   it("falls back from unknown styles and templates with a warning", () => {
     const records = new Map([["m.md", record("m.md", "---\ncsl: made-up\ntemplate: poster\n---\nText.\n")]]);
     const a = new ManuscriptAssembler().assemble(input(records, "m.md"));

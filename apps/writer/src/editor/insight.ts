@@ -63,6 +63,7 @@ export function referenceNear(state: EditorState, pos: number): { key: string; f
 
 /** Every `@key` in a text, citations and cross-references alike. */
 export function referenceKeys(text: string): string[] {
+  if (!text.includes("@")) return [];
   return [...text.matchAll(KEY)].map((m) => (m[3] ?? "").replace(/[.:,;?~/#$%&+<>-]+$/u, "")).filter(Boolean);
 }
 
@@ -86,6 +87,7 @@ export function referenceAtOffset(text: string, offset: number): string | null {
 /** Labels (`{#sec-intro}`) defined in a record body, with the text they label. */
 export function labelTargets(record: string, body: string): [string, LabelTarget][] {
   const out: [string, LabelTarget][] = [];
+  if (!body.includes("{#")) return out;
   let offset = 0;
   for (const line of body.split("\n")) {
     for (const m of line.matchAll(/\{#([\p{L}\p{N}_][\p{L}\p{N}_:.-]*)[^}]*\}/gu)) {

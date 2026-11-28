@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { MemoryReplica } from "@mdbase-dev/sdk/testing";
-import { MdbaseError, type MdbaseClient } from "@mdbase-dev/sdk";
+import { MdbaseClient, MdbaseError } from "@mdbase-dev/sdk";
 import { NextWriterRecords } from "../backend/next-records.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fail, ok, type CollectionDelta, type WriterBackend } from "../backend/types.js";
@@ -38,9 +38,20 @@ afterEach(async () => {
   for (const client of clients.splice(0)) client.close();
   vi.unstubAllGlobals();
 });
-async function fixture() {
+async function fixture(reconnect?: Promise<void>) {
   const replica = new MemoryReplica({ confirmDelayMs: 0 });
-  const client = await replica.client(); clients.push(client);
+  const connector = replica.connector();
+  let connected = false;
+  const client = reconnect ? await MdbaseClient.connect({
+    app: { name: "writer-offline-test", version: "test" },
+    connector: { ...connector, async open(hello, signal) {
+      if (connected) await reconnect;
+      const result = await connector.open(hello, signal);
+      connected = true;
+      return result;
+    } },
+  }) : await replica.client();
+  clients.push(client);
   const scope = new AbortController(); recordScopes.push(scope);
   // Use a small real CSL style for workspace-state tests. Repeatedly parsing
   // the much larger Chicago style dominates their CI budget; core tests cover it.
@@ -62,6 +73,104 @@ async function fixture() {
   return { backend, replica, client, open };
 }
 const ready = async (workspace: ManuscriptWorkspace) => vi.waitFor(() => expect(workspace.getSnapshot().phase).toBe("ready"));
+
+it("keeps both chapter versions when a remote edit arrives after offline typing", async () => {
+  const events = new EventTarget();
+  vi.stubGlobal("window", events);
+  let allowReconnect!: () => void;
+  const reconnect = new Promise<void>(resolve => { allowReconnect = resolve; });
+  const { backend, replica, client, open } = await fixture(reconnect);
+  const workspace = open();
+  const path = "chapters/one.md";
+  const chapter = () => workspace.getSnapshot().records.get(path);
+  const store = new DraftStore(backend.draftNamespace!);
+  await vi.waitFor(() => expect(chapter()?.snapshot.state).toBe("saved"));
+  const baseBody = chapter()!.snapshot.body;
+  const local = `${baseBody}\nDraft typed offline.\n`;
+  const remote = `${baseBody}\nAn edit from another device.\n`;
+
+  try {
+    replica.dropConnections();
+    await vi.waitFor(() => expect(client.link).toBe("reconnecting"));
+    workspace.setBody(path, local);
+    expect(chapter()).toMatchObject({ localSaved: true, snapshot: { body: local, dirty: true } });
+    expect(store.read(path)).toMatchObject({ body: local, baseBody });
+    replica.editElsewhere(path, { body: remote });
+    expect(chapter()?.snapshot.body).toBe(local);
+  } finally {
+    allowReconnect();
+  }
+
+  await vi.waitFor(() => expect(client.link).toBe("open"));
+  events.dispatchEvent(new Event("online"));
+  await vi.waitFor(() => expect(chapter()).toMatchObject({ localSaved: true, snapshot: { state: "conflict", body: local, remote: { body: remote } } }));
+  expect(workspace.hasUnsavedChanges()).toBe(true);
+  expect(store.read(path)).toMatchObject({ body: local, baseBody });
+  expect(workspace.localDrafts().find(([at]) => at === path)?.[1]).toContain(local);
+  expect((await workspace.retrySave(path)).ok).toBe(false);
+  expect((await client.get({ path }, { include: { body: true } })).body).toBe(remote);
+
+  const merged = `${local}\nAn edit from another device.\n`;
+  workspace.resolveConflict(path, { body: merged });
+  expect((await workspace.retrySave(path)).ok).toBe(true);
+  expect((await client.get({ path }, { include: { body: true } })).body).toBe(merged);
+  expect(store.read(path)).toBeNull();
+});
+
+it.each(["confirmed", "superseded", "rejected"] as const)("keeps an offline device save until it is %s", async outcome => {
+  const { backend, replica, client, open } = await fixture();
+  const path = "chapters/one.md";
+  const store = new DraftStore(backend.draftNamespace!);
+  const local = "# Local chapter\n\nThis text was edited offline.\n";
+  const latest = `${local}\nMore local typing after the device save.\n`;
+  const remote = "# Collection chapter\n\nThis text arrived from another device.\n";
+  const workspace = open();
+  await vi.waitFor(() => expect(workspace.getSnapshot().records.get(path)?.snapshot.state).toBe("saved"));
+  const lease = await backend.records.open(path, { autosave: { idleMs: 1_000 }, timeoutMs: 15_000 });
+  if (!lease.ok) throw new Error(lease.problem.code);
+  try {
+    replica.setOnline(false);
+    workspace.setBody(path, local);
+    expect((await lease.value.session.flush({ timeoutMs: 100 })).ok).toBe(true);
+    expect(workspace.getSnapshot().records.get(path)?.snapshot).toMatchObject({ state: "saved_on_device", body: local });
+    expect(store.read(path)?.body).toBe(local);
+    const pending = await client.pendingWrites();
+    expect(pending).toHaveLength(1);
+
+    // The next workspace opens the same pending record before the log comes back.
+    await workspace.dispose();
+    const reopened = open();
+    await vi.waitFor(() => expect(reopened.getSnapshot().records.get(path)?.snapshot.state).toBe("saved_on_device"));
+    expect(reopened.getSnapshot().recoveredDrafts.size).toBe(0);
+    expect(store.read(path)?.body).toBe(local);
+
+    if (outcome === "rejected") {
+      replica.reject(pending[0]!.receipt.mutation);
+      replica.editElsewhere(path, { body: remote });
+    }
+    if (outcome === "superseded") reopened.setBody(path, latest);
+    replica.setOnline(true);
+    if (outcome === "superseded") await reopened.retrySave(path);
+    const expected = outcome === "rejected" ? remote : outcome === "superseded" ? latest : local;
+    await vi.waitFor(() => expect(reopened.getSnapshot().records.get(path)?.snapshot).toMatchObject({ state: "saved", body: expected }));
+    if (outcome !== "rejected") {
+      expect(store.read(path)).toBeNull();
+      expect(reopened.hasUnsavedChanges()).toBe(false);
+    } else {
+      expect(reopened.getSnapshot().recoveredDrafts.get(path)?.body).toBe(local);
+      expect(reopened.localDrafts().find(([at]) => at === path)?.[1]).toContain(local);
+      expect(store.read(path)?.body).toBe(local);
+      expect(reopened.hasUnsavedChanges()).toBe(true);
+      expect((await client.get({ path }, { include: { body: true } })).body).toBe(remote);
+      reopened.restoreDraft(path);
+      expect((await reopened.retrySave(path)).ok).toBe(true);
+      expect((await client.get({ path }, { include: { body: true } })).body).toBe(local);
+    }
+  } finally {
+    replica.setOnline(true);
+    lease.value.release();
+  }
+});
 
 it("retries unsettled saves on focus as well as reconnect and removes both listeners on disposal", async () => {
   const events = new EventTarget();

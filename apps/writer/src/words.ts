@@ -6,7 +6,9 @@
  * link targets are left out.
  */
 export function wordCount(markdown: string): number {
-  const prose = markdown
+  // Most chapter prose has none of the markers stripped below. Avoid running
+  // each replacement over the whole chapter in that case.
+  const prose = /[`~$[\]@{<]/.test(markdown) ? markdown
     .replace(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:\n {0,3}\1[^\n]*|$)/gm, " ")
     .replace(/\$\$[\s\S]*?\$\$|\$[^$\n]+\$/g, " ")
     .replace(/`[^`\n]*`/g, " ")
@@ -17,8 +19,9 @@ export function wordCount(markdown: string): number {
     .replace(/\{[#.][^}\n]*\}/g, " ")
     .replace(/\[\^[^\]\n]+\]:?/g, " ")
     .replace(/\]\([^)\n]*\)/g, "]")
-    .replace(/<[^>\n]+>/g, " ");
-  return prose.match(/[\p{L}\p{N}]+(?:['’.-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+    .replace(/<[^>\n]+>/g, " ") : markdown;
+  const words = /[^\x00-\x7f]/.test(prose) ? /[\p{L}\p{N}]+(?:['’.-][\p{L}\p{N}]+)*/gu : /[a-zA-Z0-9]+(?:['.-][a-zA-Z0-9]+)*/g;
+  return prose.match(words)?.length ?? 0;
 }
 
 /** Records embedded on a line of their own (`![[chapters/one]]`). */

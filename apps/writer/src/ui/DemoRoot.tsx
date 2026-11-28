@@ -51,7 +51,7 @@ function DemoCollection() {
       if (!live) return;
       const params = new URL(location.href).searchParams;
       const b = import.meta.env.DEV && params.get("demo") === "large"
-        ? await (await import("../backend/large-demo.js")).createLargeDemoBackend(params.has("largeManuscript"))
+        ? await (await import("../backend/large-demo.js")).createLargeDemoBackend(params.has("largeManuscript"), params.has("longChapter"))
         : await createDemoBackend();
       if (live) { owned = b; setBackend(b); }
       else b.dispose();
