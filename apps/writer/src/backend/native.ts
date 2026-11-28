@@ -49,9 +49,10 @@ interface DomainScope {
 const RECONNECT_MIN_MS = 500, RECONNECT_MAX_MS = 30_000;
 /** The producer's default contract page; a refused page is asked for again at half. */
 const CONTRACT_PAGE_SIZE = 128;
-/** Manuscripts carry small projections (title, template, csl), so 200 stays within
- * the replica's 1 MiB projection budget; a refused page still halves like any domain. */
-const MANUSCRIPT_PAGE_SIZE = 200;
+/** The SDK clamps to the replica's supported limit. Larger library pages reduce
+ * repeated queries for sources and annotations. Manuscripts page separately
+ * to show progress on Home. All domains halve the size if it exceeds budget. */
+const CONTRACT_PAGE_SIZES: Partial<Record<Domain, number>> = {manuscript: 200, source: 1_000, annotation: 1_000};
 const COLLECTION_DOMAINS = ["source", "annotation", "comment", "person"] as const;
 /** Pauses before each further account check after a transient failure. */
 const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
@@ -413,7 +414,7 @@ export class NativeWriterBackend implements WriterBackend {
     // The producer refuses a page whose projection exceeds its fixed budget
     // (`too_large`), and only it knows record sizes: ask again for fewer.
     // A cursor is bound to its page size, so the domain restarts.
-    let pageSize = this.contractPageSizes.get(domain) ?? (domain === "manuscript" ? MANUSCRIPT_PAGE_SIZE : CONTRACT_PAGE_SIZE);
+    let pageSize = this.contractPageSizes.get(domain) ?? CONTRACT_PAGE_SIZES[domain] ?? CONTRACT_PAGE_SIZE;
     for (;;) {
       try {
         progress?.onReset?.();
