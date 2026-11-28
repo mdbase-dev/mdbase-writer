@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { render } from "../test/render.js";
 import { useCallback } from "react";
 import { MemoryReplica } from "@mdbase-dev/sdk/testing";
@@ -62,6 +62,27 @@ it("still reveals a different logical heading beyond the first page", async () =
     rendered.rerender(h.panel(at));
     expect(reveals).toHaveBeenCalledWith(55);
     expect(rendered.container.querySelector(`[data-heading="${at}"]`)).not.toBeNull();
+  } finally { h.release(); }
+});
+
+it("updates a folded chapter's headings when its body or title changes", async () => {
+  const h = await fixture("# Main\n");
+  const chapter = "chapter.md";
+  const props = { main: "main.md", order: ["main.md", chapter], chapters: [chapter], words: 10, byRecord: new Map(), active: "main.md", cursor: null, onOpen: vi.fn(), onJump: vi.fn(), onMove: vi.fn(), onAdd: vi.fn() };
+  const panel = (title: string, body: string) => {
+    const snapshot = { ...h.session.getSnapshot(), body, frontmatter: { title } };
+    return <OutlinePanel {...props} records={new Map([[chapter, { path: chapter, snapshot }]])} />;
+  };
+  try {
+    const rendered = render(panel("Chapter", "# Chapter\n"));
+    expect(screen.queryByRole("button", { name: "Show the headings of Chapter" })).toBeNull();
+    rendered.rerender(panel("Renamed", "# Chapter\n"));
+    fireEvent.click(screen.getByRole("button", { name: "Show the headings of Renamed" }));
+    expect(screen.getByRole("button", { name: /Chapter.*0/ })).toBeTruthy();
+    rendered.rerender(panel("Renamed", "# Chapter\n\n## Section\n\nSome words.\n"));
+    expect(screen.getByRole("button", { name: /Section.*2/ })).toBeTruthy();
+    rendered.rerender(panel("Renamed", "# Chapter\n\n## Section\n\nSome more words.\n"));
+    expect(screen.getByRole("button", { name: /Section.*3/ })).toBeTruthy();
   } finally { h.release(); }
 });
 

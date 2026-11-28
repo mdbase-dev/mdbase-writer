@@ -8,7 +8,26 @@ rpnpm --filter @mdbase-writer/app typecheck:perf
 pnpm -C apps/writer typecheck
 ```
 
-The registered smoke check runs one zero-latency fixture with `rpnpm --filter @mdbase-writer/app test:perf-fixture`.
+Run both benchmarks with `rpnpm --filter @mdbase-writer/app test:perf-fixture`. This uses one zero-latency run of the collection fixture.
+
+Run just the mounted outline benchmark from the repository root:
+
+```sh
+rpnpm --filter @mdbase-writer/app run test:perf-fixture scripts/perf/outline.bench.tsx
+```
+
+It renders all 120 chapter rows through the normal outline pagination, edits one chapter, and switches among four loaded chapters. It checks section words and searches for one sparse term and one broad term across the same manuscript. Each phase has 5 warmups and 20 measurements. The fixture has 24 headings and three comment offsets per chapter. Outline timings include React commits in jsdom.
+
+For a control at `ba47bda`, create a detached worktree and copy these files from the performance branch before running the same commands. Start the dev server from that worktree for the Chromium comparison.
+
+```text
+apps/writer/package.json
+apps/writer/scripts/perf/browser-profile.mjs
+apps/writer/scripts/perf/generator.ts
+apps/writer/scripts/perf/outline.bench.tsx
+apps/writer/scripts/perf/tsconfig.json
+apps/writer/scripts/perf/vitest.config.ts
+```
 
 Capture JSON (output path is relative to `apps/writer`):
 
@@ -37,6 +56,17 @@ Result JSON is generated evidence: the default is `out/perf/large-collection.jso
 
 ## Recorded outcomes
 
+Outline comparison on the remote builder (AMD EPYC 9B14, Node 22.22.0). Both runs used the same outline benchmark, with Writer at `ba47bda` for the baseline:
+
+| Operation | Before p50 / p95 | After p50 / p95 |
+|---|---:|---:|
+| Typing in one chapter | 21.83 / 26.34 ms | 16.76 / 19.00 ms |
+| Switching chapters | 23.75 / 53.00 ms | 18.70 / 19.30 ms |
+| Sparse manuscript search (1 hit) | 1.31 / 1.34 ms | 1.30 / 1.33 ms |
+| Broad manuscript search (34,560 hits) | 2.46 / 3.16 ms | 2.36 / 2.75 ms |
+
+In one zero-latency collection run, warm search over 5,000 sources took 0.73 ms median, and resolving paths for 100 chapter embeds took 0.25 ms median. Cached placement of 300 comments took 0.03 ms, cold placement across 3,000 comments took 10.06 ms, and server rendering the Comments panel took 24.78 ms. Scanning 100 records from scratch for words, labels, and citations took 21.85 ms. Writer already tracks those manuscript totals by changed body. The outline change reuses heading parses and section counts across edits and chapter switches.
+
 Round 3, three-run 20 ms medians (before → after):
 
 | Metric | Before | After |
@@ -57,7 +87,9 @@ Round 5 keeps the incremental traffic totals above, selected-body batching and w
 
 ## Chromium responsiveness profile (Round 4)
 
-Start the normal development server, then visit `http://127.0.0.1:5320/?demo=large&manuscript=manuscripts/main.md`. This mode shares `generator.ts` with the Node benchmark; it adds 100 labelled headings, 300 highlights on one source and one 149-reply thread. It uses NativeWriterBackend, SDK sessions, compiler and renderer over an in-memory SDK fixture. It is DEV-only, even for a production demo build.
+Start the normal development server, then visit `http://127.0.0.1:5320/?demo=large&manuscript=manuscripts/main.md`. This mode shares `generator.ts` with the Node benchmark. The Chromium fixture adds 60 embedded chapters, 100 labelled main-record headings, 300 highlights on one source and one 149-reply thread. It uses NativeWriterBackend, SDK sessions, compiler and renderer over an in-memory SDK fixture. It is DEV-only, even for a production demo build.
+
+A 120-chapter attempt with SDK 0.2.58 opened the main record and 63 chapters. The SDK refused the other 57 with `record_session_budget` because Writer retains a session for each embedded chapter. The browser fixture uses 60 chapters so it can exercise the complete manuscript. The 120-chapter outline benchmark supplies record views directly.
 
 ```sh
 PROFILE_NAME=after PROFILE_OUTPUT=out/perf/browser-after.json pnpm -C apps/writer exec node scripts/perf/browser-profile.mjs
@@ -83,4 +115,4 @@ On the fixture-corrected product comparison, cold preview went from 3,426 to
 Uncollected heap is still recorded for historical comparisons, not treated as a
 retention measurement.
 
-The script also captures editor/preview visible geometry at animation frames, CDP main-isolate JS heap, >50 ms main-thread long tasks during two ~10 s typing phases, source paging (historically Show all), 300-highlight expansion, citation/embed completion, page errors and `out/large-{sources,comments}-{before,after}.png`. One run is observational, not a statistical timing assertion; the main heap field excludes workers/native backing storage, and visible canvas is not pixel verification. The original Round 4 heap field was not GC-controlled. The default JSON output is `out/perf/browser-profile.json`. Historical before was captured before Round 4 UI changes; after uses a corrected reply counter. Interpretation and deferred work are in `docs/perf-review.md`.
+The script captures editor and preview geometry at animation frames, CDP main-isolate JS heap, and main-thread tasks over 50 ms. It measures chapter switching, typing the same text with Outline, Sources and Comments open, sparse and broad outline search, source filtering and paging, highlight expansion, citation and embed completion, and Word export. It checks the finished edits, search result counts, and the presence of a Word document part in the downloaded DOCX. Browser action timings include Playwright round trips. Each typing phase uses 12 text inputs with no added delay. One Chromium run per revision is observational. The main heap excludes workers and native backing storage. The default JSON output is `out/perf/browser-profile.json`. The original Round 4 heap field was not GC-controlled. Interpretation of the earlier runs is in `docs/perf-review.md`.

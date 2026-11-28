@@ -32,8 +32,8 @@
     "typecheck": "pnpm manifest && tsc -p tsconfig.json",
     "deploy:lab": "MDBASE_ENV=lab node scripts/deploy-pages.mjs",
     "upload:compiler": "node scripts/upload-compiler.mjs",
-    "test:perf-fixture": "PERF_RUNS=1 PERF_LATENCY_MS=0 vitest run --config scripts/perf/vitest.config.ts",
-    "typecheck:perf": "tsc -p scripts/perf/tsconfig.json"
+    "test:perf-fixture": "pnpm manifest && PERF_RUNS=1 PERF_LATENCY_MS=0 vitest run --config scripts/perf/vitest.config.ts",
+    "typecheck:perf": "pnpm manifest && tsc -p scripts/perf/tsconfig.json"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

@@ -3,6 +3,8 @@ import type { JsonObject } from "@mdbase-dev/sdk";
 export const counts = { sources: 5_000, annotations: 30_000, comments: 3_000, notes: 20_000, manuscripts: 100, files: 5_000 };
 export const main = "manuscripts/main.md";
 const pad = (n: number) => String(n).padStart(5, "0");
+// Leave room for the main record under the SDK's 64 retained-session limit.
+const browserChapters = Array.from({ length: 60 }, (_, i) => `chapters/chapter-${pad(i)}.md`);
 export function generateCollection(seed: (path: string, type: string, fm: JsonObject, body: string) => void, highlightsPerBook?: number, browser = false): string {
   const body = "# Main {#sec-main}\n\n" + Array.from({ length: 100 }, (_, i) => `${browser ? `## Section ${i} {#sec-${i}}\n\n` : ""}Paragraph ${i}: quoted passage ${i}. A sustained cited argument [@source${pad(i)}].\n\n`).join("");
   // Share the fixture's intentionally identical text instead of retaining one
@@ -13,7 +15,14 @@ export function generateCollection(seed: (path: string, type: string, fm: JsonOb
   const noteBody = "Ordinary collection note.\n".repeat(80);
   const commentBody = "A comment discussing the passage. ".repeat(16);
   const abstract = "Source metadata. ".repeat(40);
-  for (let i = 0; i < counts.manuscripts; i++) seed(i === 0 ? main : `manuscripts/paper-${pad(i)}.md`, "writer-manuscript", { title: `Paper ${pad(i)}`, csl: "apa", template: "article" }, body);
+  const mainBody = browser ? `${body}${browserChapters.map(path => `![[${path}]]`).join("\n\n")}\n` : body;
+  for (let i = 0; i < counts.manuscripts; i++) seed(i === 0 ? main : `manuscripts/paper-${pad(i)}.md`, "writer-manuscript", { title: `Paper ${pad(i)}`, csl: "apa", template: "article" }, i === 0 ? mainBody : body);
+  if (browser) {
+    for (const [i, path] of browserChapters.entries()) {
+      const sections = Array.from({ length: 8 }, (_, section) => `### Section ${section + 1}\n\nEvidence in chapter ${i + 1}, section ${section + 1}, supports the manuscript's argument. Further analysis puts the result in context.`);
+      seed(path, "note", { title: `Chapter ${i + 1}` }, `## Chapter ${i + 1}\n\n${sections.join("\n\n")}\n`);
+    }
+  }
   for (let i = 0; i < counts.sources; i++) seed(`sources/source${pad(i)}.md`, "reader-source", {
     title: `Synthetic source ${pad(i)}`,
     csl: { id: `source${pad(i)}`, type: "article-journal", title: `Synthetic research ${pad(i)}: evidence and collection performance`, author: [{ family: `Author${pad(i % 997)}`, given: "Alex" }], issued: { "date-parts": [[2000 + i % 25]] }, "container-title": "Journal of Synthetic Data", DOI: `10.0000/${i}`, abstract },

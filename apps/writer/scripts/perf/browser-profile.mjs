@@ -1,7 +1,8 @@
 // Opt-in Chromium UI profile against DEV ?demo=large; never a real collection.
 import { chromium } from "playwright";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import assert from "node:assert/strict";
 const browser = await chromium.launch({ executablePath: process.env.CHROME });
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
 const errors = []; page.on("pageerror", (e) => errors.push(e.message));
@@ -40,21 +41,38 @@ await page.addInitScript(() => {
   }; requestAnimationFrame(watch);
 });
 const base = process.env.BASE ?? "http://127.0.0.1:5320/";
-const report = { boundary: "Cold browser cache; Chromium main-thread long tasks; editor/canvas geometry and rendered-revision marker at animation frame (not pixel verification); main CDP JS heap excludes worker heaps and native/WASM backing storage; heap sampled after complete metadata; synthetic transport 20ms pages", phases: {} };
+const report = { boundary: "Cold browser cache, in-memory SDK, Chromium main-thread long tasks. Editor and preview markers describe geometry and rendered revisions. Main CDP heap excludes workers and native/WASM backing storage.", phases: {} };
+let phase = "startup";
 const measure = async (name, run) => {
-  const start = await page.evaluate(() => performance.now()); await run(); await page.waitForTimeout(100);
-  report.phases[name] = await page.evaluate((start) => {
+  phase = name;
+  const start = await page.evaluate(() => performance.now());
+  await run();
+  const actionMs = await page.evaluate(start => performance.now() - start, start);
+  await page.waitForTimeout(100);
+  report.phases[name] = await page.evaluate(({ start, actionMs }) => {
     const tasks = window.uiTasks.filter((e) => e.start >= start);
-    return { elapsedMs: performance.now() - start, longTasks: tasks.length, totalLongTaskMs: tasks.reduce((n, e) => n + e.duration, 0), maxLongTaskMs: Math.max(0, ...tasks.map((e) => e.duration)), sourceRows: document.querySelectorAll(".source-row").length, highlights: document.querySelectorAll(".annotations > li").length, threads: document.querySelectorAll(".threads > .thread").length, replies: document.querySelectorAll(".comment.is-reply").length, headings: document.querySelectorAll(".heading-row").length };
-  }, start);
+    return { actionMs, elapsedMs: performance.now() - start, longTasks: tasks.length, totalLongTaskMs: tasks.reduce((n, e) => n + e.duration, 0), maxLongTaskMs: Math.max(0, ...tasks.map((e) => e.duration)), sourceRows: document.querySelectorAll(".source-row").length, highlights: document.querySelectorAll(".annotations > li").length, threads: document.querySelectorAll(".mdbase-threads > .mdbase-thread").length, replies: document.querySelectorAll(".mdbase-comment.is-reply").length, headings: document.querySelectorAll(".heading-row").length };
+  }, { start, actionMs });
 };
 try {
   await page.goto(`${base}?demo=large&manuscript=manuscripts/main.md`);
-  await page.waitForFunction(() => window.previewRendered && window.writer.workspace.getSnapshot().commentsLoad.phase === "ready", null, { timeout: 120000 });
+  await page.waitForFunction(() => {
+    const workspace = window.writer?.workspace;
+    if (!workspace || !window.editorPaint) return false;
+    const snapshot = workspace.getSnapshot();
+    const order = workspace.readingOrder();
+    return order.length === 61 && order.every(path => snapshot.records.has(path)) && snapshot.commentsLoad.phase === "ready";
+  }, null, { timeout: 120000 });
   report.paint = await page.evaluate(() => ({ editorMs: window.editorPaint, previewMs: window.previewPaint, renderedMs: window.previewRendered }));
   // An early self-contained preview can precede discovery. Compare retained heap
   // only after the same complete metadata workload, never a partial collection.
   await page.waitForFunction(() => ["indexLoad", "libraryLoad", "annotationsLoad", "commentsLoad"].every((key) => window.writer.workspace.getSnapshot()[key].phase === "ready"), null, { timeout: 120000 });
+  report.fixture = await page.evaluate(() => {
+    const workspace = window.writer.workspace;
+    const snapshot = workspace.getSnapshot();
+    return { chapters: workspace.readingOrder().length - 1, comments: snapshot.comments.length, sources: snapshot.library.length };
+  });
+  assert.deepEqual(report.fixture, { chapters: 60, comments: 300, sources: 5_000 });
   report.metadataReadyMs = await page.evaluate(() => performance.now());
   await page.waitForTimeout(100);
   report.heapAfterLoadBytes = (await cdp.send("Performance.getMetrics")).metrics.find((m) => m.name === "JSHeapUsedSize").value;
@@ -117,31 +135,100 @@ try {
     mkdirSync(dirname(process.env.PROFILE_HEAP), { recursive: true });
     writeFileSync(process.env.PROFILE_HEAP, chunks.join(""));
   }
-  await page.getByRole("tab", { name: /Sources/ }).click();
-  const type = async () => {
-    await page.locator(".cm-content").click(); await page.keyboard.press("ControlOrMeta+End");
-    const until = Date.now() + 10000;
-    while (Date.now() < until) { await page.keyboard.type(" ordinary typing", { delay: 25 }); await page.waitForTimeout(75); }
+  const editor = page.locator(".cm-content");
+  const editorEnd = async () => {
+    await editor.focus();
+    await page.keyboard.press("ControlOrMeta+End");
   };
-  await measure("typingSources10s", type);
+  const type = async (path) => {
+    const original = await page.evaluate(path => window.writer.workspace.getSnapshot().records.get(path).snapshot.body, path);
+    await editorEnd();
+    for (let i = 0; i < 12; i++) await page.keyboard.insertText(" ordinary typing");
+    await page.waitForFunction(({ path, original }) => window.writer.workspace.getSnapshot().records.get(path).snapshot.body === original + " ordinary typing".repeat(12), { path, original });
+  };
+  const main = "manuscripts/main.md";
+  const chapter = index => `chapters/chapter-${String(index).padStart(5, "0")}.md`;
+  await page.getByRole("tab", { name: "Outline", exact: true }).click();
+  await measure("switchChapters", async () => {
+    for (const index of [1, 7, 22, 0]) {
+      const path = chapter(index);
+      await page.locator(`.record-row[data-path="${path}"]`).click();
+      await page.locator(".pane-path", { hasText: path }).waitFor();
+    }
+  });
+  await measure("typingOutline", () => type(chapter(0)));
+  const outlineSearch = page.getByRole("searchbox", { name: "Search outline" });
+  const results = page.locator(".search-hit");
+  await measure("searchOutlineSparse", async () => {
+    await outlineSearch.fill("Evidence in chapter 60, section 8");
+    await results.first().waitFor();
+    assert.equal(await results.count(), 1);
+  });
+  await measure("searchOutlineBroad", async () => {
+    await outlineSearch.fill("supports the manuscript");
+    await page.waitForFunction(() => document.querySelectorAll(".search-hit").length === 480, null, { timeout: 60_000 });
+  });
+  phase = "openMain";
+  await outlineSearch.fill("");
+  await page.locator(".outline-manuscript").click();
+  await page.locator('.cm-content[aria-label="Markdown for ' + main + '"]').waitFor();
+  await page.getByRole("tab", { name: /Comments/ }).click();
+  await page.locator(".mdbase-threads > .mdbase-thread").first().waitFor();
+  await measure("typingComments", () => type(main));
+  mkdirSync("out", { recursive: true });
+  await page.screenshot({ path: "out/large-comments-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
+  await page.getByRole("tab", { name: /Sources/ }).click();
+  await measure("typingSources", () => type(main));
   await measure("showAllSources", async () => {
     const all = page.getByRole("button", { name: /^Show all/ });
     if (await all.count()) await all.click(); else await page.getByRole("button", { name: /^Show 50 more sources/ }).click();
   });
-  await page.locator(".sources input[type=search]").fill("source00000");
-  await measure("expand300Highlights", async () => { await page.locator('.source-row[data-key="source00000"]').click(); await page.locator(".annotations > li").first().waitFor(); });
-  for (const [name, text] of [["citeCompletion", " [@"], ["embedCompletion", "\n![["]]) {
-    await measure(name, async () => { await page.locator(".cm-content").click(); await page.keyboard.press("ControlOrMeta+End"); await page.keyboard.type(text); await page.locator(".cm-tooltip-autocomplete").waitFor(); });
-    await page.keyboard.press("Escape"); await page.keyboard.press("ControlOrMeta+z");
+  await measure("filterSources", async () => {
+    await page.getByRole("searchbox", { name: "Find a source" }).fill("source00000");
+    await page.getByRole("list", { name: "Matching sources" }).locator('[data-key="source00000"]').waitFor();
+  });
+  await measure("expand300Highlights", async () => {
+    await page.locator('.source-row[data-key="source00000"]').click();
+    await page.locator(".annotations > li").first().waitFor();
+  });
+  await page.screenshot({ path: "out/large-sources-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
+  await measure("docxExport", async () => {
+    const download = page.waitForEvent("download", { timeout: 120000 });
+    await page.getByRole("button", { name: "Export formats" }).click();
+    await page.getByRole("menuitem").filter({ has: page.getByText("Word (DOCX)", { exact: true }) }).click();
+    const review = page.getByRole("button", { name: "Export anyway", exact: true });
+    if (await Promise.race([download.then(() => false), review.waitFor({ timeout: 120000 }).then(() => true)])) await review.click();
+    const bytes = readFileSync(await (await download).path());
+    assert.equal(bytes.subarray(0, 4).toString("hex"), "504b0304");
+    assert.ok(bytes.includes(Buffer.from("word/document.xml")), "DOCX is missing its document part");
+    report.docxBytes = bytes.length;
+  });
+  // Use concrete prefixes so completion waits for results from the large index.
+  for (const [name, input] of [["citeCompletion", " [@source000"], ["embedCompletion", "\n![[chapters/chapter-000"]]) {
+    await measure(name, async () => {
+      await editorEnd();
+      await page.keyboard.type(input, { delay: 20 });
+      await page.locator(".cm-tooltip-autocomplete li").first().waitFor({ timeout: 10_000 });
+    });
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("ControlOrMeta+z");
   }
-  await page.getByRole("tab", { name: /Comments/ }).click();
-  await measure("typingComments10s", type);
-  mkdirSync("out", { recursive: true }); await page.screenshot({ path: "out/large-comments-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
-  await page.getByRole("tab", { name: /Sources/ }).click(); await page.screenshot({ path: "out/large-sources-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
+} catch (error) {
+  report.failure = {
+    phase, message: String(error),
+    ...(await page.evaluate(() => ({
+      search: document.querySelector(".manuscript-search input")?.value,
+      summary: document.querySelector(".search-summary")?.textContent,
+      hits: document.querySelectorAll(".search-hit").length,
+    })).catch(() => ({}))),
+  };
+  throw error;
+} finally {
   report.errors = errors;
   const output = process.env.PROFILE_OUTPUT ?? "out/perf/browser-profile.json";
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
   if (errors.length) process.exitCode = 1;
-} finally { await browser.close(); }
+  await browser.close();
+}
