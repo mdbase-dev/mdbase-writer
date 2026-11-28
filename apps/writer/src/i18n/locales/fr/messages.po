@@ -44,7 +44,7 @@ msgstr "{0, plural, one {# chapitre} other {# chapitres}}"
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
 msgstr "{0, plural, one {# document de personne revendique votre compte : Writer ne devinera donc pas lequel est le vôtre.} other {# documents de personne revendiquent votre compte : Writer ne devinera donc pas lequel est le vôtre.}}"
 
-#. placeholder {0}: words[ranks.get(h)!] ?? 0
+#. placeholder {0}: words?.[ranks.get(h)!] ?? 0
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
 msgstr "{0, plural, one {# mot dans cette section} other {# mots dans cette section}}"

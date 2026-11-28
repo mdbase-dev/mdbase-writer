@@ -2,9 +2,11 @@
 import { counts, generateCollection } from "../../scripts/perf/generator.js";
 import { createDemoApp, DemoWriterBackend, demoRecord } from "./demo-fixture.js";
 
-export async function createLargeDemoBackend() {
+export async function createLargeDemoBackend(largeManuscript = false) {
   const records: ReturnType<typeof demoRecord>[] = [];
-  generateCollection((path, type, fields, body) => records.push(demoRecord(path, { type, ...fields }, body)), 300, true);
+  // The SDK retains a session per opened record. Leave room for the main record.
+  const chapters = largeManuscript ? 60 : 0;
+  generateCollection((path, type, fields, body) => records.push(demoRecord(path, { type, ...fields }, body)), 300, true, chapters);
   const image = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>');
   const assets = new Map(Array.from({ length: counts.files }, (_, i) => [`files/image-${i}.png`, image]));
   return new DemoWriterBackend(await createDemoApp({ name: "Large demo", records }), assets, "large-demo");

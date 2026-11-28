@@ -14,8 +14,31 @@ import { wordCount } from "../words.js";
 import type { RecordView } from "../workspace/workspace.js";
 import { useRowWindow } from "./paging.js";
 import { ChatIcon, ChevronRight, GripIcon, PlusIcon } from "./icons.js";
-import { headingAt, headings, sectionWords, withoutTitle } from "./outline.js";
+import { headingAt, headings, sectionWords, withoutTitle, type OutlineHeading } from "./outline.js";
 import { formatCount, plural as countLabel, recordTitle, STATE_LABEL, STATE_TONE } from "./records.js";
+
+// Workspace preserves each unchanged chapter's view across edits to other records.
+// A folded row and its expanded headings share the same parse of that view.
+interface RecordOutline {
+  readonly title: string;
+  readonly all: readonly OutlineHeading[];
+  readonly visible: readonly OutlineHeading[];
+  sectionWords?: readonly number[];
+}
+
+const outlines = new WeakMap<RecordView, RecordOutline>();
+function outlineFor(view: RecordView) {
+  let outline = outlines.get(view);
+  if (!outline) {
+    const title = recordTitle(view, view.path);
+    const all = headings(view.snapshot.body);
+    outline = { title, all, visible: withoutTitle(all, title) };
+    outlines.set(view, outline);
+  }
+  return outline;
+}
+
+const NO_HEADINGS: readonly OutlineHeading[] = [];
 
 export function OutlinePanel({
   main,
@@ -142,7 +165,9 @@ export function OutlinePanel({
               if (drop?.index !== index || drop.after !== after) setDrop({ index, after });
             };
             const dropClass = drop?.index === index && dragging !== null ? (drop.after ? "drop-after" : "drop-before") : "";
-            const hasHeadings = view ? withoutTitle(headings(view.snapshot.body), recordTitle(view, path)).length > 0 : false;
+            const outline = view && outlineFor(view);
+            const title = outline?.title ?? recordTitle(undefined, path);
+            const hasHeadings = Boolean(outline?.visible.length);
             const comments = commentOffsets?.get(path)?.length ?? 0;
             const openRename = () => { if (onRename && view) setRenaming(path); };
             return (
@@ -164,7 +189,7 @@ export function OutlinePanel({
               >
                 {renaming === path && view ? (
                   <RenameChapter
-                    title={recordTitle(view, path)}
+                    title={title}
                     onDone={async (title) => {
                       setRenaming(null);
                       if (title !== null && onRename) { const done = await onRename(path, title); if (!done.ok) setAnnouncement(done.message); }
@@ -187,7 +212,7 @@ export function OutlinePanel({
                         <span className="record-index">{direct ? index + 1 : ""}</span>
                         {direct && <GripIcon className="record-grip" />}
                       </span>
-                      <span className="record-name">{recordTitle(view, path)}</span>
+                      <span className="record-name">{title}</span>
                       <RecordState view={view} problems={byRecord.get(path)?.length ?? 0} comments={comments} />
                       <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
                     </button>
@@ -264,17 +289,19 @@ const Words = memo(function Words({ body }: { body: string }) {
  */
 const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump, comments, problems }: { view: RecordView | undefined; path: string; cursor: number | null; onJump(path: string, offset: number): void; comments?: readonly number[] | undefined; problems?: readonly WriterDiagnostic[] | undefined }) {
   useLingui();
-  const body = view?.snapshot.body;
-  const title = recordTitle(view, path);
-  const all = useMemo(() => (body ? headings(body) : []), [body]);
-  const words = useMemo(() => (body ? sectionWords(body, all) : []), [body, all]);
+  const outline = view && outlineFor(view);
+  const all = outline?.all ?? NO_HEADINGS;
+  const list = outline?.visible ?? NO_HEADINGS;
+  // Folded rows never need section counts. Keep them for later expansions of
+  // the same view once an expanded row has computed them.
+  if (outline && view) outline.sectionWords ??= sectionWords(view.snapshot.body, all);
+  const words = outline?.sectionWords;
   // What each section holds: the comments and problems anchored between its heading and the next of its level or higher.
   const counts = useMemo(() => all.map((h, i) => {
     const end = all.slice(i + 1).find((n) => n.level <= h.level)?.offset ?? Number.MAX_SAFE_INTEGER;
     const within = (offset: number) => offset >= h.offset && offset < end;
     return { comments: comments?.filter(within).length ?? 0, problems: problems?.filter((d) => !d.field && within(d.from)).length ?? 0 };
   }), [all, comments, problems]);
-  const list = useMemo(() => withoutTitle(all, title), [all, title]);
   const window = useRowWindow();
   const ranks = useMemo(() => new Map(all.map((h, i) => [h, i])), [all]);
   const here = cursor !== null ? headingAt(all, cursor) : undefined;
@@ -313,7 +340,7 @@ const RecordHeadings = memo(function RecordHeadings({ view, path, cursor, onJump
             <span className="heading-text">{h.text}</span>
             {(counts[ranks.get(h)!]?.comments ?? 0) > 0 && <CommentCount count={counts[ranks.get(h)!]!.comments} />}
             {(counts[ranks.get(h)!]?.problems ?? 0) > 0 && <span className="heading-problem" title={countLabel(counts[ranks.get(h)!]!.problems, "problem")} />}
-            <span className="heading-words" title={icuPlural(words[ranks.get(h)!] ?? 0, { one: "# word in this section", other: "# words in this section" })}>{formatCount(words[ranks.get(h)!] ?? 0)}</span>
+            <span className="heading-words" title={icuPlural(words?.[ranks.get(h)!] ?? 0, { one: "# word in this section", other: "# words in this section" })}>{formatCount(words?.[ranks.get(h)!] ?? 0)}</span>
           </button>
         </li>
       ))}

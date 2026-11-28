@@ -44,7 +44,7 @@ msgstr "{0, plural, other {#장}}"
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
 msgstr "{0, plural, other {계정 사용자로 주장하는 사람 레코드가 #개여서 Writer는 어느 사람이 사용자인지 임의로 판단하지 않습니다.}}"
 
-#. placeholder {0}: words[ranks.get(h)!] ?? 0
+#. placeholder {0}: words?.[ranks.get(h)!] ?? 0
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
 msgstr "{0, plural, other {이 절의 단어 #개}}"

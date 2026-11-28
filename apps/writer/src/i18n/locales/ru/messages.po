@@ -44,7 +44,7 @@ msgstr "{0, plural, one {# глава} few {# главы} many {# глав} othe
 msgid "{0, plural, one {# person record claims your account, so Writer will not guess which is you.} other {# person records claim your account, so Writer will not guess which is you.}}"
 msgstr "{0, plural, one {# запись о пользователе связана с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.} few {# записи о пользователях связаны с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.} many {# записей о пользователях связаны с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.} other {# записи о пользователях связаны с вашей учётной записью, поэтому mdbase writer не будет угадывать, какая из них ваша.}}"
 
-#. placeholder {0}: words[ranks.get(h)!] ?? 0
+#. placeholder {0}: words?.[ranks.get(h)!] ?? 0
 #: src/ui/OutlinePanel.tsx
 msgid "{0, plural, one {# word in this section} other {# words in this section}}"
 msgstr "{0, plural, one {# слово в этом разделе} few {# слова в этом разделе} many {# слов в этом разделе} other {# слова в этом разделе}}"
