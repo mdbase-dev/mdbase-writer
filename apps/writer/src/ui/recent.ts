@@ -26,6 +26,18 @@ function storage(): Storage | undefined {
 }
 const recentKey = (namespace: string) => `mdbase-writer:recent:${encodeURIComponent(namespace)}`;
 const goalKey = (namespace: string, path: string) => `mdbase-writer:goal:${encodeURIComponent(namespace)}:${encodeURIComponent(path)}`;
+const usedCollectionKey = (namespace: string) => `mdbase-writer:used-collection:${encodeURIComponent(namespace)}`;
+
+export function hasUsedCollection(namespace: string): boolean {
+  try { return storage()?.getItem(usedCollectionKey(namespace)) === "1"; }
+  catch { return false; }
+}
+
+/** Keeps first-run guidance dismissed after the collection's last document is deleted. */
+export function rememberUsedCollection(namespace: string): void {
+  try { storage()?.setItem(usedCollectionKey(namespace), "1"); }
+  catch { /* Storage may be unavailable. */ }
+}
 
 export function recentManuscripts(namespace: string, store: Pick<Storage, "getItem"> | undefined = storage()): RecentEntry[] {
   try {

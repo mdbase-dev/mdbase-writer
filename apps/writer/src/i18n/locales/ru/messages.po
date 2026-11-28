@@ -1358,6 +1358,10 @@ msgid "No manuscript problems"
 msgstr "В рукописи нет проблем"
 
 #: src/ui/Home.tsx
+msgid "No manuscripts yet"
+msgstr "Рукописей пока нет"
+
+#: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "Заметок по запросу «{query}» не найдено."
 
