@@ -44,11 +44,13 @@ export function noteName(path: string): string {
 /** Record modification time, newest first; unknown times last. Paths break ties
  * independently of titles, locale and discovery/sync arrival order. */
 export function byRecentlyEdited<T extends { readonly path: string; readonly modified?: string }>(list: readonly T[]): T[] {
-  const time = (m: T) => (m.modified ? Date.parse(m.modified) : Number.NaN);
-  return [...list].sort((a, b) => {
-    const ta = time(a);
-    const tb = time(b);
-    if (Number.isNaN(ta) !== Number.isNaN(tb)) return Number.isNaN(ta) ? 1 : -1;
-    return (Number.isNaN(ta) ? 0 : tb - ta) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  const dated = list.map(record => {
+    const time = Date.parse(record.modified ?? "");
+    return {record, time: Number.isNaN(time) ? Number.NEGATIVE_INFINITY : time};
   });
+  dated.sort((a, b) => {
+    if (a.time !== b.time) return b.time - a.time;
+    return a.record.path < b.record.path ? -1 : a.record.path > b.record.path ? 1 : 0;
+  });
+  return dated.map(({record}) => record);
 }
