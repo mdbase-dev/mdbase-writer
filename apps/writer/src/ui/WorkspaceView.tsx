@@ -289,6 +289,15 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     });
   }, []);
   const toggleLivePreview = useCallback(() => setLayout((l) => ({ ...l, livePreview: !l.livePreview })), [setLayout]);
+  const restoreEditorScroll = useRef<(() => void) | undefined>(undefined);
+  const toggleSidebar = useCallback(() => {
+    restoreEditorScroll.current = editor.current?.captureScroll();
+    setLayout(current => ({ ...current, sidebar: !current.sidebar }));
+  }, [setLayout]);
+  useLayoutEffect(() => {
+    restoreEditorScroll.current?.();
+    restoreEditorScroll.current = undefined;
+  }, [layout.sidebar]);
   const setView = useCallback((view: View) => {
     setLayout(current => ({ ...current, view }));
     requestAnimationFrame(() => { if (view === "preview") grid.current?.querySelector<HTMLElement>(".preview")?.focus(); else editor.current?.focus(); });
@@ -512,7 +521,17 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const renameChapter = useCallback((path: string, title: string) => signalFailure(workspace.renameChapter(path, title)), [workspace]);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const retryPreview = useCallback(() => { void workspace.retryPreview(); }, [workspace]);
-  const closeShortcuts = useCallback(() => setShortcutsOpen(false), []);
+  const closeWritingDialog = useCallback((close: () => void) => {
+    flushSync(close);
+    // Native dialog focus restoration can leave the DOM selection in the
+    // dismissed dialog. Synchronize it before the next keystroke, while
+    // respecting other openers such as the More menu button.
+    const handle = editor.current;
+    const focused = document.activeElement;
+    if (focused?.matches(".cm-content") && handle?.scroller().contains(focused)) handle.focus();
+  }, []);
+  const closePalette = useCallback(() => closeWritingDialog(() => setPaletteOpen(false)), [closeWritingDialog]);
+  const closeShortcuts = useCallback(() => closeWritingDialog(() => setShortcutsOpen(false)), [closeWritingDialog]);
 
   const onEditorReady = useCallback((handle: EditorHandle) => {
     editor.current = handle;
@@ -842,15 +861,19 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     const mod = isMod(e);
     const blockingDialog = document.querySelector("dialog[open]:not([inert]):not(.settings-sheet), .settings-sheet:modal");
     if (mod && !e.shiftKey && e.key.toLowerCase() === "k" && (paletteOpen || !blockingDialog)) {
-      e.preventDefault(); e.stopPropagation(); setPaletteOpen(open => !open); return;
+      e.preventDefault(); e.stopPropagation();
+      if (paletteOpen) closePalette(); else setPaletteOpen(true);
+      return;
     }
     if (mod && e.key === "/" && (shortcutsOpen || !blockingDialog)) {
-      e.preventDefault(); e.stopPropagation(); setShortcutsOpen(open => !open); return;
+      e.preventDefault(); e.stopPropagation();
+      if (shortcutsOpen) closeShortcuts(); else setShortcutsOpen(true);
+      return;
     }
     if (e.target instanceof Element && e.target.closest("dialog[open]:not(.settings-sheet), .settings-sheet:modal")) return;
     if (blockingDialog && e.key !== "F8") return;
     let handled = true;
-    if (mod && !e.shiftKey && e.code === "Backslash") setLayout((l) => ({ ...l, sidebar: !l.sidebar }));
+    if (mod && !e.shiftKey && e.code === "Backslash") toggleSidebar();
     else if (mod && e.shiftKey && e.code === "Backslash") setView(VIEW_ORDER[(VIEW_ORDER.indexOf(layout.view) + 1) % VIEW_ORDER.length] as View);
     else if (mod && e.shiftKey && e.code === "KeyF") showSearch();
     else if (mod && e.shiftKey && e.code === "KeyE") showSources();
@@ -1016,7 +1039,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "zoom-in", group: translate`View`, label: translate`Zoom in`, run: () => setLayout(current => ({ ...current, zoom: nextZoom(previewView?.scale ?? 1, 1) })) },
     { id: "zoom-out", group: translate`View`, label: translate`Zoom out`, run: () => setLayout(current => ({ ...current, zoom: nextZoom(previewView?.scale ?? 1, -1) })) },
     { id: "lower-panel", group: translate`View`, label: layout.lowerTab ? translate`Close the lower panel` : translate`Split sidebar`, keywords: translate`split stack outline comments sources`, run: toggleLower },
-    { id: "sidebar", group: translate`View`, label: layout.sidebar ? translate`Hide the sidebar` : translate`Show the sidebar`, shortcut: "mod+\\", run: () => setLayout((l) => ({ ...l, sidebar: !l.sidebar })) },
+    { id: "sidebar", group: translate`View`, label: layout.sidebar ? translate`Hide the sidebar` : translate`Show the sidebar`, shortcut: "mod+\\", run: toggleSidebar },
     { id: "live-preview", group: translate`View`, label: layout.livePreview ? translate`Show Markdown as written` : translate`Read as the manuscript`, keywords: translate`source markup raw live preview chips`, run: toggleLivePreview },
     { id: "cycle-view", group: translate`View`, label: translate`Cycle editor and preview`, shortcut: "mod+shift+\\", run: () => setView(VIEW_ORDER[(VIEW_ORDER.indexOf(layout.view) + 1) % VIEW_ORDER.length]!) },
     ...VIEW_ORDER.filter((view) => view !== layout.view).map((view) => ({ id: `view-${view}`, group: translate`View`, label: VIEW_NAME[view], run: () => setView(view) })),
@@ -1070,7 +1093,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               type="button"
               className="mdbase-icon-button"
               aria-pressed={layout.sidebar}
-              onClick={() => setLayout((l) => ({ ...l, sidebar: !l.sidebar }))}
+              onClick={toggleSidebar}
               title={layout.sidebar ? translate`Hide the sidebar (${shortcutLabel("mod+\\")})` : translate`Show the sidebar (${shortcutLabel("mod+\\")})`}
               aria-label={translate`Sidebar`}
             >
@@ -1380,7 +1403,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       <Shortcuts open={shortcutsOpen} onClose={closeShortcuts} commands={commands} />
       <CommandPalette
         open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
+        onClose={closePalette}
         label={translate`Writer commands`}
         commands={commands}
       />

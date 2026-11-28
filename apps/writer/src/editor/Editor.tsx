@@ -55,6 +55,8 @@ export interface EditorHandle {
   coords(offset: number): { left: number; top: number; bottom: number } | null;
   /** The editor's scrolling element, to follow while something is placed beside the text. */
   scroller(): HTMLElement;
+  /** Capture the viewport before a layout change and restore it on the same document. */
+  captureScroll(): () => void;
 }
 
 export interface RetainedEditor {
@@ -201,6 +203,8 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     // an animation frame is clamped while long documents are still virtualised.
     const restored = position?.path === path ? position : undefined;
     const v = new EditorView({ parent: host.current, state, ...(retained ? { scrollTo: retained.scroll } : restored ? { scrollTo: EditorView.scrollIntoView(Math.min(doc.length, restored.top), { y: "start", yMargin: restored.offset }) } : {}) });
+    let layoutScroll: { doc: Text; selection: EditorSelection; scroll: RetainedEditor["scroll"]; top: number; left: number } | undefined;
+    let scrollFrame = 0;
     let measured = false;
     v.requestMeasure({ read: () => { measured = true; } });
     view.current = v;
@@ -231,6 +235,23 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
       },
       scroller() {
         return v.scrollDOM;
+      },
+      captureScroll() {
+        const { doc, selection } = v.state;
+        const { scrollTop, scrollLeft } = v.scrollDOM;
+        // A wrapped line can become shorter than its captured offset. Reuse
+        // the original anchor on the next resize until the writer moves away.
+        const scroll = layoutScroll?.doc === doc && layoutScroll.selection.eq(selection)
+          && layoutScroll.top === scrollTop && layoutScroll.left === scrollLeft ? layoutScroll.scroll : v.scrollSnapshot();
+        return () => {
+          if (view.current !== v || v.state.doc !== doc || !v.state.selection.eq(selection)) return;
+          v.dispatch({ effects: scroll });
+          cancelAnimationFrame(scrollFrame);
+          // CodeMirror applies its scroll target during the next measurement.
+          scrollFrame = requestAnimationFrame(() => {
+            layoutScroll = { doc, selection, scroll, top: v.scrollDOM.scrollTop, left: v.scrollDOM.scrollLeft };
+          });
+        };
       },
       insert(insertion, options) {
         if (v.state.readOnly) return;
@@ -276,7 +297,9 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     const savePosition = () => {
       if (!measured) return;
       const edge = v.scrollDOM.getBoundingClientRect();
-      const top = v.posAtCoords({ x: edge.left, y: edge.top + v.defaultLineHeight / 2 });
+      if (!edge.height) return;
+      // Sample the very top, so a partially visible wrapped row is retained.
+      const top = v.posAtCoords({ x: edge.left, y: edge.top });
       if (top === null) return;
       const coordinates = v.coordsAtPos(top);
       if (!coordinates) return;
@@ -287,6 +310,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
       // React's development setup/cleanup/setup must not replace the retained
       // scroll target with zero before CodeMirror has had a layout pass.
       if (measured || retained) states?.set(path, { state: v.state, scroll: retained && !measured ? retained.scroll : v.scrollSnapshot() });
+      cancelAnimationFrame(scrollFrame);
       window.removeEventListener("pagehide", savePosition);
       v.destroy();
       view.current = null;
