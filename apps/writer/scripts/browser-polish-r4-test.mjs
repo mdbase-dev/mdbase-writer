@@ -30,6 +30,15 @@ async function typeInEditor(page, text) {
   assert.ok(await page.evaluate(text => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes(text)), text), `Typing after handoff lost ${text}`);
 }
 
+const editorState = page => page.evaluate(async () => (await import("/scripts/browser-a11y-fixture.tsx")).editorSnapshot());
+
+async function assertInsertion(page, before, text) {
+  const expected = before.text.slice(0, before.from) + text + before.text.slice(before.to);
+  assert.equal((await editorState(page)).text, expected, `Editor lost or misplaced ${text.trim()}`);
+  const saved = await page.evaluate(() => window.writer.workspace.getSnapshot().records.get("chapters/reefs.md").snapshot.body);
+  assert.equal(saved, expected, `Workspace did not receive ${text.trim()}`);
+}
+
 async function command(page, query) {
   await page.keyboard.press("Control+k");
   await page.locator(".mdbase-command-palette input").waitFor();
@@ -155,6 +164,9 @@ async function continuePosition(page, width, reduced) {
     // Logged on success too, so CI shows how close the hide runs to its budget.
     console.log(`sidebar hide longest tasks ${reduced ? "reduce" : "no-preference"}: median ${median}ms of ${JSON.stringify(longestTasks)}`);
     assert.ok(median < 50, `Sidebar long-task budget exceeded: median of the longest task per hide is ${median}ms (${JSON.stringify(longestTasks)})`);
+    const afterSidebar = await visible();
+    assert.equal(afterSidebar.text, anchor.text, "Toggling the sidebar changed the first visible line");
+    assert.ok(Math.abs(afterSidebar.y - anchor.y) < 2, `Toggling the sidebar moved the viewport: ${JSON.stringify({ anchor, afterSidebar })}`);
   }
   await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
   await page.locator(".continue-card").waitFor();
@@ -165,7 +177,7 @@ async function continuePosition(page, width, reduced) {
   await editor.waitFor();
   await page.waitForTimeout(220);
   const restored = await visible();
-  assert.equal(restored.text, anchor.text);
+  assert.equal(restored.text, anchor.text, `Continue moved to another line: ${JSON.stringify({ anchor, restored, position })}`);
   assert.ok(Math.abs(restored.y - anchor.y) < 2, `Continue moved visible text: ${JSON.stringify({ anchor, restored, position })}`);
   const before = await page.evaluate(() => { const workspace = window.writer.workspace; return workspace.getSnapshot().records.get(workspace.main).snapshot.body; });
   await page.keyboard.type("RESUMED");
@@ -193,6 +205,7 @@ async function continuePosition(page, width, reduced) {
 
 async function immediateResume(page, shortcut, overlay, text, reduced) {
   await page.locator(".cm-content").focus();
+  const before = await editorState(page);
   await page.keyboard.press(shortcut);
   await page.locator(overlay).waitFor();
   await page.locator(overlay).evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
@@ -218,7 +231,7 @@ async function immediateResume(page, shortcut, overlay, text, reduced) {
   }, { overlay });
   await page.keyboard.press("Escape");
   await page.keyboard.type(text, { delay: 3 });
-  assert.ok(await page.evaluate(text => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes(text)), text), `Immediate Escape resume lost ${text}`);
+  await assertInsertion(page, before, text);
   const [first] = await page.evaluate(() => window.resumeKeys);
   assert.equal(first.editor, true, JSON.stringify(first));
   if (!reduced) assert.deepEqual({ attached: first.attached, inert: first.inert }, { attached: true, inert: true });
@@ -228,11 +241,12 @@ async function immediateResume(page, shortcut, overlay, text, reduced) {
 async function roundFive(page, width, reduced) {
   for (const [shortcut, selector, text] of [["Control+k", ".mdbase-command-palette", " PALETTE_POINTER "], ["Control+/", ".shortcuts-dialog", " HELP_POINTER "]]) {
     await page.locator(".cm-content").focus();
+    const before = await editorState(page);
     await page.keyboard.press(shortcut);
     await page.locator(selector).waitFor();
     await page.mouse.click(4, 10);
     await page.keyboard.type(text, { delay: 3 });
-    assert.ok(await page.evaluate(text => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes(text)), text), `Pointer dismissal lost ${text}`);
+    await assertInsertion(page, before, text);
     assert.equal(await page.evaluate(() => document.activeElement?.matches(".cm-content")), true);
     await page.locator(selector).waitFor({ state: "hidden" });
   }
@@ -246,11 +260,14 @@ async function roundFive(page, width, reduced) {
   await page.keyboard.press("Escape");
   await page.locator(".mdbase-command-palette").waitFor({ state: "hidden" });
   await immediateResume(page, "Control+/", ".shortcuts-dialog", " HELP_ESCAPE ", reduced);
+  await page.keyboard.press("Shift+ArrowLeft");
+  const beforeHelp = await editorState(page);
+  assert.ok(beforeHelp.from < beforeHelp.to, "Select text before opening the palette");
   await command(page, "Keyboard shortcuts");
   await page.locator(".shortcuts-dialog").waitFor();
   await page.keyboard.press("Escape");
   await page.keyboard.type(" PALETTE_HELP ", { delay: 3 });
-  assert.ok(await page.evaluate(() => [...window.writer.workspace.getSnapshot().records.values()].some(record => record.snapshot.body.includes(" PALETTE_HELP "))));
+  await assertInsertion(page, beforeHelp, " PALETTE_HELP ");
   await page.locator(".shortcuts-dialog").waitFor({ state: "hidden" });
   await command(page, "Settings");
   await page.locator(".settings-sheet").waitFor();
@@ -385,6 +402,7 @@ try {
     await context.route("**/*", route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
     const page = await context.newPage();
     page.setDefaultTimeout(7000);
+    page.setDefaultNavigationTimeout(30_000);
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     try {

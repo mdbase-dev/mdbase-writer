@@ -6,7 +6,7 @@ import { shortcutLabel } from "@mdbase-dev/ui/command-palette";
 // chapters (records embedded on lines of their own) in reading order, each
 // with its headings. Chapters are dragged, or moved with Alt-↑/↓, to reorder
 // them; a new chapter is added at the end.
-import { memo, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 
 import type { Result } from "../backend/types.js";
 import type { WriterDiagnostic } from "../compile/protocol.js";
@@ -84,13 +84,6 @@ export function OutlinePanel({
   // A book's chapters fold their headings away, except the one being written.
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   const [renaming, setRenaming] = useState<string | null>(null);
-  const isExpanded = (path: string) => expanded.has(path) || path === active;
-  const toggleExpanded = (path: string) => setExpanded((set) => {
-    const next = new Set(set);
-    if (isExpanded(path)) { next.delete(path); if (path === active) next.add(`!${path}`); }
-    else { next.add(path); next.delete(`!${path}`); }
-    return next;
-  });
   const shows = (path: string) => (path === active ? !expanded.has(`!${path}`) : expanded.has(path));
   const refocus = useRef<string | null>(null);
   const list = useRef<HTMLOListElement>(null);
@@ -109,19 +102,57 @@ export function OutlinePanel({
     refocus.current = null;
   }, [order]);
 
-  const move = (from: number, to: number) => {
+  const move = useCallback((from: number, to: number, view: RecordView | undefined) => {
     const path = chapters[from];
     if (to < 0 || to >= chapters.length || !path) return;
     refocus.current = path;
     onMove(from, to);
-    setAnnouncement(t`Moved ${recordTitle(records.get(path), path)} to chapter ${to + 1} of ${chapters.length}.`);
-  };
+    setAnnouncement(t`Moved ${recordTitle(view, path)} to chapter ${to + 1} of ${chapters.length}.`);
+  }, [chapters, onMove]);
+
+  const reveal = window.reveal;
+  const navigate = useCallback((event: KeyboardEvent, path: string, index: number, view: RecordView | undefined) => {
+    const direction = event.key === "ArrowDown" || event.key === "j" ? 1 : event.key === "ArrowUp" || event.key === "k" ? -1 : 0;
+    if (!direction) return;
+    if (event.altKey) {
+      if (index >= 0) { event.preventDefault(); move(index, index + direction, view); }
+      return;
+    }
+    const rank = (recordRanks.get(path) ?? -1) + direction;
+    const next = rest[rank];
+    if (!next) return;
+    event.preventDefault();
+    reveal(rank);
+    requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`.record-row[data-path="${CSS.escape(next)}"]`)?.focus());
+  }, [move, recordRanks, rest, reveal]);
+  const finishRename = useCallback((path: string) => {
+    requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`.record-row[data-path="${CSS.escape(path)}"]`)?.focus());
+  }, []);
+  const startDrag = useCallback((index: number) => setDragging(index), []);
+  const endDrag = useCallback(() => { setDragging(null); setDrop(null); }, []);
+  const markDrop = useCallback((index: number, after: boolean) => {
+    setDrop(current => current?.index === index && current.after === after ? current : { index, after });
+  }, []);
+  const toggle = useCallback((path: string, wasExpanded: boolean) => {
+    setExpanded(set => {
+      const next = new Set(set);
+      if (wasExpanded) {
+        next.delete(path);
+        if (path === active) next.add(`!${path}`);
+      } else {
+        next.add(path);
+        next.delete(`!${path}`);
+      }
+      return next;
+    });
+  }, [active]);
 
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     if (dragging !== null && drop) {
       const at = drop.index + (drop.after ? 1 : 0);
-      move(dragging, at > dragging ? at - 1 : at);
+      const path = chapters[dragging];
+      if (path) move(dragging, at > dragging ? at - 1 : at, records.get(path));
     }
     setDragging(null);
     setDrop(null);
@@ -144,88 +175,34 @@ export function OutlinePanel({
       )}
       {rest.length > 0 && (
         <ol ref={list} className="records" aria-labelledby="outline-chapters" onDragOver={(e) => dragging !== null && e.preventDefault()} onDrop={onDrop}>
-          {rest.slice(window.from, window.from + window.size).map((path) => {
-            const view = records.get(path);
+          {rest.slice(window.from, window.from + window.size).map(path => {
             const index = ranks.get(path) ?? -1;
-            const direct = index >= 0;
-            const onKeyDown = (e: KeyboardEvent) => {
-              const direction = e.key === "ArrowDown" || e.key === "j" ? 1 : e.key === "ArrowUp" || e.key === "k" ? -1 : 0;
-              if (!direction) return;
-              if (e.altKey) { if (direct) { e.preventDefault(); move(index, index + direction); } return; }
-              const rank = (recordRanks.get(path) ?? -1) + direction, next = rest[rank];
-              if (!next) return;
-              e.preventDefault(); window.reveal(rank);
-              requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`.record-row[data-path="${CSS.escape(next)}"]`)?.focus());
-            };
-            const onDragOver = (e: DragEvent<HTMLLIElement>) => {
-              if (dragging === null || !direct) return;
-              e.preventDefault();
-              const box = e.currentTarget.getBoundingClientRect();
-              const after = e.clientY > box.top + Math.min(box.height, 40) / 2;
-              if (drop?.index !== index || drop.after !== after) setDrop({ index, after });
-            };
-            const dropClass = drop?.index === index && dragging !== null ? (drop.after ? "drop-after" : "drop-before") : "";
-            const outline = view && outlineFor(view);
-            const title = outline?.title ?? recordTitle(undefined, path);
-            const hasHeadings = Boolean(outline?.visible.length);
-            const comments = commentOffsets?.get(path)?.length ?? 0;
-            const openRename = () => { if (onRename && view) setRenaming(path); };
-            return (
-              <li
-                key={path}
-                className={[direct ? "" : "is-nested", dragging === index && direct ? "is-dragging" : "", dropClass].filter(Boolean).join(" ") || undefined}
-                draggable={direct}
-                onDragStart={(e) => {
-                  if (!direct) return;
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData("text/plain", path);
-                  setDragging(index);
-                }}
-                onDragEnd={() => {
-                  setDragging(null);
-                  setDrop(null);
-                }}
-                onDragOver={onDragOver}
-              >
-                {renaming === path && view ? (
-                  <RenameChapter
-                    title={title}
-                    onDone={async (title) => {
-                      setRenaming(null);
-                      if (title !== null && onRename) { const done = await onRename(path, title); if (!done.ok) setAnnouncement(done.message); }
-                      requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`.record-row[data-path="${CSS.escape(path)}"]`)?.focus());
-                    }}
-                  />
-                ) : (
-                  <div className="record-line">
-                    <button
-                      type="button"
-                      className="record-row"
-                      data-path={path}
-                      aria-current={path === active ? "true" : undefined}
-                      onClick={() => onOpen(path)}
-                      onDoubleClick={openRename}
-                      onKeyDown={(e) => { if (e.key === "F2") { e.preventDefault(); openRename(); } else onKeyDown(e); }}
-                      title={[path, direct ? t`Drag, or ${shortcutLabel("alt+↑")} / ${shortcutLabel("alt+↓")}, to reorder` : null, onRename ? t`Double-click or F2 to rename` : null].filter(Boolean).join(" · ")}
-                    >
-                      <span className="record-number" aria-hidden={!direct}>
-                        <span className="record-index">{direct ? index + 1 : ""}</span>
-                        {direct && <GripIcon className="record-grip" />}
-                      </span>
-                      <span className="record-name">{title}</span>
-                      <RecordState view={view} problems={byRecord.get(path)?.length ?? 0} comments={comments} />
-                      <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
-                    </button>
-                    {hasHeadings && (
-                      <button type="button" className="record-fold" aria-expanded={shows(path)} aria-label={shows(path) ? t`Hide the headings of ${recordTitle(view, path)}` : t`Show the headings of ${recordTitle(view, path)}`} onClick={() => toggleExpanded(path)}>
-                        <ChevronRight />
-                      </button>
-                    )}
-                  </div>
-                )}
-                {shows(path) && <RecordHeadings view={view} path={path} cursor={cursor?.record === path ? cursor.offset : null} onJump={onJump} comments={commentOffsets?.get(path)} problems={byRecord.get(path)} />}
-              </li>
-            );
+            return <ChapterRow
+              key={path}
+              path={path}
+              view={records.get(path)}
+              index={index}
+              active={path === active}
+              expanded={shows(path)}
+              cursor={cursor?.record === path ? cursor.offset : null}
+              comments={commentOffsets?.get(path)}
+              problems={byRecord.get(path)}
+              renaming={renaming === path}
+              dragging={dragging === index && index >= 0}
+              dropClass={dragging !== null && drop?.index === index ? (drop.after ? "drop-after" : "drop-before") : ""}
+              canDrop={dragging !== null && index >= 0}
+              onOpen={onOpen}
+              onJump={onJump}
+              onNavigate={navigate}
+              onToggle={toggle}
+              onRename={onRename}
+              onStartRename={setRenaming}
+              onFinishRename={finishRename}
+              onRenameFailure={setAnnouncement}
+              onStartDrag={startDrag}
+              onEndDrag={endDrag}
+              onMarkDrop={markDrop}
+            />;
           })}
         </ol>
       )}
@@ -237,6 +214,101 @@ export function OutlinePanel({
     </div>
   );
 }
+
+const ChapterRow = memo(function ChapterRow({
+  path, view, index, active, expanded, cursor, comments, problems, renaming, dragging, dropClass, canDrop,
+  onOpen, onJump, onNavigate, onToggle, onRename, onStartRename, onFinishRename, onRenameFailure, onStartDrag, onEndDrag, onMarkDrop,
+}: {
+  path: string;
+  view: RecordView | undefined;
+  index: number;
+  active: boolean;
+  expanded: boolean;
+  cursor: number | null;
+  comments: readonly number[] | undefined;
+  problems: readonly WriterDiagnostic[] | undefined;
+  renaming: boolean;
+  dragging: boolean;
+  dropClass: string;
+  canDrop: boolean;
+  onOpen(path: string): void;
+  onJump(path: string, offset: number): void;
+  onNavigate(event: KeyboardEvent, path: string, index: number, view: RecordView | undefined): void;
+  onToggle(path: string, expanded: boolean): void;
+  onRename: ((path: string, title: string) => Promise<Result<unknown>> | Result<unknown>) | undefined;
+  onStartRename(path: string | null): void;
+  onFinishRename(path: string): void;
+  onRenameFailure(message: string): void;
+  onStartDrag(index: number): void;
+  onEndDrag(): void;
+  onMarkDrop(index: number, after: boolean): void;
+}) {
+  useLingui();
+  const direct = index >= 0;
+  const outline = view && outlineFor(view);
+  const title = outline?.title ?? recordTitle(undefined, path);
+  const openRename = () => { if (onRename && view) onStartRename(path); };
+  return (
+    <li
+      className={[direct ? "" : "is-nested", dragging ? "is-dragging" : "", dropClass].filter(Boolean).join(" ") || undefined}
+      draggable={direct}
+      onDragStart={event => {
+        if (!direct) return;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", path);
+        onStartDrag(index);
+      }}
+      onDragEnd={onEndDrag}
+      onDragOver={event => {
+        if (!canDrop) return;
+        event.preventDefault();
+        const box = event.currentTarget.getBoundingClientRect();
+        onMarkDrop(index, event.clientY > box.top + Math.min(box.height, 40) / 2);
+      }}
+    >
+      {renaming && view ? (
+        <RenameChapter
+          title={title}
+          onDone={async name => {
+            onStartRename(null);
+            if (name !== null && onRename) { const done = await onRename(path, name); if (!done.ok) onRenameFailure(done.message); }
+            onFinishRename(path);
+          }}
+        />
+      ) : (
+        <div className="record-line">
+          <button
+            type="button"
+            className="record-row"
+            data-path={path}
+            aria-current={active ? "true" : undefined}
+            onClick={() => onOpen(path)}
+            onDoubleClick={openRename}
+            onKeyDown={event => {
+              if (event.key === "F2") { event.preventDefault(); openRename(); }
+              else onNavigate(event, path, index, view);
+            }}
+            title={[path, direct ? t`Drag, or ${shortcutLabel("alt+↑")} / ${shortcutLabel("alt+↓")}, to reorder` : null, onRename ? t`Double-click or F2 to rename` : null].filter(Boolean).join(" · ")}
+          >
+            <span className="record-number" aria-hidden={!direct}>
+              <span className="record-index">{direct ? index + 1 : ""}</span>
+              {direct && <GripIcon className="record-grip" />}
+            </span>
+            <span className="record-name">{title}</span>
+            <RecordState view={view} problems={problems?.length ?? 0} comments={comments?.length ?? 0} />
+            <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
+          </button>
+          {!!outline?.visible.length && (
+            <button type="button" className="record-fold" aria-expanded={expanded} aria-label={expanded ? t`Hide the headings of ${recordTitle(view, path)}` : t`Show the headings of ${recordTitle(view, path)}`} onClick={() => onToggle(path, expanded)}>
+              <ChevronRight />
+            </button>
+          )}
+        </div>
+      )}
+      {expanded && <RecordHeadings view={view} path={path} cursor={cursor} onJump={onJump} comments={comments} problems={problems} />}
+    </li>
+  );
+});
 
 function RecordState({ view, problems, comments = 0 }: { view: RecordView | undefined; problems: number; comments?: number }) {
   useLingui();

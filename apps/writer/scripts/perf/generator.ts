@@ -3,7 +3,7 @@ import type { JsonObject } from "@mdbase-dev/sdk";
 export const counts = { sources: 5_000, annotations: 30_000, comments: 3_000, notes: 20_000, manuscripts: 100, files: 5_000 };
 export const main = "manuscripts/main.md";
 const pad = (n: number) => String(n).padStart(5, "0");
-export function generateCollection(seed: (path: string, type: string, fm: JsonObject, body: string) => void, highlightsPerBook?: number, browser = false, chapterCount = 0): string {
+export function generateCollection(seed: (path: string, type: string, fm: JsonObject, body: string) => void, highlightsPerBook?: number, browser = false, chapterCount = 0, longChapter = false): string {
   const browserChapters = Array.from({ length: chapterCount }, (_, i) => `chapters/chapter-${pad(i)}.md`);
   const body = "# Main {#sec-main}\n\n" + Array.from({ length: 100 }, (_, i) => `${browser ? `## Section ${i} {#sec-${i}}\n\n` : ""}Paragraph ${i}: quoted passage ${i}. A sustained cited argument [@source${pad(i)}].\n\n`).join("");
   // Share the fixture's intentionally identical text instead of retaining one
@@ -20,7 +20,8 @@ export function generateCollection(seed: (path: string, type: string, fm: JsonOb
   for (let i = 0; i < counts.manuscripts; i++) seed(i === 0 ? main : `manuscripts/paper-${pad(i)}.md`, "writer-manuscript", { title: `Paper ${pad(i)}`, csl: "apa", template: "article" }, i === 0 ? mainBody : body);
   for (const [i, path] of browserChapters.entries()) {
     const sections = Array.from({ length: 8 }, (_, section) => `### Section ${section + 1}\n\nEvidence in chapter ${i + 1}, section ${section + 1}, supports the manuscript's argument. Further analysis puts the result in context.`);
-    seed(path, "note", { title: `Chapter ${i + 1}` }, `## Chapter ${i + 1}\n\n${sections.join("\n\n")}\n`);
+    const prose = longChapter && i === 0 ? `\n${"The chapter assembles evidence from several archives and follows the argument through its historical context.\n\n".repeat(700)}` : "";
+    seed(path, "note", { title: `Chapter ${i + 1}` }, `## Chapter ${i + 1}\n\n${sections.join("\n\n")}\n${prose}`);
   }
   for (let i = 0; i < counts.sources; i++) seed(`sources/source${pad(i)}.md`, "reader-source", {
     title: `Synthetic source ${pad(i)}`,

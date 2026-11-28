@@ -1291,7 +1291,7 @@ msgstr "다음 컨트롤로 이동"
 msgid "Move up"
 msgstr "위로 이동"
 
-#. placeholder {0}: recordTitle(records.get(path), path)
+#. placeholder {0}: recordTitle(view, path)
 #. placeholder {1}: to + 1
 #. placeholder {2}: chapters.length
 #: src/ui/OutlinePanel.tsx

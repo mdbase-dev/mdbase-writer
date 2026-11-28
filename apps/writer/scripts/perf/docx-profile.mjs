@@ -112,6 +112,14 @@ try {
     // Both paths use the ordinary SDK record session and collection watch.
     const start = await page.evaluate(chapter => {
       const workspace = window.writer.workspace;
+      for (const stage of ["preflight", "materialize"]) {
+        const method = workspace[stage].bind(workspace);
+        workspace[stage] = async (...args) => {
+          performance.mark(`${stage}:start`);
+          try { return await method(...args); }
+          finally { performance.mark(`${stage}:end`); }
+        };
+      }
       const exportDocx = workspace.exportDocx.bind(workspace);
       workspace.exportDocx = async (...args) => {
         performance.mark("export:start");
@@ -133,10 +141,16 @@ try {
     const timing = await page.evaluate(start => {
       const exportStart = performance.getEntriesByName("export:start")[0].startTime;
       const exportEnd = performance.getEntriesByName("export:end")[0].startTime;
+      const elapsed = (stage) => performance.measure(stage, `${stage}:start`, `${stage}:end`).duration;
+      const preflight = elapsed("preflight");
+      const materialize = elapsed("materialize");
       return {
         saveToDownloadMs: Math.round(performance.now() - start),
         beforeExportMs: Math.round(exportStart - start),
         exportMs: Math.round(exportEnd - exportStart),
+        preflightMs: Math.round(preflight),
+        materializeMs: Math.round(materialize - preflight),
+        convertAndFetchMs: Math.round(exportEnd - exportStart - materialize),
         mainLongTaskMs: Math.round(window.tasks.filter(([at]) => at >= start).reduce((sum, [, duration]) => sum + duration, 0)),
       };
     }, start);
