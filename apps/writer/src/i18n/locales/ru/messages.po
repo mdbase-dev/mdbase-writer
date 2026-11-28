@@ -788,6 +788,7 @@ msgstr "Всё равно экспортировать"
 msgid "Export cancelled."
 msgstr "Экспорт отменён."
 
+#: src/compile/client.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Export failed."
 msgstr "Не удалось выполнить экспорт."
@@ -1427,7 +1428,7 @@ msgstr "Нет на сервере"
 msgid "Not saved"
 msgstr "Сохранить не удалось"
 
-#. placeholder {0}: activeView.snapshot.problem.message ?? activeView.snapshot.problem.code
+#. placeholder {0}: recordProblem(activeView.snapshot.problem)
 #: src/ui/WorkspaceView.tsx
 msgid "Not saved: {0}. Your text is kept here."
 msgstr "Не сохранено: {0}. Ваш текст остаётся здесь."
@@ -2198,11 +2199,6 @@ msgstr "Не удалось загрузить язык редактора. Мо
 msgid "The embed ![[{value}]] in {other} was left out."
 msgstr "Встраивание ![[{value}]] в {other} пропущено."
 
-#. placeholder {0}: errorMessage(error)
-#: src/ui/WorkspaceView.tsx
-msgid "The file could not be downloaded. {0}"
-msgstr "Не удалось скачать файл. {0}"
-
 #. placeholder {0}: missingImage[1] ?? ""
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
@@ -2266,6 +2262,10 @@ msgstr "Предложенного текста больше нет в глав�
 msgid "Theme"
 msgstr "Тема"
 
+#: src/backend/index-problem.ts
+msgid "There is more text than Writer can keep open at once. Try a smaller manuscript."
+msgstr "Writer не может держать открытым столько текста одновременно. Попробуйте открыть рукопись поменьше."
+
 #: src/ui/names.ts
 msgid "Thesis or book"
 msgstr "Диссертация или книга"
@@ -2307,6 +2307,7 @@ msgstr "Не удалось открыть представление этой �
 msgid "This deletes {0} from this collection. This cannot be undone here."
 msgstr "Это удалит {0} из этой коллекции. Отменить это действие здесь нельзя."
 
+#: src/backend/index-problem.ts
 #: src/backend/native.ts
 msgid "This document changed elsewhere. Reload and try again."
 msgstr "Этот документ был изменён в другом месте. Перезагрузите и попробуйте ещё раз."
@@ -2454,6 +2455,7 @@ msgstr "Слова целиком"
 msgid "Word (DOCX)"
 msgstr "Документ Word (DOCX)"
 
+#: src/export/pandoc.ts
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
 msgstr "При экспорте в Word возникла проблема."
@@ -2494,6 +2496,10 @@ msgstr "mdbase writer не может запрашивать здесь дост
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Команды mdbase writer"
+
+#: src/backend/index-problem.ts
+msgid "Writer could not complete this operation. Try again."
+msgstr "Writer не удалось завершить операцию. Попробуйте ещё раз."
 
 #: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."

@@ -8,7 +8,7 @@ it("explains Word's missing-image fallback without hiding other warnings", () =>
     warning,
     { verbosity: "WARNING", pretty: warning },
     { verbosity: "WARNING", pretty: "Unknown citation key" },
-    { verbosity: "WARNING" },
+    { verbosity: "WARNING", type: "UnknownInternalWarning" },
   ])).toEqual([guidance, guidance, "Unknown citation key", "Word export reported a problem."]);
 });
 it("does not interrupt a clean export with informational resource messages", () => {

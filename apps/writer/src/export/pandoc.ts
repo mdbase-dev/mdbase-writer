@@ -25,9 +25,9 @@ export function toDocx(markdown: string, files: ToPandoc["files"], signal?: Abor
       const result = event.data;
       waiting.get(result.id)?.(result.bytes
         ? { ...result, warnings: pandocWarnings(result.warnings) }
-        : { id: result.id, error: result.reason === "no-document" ? t`Pandoc produced no document.` : result.error });
+        : { id: result.id, error: result.reason === "no-document" ? t`Pandoc produced no document.` : t`Word export reported a problem.` });
     };
-    worker.onerror = (event) => { event.preventDefault(); stop(event.message || t`Pandoc stopped.`); };
+    worker.onerror = (event) => { event.preventDefault(); stop(t`Pandoc stopped.`); };
     worker.onmessageerror = () => stop(t`Pandoc returned an unreadable response.`);
   }
   const id = nextId++;
@@ -46,6 +46,6 @@ export function toDocx(markdown: string, files: ToPandoc["files"], signal?: Abor
     try {
       const transfer = files.flatMap(([, data]) => typeof data === "string" ? [] : [data.buffer as ArrayBuffer]);
       current.postMessage({ id, baseUrl: import.meta.env.BASE_URL, markdown, files } satisfies ToPandoc, transfer);
-    } catch (error) { stop(error instanceof Error ? error.message : String(error)); }
+    } catch { stop(t`Word export reported a problem.`); }
   });
 }

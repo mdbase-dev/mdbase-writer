@@ -78,11 +78,11 @@ it("settles readiness and all outstanding exports when the worker fails", async 
   const client = new CompileClient();
   const failed = vi.fn(); client.onFailure(failed);
   const one = client.exportPdf(), two = client.exportPdf();
-  FakeWorker.latest.onerror?.({ message: "Worker crashed", preventDefault() {} });
-  await expect(client.ready).rejects.toThrow("Worker crashed");
-  expect(await one).toEqual({ error: "Worker crashed" });
-  expect(await two).toEqual({ error: "Worker crashed" });
-  expect(failed).toHaveBeenCalledWith("Worker crashed");
+  FakeWorker.latest.onerror?.({ message: "raw_worker_error", preventDefault() {} });
+  await expect(client.ready).rejects.toThrow("The compile worker stopped.");
+  expect(await one).toEqual({ error: "The compile worker stopped." });
+  expect(await two).toEqual({ error: "The compile worker stopped." });
+  expect(failed).toHaveBeenCalledWith("The compile worker stopped.");
   expect(FakeWorker.latest.terminated).toBe(true);
 });
 it("settles exports on disposal", async () => {
@@ -114,4 +114,14 @@ it("times out initialization and a stuck compile rather than waiting forever", a
   second.send({ type: "init", baseUrl: "/", library: [], styles: [], locales: [] });
   await vi.advanceTimersByTimeAsync(60_000);
   await expect(second.ready).rejects.toThrow("too long to load");
+});
+
+it("preserves document repair guidance and presents an unexpected PDF worker error in plain words", async () => {
+  const client = new CompileClient();
+  const first = client.exportPdf(), second = client.exportPdf();
+  FakeWorker.latest.reply({ type: "pdf", id: 1, error: "private_compiler_error" });
+  FakeWorker.latest.reply({ type: "pdf", id: 2, error: "diagnostic", reason: "document-errors" });
+  expect(await first).toEqual({ error: "Export failed." });
+  expect(await second).toEqual({ error: "The document has errors; fix them to export." });
+  client.terminate();
 });

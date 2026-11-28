@@ -56,6 +56,39 @@ Readiness/content assertions fail the run rather than emit a successful baseline
 
 Result JSON is generated evidence: the default is `out/perf/large-collection.json` (gitignored). The scripts/config are outside normal test discovery; `generator.ts` is shared with the DEV-only large browser demo and compiled out of ordinary deployment builds.
 
+## Paired interactive Chromium profile
+
+Start a DEV server for each revision on a separate port. Copy the benchmark's
+`interactive-profile.mjs`, `outline.bench.tsx`, `large-demo.ts` and `DemoRoot.tsx`
+to the same locations in the baseline checkout. The last two files enable
+the same fixture sizes on both revisions.
+
+```sh
+# In separate shells, from each checkout
+pnpm -C apps/writer dev --port 5437  # baseline
+pnpm -C apps/writer dev --port 5438  # candidate
+
+BASELINE=http://127.0.0.1:5437 BASE=http://127.0.0.1:5438 PROFILE_CHAPTERS=120 \
+  pnpm -C apps/writer exec node scripts/perf/interactive-profile.mjs > paired.jsonl
+```
+
+Each of seven rounds runs the two-chapter worked example and a large manuscript
+on both revisions. Revision order reverses each round. Each sample opens a fresh
+browser context, waits for the chapter count and bibliography revision, then
+uses the visible Sources panel, outline search, editor and citation completion.
+Typing must synchronously checkpoint the exact edit in local storage, and normal
+SDK autosave must confirm the same body. Startup timings include navigation,
+demo seeding and development module loading. The bibliography timing includes
+full preview rendering. Action timings include Playwright input and waiting for
+the result. Renderer CPU uses CDP thread ticks.
+
+The 120-chapter demo explicitly checks the pinned SDK's session limit. The
+workspace must discover all 120 chapters and report 57 failed opens alongside
+the main record and 63 loaded chapters. Search and editing use loaded chapters.
+Omit `PROFILE_CHAPTERS` for the fully loaded 60-chapter comparison. The mounted
+outline benchmark above measures all 120 chapter bodies and all 120 rows with
+real React components and manuscript statistics in jsdom.
+
 ## Recorded outcomes
 
 ### Source lookup, long-chapter typing and Word export

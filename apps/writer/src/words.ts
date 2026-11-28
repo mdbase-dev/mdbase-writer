@@ -21,7 +21,9 @@ export function wordCount(markdown: string): number {
     .replace(/\]\([^)\n]*\)/g, "]")
     .replace(/<[^>\n]+>/g, " ") : markdown;
   const words = /[^\x00-\x7f]/.test(prose) ? /[\p{L}\p{N}]+(?:['’.-][\p{L}\p{N}]+)*/gu : /[a-zA-Z0-9]+(?:['.-][a-zA-Z0-9]+)*/g;
-  return prose.match(words)?.length ?? 0;
+  let count = 0;
+  while (words.test(prose)) count++;
+  return count;
 }
 
 /** Records embedded on a line of their own (`![[chapters/one]]`). */

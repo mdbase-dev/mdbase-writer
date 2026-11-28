@@ -8,7 +8,7 @@ import { applySuggestion, bodyHash, linkPath, targetFor, type CommentChange, typ
 // (autosave, conflict detection, exact recovery — all from the SDK). Every
 // content change is forwarded to the worker, which assembles and typesets
 // the whole manuscript and reports which embedded records it still needs.
-import type { JsonObject } from "@mdbase-dev/sdk";
+import { isMdbaseError, type JsonObject } from "@mdbase-dev/sdk";
 import { ManuscriptAssembler, translateRecord, type WriterRecord, type AssemblyInput, type AssemblyInspection } from "@mdbase-writer/core";
 import { BUNDLE_README, materialize } from "@mdbase-writer/core/materialize";
 import { isAnnotation } from "@mdbase-writer/core/annotations";
@@ -16,10 +16,10 @@ import { IMAGE_EXTENSION, PathIndex, pathIndex, resolveLinkTarget } from "@mdbas
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type NewComment, type People } from "../backend/comments.js";
-import { indexProblem } from "../backend/index-problem.js";
+import { indexProblem, recordProblem } from "../backend/index-problem.js";
 import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type ReadProblem, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
-import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
+import { UserFacingError, errorMessage, fetchChecked, mapConcurrent } from "../async.js";
 import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
 import { CompileClient, takeCompileClient } from "../compile/client.js";
 import type { CompileResult, WriterDiagnostic } from "../compile/protocol.js";
@@ -137,6 +137,7 @@ export class ManuscriptWorkspace {
   /** One intent per unconfirmed comment (by its content): a retry after a lost reply re-sends it, so it lands once. */
   private readonly commentIntents = new Map<string, string>();
   private readonly translations = new Map<string, { body: string; translated: ReturnType<typeof translateRecord> }>();
+  private orderInputs?: Pick<WorkspaceSnapshot, "records" | "recordIndex" | "annotationPaths">;
   private lastOrder: readonly string[] = [];
   private lastChapters: readonly (string | null)[] = [];
   private readonly requestedAssets = new Set<string>();
@@ -310,11 +311,11 @@ export class ManuscriptWorkspace {
       await Promise.all(annotations ? Object.values(this.metadataJobs) : [index ? this.metadataJobs.indexLoad : undefined, this.metadataJobs.libraryLoad]);
       if (this.disposed || generation === this.metadataGeneration) break;
     }
-    if (this.disposed) throw new Error(t`The manuscript was closed.`);
+    if (this.disposed) throw new UserFacingError(t`The manuscript was closed.`);
     // Annotation discovery is optional: a real failure is visible, not a preview/export gate.
     for (const domain of (index ? ["indexLoad", "libraryLoad"] : ["libraryLoad"]) as MetadataDomain[]) {
       const state = this.current[domain];
-      if (state.phase !== "ready") throw new Error(state.problem ?? t`Collection metadata is still loading.`);
+      if (state.phase !== "ready") throw new UserFacingError(state.problem ?? t`Collection metadata is still loading.`, state.details);
     }
   }
 
@@ -492,7 +493,7 @@ export class ManuscriptWorkspace {
     if (recovered) this.update({ recoveredDrafts: new Map(this.current.recoveredDrafts).set(path, recovered) });
     try {
       const opened = await this.backend.records.open(path, { autosave: { idleMs: 1_000 }, timeoutMs: 15_000 });
-      if (!opened.ok) throw new Error(opened.problem.message ?? opened.problem.code);
+      if (!opened.ok) throw new UserFacingError(recordProblem(opened.problem));
       if (this.disposed) { opened.value.release(); return false; }
       const { session } = opened.value;
       if (recovered) {
@@ -513,7 +514,7 @@ export class ManuscriptWorkspace {
       this.onSession(path, session.getSnapshot());
       return true;
     } catch (error) {
-      const message = errorMessage(error);
+      const message = error instanceof UserFacingError ? error.message : recordProblem(isMdbaseError(error) ? error : { code: "internal" });
       this.update({ recordProblems: new Map(this.current.recordProblems).set(path, message), ...(path === this.main ? { problem: message } : {}) });
       return false;
     }
@@ -574,6 +575,8 @@ export class ManuscriptWorkspace {
   }
 
   readingOrder(): readonly string[] {
+    const { records, recordIndex, annotationPaths } = this.current;
+    if (this.orderInputs?.records === records && this.orderInputs.recordIndex === recordIndex && this.orderInputs.annotationPaths === annotationPaths) return this.lastOrder;
     const order: string[] = [];
     const seen = new Set<string>();
     const candidates = this.current.recordIndex;
@@ -590,6 +593,7 @@ export class ManuscriptWorkspace {
       }
     };
     visit(this.main);
+    this.orderInputs = { records, recordIndex, annotationPaths };
     if (order.length !== this.lastOrder.length || order.some((path, index) => path !== this.lastOrder[index])) this.lastOrder = order;
     return this.lastOrder;
   }
@@ -679,7 +683,7 @@ export class ManuscriptWorkspace {
     this.assetAttempts.set(path, attempt);
     try {
       const read = await this.backend.readFile(path);
-      if (!read.ok) throw new Error(read.message);
+      if (!read.ok) throw new UserFacingError(read.message);
       if (this.disposed) return;
       this.assetAttempts.delete(path);
       this.assetBytes.set(path, read.value);
@@ -692,7 +696,8 @@ export class ManuscriptWorkspace {
       this.sendAssets([[path, read.value]]);
     } catch (error) {
       if (this.disposed) return;
-      this.update({ assetProblems: new Map(this.current.assetProblems).set(path, errorMessage(error)) });
+      const message = error instanceof UserFacingError ? error.message : recordProblem(isMdbaseError(error) ? error : { code: "internal" });
+      this.update({ assetProblems: new Map(this.current.assetProblems).set(path, message) });
       // Two bounded retries for transient failures; afterwards a visible Retry remains.
       if (attempt < 3) {
         const timer = setTimeout(() => {
@@ -718,6 +723,9 @@ export class ManuscriptWorkspace {
     const candidates = this.current.fileIndex;
     const recordPaths = this.current.recordIndex;
     for (const [path, view] of this.current.records) {
+      // Both a Markdown image and a chapter embed start with "![". A problem
+      // in another chapter should not reparse an edited chapter of plain prose.
+      if (!view.snapshot.body.includes("![")) continue;
       const translated = this.translated(path, view.snapshot.body);
       for (const image of translated.images) {
         const asset = resolveLinkTarget(image.target, path, candidates, "");
@@ -1033,8 +1041,8 @@ export class ManuscriptWorkspace {
       try {
         if (lease.session.getSnapshot().state === "deleted") { problems.push(t`${at}: this chapter was deleted; download the local draft before leaving.`); return; }
         const out = await lease.session.flush({ timeoutMs: 15_000 });
-        if (!out.ok) problems.push(`${at}: ${out.problem.message ?? out.problem.code}`);
-      } catch (error) { problems.push(`${at}: ${errorMessage(error)}`); }
+        if (!out.ok) problems.push(`${at}: ${recordProblem(out.problem)}`);
+      } catch { problems.push(`${at}: ${recordProblem({ code: "internal" })}`); }
     }));
     if (this.current.recoveredDrafts.size) problems.push(t`Review the recovered local drafts before leaving.`);
     return problems.length ? fail(problems.join("\n")) : ok(undefined);
@@ -1090,13 +1098,13 @@ export class ManuscriptWorkspace {
   private async preflight<T extends AssemblyInspection>(inspect: (input: AssemblyInput) => T, signal?: AbortSignal) {
     const check = () => {
       signal?.throwIfAborted();
-      if (this.disposed) throw new Error(t`The manuscript was closed.`);
-      if (this.current.phase !== "ready") throw new Error(t`Wait for the manuscript to open before exporting.`);
+      if (this.disposed) throw new UserFacingError(t`The manuscript was closed.`);
+      if (this.current.phase !== "ready") throw new UserFacingError(t`Wait for the manuscript to open before exporting.`);
     };
     check();
     this.commitSettings();
     const changes = await this.backend.flushChanges?.();
-    if (changes && !changes.ok) throw new Error(changes.message);
+    if (changes && !changes.ok) throw new UserFacingError(changes.message, changes.details);
     await this.metadata();
     check();
     const { styles, locales } = await loadStyles();
@@ -1131,7 +1139,7 @@ export class ManuscriptWorkspace {
         this.loadAssets(assets),
       ]);
     }
-    throw new Error(t`The manuscript kept changing while export dependencies were loading. Pause editing and try again.`);
+    throw new UserFacingError(t`The manuscript kept changing while export dependencies were loading. Pause editing and try again.`);
   }
 
   async exportPdf(signal?: AbortSignal): Promise<{ bytes?: Uint8Array; error?: string; problems: readonly string[] }> {

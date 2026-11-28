@@ -4,6 +4,7 @@ import { expect, it, vi } from "vitest";
 import { fireEvent } from "@testing-library/react";
 import { render } from "../../src/test/render.js";
 import { OutlinePanel } from "../../src/ui/OutlinePanel.js";
+import { ManuscriptStats } from "../../src/ui/stats.js";
 import { searchManuscript } from "../../src/ui/search.js";
 import type { RecordView } from "../../src/workspace/workspace.js";
 
@@ -32,7 +33,19 @@ it("updates the open outline across a 120-chapter manuscript", () => {
   const scroll = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value() {} });
   try {
+    const library = Array.from({ length: 5000 }, (_, i) => {
+      const key = i ? `source${i}` : "source";
+      return { key, path: `sources/${key}.md`, title: key, item: { id: key, type: "book" } };
+    });
+    const start = performance.now();
+    const stats = new ManuscriptStats().derive(order, records, library);
+    props.words = stats.words;
     const rendered = render(panel(edited));
+    const initialMs = performance.now() - start;
+    expect(stats.words).toBeGreaterThan(240_000);
+    expect(stats.cited.get("source")).toBe(34_560);
+    expect(rendered.container.querySelector(".outline-manuscript .record-words")?.textContent).toContain(stats.words.toLocaleString("en"));
+    console.log(`Initial stats and mounted outline: ${initialMs.toFixed(2)} ms`);
     try {
       fireEvent.click(rendered.getByRole("button", { name: /Show 50 more chapters/ }));
       fireEvent.click(rendered.getByRole("button", { name: /Show 50 more chapters/ }));

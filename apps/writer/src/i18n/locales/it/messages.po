@@ -788,6 +788,7 @@ msgstr "Esporta comunque"
 msgid "Export cancelled."
 msgstr "Esportazione annullata."
 
+#: src/compile/client.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Export failed."
 msgstr "Esportazione non riuscita."
@@ -1427,7 +1428,7 @@ msgstr "Non sul server"
 msgid "Not saved"
 msgstr "Non salvato"
 
-#. placeholder {0}: activeView.snapshot.problem.message ?? activeView.snapshot.problem.code
+#. placeholder {0}: recordProblem(activeView.snapshot.problem)
 #: src/ui/WorkspaceView.tsx
 msgid "Not saved: {0}. Your text is kept here."
 msgstr "Non salvato: {0}. Il testo resta disponibile qui."
@@ -2198,11 +2199,6 @@ msgstr "Impossibile caricare la lingua dell'editor. Puoi continuare a scrivere."
 msgid "The embed ![[{value}]] in {other} was left out."
 msgstr "L'incorporamento ![[{value}]] in {other} è stato omesso."
 
-#. placeholder {0}: errorMessage(error)
-#: src/ui/WorkspaceView.tsx
-msgid "The file could not be downloaded. {0}"
-msgstr "Impossibile scaricare il file. {0}"
-
 #. placeholder {0}: missingImage[1] ?? ""
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
@@ -2266,6 +2262,10 @@ msgstr "Il testo suggerito non è più nel capitolo; modificalo a mano, poi riso
 msgid "Theme"
 msgstr "Tema"
 
+#: src/backend/index-problem.ts
+msgid "There is more text than Writer can keep open at once. Try a smaller manuscript."
+msgstr "Writer non può tenere aperto così tanto testo contemporaneamente. Prova con un manoscritto più breve."
+
 #: src/ui/names.ts
 msgid "Thesis or book"
 msgstr "Tesi o libro"
@@ -2307,6 +2307,7 @@ msgstr "Impossibile aprire questa vista della raccolta. Scegli un'altra raccolta
 msgid "This deletes {0} from this collection. This cannot be undone here."
 msgstr "Questo elimina {0} da questa raccolta. L’azione non può essere annullata qui."
 
+#: src/backend/index-problem.ts
 #: src/backend/native.ts
 msgid "This document changed elsewhere. Reload and try again."
 msgstr "Questo documento è stato modificato altrove. Ricarica e riprova."
@@ -2454,6 +2455,7 @@ msgstr "Parole intere"
 msgid "Word (DOCX)"
 msgstr "Word (DOCX)"
 
+#: src/export/pandoc.ts
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
 msgstr "L'esportazione Word ha segnalato un problema."
@@ -2494,6 +2496,10 @@ msgstr "Writer non può richiedere l'accesso da qui."
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Comandi di Writer"
+
+#: src/backend/index-problem.ts
+msgid "Writer could not complete this operation. Try again."
+msgstr "Writer non è riuscito a completare questa operazione. Riprova."
 
 #: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."

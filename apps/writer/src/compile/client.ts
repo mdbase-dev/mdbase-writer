@@ -47,10 +47,10 @@ export class CompileClient {
         this.compileTimer = undefined;
         for (const l of this.resultListeners) l(m);
       }
-      else if (m.type === "pdf") this.pdfWaiters.get(m.id)?.(m.reason === "document-errors" ? { error: t`The document has errors; fix them to export.` } : m);
-      else if (m.type === "failure") this.fail(m.message);
+      else if (m.type === "pdf") this.pdfWaiters.get(m.id)?.(m.reason === "document-errors" ? { error: t`The document has errors; fix them to export.` } : m.bytes ? m : { error: t`Export failed.` });
+      else if (m.type === "failure") this.fail(t`The compile worker stopped.`);
     };
-    this.worker.onerror = (event) => { event.preventDefault(); this.fail(event.message || t`The compile worker stopped.`); };
+    this.worker.onerror = (event) => { event.preventDefault(); this.fail(t`The compile worker stopped.`); };
     this.worker.onmessageerror = () => this.fail(t`The preview worker returned an unreadable response.`);
   }
   private fail(message: string): void {
@@ -72,7 +72,7 @@ export class CompileClient {
       this.compileTimer = setTimeout(() => this.fail(t`Typesetting took too long. Your editor is still available; retry the preview.`), 60_000);
     }
     try { this.worker.postMessage(message, transfer); }
-    catch (error) { this.fail(error instanceof Error ? error.message : String(error)); }
+    catch { this.fail(t`The compile worker stopped.`); }
   }
   onResult(listener: (result: CompileResult) => void): () => void {
     this.resultListeners.add(listener);

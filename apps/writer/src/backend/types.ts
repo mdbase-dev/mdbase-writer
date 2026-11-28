@@ -102,6 +102,7 @@ export interface NewManuscript {
 
 /** A result problem may also describe a Writer view that has closed. */
 export interface SessionProblem {
+  readonly reason?: string | undefined;
   readonly code: string;
   readonly message?: string;
 }

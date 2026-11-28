@@ -24,3 +24,15 @@ it("gives an annotation read failure plain copy and an independent retry", async
   expect(await screen.findByText("No annotations on this source.")).toBeTruthy();
   expect(loadAnnotations).toHaveBeenCalledTimes(2);
 });
+
+it("keeps technical details available when the first library read returns no rows", () => {
+  render(<SourcesPanel query="" setQuery={vi.fn()} library={[]} cited={new Map()} loadAnnotations={vi.fn()}
+    canInsert onInsert={vi.fn()} onStepCitation={vi.fn()} onRetry={vi.fn()}
+    problem="The library changed while loading. Try again." details="invalid_request: cursor_stale" />);
+  const details = screen.getByText("Technical details").closest("details")!;
+  expect(details.open).toBe(false);
+  fireEvent.click(screen.getByText("Technical details"));
+  expect(details.open).toBe(true);
+  expect(details.querySelector("code")?.textContent).toBe("invalid_request: cursor_stale");
+  expect(screen.getByRole("button", { name: "Retry sources" })).toBeTruthy();
+});

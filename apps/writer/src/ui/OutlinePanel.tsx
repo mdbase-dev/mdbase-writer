@@ -133,19 +133,19 @@ export function OutlinePanel({
   const markDrop = useCallback((index: number, after: boolean) => {
     setDrop(current => current?.index === index && current.after === after ? current : { index, after });
   }, []);
-  const toggle = useCallback((path: string, wasExpanded: boolean) => {
+  const toggle = useCallback((path: string, wasExpanded: boolean, isActive: boolean) => {
     setExpanded(set => {
       const next = new Set(set);
       if (wasExpanded) {
         next.delete(path);
-        if (path === active) next.add(`!${path}`);
+        if (isActive) next.add(`!${path}`);
       } else {
         next.add(path);
         next.delete(`!${path}`);
       }
       return next;
     });
-  }, [active]);
+  }, []);
 
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
@@ -234,7 +234,7 @@ const ChapterRow = memo(function ChapterRow({
   onOpen(path: string): void;
   onJump(path: string, offset: number): void;
   onNavigate(event: KeyboardEvent, path: string, index: number, view: RecordView | undefined): void;
-  onToggle(path: string, expanded: boolean): void;
+  onToggle(path: string, expanded: boolean, active: boolean): void;
   onRename: ((path: string, title: string) => Promise<Result<unknown>> | Result<unknown>) | undefined;
   onStartRename(path: string | null): void;
   onFinishRename(path: string): void;
@@ -299,7 +299,7 @@ const ChapterRow = memo(function ChapterRow({
             <span className="record-words">{view ? <Words body={view.snapshot.body} /> : ""}</span>
           </button>
           {!!outline?.visible.length && (
-            <button type="button" className="record-fold" aria-expanded={expanded} aria-label={expanded ? t`Hide the headings of ${recordTitle(view, path)}` : t`Show the headings of ${recordTitle(view, path)}`} onClick={() => onToggle(path, expanded)}>
+            <button type="button" className="record-fold" aria-expanded={expanded} aria-label={expanded ? t`Hide the headings of ${recordTitle(view, path)}` : t`Show the headings of ${recordTitle(view, path)}`} onClick={() => onToggle(path, expanded, active)}>
               <ChevronRight />
             </button>
           )}

@@ -788,6 +788,7 @@ msgstr "そのままエクスポート"
 msgid "Export cancelled."
 msgstr "エクスポートをキャンセルしました。"
 
+#: src/compile/client.ts
 #: src/ui/WorkspaceView.tsx
 msgid "Export failed."
 msgstr "エクスポートに失敗しました。"
@@ -1427,7 +1428,7 @@ msgstr "サーバーに未保存"
 msgid "Not saved"
 msgstr "未保存"
 
-#. placeholder {0}: activeView.snapshot.problem.message ?? activeView.snapshot.problem.code
+#. placeholder {0}: recordProblem(activeView.snapshot.problem)
 #: src/ui/WorkspaceView.tsx
 msgid "Not saved: {0}. Your text is kept here."
 msgstr "保存できませんでした：{0}。テキストはここに保持されています。"
@@ -2198,11 +2199,6 @@ msgstr "エディターの言語を読み込めませんでした。執筆を続
 msgid "The embed ![[{value}]] in {other} was left out."
 msgstr "{other}内の埋め込み![[{value}]]は省略されました。"
 
-#. placeholder {0}: errorMessage(error)
-#: src/ui/WorkspaceView.tsx
-msgid "The file could not be downloaded. {0}"
-msgstr "ファイルをダウンロードできませんでした。{0}"
-
 #. placeholder {0}: missingImage[1] ?? ""
 #: src/export/warnings.ts
 msgid "The image “{0}” could not be loaded for Word. Its description will be included instead."
@@ -2266,6 +2262,10 @@ msgstr "提案されたテキストは章にありません。手動で編集し
 msgid "Theme"
 msgstr "テーマ"
 
+#: src/backend/index-problem.ts
+msgid "There is more text than Writer can keep open at once. Try a smaller manuscript."
+msgstr "Writer で一度に開けるテキストの量を超えています。短い原稿でお試しください。"
+
 #: src/ui/names.ts
 msgid "Thesis or book"
 msgstr "学位論文または書籍"
@@ -2307,6 +2307,7 @@ msgstr "このコレクションビューを開けませんでした。上のバ
 msgid "This deletes {0} from this collection. This cannot be undone here."
 msgstr "この操作により {0} がこのコレクションから削除されます。ここでは元に戻せません。"
 
+#: src/backend/index-problem.ts
 #: src/backend/native.ts
 msgid "This document changed elsewhere. Reload and try again."
 msgstr "このドキュメントは別の場所で変更されました。再読み込みしてからもう一度お試しください。"
@@ -2454,6 +2455,7 @@ msgstr "単語全体"
 msgid "Word (DOCX)"
 msgstr "Word（DOCX）"
 
+#: src/export/pandoc.ts
 #: src/export/warnings.ts
 msgid "Word export reported a problem."
 msgstr "Word エクスポートで問題が報告されました。"
@@ -2494,6 +2496,10 @@ msgstr "Writer はここでアクセスを要求できません。"
 #: src/ui/WorkspaceView.tsx
 msgid "Writer commands"
 msgstr "Writer コマンド"
+
+#: src/backend/index-problem.ts
+msgid "Writer could not complete this operation. Try again."
+msgstr "Writer はこの操作を完了できませんでした。もう一度お試しください。"
 
 #: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."
