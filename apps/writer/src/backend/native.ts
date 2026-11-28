@@ -4,7 +4,7 @@ import { isMdbaseError, type Change, type JsonObject, type MdbaseApplicationConn
 import { t } from "@lingui/core/macro";
 import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
-import { IndexDiagnostic, indexProblem, SnapshotChanged, staleContinuation } from "./index-problem.js";
+import { IndexDiagnostic, indexProblem, problemDetails, recordProblem, SnapshotChanged, staleContinuation } from "./index-problem.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
 import { NO_PEOPLE, peopleFromDirectory, type NewComment, type People } from "./comments.js";
 import { manifestContractDigest, nativeObject, sameDigest, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
@@ -202,9 +202,9 @@ export class NativeWriterBackend implements WriterBackend {
     catch (error) {
       if (this.signal.aborted || this.disposed) return fail(t`Writer's collection view has closed.`);
       if (error instanceof OperationMessage) return fail(error.message);
-      if (scope === "index") return {ok: false, ...indexProblem(error)};
-      return fail(isMdbaseError(error) ? `The native collection operation could not complete (${error.reason ? `${error.code}: ${error.reason}` : error.code}).`
-        : error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
+      if (scope === "index" || error instanceof IndexDiagnostic) return {ok: false, ...indexProblem(error)};
+      if (isMdbaseError(error)) return { ok: false, message: recordProblem(error), details: problemDetails(error) };
+      return fail(error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
   }
   private async safelyReadResult<T>(operation: () => Promise<Result<T>>): Promise<Result<T>> {
@@ -836,7 +836,7 @@ export class NativeWriterBackend implements WriterBackend {
   }
   onExternalChange(listener: (paths: readonly string[]) => void): () => void {this.external.add(listener); return () => {this.external.delete(listener);};}
   onCollectionChange(listener: (delta: CollectionDelta) => void): () => void {this.collection.add(listener); return () => {this.collection.delete(listener);};}
-  flushChanges(): Promise<Result<void>> {return this.safely(async () => {await this.readyWatch();});}
+  flushChanges(): Promise<Result<void>> {return this.safely(async () => {await this.readyWatch();}, "index");}
   reconcile(): Promise<Result<void>> {this.invalidate([]); return this.flushChanges();}
   dispose(): void {
     if (this.disposed) return;

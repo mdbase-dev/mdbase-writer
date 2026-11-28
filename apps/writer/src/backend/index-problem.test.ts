@@ -1,6 +1,6 @@
 import { MdbaseError } from "@mdbase-dev/sdk";
 import { expect, it } from "vitest";
-import { indexProblem, SnapshotChanged, staleContinuation } from "./index-problem.js";
+import { indexProblem, problemDetails, recordProblem, SnapshotChanged, staleContinuation } from "./index-problem.js";
 
 it.each([
   ["invalid_request", "cursor_stale", /changed while loading/i],
@@ -35,4 +35,13 @@ it("keeps snapshot diagnostics and drops arbitrary exception and server text", (
   expect(indexProblem(new SnapshotChanged("Snapshot digest changed."))).toEqual({ message: "The library changed while loading. Try again.", details: "Snapshot digest changed." });
   expect(indexProblem(new MdbaseError({ code: "internal", recovery: "none", message: "server payload", reason: "private/path.md" }))).toEqual({ message: "Writer could not load the library. Try again.", details: "internal" });
   expect(indexProblem(new Error("cursor_stale: private/path.md"))).toEqual({ message: "Writer could not load the library. Try again." });
+});
+
+it("presents code-only session failures and keeps untrusted text out of diagnostics", () => {
+  const failure = { code: "future_code", reason: "private/path.md", message: "private content" };
+  expect(recordProblem(failure)).toBe("Writer could not complete this operation. Try again.");
+  expect(recordProblem({ code: "invalid_request", reason: "record_session_budget" })).toMatch(/smaller manuscript/);
+  expect(problemDetails(failure)).toBe("future_code");
+  expect(problemDetails({ code: "unavailable", reason: "device_offline" })).toBe("unavailable: device_offline");
+  expect(problemDetails({ code: "private content" })).toBe("");
 });

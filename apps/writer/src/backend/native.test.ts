@@ -397,9 +397,12 @@ describe("native Writer domain backend", () => {
       yield {...actual, records: [], complete: false, ...(failure === "changed snapshot" ? {asOf: actual.asOf + 1, cursor: "next-cursor"} : {cursor: "original-cursor"})};
       throw new Error("The repository must stop before requesting another unsafe page");
     });
-    expect(await h.backend.index()).toMatchObject(failure === "changed snapshot"
+    const expected = failure === "changed snapshot"
       ? {ok: false, message: "The library changed while loading. Try again.", details: "Writer's native query snapshot changed."}
-      : {ok: false, message: "Writer could not load the library. Try again.", details: "Writer's native record cursor repeated."});
+      : {ok: false, message: "Writer could not load the library. Try again.", details: "Writer's native record cursor repeated."};
+    const [index, image] = await Promise.all([h.backend.index(), h.backend.readFile("figures/example.png")]);
+    expect(index).toMatchObject(expected);
+    expect(image).toMatchObject(expected);
   });
   // Connect #1502: a save's acknowledgement changes the view mid-load. The replica ends
   // the continuation (`cursor_stale`) or a later page reports another snapshot; Writer

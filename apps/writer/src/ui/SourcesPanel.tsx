@@ -148,7 +148,7 @@ export function SourcesPanel({
 
   const rowFor = (key: string) => panel.current?.querySelector<HTMLElement>(`.source-row[data-key="${CSS.escape(key)}"]`);
 
-  const logicalRows = query.trim() ? results : [...inManuscript, ...rest];
+  const logicalRows = useMemo(() => query.trim() ? results : [...inManuscript, ...rest], [query, results, inManuscript, rest]);
   const reveal = (key: string, focus = false) => {
     if (!query.trim()) {
       const rank = inManuscript.findIndex((e) => e.key === key);
@@ -231,6 +231,7 @@ export function SourcesPanel({
           {loading ? t`Loading sources…` : libraryProblem ? t`Sources unavailable: ${libraryProblem}` : notSetUp ? t`Sources are not set up in this collection.` : t`No sources in this collection yet.`} {libraryProblem && retryLibrary && <button type="button" className="text-button" onClick={retryLibrary}><Trans>Retry sources</Trans></button>} {!loading && !libraryProblem && <><Trans>Add them in mdbase Reader; cite them here with <code>[@citekey]</code>.</Trans></>}
           {!loading && !libraryProblem && readerSourceHref() && <> <a href={readerSourceHref()} target="_blank" rel="noopener"><Trans>Open Reader to add a source</Trans></a>.</>}
         </p>
+        {!loading && libraryProblem && libraryDetails && <TechnicalDetails details={libraryDetails} />}
       </section>
     );
   }

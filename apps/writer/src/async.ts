@@ -1,4 +1,9 @@
 // Network operations must fail visibly, be bounded, and be retryable.
+/** Writer-authored guidance that can be presented directly after a failed operation. */
+export class UserFacingError extends Error {
+  constructor(message: string, readonly details?: string) { super(message); }
+}
+
 export const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 export async function fetchChecked(url: string, signal?: AbortSignal): Promise<Response> {

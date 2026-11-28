@@ -255,7 +255,6 @@ function inlineDecorations(view: EditorView, insight: () => EditorInsight): Deco
   const { state } = view;
   const data = insight();
   const spans = activeSpans(state);
-  const notes = footnotes(state);
   const ranges: Range<Decoration>[] = [];
   const hide = (from: number, to: number) => {
     if (to > from) ranges.push(Decoration.replace({}).range(from, to));
@@ -337,6 +336,7 @@ function inlineDecorations(view: EditorView, insight: () => EditorInsight): Deco
           }
           case "FootnoteReference": {
             const id = state.sliceDoc(node.from + 2, node.to - 1);
+            const notes = footnotes(state);
             const number = notes.numbers.get(id);
             if (!number) return;
             ranges.push(Decoration.replace({ widget: new SupWidget(number, notes.definitions.get(id) ?? "", false) }).range(node.from, node.to));
@@ -346,7 +346,7 @@ function inlineDecorations(view: EditorView, insight: () => EditorInsight): Deco
             const first = state.doc.lineAt(node.from);
             const marker = /^\[\^([^\]\s]+)\]:[ \t]*/.exec(first.text);
             if (!marker) return;
-            const number = notes.numbers.get(marker[1] ?? "");
+            const number = footnotes(state).numbers.get(marker[1] ?? "");
             for (let line = first; line.from <= node.to; line = state.doc.line(line.number + 1)) {
               ranges.push(Decoration.line({ class: "cm-lp-footnote" }).range(line.from));
               if (line.number === state.doc.lines) break;
@@ -399,7 +399,7 @@ function blockDecorations(state: EditorState, insight: () => EditorInsight): Dec
         case "Paragraph": {
           const text = state.sliceDoc(node.from, node.to);
           const figure = FIGURE.exec(text);
-          if (!figure) return;
+          if (!figure) return false;
           const src = (figure[2] ?? "").trim();
           replace(node.from, node.to, new FigureWidget((figure[1] ?? "").trim(), src, labelOf(figure[3]), data.image?.(src) ?? null));
           return false;

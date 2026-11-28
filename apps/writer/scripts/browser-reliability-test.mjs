@@ -401,13 +401,20 @@ try {
     const result = await page.evaluate(async () => {
       const { workspace, backend } = window.writer;
       workspace.setBody(workspace.main, "# Unsent local draft\n");
-      backend.replica.failNextRead("get", { code: "unavailable", recovery: "retry", message: "Test save failure" });
+      backend.replica.failNextRead("get", { code: "unavailable", recovery: "retry", message: "raw_save_error" });
       const saved = await workspace.retrySave();
       const { DraftStore } = await import("/src/workspace/drafts.ts");
       return { failed: !saved.ok, backedUp: new DraftStore("demo").read(workspace.main)?.body === "# Unsent local draft\n" };
     });
     assert.deepEqual(result, { failed: true, backedUp: true });
-    await page.getByRole("button", { name: "Retry save", exact: true }).click();
+    const banner = page.getByRole("alert").filter({ has: page.getByRole("button", { name: "Retry save", exact: true }) });
+    assert.match(await banner.innerText(), /could not reach the collection/i);
+    assert.doesNotMatch(await banner.innerText(), /raw_save_error|unavailable/);
+    const details = banner.locator("details");
+    assert.equal(await details.evaluate(el => el.open), false);
+    await details.locator("summary").click();
+    assert.equal(await details.locator("code").innerText(), "unavailable");
+    await banner.getByRole("button", { name: "Retry save", exact: true }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot.state === "saved");
   });
 
@@ -467,6 +474,26 @@ try {
     await page.getByRole("button", { name: "Save merged version" }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().records.get(window.writer.workspace.main).snapshot.state === "saved");
     assert.match(await body(page, main), /Local and remote changes preserved/);
+  });
+
+  await scenario("unexpected export failure keeps the retry action and hides internal text", async (page) => {
+    await open(page); await painted(page);
+    await page.evaluate(() => {
+      const workspace = window.writer.workspace;
+      const original = workspace.exportBundle.bind(workspace);
+      workspace.exportBundle = async () => {
+        workspace.exportBundle = original;
+        throw new Error("raw_export_error");
+      };
+    });
+    await format(page, "Pandoc bundle (zip)");
+    const failure = page.getByRole("alert").filter({ has: page.getByRole("button", { name: "Retry export" }) });
+    await failure.waitFor();
+    assert.match(await failure.innerText(), /Export failed/);
+    assert.doesNotMatch(await failure.innerText(), /raw_export_error/);
+    const download = page.waitForEvent("download");
+    await failure.getByRole("button", { name: "Retry export" }).click();
+    assert.match((await download).suggestedFilename(), /\.zip$/);
   });
 
   await scenario("cancelling a slow Word export produces no download", async (page) => {

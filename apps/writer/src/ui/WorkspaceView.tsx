@@ -1,4 +1,5 @@
 import { Trans, Plural } from "@lingui/react/macro";
+import { problemDetails, recordProblem } from "../backend/index-problem.js";
 import { TechnicalDetails } from "./TechnicalDetails.js";
 import { t as translate, plural as icuPlural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
@@ -53,7 +54,7 @@ import {
   SplitVerticalIcon,
 } from "./icons.js";
 import { readerSourceHref } from "../apps.js";
-import { errorMessage } from "../async.js";
+import { UserFacingError } from "../async.js";
 import { zip } from "../export/zip.js";
 import { CompareDialog, type Comparison } from "./CompareDialog.js";
 import { DeleteDocumentDialog } from "./DeleteDocumentDialog.js";
@@ -93,6 +94,7 @@ interface PendingComment {
 }
 
 interface Notice {
+  readonly details?: string | undefined;
   readonly text: string;
   readonly tone: "busy" | "ok" | "problem";
 }
@@ -793,7 +795,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       try {
         const out = await (format === "pdf" ? workspace.exportPdf(controller.signal) : format === "docx" ? workspace.exportDocx(controller.signal) : workspace.exportBundle(controller.signal));
         controller.signal.throwIfAborted();
-        if (!out.bytes) throw new Error("error" in out ? out.error ?? translate`Export failed.` : translate`Export failed.`);
+        if (!out.bytes) throw new UserFacingError("error" in out ? out.error ?? translate`Export failed.` : translate`Export failed.`);
         const type = format === "pdf" ? "application/pdf" : format === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/zip";
         const name = format === "bundle" ? `${fileStem} (Pandoc).zip` : `${fileStem}.${format}`;
         if (out.problems.length) {
@@ -807,7 +809,9 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       } catch (error) {
         if (!controller.signal.aborted) {
           reportError({ code: "unknown_error" });
-          setNotice({ tone: "problem", text: errorMessage(error) });
+          setNotice(error instanceof UserFacingError
+            ? { tone: "problem", text: error.message, details: error.details }
+            : { tone: "problem", text: translate`Export failed.` });
           signalMdbaseMark("error");
         }
       } finally {
@@ -1221,7 +1225,8 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         {activeView?.snapshot.state === "deleted" && <div className="banner" role="alert"><span><Trans>This chapter was deleted elsewhere. Your local text is still available here.</Trans></span><button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button></div>}
         {activeView?.snapshot.state === "error" && activeView.snapshot.problem && (
           <div className="banner" role="alert">
-            <span>{translate`Not saved: ${activeView.snapshot.problem.message ?? activeView.snapshot.problem.code}. Your text is kept here.`}</span>
+            <span>{translate`Not saved: ${recordProblem(activeView.snapshot.problem)}. Your text is kept here.`}</span>
+            {problemDetails(activeView.snapshot.problem) && <TechnicalDetails details={problemDetails(activeView.snapshot.problem)} />}
             <button type="button" className="mdbase-button" onClick={() => void workspace.retrySave(active).then(signalResult)}><Trans>Retry save</Trans></button>
             <button type="button" className="mdbase-button" onClick={downloadDrafts}><Trans>Download local drafts</Trans></button>
           </div>
@@ -1431,15 +1436,16 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         download(pending.bytes, pending.type, pending.name);
         exported(EXPORT_NAME[lastExport.current], pending.problems);
         signalMdbaseMark("saved");
-      }} onError={(error) => {
+      }} onError={() => {
         reportError({ code: "unknown_error" });
-        setNotice({ tone: "problem", text: translate`The file could not be downloaded. ${errorMessage(error)}` });
+        setNotice({ tone: "problem", text: translate`Export failed.` });
         signalMdbaseMark("error");
       }} />
       {notice && (
         <div className={`toast tone-${notice.tone}${notice.tone === "ok" ? " mdbase-settle" : ""}`} role={notice.tone === "problem" ? "alert" : "status"}>
           {notice.tone === "busy" ? <span className="spinner" aria-hidden="true" /> : notice.tone === "ok" ? <CheckIcon /> : <AlertIcon />}
           <span>{notice.text}</span>
+          {notice.details && <TechnicalDetails details={notice.details} />}
           {notice.tone === "busy" && <button type="button" className="text-button" onClick={cancelExport}><Trans>Cancel export</Trans></button>}
           {notice.tone === "problem" && <button type="button" className="text-button" onClick={() => runExport(lastExport.current)}><Trans>Retry export</Trans></button>}
           {notice.tone !== "busy" && (
