@@ -3,6 +3,7 @@
 import { isMdbaseError, type Change, type JsonObject, type MdbaseApplicationConnection, type MdbaseClient, type ContractRecordView, type ContractSelector, type DescribeResult, type FileView, type Receipt, type RecordView, type Write } from "@mdbase-dev/sdk";
 import { t } from "@lingui/core/macro";
 import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
+import { CollectionCache } from "./cache.js";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
 import { IndexDiagnostic, indexProblem, problemDetails, recordProblem, SnapshotChanged, staleContinuation } from "./index-problem.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
@@ -34,6 +35,7 @@ interface RecordIdentity {
   readonly noteTypes?: readonly string[];
 }
 interface NativeMetadata {
+  readonly loadAnnotationSources: () => Promise<Result<void>>;
   readonly schema: CollectionSchema;
   readonly store: CollectionStore;
   readonly identities: ReadonlyMap<string, RecordIdentity>;
@@ -42,7 +44,7 @@ interface NativeMetadata {
   readonly noteChanges: Map<string, number>;
 }
 interface DomainScope {
-  readonly asOf: number;
+  readonly asOf?: number;
   readonly selected: ReadonlyMap<string, CollectionRow>;
   readonly identities: ReadonlyMap<string, {readonly id: string; readonly revision: string}>;
 }
@@ -53,7 +55,7 @@ const CONTRACT_PAGE_SIZE = 128;
  * repeated queries for sources and annotations. Manuscripts page separately
  * to show progress on Home. All domains halve the size if it exceeds budget. */
 const CONTRACT_PAGE_SIZES: Partial<Record<Domain, number>> = {manuscript: 200, source: 1_000, annotation: 1_000};
-const COLLECTION_DOMAINS = ["source", "annotation", "comment", "person"] as const;
+const COLLECTION_DOMAINS = ["source", "comment", "person"] as const;
 /** Pauses before each further account check after a transient failure. */
 const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
 /** A metadata load the collection changed under starts over at most this many times
@@ -351,11 +353,10 @@ export class NativeWriterBackend implements WriterBackend {
     const store = new CollectionStore(schema);
     const rows = new Map<string, CollectionRow>();
     const identities = new Map<string, RecordIdentity>();
-    const ids = new Set<string>();
     const recordCursors = new Set<string>();
     let asOf: number | undefined;
     let complete = false;
-    for await (const page of this.client.pages({limit: 500}, {include: {effective: true}, signal: this.signal})) {
+    for await (const page of this.client.pages({limit: 500}, {signal: this.signal})) {
       this.check(generation);
       if (asOf !== undefined && asOf !== page.asOf) throw new SnapshotChanged("Writer's native query snapshot changed.");
       asOf = page.asOf;
@@ -364,11 +365,10 @@ export class NativeWriterBackend implements WriterBackend {
         recordCursors.add(page.cursor);
       }
       for (const record of page.records) {
-        if (identities.has(record.path) || ids.has(record.id)) throw new IndexDiagnostic("Writer's native query repeated a record identity.");
+        if (identities.has(record.path) || rows.has(record.id)) throw new IndexDiagnostic("Writer's native query repeated a record identity.");
         const note = /\.md$/i.test(record.path) && schema.roles(record.types).size === 0
           && !record.types.some(type => schema.isUnavailableType(type));
         identities.set(record.path, {id: record.id, revision: record.revision, ...(note ? {noteTypes: record.types} : {})});
-        ids.add(record.id);
         rows.set(record.id, {path: record.path, types: record.types,
           ...(record.mtime !== undefined ? {modified: new Date(record.mtime).toISOString()} : {})});
       }
@@ -376,6 +376,8 @@ export class NativeWriterBackend implements WriterBackend {
     }
     if (!complete || asOf === undefined) throw new IndexDiagnostic("Writer's native query did not return a complete snapshot.");
     await this.projectMetadata(catalog, schema, rows, identities, asOf, generation);
+    const annotationRows = new Map([...rows].filter(([, row]) => schema.roles(row.types).get("annotation")?.active));
+    const loadAnnotationSources = this.annotationSourceLoader(catalog, schema, store, annotationRows, identities, generation);
     store.upsert([...rows.values()], true);
     const files = new Map<string, FileView>();
     const fileIds = new Set<string>();
@@ -397,7 +399,20 @@ export class NativeWriterBackend implements WriterBackend {
     store.files([...files.keys()]);
     this.check(generation);
     if (watch !== this.watch || watch.state !== "active") throw new Error("Writer's collection watch needs reconnection.");
-    return this.cached = {schema, store, identities, files, generation, noteChanges: new Map()};
+    return this.cached = {schema, store, loadAnnotationSources, identities, files, generation, noteChanges: new Map()};
+  }
+  /** Discovery needs annotation paths and type bindings. Only a highlight read
+   * needs the projected source links. All pages must still agree on a snapshot
+   * and every annotation must match its original identity and revision. */
+  private annotationSourceLoader(catalog: DescribeResult, schema: CollectionSchema, store: CollectionStore, selected: Map<string, CollectionRow>, identities: ReadonlyMap<string, RecordIdentity>, generation: number) {
+    const cache = new CollectionCache<void>();
+    return () => cache.load(() => this.safely(async () => {
+      if (!selected.size) return;
+      const projected = await this.loadContractDomain("annotation", catalog, schema, generation, {selected, identities});
+      this.check(generation);
+      store.upsert([...projected.values()], true);
+      selected.clear();
+    }, "index"));
   }
   private async projectMetadata(catalog: DescribeResult, schema: CollectionSchema, rows: Map<string, CollectionRow>, identities: ReadonlyMap<string, {id: string; revision: string}>, asOf: number, generation: number): Promise<void> {
     for (const domain of COLLECTION_DOMAINS) {
@@ -473,7 +488,7 @@ export class NativeWriterBackend implements WriterBackend {
           ? row
           : {...row, contractFields: {...row.contractFields, [domain]: nativeObject(implementation.fields)}};
         rows.set(projected.id, classified);
-        pageRows.push(classified);
+        if (progress) pageRows.push(classified);
       }
       cursor = result.page.cursor;
       if (cursor) {
@@ -540,6 +555,8 @@ export class NativeWriterBackend implements WriterBackend {
   annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>> {
     return this.safelyReadResult(async () => {
       const metadata = await this.metadata();
+      const links = await metadata.loadAnnotationSources();
+      if (!links.ok) return links;
       const result = await this.bodies(metadata).annotationsForSource(path); this.check(metadata.generation);
       return result;
     });

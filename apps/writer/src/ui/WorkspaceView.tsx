@@ -217,8 +217,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const themeChoice = useContext(ThemeChoice);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sourcesRequest, setSourcesRequest] = useState<SourcesRequest | null>(null);
-  const [sourceQuery, setSourceQuery] = useState("");
+  const sourceQuery = useRef("");
   const [previewView, setPreviewView] = useState<PreviewView | null>(null);
+  const reportPreviewView = useCallback((view: PreviewView) => {
+    setPreviewView(previous => previous?.page === view.page && previous.pages === view.pages && previous.scale === view.scale ? previous : view);
+  }, []);
   const zoomLabel = formatNumber(layout.zoom === "fit" ? previewView?.scale ?? 1 : layout.zoom, { style: "percent", maximumFractionDigits: 0 });
   const [cursor, setCursor] = useState<{ record: string; offset: number } | null>(null);
   const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
@@ -520,6 +523,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     setPane("write");
   }, []);
   const moveChapter = useCallback((from: number, to: number) => workspace.moveChapter(from, to), [workspace]);
+  const addChapter = useCallback(async (title: string, intent: string) => signalFailure(await workspace.addChapter(title, intent)), [workspace]);
   const renameChapter = useCallback((path: string, title: string) => signalFailure(workspace.renameChapter(path, title)), [workspace]);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const retryPreview = useCallback(() => { void workspace.retryPreview(); }, [workspace]);
@@ -906,8 +910,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const retrySources = useCallback(() => { void workspace.retryMetadata(); }, [workspace]);
   const sourcesPanel = (
     <SourcesPanel
-      query={sourceQuery}
-      setQuery={setSourceQuery}
+      savedQuery={sourceQuery}
       library={snap.library}
       cited={stats.cited}
       atCursor={citedAtCursor}
@@ -955,7 +958,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               onOpen={openChapter}
               onJump={jump}
               onMove={moveChapter}
-              onAdd={async (title, intent) => signalFailure(await workspace.addChapter(title, intent))}
+              onAdd={addChapter}
               onRename={renameChapter}
               commentOffsets={commentOffsets}
             />
@@ -1350,7 +1353,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           onJump={onPreviewJump}
           follow={follow}
           zoom={layout.zoom}
-          onView={setPreviewView}
+          onView={reportPreviewView}
           onTitleClick={openSettings}
         />
       </section>

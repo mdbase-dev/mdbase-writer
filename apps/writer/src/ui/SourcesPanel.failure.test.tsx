@@ -11,7 +11,7 @@ afterEach(cleanup);
 it("gives an annotation read failure plain copy and an independent retry", async () => {
   const source = { key: "a", path: "sources/a.md", title: "A source", item: { id: "a", type: "book", title: "A source" } };
   const loadAnnotations = vi.fn(async () => ok([])).mockRejectedValueOnce(new MdbaseError({ code: "unavailable", recovery: "retry", reason: "device_offline", message: "raw_transport_error" }));
-  render(<SourcesPanel query="" setQuery={vi.fn()} library={[source]} cited={new Map()} loadAnnotations={loadAnnotations} canInsert onInsert={vi.fn()} onStepCitation={vi.fn()} />);
+  render(<SourcesPanel library={[source]} cited={new Map()} loadAnnotations={loadAnnotations} canInsert onInsert={vi.fn()} onStepCitation={vi.fn()} />);
   fireEvent.click(screen.getByRole("button", { name: /^A source/, expanded: false }));
   const banner = await screen.findByRole("alert");
   expect(banner.textContent).toContain("Open mdbase on the computer that holds this collection, then try again.");
@@ -26,7 +26,7 @@ it("gives an annotation read failure plain copy and an independent retry", async
 });
 
 it("keeps technical details available when the first library read returns no rows", () => {
-  render(<SourcesPanel query="" setQuery={vi.fn()} library={[]} cited={new Map()} loadAnnotations={vi.fn()}
+  render(<SourcesPanel library={[]} cited={new Map()} loadAnnotations={vi.fn()}
     canInsert onInsert={vi.fn()} onStepCitation={vi.fn()} onRetry={vi.fn()}
     problem="The library changed while loading. Try again." details="invalid_request: cursor_stale" />);
   const details = screen.getByText("Technical details").closest("details")!;
