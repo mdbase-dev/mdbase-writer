@@ -58,14 +58,14 @@ Result JSON is generated evidence: the default is `out/perf/large-collection.jso
 
 ## Recorded outcomes
 
-Outline comparison on the remote builder (AMD EPYC 9B14, Node 22.22.0). Both runs used the same outline benchmark, with Writer at `ba47bda` for the baseline:
+Outline comparison on the remote builder (AMD EPYC 9B14, Node 22.22.0). The two revisions ran the same outline benchmark three times each, with Writer at `ba47bda` for the control. The p50 columns are medians of the three runs. The p95 columns show the spread across runs.
 
-| Operation | Before p50 / p95 | After p50 / p95 |
-|---|---:|---:|
-| Typing in one chapter | 21.83 / 26.34 ms | 16.76 / 19.00 ms |
-| Switching chapters | 23.75 / 53.00 ms | 18.70 / 19.30 ms |
-| Sparse manuscript search (1 hit) | 1.31 / 1.34 ms | 1.30 / 1.33 ms |
-| Broad manuscript search (34,560 hits) | 2.46 / 3.16 ms | 2.36 / 2.75 ms |
+| Operation | Before p50 | After p50 | Before p95 range | After p95 range |
+|---|---:|---:|---:|---:|
+| Typing in one chapter | 19.97 ms | 16.76 ms | 21.66–49.75 ms | 19.00–47.49 ms |
+| Switching chapters | 21.98 ms | 18.57 ms | 20.45–60.42 ms | 18.89–19.30 ms |
+| Sparse manuscript search (1 hit) | 1.31 ms | 1.31 ms | 1.32–1.40 ms | 1.32–1.33 ms |
+| Broad manuscript search (34,560 hits) | 2.46 ms | 2.38 ms | 2.87–4.62 ms | 2.68–2.77 ms |
 
 In one zero-latency collection run, warm search over 5,000 sources took 0.73 ms median, and resolving paths for 100 chapter embeds took 0.25 ms median. Cached placement of 300 comments took 0.03 ms, cold placement across 3,000 comments took 10.06 ms, and server rendering the Comments panel took 24.78 ms. Scanning 100 records from scratch for words, labels, and citations took 21.85 ms. Writer already tracks those manuscript totals by changed body. The outline change reuses heading parses and section counts across edits and chapter switches.
 
@@ -98,7 +98,7 @@ PROFILE_NAME=after PROFILE_OUTPUT=out/perf/browser-after.json pnpm -C apps/write
 pnpm -C apps/writer test:browser
 ```
 
-`BASE`, `CHROME`, `PROFILE_NAME`, `PROFILE_OUTPUT` are configurable.
+`BASE`, `CHROME`, `PROFILE_NAME`, and `PROFILE_OUTPUT` are configurable. Set `PROFILE_EDITOR_ONLY=1` to measure editing with the preview pane hidden.
 HTTP cache is explicitly disabled and service workers bypassed on every profile.
 The profiler now also captures startup tasks, first drawn-revision time, worker
 messages/resource timings, main heap after forced GC/full discovery and worker
@@ -111,6 +111,25 @@ Summarise a snapshot with:
 pnpm -C apps/writer exec node scripts/perf/heap-summary.mjs out/perf/main.heapsnapshot > apps/writer/out/perf/heap-summary.json
 COLD_CACHE=1 pnpm -C apps/writer test:browser
 ```
+
+### 60-chapter Chromium comparison
+
+Both runs used `PROFILE_EDITOR_ONLY=1` on an AMD Ryzen 9 7940HS with Node 22.22.0 and Playwright's Chromium. The split-view attempts timed out while returning to the main record. The editor-only pair edited a chapter and used the export controls for the full workspace. Each run loaded 60 chapters, 300 comment records, and 5,000 sources. Comments showed 50 threads and 50 replies in both runs.
+
+| Action | Before | After |
+|---|---:|---:|
+| Switch through four chapters | 4.17 s | 2.46 s |
+| Type with Outline open | 1.81 s | 1.19 s |
+| Type with Comments open | 2.41 s | 1.68 s |
+| Type with Sources open | 1.01 s | 1.22 s |
+| Filter sources | 288 ms | 98 ms |
+| Sparse outline search (1 result) | 272 ms | 730 ms |
+| Broad outline search (480 results) | 761 ms | 461 ms |
+| Download Word document | 43.15 s | 44.39 s |
+
+Both exports produced a 27,086-byte DOCX containing the Word document part. The two browser runs had long tasks above 20 seconds around export and source interactions. The browser measurements are single observations. The repeated Vitest runs establish the outline comparison.
+
+### Earlier browser measurements
 
 On the fixture-corrected product comparison, cold preview went from 3,426 to
 2,134 ms and the GC-controlled main heap from 60.91 to 58.28 MiB.

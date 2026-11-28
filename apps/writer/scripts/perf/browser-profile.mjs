@@ -5,6 +5,11 @@ import { dirname } from "node:path";
 import assert from "node:assert/strict";
 const browser = await chromium.launch({ executablePath: process.env.CHROME });
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
+page.setDefaultTimeout(60_000);
+const editorOnly = process.env.PROFILE_EDITOR_ONLY === "1";
+if (editorOnly) {
+  await page.addInitScript(() => localStorage.setItem("mdbase-writer:layout", JSON.stringify({ view: "write" })));
+}
 const errors = []; page.on("pageerror", (e) => errors.push(e.message));
 const workers = []; page.on("worker", (worker) => workers.push(worker));
 const cdp = await page.context().newCDPSession(page);
@@ -41,7 +46,7 @@ await page.addInitScript(() => {
   }; requestAnimationFrame(watch);
 });
 const base = process.env.BASE ?? "http://127.0.0.1:5320/";
-const report = { boundary: "Cold browser cache, in-memory SDK, Chromium main-thread long tasks. Editor and preview markers describe geometry and rendered revisions. Main CDP heap excludes workers and native/WASM backing storage.", phases: {} };
+const report = { boundary: "Cold browser cache, in-memory SDK, Chromium main-thread long tasks. Editor and preview markers describe geometry and rendered revisions. Main CDP heap excludes workers and native/WASM backing storage.", editorOnly, phases: {} };
 let phase = "startup";
 const measure = async (name, run) => {
   phase = name;
@@ -146,7 +151,6 @@ try {
     for (let i = 0; i < 12; i++) await page.keyboard.insertText(" ordinary typing");
     await page.waitForFunction(({ path, original }) => window.writer.workspace.getSnapshot().records.get(path).snapshot.body === original + " ordinary typing".repeat(12), { path, original });
   };
-  const main = "manuscripts/main.md";
   const chapter = index => `chapters/chapter-${String(index).padStart(5, "0")}.md`;
   await page.getByRole("tab", { name: "Outline", exact: true }).click();
   await measure("switchChapters", async () => {
@@ -157,16 +161,25 @@ try {
     }
   });
   await measure("typingOutline", () => type(chapter(0)));
-  phase = "openMain";
-  await page.locator(".outline-manuscript").click();
-  await page.locator('.cm-content[aria-label="Markdown for ' + main + '"]').waitFor();
+  phase = "openComments";
   await page.getByRole("tab", { name: /Comments/ }).click();
   await page.locator(".mdbase-threads > .mdbase-thread").first().waitFor();
-  await measure("typingComments", () => type(main));
+  await measure("typingComments", () => type(chapter(0)));
   mkdirSync("out", { recursive: true });
   await page.screenshot({ path: "out/large-comments-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
+  await measure("docxExport", async () => {
+    const download = page.waitForEvent("download", { timeout: 120000 });
+    await page.getByRole("button", { name: "Export formats" }).click();
+    await page.getByRole("menuitem").filter({ has: page.getByText("Word (DOCX)", { exact: true }) }).click();
+    const review = page.getByRole("button", { name: "Export anyway", exact: true });
+    if (await Promise.race([download.then(() => false), review.waitFor({ timeout: 120000 }).then(() => true)])) await review.click();
+    const bytes = readFileSync(await (await download).path());
+    assert.equal(bytes.subarray(0, 4).toString("hex"), "504b0304");
+    assert.ok(bytes.includes(Buffer.from("word/document.xml")), "DOCX is missing its document part");
+    report.docxBytes = bytes.length;
+  });
   await page.getByRole("tab", { name: /Sources/ }).click();
-  await measure("typingSources", () => type(main));
+  await measure("typingSources", () => type(chapter(0)));
   await measure("showAllSources", async () => {
     const all = page.getByRole("button", { name: /^Show all/ });
     if (await all.count()) await all.click(); else await page.getByRole("button", { name: /^Show 50 more sources/ }).click();
@@ -180,17 +193,6 @@ try {
     await page.locator(".annotations > li").first().waitFor();
   });
   await page.screenshot({ path: "out/large-sources-" + (process.env.PROFILE_NAME ?? "profile") + ".png" });
-  await measure("docxExport", async () => {
-    const download = page.waitForEvent("download", { timeout: 120000 });
-    await page.getByRole("button", { name: "Export formats" }).click();
-    await page.getByRole("menuitem").filter({ has: page.getByText("Word (DOCX)", { exact: true }) }).click();
-    const review = page.getByRole("button", { name: "Export anyway", exact: true });
-    if (await Promise.race([download.then(() => false), review.waitFor({ timeout: 120000 }).then(() => true)])) await review.click();
-    const bytes = readFileSync(await (await download).path());
-    assert.equal(bytes.subarray(0, 4).toString("hex"), "504b0304");
-    assert.ok(bytes.includes(Buffer.from("word/document.xml")), "DOCX is missing its document part");
-    report.docxBytes = bytes.length;
-  });
   await page.getByRole("tab", { name: "Outline", exact: true }).click();
   const outlineSearch = page.getByRole("searchbox", { name: "Search outline" });
   const results = page.locator(".search-hit");
