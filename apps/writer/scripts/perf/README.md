@@ -86,7 +86,7 @@ completion, checks the exact citation in the chapter, and undoes it before the
 typing phase. Typing must synchronously checkpoint the exact edit in local storage,
 and SDK autosave must confirm the same body. Renderer CPU uses CDP thread ticks.
 For a separate diagnostic run, set `PROFILE_CPU=out/perf/cpu` to capture V8
-profiles through hydration and during the switch pair.
+profiles through hydration and during the switch pair. Set `PROFILE_SMALL_FILTER_ONLY=1` for a separate seven-pair control ending at the first source match. It also records elapsed time from the input event to the matching list mutation. The interactive driver launches Chromium with its sandbox enabled.
 
 The 120-chapter demo explicitly checks the pinned SDK's session limit. The
 workspace must discover all 120 chapters and report 57 failed opens alongside
