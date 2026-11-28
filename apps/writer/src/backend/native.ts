@@ -202,7 +202,7 @@ export class NativeWriterBackend implements WriterBackend {
     catch (error) {
       if (this.signal.aborted || this.disposed) return fail(t`Writer's collection view has closed.`);
       if (error instanceof OperationMessage) return fail(error.message);
-      if (scope === "index") return {ok: false, ...indexProblem(error)};
+      if (scope === "index" || error instanceof IndexDiagnostic) return {ok: false, ...indexProblem(error)};
       if (isMdbaseError(error)) return { ok: false, message: recordProblem(error), details: problemDetails(error) };
       return fail(error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
