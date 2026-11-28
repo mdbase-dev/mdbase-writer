@@ -697,7 +697,7 @@ describe("workspace reliability", () => {
     expect(workspace.getSnapshot().problem).toBeUndefined();
     workspace.setBody("main.md", "Still editable");
     expect(workspace.getSnapshot().records.get("main.md")?.snapshot.body).toBe("Still editable");
-    await expect(workspace.exportBundle()).rejects.toThrow("temporarily unavailable");
+    await expect(workspace.exportBundle()).rejects.toThrow("Writer could not load the library. Try again.");
     backend.index = index;
     await workspace.retryMetadata();
     expect(workspace.getSnapshot().indexLoad.phase).toBe("ready");
