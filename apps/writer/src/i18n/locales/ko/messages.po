@@ -1358,6 +1358,10 @@ msgid "No manuscript problems"
 msgstr "원고에 문제가 없습니다"
 
 #: src/ui/Home.tsx
+msgid "No manuscripts yet"
+msgstr "아직 원고가 없습니다"
+
+#: src/ui/Home.tsx
 msgid "No note matches “{query}”."
 msgstr "“{query}”와(과) 일치하는 메모가 없습니다."
 

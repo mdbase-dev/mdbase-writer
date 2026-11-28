@@ -24,7 +24,7 @@ import { wordCount } from "../words.js";
 import { PlusIcon, SearchIcon, MoreIcon } from "./icons.js";
 import { byRecentlyEdited, noteName, relativeTime, styleName, templateName } from "./names.js";
 import { DraftStore } from "../workspace/drafts.js";
-import { localNamespace, recentManuscripts, removeRecent, setWordGoal, wordGoal } from "./recent.js";
+import { hasUsedCollection, localNamespace, recentManuscripts, rememberUsedCollection, removeRecent, setWordGoal, wordGoal } from "./recent.js";
 import { ChevronRight, PenIcon } from "./icons.js";
 import { DeleteDocumentDialog, type DeleteTarget } from "./DeleteDocumentDialog.js";
 import { Popover } from "./Popover.js";
@@ -66,6 +66,7 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
   const [backgroundProblem, setBackgroundProblem] = useState<ReadProblem | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   const [recordPaths, setRecordPaths] = useState<readonly string[] | null>(null);
+  const [collectionIsEmpty, setCollectionIsEmpty] = useState(false);
   const [untyped, setUntyped] = useState<readonly string[]>([]);
   const [unavailable, setUnavailable] = useState<readonly UnavailableType[]>([]);
   const [allUntyped, setAllUntyped] = useState(false);
@@ -84,10 +85,18 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
   const [filter, setFilter] = useState("");
   const [limit, setLimit] = useState(50);
   const namespace = localNamespace(backend);
+  const [usedCollection, setUsedCollection] = useState(() => hasUsedCollection(namespace));
   // What this browser remembers: the manuscripts opened last, and drafts not yet saved.
   const remembered = useMemo(() => ({revision: reload, recent: recentManuscripts(namespace),
     drafts: new DraftStore(namespace).list()}), [namespace, reload]);
   const {recent, drafts} = remembered;
+  const firstRun = collectionIsEmpty && !usedCollection && !returnPath && !recent.length && !drafts.length;
+
+  useEffect(() => {
+    if (usedCollection || !manuscripts?.length) return;
+    rememberUsedCollection(namespace);
+    setUsedCollection(true);
+  }, [manuscripts, namespace, usedCollection]);
 
   useEffect(() => {
     if (opening || !window.requestIdleCallback) return;
@@ -146,6 +155,7 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
       setUntyped([...r.value.untypedPaths ?? []].sort());
       setUnavailable(r.value.unavailableTypes ?? []);
       setRecordPaths(r.value.recordPaths);
+      setCollectionIsEmpty(r.value.recordPaths.length === 0 && r.value.filePaths.length === 0);
     }).catch((error: unknown) => { if (live) setBackgroundProblem({message: errorMessage(error)}); });
     return () => {
       live = false;
@@ -305,9 +315,9 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
             <span>{icuPlural(streamingCount, { one: "Loading manuscripts… # loaded", other: "Loading manuscripts… # loaded" })}</span>
           </div>
         )}
-        {manuscripts?.length === 0 && (
-          <div className="first-run">
-            <ol>
+        {manuscripts?.length === 0 && streamingCount === null && !problem && (
+          <div className={firstRun ? "first-run" : "home-empty"}>
+            {firstRun ? <ol>
               <li>
                 <strong><Trans>Sources.</Trans></strong>{" "}
                 {sources === null
@@ -324,7 +334,7 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
                 <code>{"{#fig-plan}"}</code> and refer with <code>@fig-plan</code>, embed chapters with <code>![[chapters/one]]</code>. Export a PDF or a Word
                 document.
               </Trans></li>
-            </ol>
+            </ol> : <p className="muted"><Trans>No manuscripts yet</Trans></p>}
             {newButton}
           </div>
         )}
@@ -416,6 +426,10 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
         onClose={() => setDeleteTarget(null)}
         onDelete={(path) => backend.deleteDocument(path)}
         onDeleted={(path) => {
+          if (!usedCollection) {
+            rememberUsedCollection(namespace);
+            setUsedCollection(true);
+          }
           removeRecent(namespace, path);
           setWordGoal(namespace, path, null);
           new DraftStore(namespace).remove(path);

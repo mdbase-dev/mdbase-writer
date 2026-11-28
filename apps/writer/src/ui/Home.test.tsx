@@ -280,6 +280,48 @@ it("deletes a manuscript from its row menu after exact title confirmation and cl
   await waitFor(() => expect(view.container.querySelector('[data-path="manuscripts/keep.md"]')).toBeNull());
 });
 
+it.each([true, false])("shows a compact empty state after deleting the last manuscript (#217, with other notes: %s)", async (withNotes) => {
+  const path = "manuscripts/only.md";
+  const notes = withNotes ? ["README.md"] : [];
+  let manuscripts: ManuscriptSummary[] = [{path, title: "Only manuscript"}];
+  const fixture: WriterBackend = {
+    ...backend({recordPaths: [], notePaths: [], filePaths: []}),
+    listManuscripts: async () => ok(manuscripts),
+    index: async () => ok({recordPaths: [...manuscripts.map(m => m.path), ...notes], notePaths: notes, untypedPaths: notes, filePaths: []}),
+    deleteDocument: async (deleted) => {
+      manuscripts = manuscripts.filter(m => m.path !== deleted);
+      return ok(undefined);
+    },
+  };
+  const view = render(<Home backend={fixture} onOpen={vi.fn()} />);
+
+  const row = (await screen.findByText("Only manuscript")).closest("li")!;
+  fireEvent.click(within(row).getByRole("button", {name: "Document actions"}));
+  fireEvent.click(await screen.findByRole("menuitem", {name: "Delete document…", hidden: true}));
+  const dialog = await screen.findByRole("dialog", {name: "Delete “Only manuscript”?"});
+  fireEvent.change(within(dialog).getByRole("textbox"), {target: {value: "Only manuscript"}});
+  fireEvent.click(within(dialog).getByRole("button", {name: "Delete document"}));
+
+  expect(await screen.findByText("No manuscripts yet")).toBeTruthy();
+  expect(screen.queryByText("A manuscript.")).toBeNull();
+  if (withNotes) expect(await screen.findByRole("button", {name: /README/})).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", {name: "New manuscript"}));
+  expect(screen.getByRole("dialog", {name: "New manuscript"})).toBeTruthy();
+
+  view.unmount();
+  render(<Home backend={fixture} onOpen={vi.fn()} />);
+  await screen.findByText("No manuscripts yet");
+  await waitFor(() => expect(screen.queryByText("Loading collection data…")).toBeNull());
+  expect(screen.queryByText("A manuscript.")).toBeNull();
+});
+
+it("offers first-run guidance for an empty collection with no prior use", async () => {
+  render(<Home backend={backend({recordPaths: [], notePaths: [], filePaths: []})} onOpen={vi.fn()} />);
+  expect(await screen.findByText("A manuscript.")).toBeTruthy();
+  expect(screen.queryByText("No manuscripts yet")).toBeNull();
+  expect(screen.getByRole("button", {name: "New manuscript"})).toBeTruthy();
+});
+
 it("shows skeleton placeholder rows immediately and renders incremental pages with progress count (#211)", async () => {
   let resolveList!: (result: Result<ManuscriptSummary[]>) => void;
   let emitProgress: NonNullable<ManuscriptListOptions["onProgress"]> | undefined;

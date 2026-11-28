@@ -80,7 +80,7 @@ import { ManuscriptStats } from "./stats.js";
 import { SourcesPanel, type SourcesRequest } from "./SourcesPanel.js";
 import { InTopbar, ThemeChoice } from "./topbar.js";
 import { signalFailure, signalResult } from "./mark.js";
-import { recentManuscripts, recordOpened, removeRecent, setWordGoal, type WritingPosition } from "./recent.js";
+import { recentManuscripts, recordOpened, rememberUsedCollection, removeRecent, setWordGoal, type WritingPosition } from "./recent.js";
 import { Shortcuts } from "./Shortcuts.js";
 
 /** Which part a phone shows. */
@@ -1355,6 +1355,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
         onClose={() => setDeleteOpen(false)}
         onDelete={() => workspace.deleteDocument()}
         onDeleted={(path) => {
+          rememberUsedCollection(workspace.namespace);
           removeRecent(workspace.namespace, path);
           setWordGoal(workspace.namespace, path, null);
           cancelExport();
