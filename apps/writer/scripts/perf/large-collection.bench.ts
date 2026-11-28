@@ -233,16 +233,24 @@ it("large collection baseline (opt-in)", async () => {
           cloneLibrary5000: measure(() => structuredClone({ type: "library", library: library.map((e) => e.item) })),
         };
         const previousRecords = workspace.getSnapshot().recordPaths;
-        const refreshMessagesStart = compiler.messages.length;
-        const refreshStart = performance.now();
-        f.replica.editElsewhere("notes/note-00000.md", { body: "Changed in another app" });
-        await until(workspace, () => {
-          const current = workspace!.getSnapshot();
-          return current.indexLoad.phase === "ready" && current.libraryLoad.phase === "ready" && current.annotationsLoad.phase === "ready" && (current.recordPaths !== previousRecords || f.transfers.some((t) => t.operation === "query:changed-paths" || t.operation === "read:note"));
+        const note = "notes/note-00000.md";
+        const noteMessagesStart = compiler.messages.length;
+        const noteChanged = new Promise<void>(resolve => {
+          const stop = f.backend.onCollectionChange(delta => {
+            if (!delta.paths.includes(note)) return;
+            stop();
+            resolve();
+          });
         });
-        const externalRefreshMs = performance.now() - refreshStart;
-        const externalTransfers = totals(f.transfers.splice(0));
-        const noteWorkerMessages = compiler.messages.slice(refreshMessagesStart);
+        const noteStart = performance.now();
+        f.replica.editElsewhere(note, { body: "Changed in another app" });
+        await noteChanged;
+        expect(await f.backend.readBody(note)).toEqual({ ok: true, value: "Changed in another app" });
+        const noteChangeAndReadMs = performance.now() - noteStart;
+        const noteTransfers = totals(f.transfers.splice(0));
+        const noteWorkerMessages = compiler.messages.slice(noteMessagesStart);
+        expect(noteTransfers.byOperation).toEqual({ "read:note": 1 });
+        expect(workspace.getSnapshot().recordPaths).toBe(previousRecords);
         f.seed("sources/new-source.md", "reader-source", { csl: { id: "newsource", type: "book", title: "A newly imported source" } }, "New source");
         const sourceChangeStart = performance.now();
         const sourceMessagesStart = compiler.messages.length;
@@ -251,7 +259,7 @@ it("large collection baseline (opt-in)", async () => {
         const newSourceMs = performance.now() - sourceChangeStart;
         const newSourceTransfers = totals(f.transfers.splice(0));
         const sourceWorkerMessages = compiler.messages.slice(sourceMessagesStart);
-        output.push({ run: run + 1, seedMs, homeListMs, homeBackgroundMs, readyMs, sourcesUsableMs, sourcesFirstSearchMs, commentsUsableMs, annotationIndexMs, sourceAnnotationsMs, annotationsUsableMs, previewInitializedMs, externalRefreshMs, newSourceMs, newSourceTransfers, commentTransfers, annotationIdentityTransfers, returnHomeMs, returnHomeTransfers, navigationTransfers, noteWorkerMessages, sourceWorkerMessages, homeTransfers, readyTransfers, workspaceTransfers, externalTransfers, computations, workerMessages: [...compiler.messages] });
+        output.push({ run: run + 1, seedMs, homeListMs, homeBackgroundMs, readyMs, sourcesUsableMs, sourcesFirstSearchMs, commentsUsableMs, annotationIndexMs, sourceAnnotationsMs, annotationsUsableMs, previewInitializedMs, noteChangeAndReadMs, noteTransfers, newSourceMs, newSourceTransfers, commentTransfers, annotationIdentityTransfers, returnHomeMs, returnHomeTransfers, navigationTransfers, noteWorkerMessages, sourceWorkerMessages, homeTransfers, readyTransfers, workspaceTransfers, computations, workerMessages: [...compiler.messages] });
       } finally { await workspace?.dispose(); await f.close(); }
       // Same collection size, redistributed highlights: one book has 300, not six.
       // Only its no-body annotation discovery pages are 6x slower, exposing preview gating.
