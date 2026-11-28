@@ -292,7 +292,7 @@ msgstr "Découverte des annotations indisponible : {0}. Les métadonnées de ci
 msgid "Annotation index"
 msgstr "Index des annotations"
 
-#. placeholder {0}: literal(problem)
+#. placeholder {0}: literal(problem.message)
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
 msgstr "Annotations indisponibles : {0} <0>Réessayer les annotations</0>"
@@ -405,6 +405,10 @@ msgstr "Chapitres <0>{0}</0>"
 #: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "Vérifier à nouveau"
+
+#: src/backend/index-problem.ts
+msgid "Check your internet connection, then try again."
+msgstr "Vérifiez votre connexion Internet, puis réessayez."
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
@@ -1035,7 +1039,7 @@ msgstr "Dans ce manuscrit"
 msgid "In this manuscript <0>{0}</0>"
 msgstr "Dans ce manuscrit <0>{0}</0>"
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Index could not be loaded: {0}"
 msgstr "Impossible de charger l’index : {0}"
@@ -1506,6 +1510,10 @@ msgstr "Ouvrez son manuscrit pour l’examiner"
 #: src/ui/Home.tsx
 msgid "Open manuscript"
 msgstr "Ouvrir un manuscrit"
+
+#: src/backend/index-problem.ts
+msgid "Open mdbase on the computer that holds this collection, then try again."
+msgstr "Ouvrez mdbase sur l’ordinateur qui héberge cette collection, puis réessayez."
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -2075,7 +2083,7 @@ msgstr "Sources"
 msgid "Sources are not set up in this collection."
 msgstr "Les sources ne sont pas configurées dans cette collection."
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
 msgstr "Impossible de charger les sources : {0}"
@@ -2162,6 +2170,10 @@ msgstr "L’annotation {value} ne contient aucune citation à intégrer."
 msgid "The chapter is not open."
 msgstr "Le chapitre n’est pas ouvert."
 
+#: src/backend/index-problem.ts
+msgid "The collection is getting too many requests. Wait a moment, then try again."
+msgstr "La collection reçoit trop de requêtes. Patientez un instant, puis réessayez."
+
 #: src/ui/WorkspaceView.tsx
 msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
 msgstr "La version de la collection ne peut pas être comparée. Résolvez les conflits dans la collection avant d’enregistrer ici, ou téléchargez vos brouillons locaux."
@@ -2204,7 +2216,7 @@ msgstr "L’étiquette {value} est utilisée plusieurs fois."
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "La langue n’a pas pu être chargée. Votre langue actuelle reste inchangée. Réessayez."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "The library changed while loading. Try again."
 msgstr "La bibliothèque a changé pendant le chargement. Réessayez."
 
@@ -2282,6 +2294,10 @@ msgstr "Ce chapitre a été supprimé. Téléchargez le brouillon local pour le 
 msgid "This collection does not accept files from Writer."
 msgstr "Cette collection n’accepte pas les fichiers provenant de Writer."
 
+#: src/backend/index-problem.ts
+msgid "This collection needs attention. Open it in mdbase, then try again."
+msgstr "Cette collection rencontre un problème. Ouvrez-la dans mdbase, puis réessayez."
+
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "Cette vue de la collection n’a pas pu être ouverte. Choisissez une autre collection dans la barre ci-dessus, ou rechargez la page pour réessayer."
@@ -2299,9 +2315,9 @@ msgstr "Ce document a été modifié ailleurs. Rechargez et réessayez."
 msgid "This document has already been deleted."
 msgstr "Ce document a déjà été supprimé."
 
-#: src/backend/native.ts
-msgid "This library is too large to index at once."
-msgstr "Cette bibliothèque est trop volumineuse pour être indexée en une seule fois."
+#: src/backend/index-problem.ts
+msgid "This library is too large to index at once. Try opening a smaller collection."
+msgstr "Cette bibliothèque est trop volumineuse pour être indexée en une seule fois. Essayez d’ouvrir une collection plus petite."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2390,7 +2406,7 @@ msgstr "Bloc Markdown non pris en charge : {value}."
 msgid "Untitled figure"
 msgstr "Figure sans titre"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Update mdbase Connect, then try again."
 msgstr "Mettez à jour mdbase Connect, puis réessayez."
 
@@ -2479,7 +2495,7 @@ msgstr "Writer ne peut pas demander l’accès ici."
 msgid "Writer commands"
 msgstr "Commandes de Writer"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."
 msgstr "Writer n’a pas pu charger la bibliothèque. Réessayez."
 
@@ -2487,17 +2503,29 @@ msgstr "Writer n’a pas pu charger la bibliothèque. Réessayez."
 msgid "Writer could not open this collection"
 msgstr "Writer n’a pas pu ouvrir cette collection"
 
+#: src/backend/index-problem.ts
+msgid "Writer could not reach the collection. Check your connection and try again."
+msgstr "Writer n’a pas pu joindre la collection. Vérifiez votre connexion, puis réessayez."
+
 #: src/backend/native.ts
 msgid "Writer does not have permission to delete documents in this collection."
 msgstr "Writer n’a pas l’autorisation de supprimer des documents dans cette collection."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
+msgid "Writer does not have permission to read this part of the collection. Check your collection access."
+msgstr "Writer n’est pas autorisé à lire cette partie de la collection. Vérifiez vos droits d’accès à la collection."
+
+#: src/backend/index-problem.ts
 msgid "Writer no longer has access to this collection."
 msgstr "Writer n’a plus accès à cette collection."
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer n’a pas été autorisé à voir votre compte."
+
+#: src/backend/native.ts
+msgid "Writer's collection view has closed."
+msgstr "La vue de la collection dans Writer est fermée."
 
 #: src/main.tsx
 msgid "You can close this window."

@@ -10,7 +10,9 @@ import { useLingui } from "@lingui/react";
 import { citationFor, inlineQuotation, isInlineQuote } from "@mdbase-writer/core/annotations";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import type { LibraryEntry, Result, SourceAnnotation } from "../backend/types.js";
+import type { LibraryEntry, ReadProblem, Result, SourceAnnotation } from "../backend/types.js";
+import { indexProblem } from "../backend/index-problem.js";
+import { TechnicalDetails } from "./TechnicalDetails.js";
 import { authorYear, searchLibrary, sortedLibrary } from "../editor/library-search.js";
 import { readerSourceHref } from "../apps.js";
 import { useRowWindow } from "./paging.js";
@@ -72,6 +74,7 @@ export function SourcesPanel({
   annotationVersion = 0,
   loading = false,
   problem: libraryProblem,
+  details: libraryDetails,
   onRetry: retryLibrary,
   notSetUp = false,
   annotationsNotSetUp = false,
@@ -85,6 +88,7 @@ export function SourcesPanel({
   onJump?(record: string, offset: number): void;
   annotationsNotSetUp?: boolean;
   problem?: string | undefined;
+  details?: string | undefined;
   onRetry?(): void;
   notSetUp?: boolean;
   annotationVersion?: number;
@@ -107,7 +111,7 @@ export function SourcesPanel({
   const [open, setOpen] = useState<string | null>(null);
   const libraryWindow = useRowWindow(LIBRARY_PREVIEW);
   const citedWindow = useRowWindow();
-  const [highlights, setHighlights] = useState<{ path: string; version: number; value?: SourceAnnotation[]; problem?: string } | null>(null);
+  const [highlights, setHighlights] = useState<{ path: string; version: number; value?: SourceAnnotation[]; problem?: ReadProblem } | null>(null);
   const [retry, setRetry] = useState(0);
   const search = useRef<HTMLInputElement>(null);
   const panel = useRef<HTMLElement>(null);
@@ -192,9 +196,9 @@ export function SourcesPanel({
     let live = true;
     setHighlights(null);
     void loadAnnotations(sourcePath).then((r) => {
-      if (live) setHighlights({ path: sourcePath, version: annotationVersion, ...(r.ok ? { value: r.value } : { problem: r.message }) });
+      if (live) setHighlights({ path: sourcePath, version: annotationVersion, ...(r.ok ? { value: r.value } : { problem: r }) });
     }).catch((error: unknown) => {
-      if (live) setHighlights({ path: sourcePath, version: annotationVersion, problem: error instanceof Error ? error.message : String(error) });
+      if (live) setHighlights({ path: sourcePath, version: annotationVersion, problem: indexProblem(error) });
     });
     return () => { live = false; };
   }, [sourcePath, annotationVersion, retry, loadAnnotations]);
@@ -271,7 +275,7 @@ export function SourcesPanel({
           aria-describedby="sources-keys"
         />
       </div>
-      {libraryProblem && <p className="muted small" role="alert"><Trans>Sources unavailable: {literal(libraryProblem)} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></Trans></p>}
+      {libraryProblem && <div className="muted small" role="alert"><Trans>Sources unavailable: {literal(libraryProblem)} <button type="button" className="text-button" onClick={retryLibrary}>Retry sources</button></Trans>{libraryDetails && <TechnicalDetails details={libraryDetails} />}</div>}
       <span id="sources-keys" className="visually-hidden"><Trans>Down arrow moves to the sources; Enter cites the first match.</Trans></span>
       {query.trim() ? (
         <>
@@ -357,7 +361,7 @@ const SourceRow = memo(function SourceRow({
   expanded: boolean;
   onToggle(key: string): void;
   annotations: SourceAnnotation[] | null;
-  problem: string | null;
+  problem: ReadProblem | null;
   onRetry(): void;
   canInsert: boolean;
   onInsert(text: string): void;
@@ -455,7 +459,7 @@ const SourceRow = memo(function SourceRow({
             </span>
           </div>
           {annotations === null && !problem && <p className="muted small" role="status"><Trans>Loading annotations…</Trans></p>}
-          {problem && <p className="muted small" role="alert"><Trans>Annotations unavailable: {literal(problem)} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></Trans></p>}
+          {problem && <div className="muted small" role="alert"><Trans>Annotations unavailable: {literal(problem.message)} <button type="button" className="text-button" onClick={onRetry}>Retry annotations</button></Trans>{problem.details && <TechnicalDetails details={problem.details} />}</div>}
           {annotations?.length === 0 && <p className="muted small">{annotationsNotSetUp ? t`Highlights are not set up in this collection.` : t`No annotations on this source.`}</p>}
           {notes.length > 0 && (
             <ul className="annotations" aria-label={t`Highlights from Reader`}>

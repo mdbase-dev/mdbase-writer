@@ -292,7 +292,7 @@ msgstr "Не удалось обнаружить аннотации: {0}. Мет
 msgid "Annotation index"
 msgstr "Индекс аннотаций"
 
-#. placeholder {0}: literal(problem)
+#. placeholder {0}: literal(problem.message)
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
 msgstr "Аннотации недоступны: {0} <0>Повторить загрузку аннотаций</0>"
@@ -405,6 +405,10 @@ msgstr "Главы <0>{0}</0>"
 #: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "Проверить ещё раз"
+
+#: src/backend/index-problem.ts
+msgid "Check your internet connection, then try again."
+msgstr "Проверьте подключение к интернету и попробуйте снова."
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
@@ -1035,7 +1039,7 @@ msgstr "В этой рукописи"
 msgid "In this manuscript <0>{0}</0>"
 msgstr "В этой рукописи <0>{0}</0>"
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Index could not be loaded: {0}"
 msgstr "Не удалось загрузить индекс: {0}"
@@ -1506,6 +1510,10 @@ msgstr "Откройте рукопись, к которой он относит
 #: src/ui/Home.tsx
 msgid "Open manuscript"
 msgstr "Открыть рукопись"
+
+#: src/backend/index-problem.ts
+msgid "Open mdbase on the computer that holds this collection, then try again."
+msgstr "Откройте mdbase на компьютере, где хранится эта коллекция, и попробуйте снова."
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -2075,7 +2083,7 @@ msgstr "Источники"
 msgid "Sources are not set up in this collection."
 msgstr "Источники не настроены в этой коллекции."
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
 msgstr "Не удалось загрузить источники: {0}"
@@ -2162,6 +2170,10 @@ msgstr "В аннотации {value} нет цитаты для встраив�
 msgid "The chapter is not open."
 msgstr "Глава не открыта."
 
+#: src/backend/index-problem.ts
+msgid "The collection is getting too many requests. Wait a moment, then try again."
+msgstr "Коллекция получает слишком много запросов. Немного подождите и попробуйте снова."
+
 #: src/ui/WorkspaceView.tsx
 msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
 msgstr "Версия из коллекции недоступна для сравнения. Разрешите конфликты в коллекции перед сохранением здесь или скачайте локальные черновики."
@@ -2204,7 +2216,7 @@ msgstr "Метка {value} используется несколько раз."
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "Не удалось загрузить язык. Текущий язык не изменён. Повторите попытку."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "The library changed while loading. Try again."
 msgstr "Во время загрузки библиотека изменилась. Попробуйте ещё раз."
 
@@ -2282,6 +2294,10 @@ msgstr "Эта глава удалена. Скачайте локальный ч
 msgid "This collection does not accept files from Writer."
 msgstr "Эта коллекция не принимает файлы от mdbase writer."
 
+#: src/backend/index-problem.ts
+msgid "This collection needs attention. Open it in mdbase, then try again."
+msgstr "С этой коллекцией возникла проблема. Откройте её в mdbase и попробуйте снова."
+
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "Не удалось открыть представление этой коллекции. Выберите другую коллекцию на панели выше или перезагрузите страницу, чтобы повторить попытку."
@@ -2299,9 +2315,9 @@ msgstr "Этот документ был изменён в другом мест
 msgid "This document has already been deleted."
 msgstr "Этот документ уже удалён."
 
-#: src/backend/native.ts
-msgid "This library is too large to index at once."
-msgstr "Эта библиотека слишком велика, чтобы проиндексировать её за один раз."
+#: src/backend/index-problem.ts
+msgid "This library is too large to index at once. Try opening a smaller collection."
+msgstr "Эта библиотека слишком велика, чтобы индексировать её целиком за один раз. Попробуйте открыть коллекцию поменьше."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2390,7 +2406,7 @@ msgstr "Неподдерживаемый блок Markdown: {value}."
 msgid "Untitled figure"
 msgstr "Рисунок без названия"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Update mdbase Connect, then try again."
 msgstr "Обновите mdbase Connect и попробуйте ещё раз."
 
@@ -2479,7 +2495,7 @@ msgstr "mdbase writer не может запрашивать здесь дост
 msgid "Writer commands"
 msgstr "Команды mdbase writer"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."
 msgstr "Writer не удалось загрузить библиотеку. Попробуйте ещё раз."
 
@@ -2487,17 +2503,29 @@ msgstr "Writer не удалось загрузить библиотеку. По
 msgid "Writer could not open this collection"
 msgstr "mdbase writer не удалось открыть эту коллекцию"
 
+#: src/backend/index-problem.ts
+msgid "Writer could not reach the collection. Check your connection and try again."
+msgstr "Writer не удалось подключиться к коллекции. Проверьте подключение и попробуйте снова."
+
 #: src/backend/native.ts
 msgid "Writer does not have permission to delete documents in this collection."
 msgstr "У Writer нет разрешения на удаление документов в этой коллекции."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
+msgid "Writer does not have permission to read this part of the collection. Check your collection access."
+msgstr "У Writer нет прав на чтение этой части коллекции. Проверьте права доступа к коллекции."
+
+#: src/backend/index-problem.ts
 msgid "Writer no longer has access to this collection."
 msgstr "У Writer больше нет доступа к этой коллекции."
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "У mdbase writer нет разрешения видеть вашу учётную запись."
+
+#: src/backend/native.ts
+msgid "Writer's collection view has closed."
+msgstr "Представление коллекции в Writer закрыто."
 
 #: src/main.tsx
 msgid "You can close this window."

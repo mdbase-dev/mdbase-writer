@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { render } from "../test/render.js";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
-import { MdbasePeopleClient, type DescribeResult, type MdbaseApplicationConnection } from "@mdbase-dev/sdk";
+import { MdbaseError, MdbasePeopleClient, type DescribeResult, type MdbaseApplicationConnection } from "@mdbase-dev/sdk";
 import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
 import { NativeWriterBackend } from "../backend/native.js";
@@ -116,6 +116,23 @@ it("keeps an index refusal out of the banner text until its details are opened",
   expect(details?.open).toBe(false);
   fireEvent.click(screen.getByText("Technical details"));
   expect(details?.open).toBe(true);
+});
+
+it("explains a rejected background index read and clears its banner after retry", async () => {
+  const index = {recordPaths: [], filePaths: [], notePaths: []};
+  const fixture = backend(index);
+  fixture.index = vi.fn(async () => ok(index)).mockRejectedValueOnce(new MdbaseError({ code: "unavailable", recovery: "retry", reason: "offline", message: "raw_transport_error" }));
+  render(<Home backend={fixture} onOpen={vi.fn()} />);
+  const banner = await screen.findByRole("alert");
+  expect(banner.textContent).toContain("Index could not be loaded: Check your internet connection, then try again.");
+  expect(banner.textContent).not.toContain("raw_transport_error");
+  expect(banner.querySelector("details")?.open).toBe(false);
+  expect(banner.querySelector("details code")?.textContent).toBe("unavailable: offline");
+  fireEvent.click(within(banner).getByRole("button", { name: "Retry background data" }));
+  await waitFor(() => {
+    expect(fixture.index).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });
 
 it("paints manuscripts from the manuscript contract before scanning the full collection", async () => {

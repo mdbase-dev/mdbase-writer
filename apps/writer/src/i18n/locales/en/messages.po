@@ -292,7 +292,7 @@ msgstr "Annotation discovery unavailable: {0}. Quotation metadata may be incompl
 msgid "Annotation index"
 msgstr "Annotation index"
 
-#. placeholder {0}: literal(problem)
+#. placeholder {0}: literal(problem.message)
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
 msgstr "Annotations unavailable: {0} <0>Retry annotations</0>"
@@ -405,6 +405,10 @@ msgstr "Chapters <0>{0}</0>"
 #: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "Check again"
+
+#: src/backend/index-problem.ts
+msgid "Check your internet connection, then try again."
+msgstr "Check your internet connection, then try again."
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
@@ -1035,7 +1039,7 @@ msgstr "In this manuscript"
 msgid "In this manuscript <0>{0}</0>"
 msgstr "In this manuscript <0>{0}</0>"
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Index could not be loaded: {0}"
 msgstr "Index could not be loaded: {0}"
@@ -1506,6 +1510,10 @@ msgstr "Open its manuscript to review it"
 #: src/ui/Home.tsx
 msgid "Open manuscript"
 msgstr "Open manuscript"
+
+#: src/backend/index-problem.ts
+msgid "Open mdbase on the computer that holds this collection, then try again."
+msgstr "Open mdbase on the computer that holds this collection, then try again."
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -2075,7 +2083,7 @@ msgstr "Sources"
 msgid "Sources are not set up in this collection."
 msgstr "Sources are not set up in this collection."
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
 msgstr "Sources could not be loaded: {0}"
@@ -2162,6 +2170,10 @@ msgstr "The annotation {value} has no quotation to embed."
 msgid "The chapter is not open."
 msgstr "The chapter is not open."
 
+#: src/backend/index-problem.ts
+msgid "The collection is getting too many requests. Wait a moment, then try again."
+msgstr "The collection is getting too many requests. Wait a moment, then try again."
+
 #: src/ui/WorkspaceView.tsx
 msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
 msgstr "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
@@ -2204,7 +2216,7 @@ msgstr "The label {value} is used more than once."
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "The language could not be loaded. Your current language is unchanged. Try again."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "The library changed while loading. Try again."
 msgstr "The library changed while loading. Try again."
 
@@ -2282,6 +2294,10 @@ msgstr "This chapter was deleted. Download the local draft to keep it."
 msgid "This collection does not accept files from Writer."
 msgstr "This collection does not accept files from Writer."
 
+#: src/backend/index-problem.ts
+msgid "This collection needs attention. Open it in mdbase, then try again."
+msgstr "This collection needs attention. Open it in mdbase, then try again."
+
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
@@ -2299,9 +2315,9 @@ msgstr "This document changed elsewhere. Reload and try again."
 msgid "This document has already been deleted."
 msgstr "This document has already been deleted."
 
-#: src/backend/native.ts
-msgid "This library is too large to index at once."
-msgstr "This library is too large to index at once."
+#: src/backend/index-problem.ts
+msgid "This library is too large to index at once. Try opening a smaller collection."
+msgstr "This library is too large to index at once. Try opening a smaller collection."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2390,7 +2406,7 @@ msgstr "Unsupported Markdown block: {value}."
 msgid "Untitled figure"
 msgstr "Untitled figure"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Update mdbase Connect, then try again."
 msgstr "Update mdbase Connect, then try again."
 
@@ -2479,7 +2495,7 @@ msgstr "Writer cannot ask for access here."
 msgid "Writer commands"
 msgstr "Writer commands"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."
 msgstr "Writer could not load the library. Try again."
 
@@ -2487,17 +2503,29 @@ msgstr "Writer could not load the library. Try again."
 msgid "Writer could not open this collection"
 msgstr "Writer could not open this collection"
 
+#: src/backend/index-problem.ts
+msgid "Writer could not reach the collection. Check your connection and try again."
+msgstr "Writer could not reach the collection. Check your connection and try again."
+
 #: src/backend/native.ts
 msgid "Writer does not have permission to delete documents in this collection."
 msgstr "Writer does not have permission to delete documents in this collection."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
+msgid "Writer does not have permission to read this part of the collection. Check your collection access."
+msgstr "Writer does not have permission to read this part of the collection. Check your collection access."
+
+#: src/backend/index-problem.ts
 msgid "Writer no longer has access to this collection."
 msgstr "Writer no longer has access to this collection."
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer was not allowed to see your account."
+
+#: src/backend/native.ts
+msgid "Writer's collection view has closed."
+msgstr "Writer's collection view has closed."
 
 #: src/main.tsx
 msgid "You can close this window."

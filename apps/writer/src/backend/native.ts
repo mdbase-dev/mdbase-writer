@@ -4,6 +4,7 @@ import { isMdbaseError, type JsonObject, type MdbaseApplicationConnection, type 
 import { t } from "@lingui/core/macro";
 import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
+import { indexProblem, SnapshotChanged, staleContinuation } from "./index-problem.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
 import { NO_PEOPLE, peopleFromDirectory, type NewComment, type People } from "./comments.js";
 import { manifestContractDigest, nativeObject, sameDigest, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
@@ -51,18 +52,11 @@ const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
  * in all; each further try first waits up to its pause for the change to arrive. */
 const METADATA_ATTEMPTS = 3;
 const METADATA_RESTART_MS = [200, 500];
-/** The collection's view changed while Writer was reading it page by page: the pages
- * no longer form one snapshot, and the whole load starts over. */
-class SnapshotChanged extends Error {}
 /** A user-facing operation refusal whose message is already safe and localized. */
 class OperationMessage extends Error {}
 interface ContractPageProgress {
   readonly onReset?: () => void;
   readonly onPage: (rows: readonly CollectionRow[], hasMore: boolean) => void;
-}
-/** A continuation the replica ended because the view changed (any change does). */
-function staleContinuation(error: unknown): boolean {
-  return isMdbaseError(error) && error.code === "invalid_request" && (error.reason === "cursor_stale" || error.reason === "cursor_expired");
 }
 function unprotected(record: RecordView): boolean {
   return record.state.state === "confirmed" && readable(record);
@@ -194,24 +188,15 @@ export class NativeWriterBackend implements WriterBackend {
   private async safely<T>(operation: () => Promise<T>, scope?: "index"): Promise<Result<T>> {
     try {this.check(); const value = await operation(); this.check(); return ok(value);}
     catch (error) {
-      if (this.signal.aborted || this.disposed) return fail("Writer's collection view has closed.");
-      if (scope === "index" && (error instanceof SnapshotChanged || isMdbaseError(error))) {
-        const details = error instanceof SnapshotChanged ? error.message : [error.code, error.reason].filter(Boolean).join(": ");
-        if (isMdbaseError(error) && (error.code === "unauthenticated" || error.reason === "access_removed" || error.reason === "installation_scope_removed")) {
-          return {ok: false, message: t`Writer no longer has access to this collection.`, recovery: "reauthorize", details};
-        }
-        const message = error instanceof SnapshotChanged || staleContinuation(error) ? t`The library changed while loading. Try again.`
-          : error.code === "too_large" ? t`This library is too large to index at once.`
-          : error.code === "upgrade_required" ? t`Update mdbase Connect, then try again.` : t`Writer could not load the library. Try again.`;
-        return {ok: false, message, details};
-      }
+      if (this.signal.aborted || this.disposed) return fail(t`Writer's collection view has closed.`);
       if (error instanceof OperationMessage) return fail(error.message);
+      if (scope === "index") return {ok: false, ...indexProblem(error)};
       return fail(isMdbaseError(error) ? `The native collection operation could not complete (${error.reason ? `${error.code}: ${error.reason}` : error.code}).`
         : error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
   }
-  private async safelyResult<T>(operation: () => Promise<Result<T>>): Promise<Result<T>> {
-    const result = await this.safely(operation);
+  private async safelyReadResult<T>(operation: () => Promise<Result<T>>): Promise<Result<T>> {
+    const result = await this.safely(operation, "index");
     return result.ok ? result.value : result;
   }
   private invalidate(paths: readonly string[]): void {
@@ -486,7 +471,7 @@ export class NativeWriterBackend implements WriterBackend {
   /** Fails with plain copy when every Writer type for the domain is unusable. */
   private available(schema: CollectionSchema, domain: Domain): void {
     const message = schema.unavailableMessage(domain);
-    if (message) throw new Error(message);
+    if (message) throw new OperationMessage(message);
   }
   index(): Promise<Result<CollectionIndex>> {return this.safely(async () => (await this.metadata()).store.index, "index");}
   library(): Promise<Result<LibraryEntry[]>> {return this.safely(async () => (await this.metadata()).store.library, "index");}
@@ -507,10 +492,10 @@ export class NativeWriterBackend implements WriterBackend {
         rows.push({path: record.path, types: record.types, contractFields: nativeObject(projected.fields), body: record.body ?? ""});
       }
       return rows;
-    }));
+    }, "index"));
   }
   comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>> {
-    return this.safelyResult(async () => {
+    return this.safelyReadResult(async () => {
       const metadata = await this.metadata();
       this.available(metadata.schema, "comment");
       const result = await this.bodies(metadata).commentsForScope(scope); this.check(metadata.generation);
@@ -518,7 +503,7 @@ export class NativeWriterBackend implements WriterBackend {
     });
   }
   annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>> {
-    return this.safelyResult(async () => {
+    return this.safelyReadResult(async () => {
       const metadata = await this.metadata();
       const result = await this.bodies(metadata).annotationsForSource(path); this.check(metadata.generation);
       return result;

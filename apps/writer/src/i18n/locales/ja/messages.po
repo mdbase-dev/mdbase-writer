@@ -292,7 +292,7 @@ msgstr "注釈の検出を利用できません：{0}。引用のメタデータ
 msgid "Annotation index"
 msgstr "注釈インデックス"
 
-#. placeholder {0}: literal(problem)
+#. placeholder {0}: literal(problem.message)
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
 msgstr "注釈を利用できません：{0} <0>注釈を再試行</0>"
@@ -405,6 +405,10 @@ msgstr "章 <0>{0}</0>"
 #: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "もう一度確認"
+
+#: src/backend/index-problem.ts
+msgid "Check your internet connection, then try again."
+msgstr "インターネット接続を確認してから、もう一度お試しください。"
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
@@ -1035,7 +1039,7 @@ msgstr "この原稿内"
 msgid "In this manuscript <0>{0}</0>"
 msgstr "この原稿内 <0>{0}</0>"
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Index could not be loaded: {0}"
 msgstr "インデックスを読み込めませんでした：{0}"
@@ -1506,6 +1510,10 @@ msgstr "原稿を開いて確認してください"
 #: src/ui/Home.tsx
 msgid "Open manuscript"
 msgstr "原稿を開く"
+
+#: src/backend/index-problem.ts
+msgid "Open mdbase on the computer that holds this collection, then try again."
+msgstr "このコレクションが保存されているコンピューターで mdbase を開いてから、もう一度お試しください。"
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -2075,7 +2083,7 @@ msgstr "出典"
 msgid "Sources are not set up in this collection."
 msgstr "このコレクションでは出典が設定されていません。"
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
 msgstr "出典を読み込めませんでした：{0}"
@@ -2162,6 +2170,10 @@ msgstr "注釈{value}には埋め込む引用文がありません。"
 msgid "The chapter is not open."
 msgstr "その章は開いていません。"
 
+#: src/backend/index-problem.ts
+msgid "The collection is getting too many requests. Wait a moment, then try again."
+msgstr "コレクションへのリクエストが多すぎます。少し待ってから、もう一度お試しください。"
+
 #: src/ui/WorkspaceView.tsx
 msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
 msgstr "コレクションのバージョンを比較できません。ここで保存する前にコレクション内の競合を解決するか、ローカルの下書きをダウンロードしてください。"
@@ -2204,7 +2216,7 @@ msgstr "ラベル{value}が複数回使われています。"
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "言語を読み込めませんでした。現在の言語は変更されていません。もう一度お試しください。"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "The library changed while loading. Try again."
 msgstr "読み込み中にライブラリが変更されました。もう一度お試しください。"
 
@@ -2282,6 +2294,10 @@ msgstr "この章は削除されました。ローカルの下書きをダウン
 msgid "This collection does not accept files from Writer."
 msgstr "このコレクションは Writer からのファイルを受け付けません。"
 
+#: src/backend/index-problem.ts
+msgid "This collection needs attention. Open it in mdbase, then try again."
+msgstr "このコレクションに問題があります。mdbase で開いてから、もう一度お試しください。"
+
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "このコレクションビューを開けませんでした。上のバーから別のコレクションを選択するか、再読み込みして再試行してください。"
@@ -2299,9 +2315,9 @@ msgstr "このドキュメントは別の場所で変更されました。再読
 msgid "This document has already been deleted."
 msgstr "このドキュメントはすでに削除されています。"
 
-#: src/backend/native.ts
-msgid "This library is too large to index at once."
-msgstr "ライブラリが大きすぎるため、一度に索引を作成できません。"
+#: src/backend/index-problem.ts
+msgid "This library is too large to index at once. Try opening a smaller collection."
+msgstr "ライブラリが大きすぎて一度にインデックスを作成できません。より小さいコレクションを開いてみてください。"
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2390,7 +2406,7 @@ msgstr "サポートされていないMarkdownブロック: {value}。"
 msgid "Untitled figure"
 msgstr "無題の図"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Update mdbase Connect, then try again."
 msgstr "mdbase Connect を更新して、もう一度お試しください。"
 
@@ -2479,7 +2495,7 @@ msgstr "Writer はここでアクセスを要求できません。"
 msgid "Writer commands"
 msgstr "Writer コマンド"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."
 msgstr "Writer はライブラリを読み込めませんでした。もう一度お試しください。"
 
@@ -2487,17 +2503,29 @@ msgstr "Writer はライブラリを読み込めませんでした。もう一�
 msgid "Writer could not open this collection"
 msgstr "Writer はこのコレクションを開けませんでした"
 
+#: src/backend/index-problem.ts
+msgid "Writer could not reach the collection. Check your connection and try again."
+msgstr "Writer はコレクションに接続できませんでした。接続を確認して、もう一度お試しください。"
+
 #: src/backend/native.ts
 msgid "Writer does not have permission to delete documents in this collection."
 msgstr "Writer にはこのコレクションのドキュメントを削除する権限がありません。"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
+msgid "Writer does not have permission to read this part of the collection. Check your collection access."
+msgstr "Writer にはコレクションのこの部分を読み取る権限がありません。コレクションへのアクセス権を確認してください。"
+
+#: src/backend/index-problem.ts
 msgid "Writer no longer has access to this collection."
 msgstr "Writer はこのコレクションにアクセスできなくなりました。"
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer によるアカウントの表示は許可されませんでした。"
+
+#: src/backend/native.ts
+msgid "Writer's collection view has closed."
+msgstr "Writer のコレクション画面は閉じられました。"
 
 #: src/main.tsx
 msgid "You can close this window."

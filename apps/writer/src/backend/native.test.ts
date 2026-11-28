@@ -325,7 +325,7 @@ describe("native Writer domain backend", () => {
   it("reports the refusal reason when a single record exceeds the producer's contract budget", async () => {
     const h = await fixture();
     const query = vi.spyOn(h.client, "queryContract").mockRejectedValue(new MdbaseError({code: "too_large", recovery: "none", message: "Contract projection exceeds its page budget.", reason: "contract_projection_budget"}));
-    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "This library is too large to index at once.", details: "too_large: contract_projection_budget"});
+    expect(await h.backend.listManuscripts()).toEqual({ok: false, message: "This library is too large to index at once. Try opening a smaller collection.", details: "too_large: contract_projection_budget"});
     expect(query.mock.calls.map(call => call[1]?.pageSize)).toEqual([200, 100, 50, 25, 13, 7, 4, 2, 1]);
   });
   it.each(["changed snapshot", "repeated cursor"]) ("refuses unsafe metadata pagination: %s", async failure => {
@@ -441,7 +441,7 @@ describe("native Writer domain backend", () => {
     const h = await fixture();
     const row = h.replica.seed({path: "comments/unsupported.md", types: ["native-comment"], frontmatter: {type: "native-comment", document: "manuscripts/original.md", motivation: "commenting", status: "open", created_at: "2026-06-10T12:00:00Z"}, body: "Unconfirmed contract text\n"});
     const read = vi.spyOn(h.client, "getContract").mockRejectedValue(new MdbaseError({code: "upgrade_required", recovery: "upgrade", message: "Contract records unsupported", reason: "contract_records_unsupported"}));
-    expect(await h.backend.comments()).toMatchObject({ok: false, message: expect.stringContaining("upgrade_required")});
+    expect(await h.backend.comments()).toEqual({ok: false, message: "Update mdbase Connect, then try again.", details: "upgrade_required: contract_records_unsupported"});
     expect(read).toHaveBeenCalledWith(row.id, {id: "mdbase.comment", version: "1.0.0", type: "native-comment"}, {signal: expect.any(AbortSignal)});
   });
   it("creates a mapped manuscript and chapter only after confirmed current native readback", async () => {

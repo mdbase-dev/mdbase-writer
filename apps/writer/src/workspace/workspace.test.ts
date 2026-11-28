@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { MemoryReplica } from "@mdbase-dev/sdk/testing";
-import type { MdbaseClient } from "@mdbase-dev/sdk";
+import { MdbaseError, type MdbaseClient } from "@mdbase-dev/sdk";
 import { NextWriterRecords } from "../backend/next-records.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fail, ok, type CollectionDelta, type WriterBackend } from "../backend/types.js";
@@ -341,7 +341,7 @@ describe("workspace reliability", () => {
     expect(workspace.getSnapshot().annotationPaths).toEqual(new Set(["annotations/new.md"]));
     expect(states.every(phases => !phases.includes("loading"))).toBe(true);
     const latest = workspace.getSnapshot();
-    backend.index = async () => ({ok: false, message: "The library changed while loading. Try again.", details: "invalid_request: cursor_stale"});
+    backend.index = async () => { throw new MdbaseError({ code: "invalid_request", recovery: "fix_request", reason: "cursor_stale", message: "raw_server_failure" }); };
     backend.library = async () => ok([source]);
     backend.annotationPaths = async () => ok(["annotations/new.md"]);
     changed({ paths: [], reset: true });

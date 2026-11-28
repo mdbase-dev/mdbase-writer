@@ -16,7 +16,8 @@ import { IMAGE_EXTENSION, PathIndex, pathIndex, resolveLinkTarget } from "@mdbas
 import { LOCALES, STYLES } from "@mdbase-writer/core/styles";
 
 import { NO_PEOPLE, type NewComment, type People } from "../backend/comments.js";
-import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
+import { indexProblem } from "../backend/index-problem.js";
+import { fail, manuscriptSlug, manuscriptFrontmatter, ok, type ManuscriptBinding, type LibraryEntry, type CollectionDelta, type ReadProblem, type RecordLease, type RecordSessionSnapshot, type Result, type WriterBackend } from "../backend/types.js";
 import { toLocal } from "../backend/comments.js";
 import { errorMessage, fetchChecked, mapConcurrent } from "../async.js";
 import { DraftStore, draftPatch, type LocalDraft } from "./drafts.js";
@@ -64,6 +65,7 @@ export interface RecordView {
 export type LoadState = { readonly phase: "loading" | "ready" | "failed"; readonly problem?: string; readonly details?: string | undefined };
 const LOADING: LoadState = { phase: "loading" };
 const READY: LoadState = { phase: "ready" };
+const failedLoad = ({ message, details }: ReadProblem): LoadState => ({ phase: "failed", problem: message, details });
 type MetadataDomain = "indexLoad" | "libraryLoad" | "annotationsLoad";
 
 export interface WorkspaceSnapshot {
@@ -281,22 +283,22 @@ export class ManuscriptWorkspace {
       const index = await this.backend.index();
       if (generation !== this.metadataGeneration || this.disposed) return;
       if (recordPaths !== this.current.recordPaths || filePaths !== this.current.filePaths) return;
-      if (!index.ok) return this.update({indexLoad: {phase: "failed", problem: index.message, details: index.details}});
+      if (!index.ok) return this.update({ indexLoad: failedLoad(index) });
       this.update({ ...(index.value.recordPaths !== this.current.recordPaths ? { recordPaths: index.value.recordPaths } : {}), ...(index.value.filePaths !== this.current.filePaths ? { filePaths: index.value.filePaths } : {}), indexLoad: READY });
       this.sendCollection();
       for (const [path, view] of this.current.records) this.openEmbeds(path, view.snapshot.body);
-    } catch (error) { if (generation === this.metadataGeneration && recordPaths === this.current.recordPaths && filePaths === this.current.filePaths) this.update({ indexLoad: { phase: "failed", problem: errorMessage(error) } }); }
+    } catch (error) { if (generation === this.metadataGeneration && recordPaths === this.current.recordPaths && filePaths === this.current.filePaths) this.update({ indexLoad: failedLoad(indexProblem(error)) }); }
   }
 
   private async loadLibrary(generation: number): Promise<void> {
     try {
       const library = await this.backend.library();
       if (generation !== this.metadataGeneration || this.disposed) return;
-      if (!library.ok) return this.update({libraryLoad: {phase: "failed", problem: library.message, details: library.details}});
+      if (!library.ok) return this.update({ libraryLoad: failedLoad(library) });
       this.update({ library: library.value, libraryLoad: READY });
       this.sendLibrary();
       this.sendQuotations();
-    } catch (error) { if (generation === this.metadataGeneration) this.update({ libraryLoad: { phase: "failed", problem: errorMessage(error) } }); }
+    } catch (error) { if (generation === this.metadataGeneration) this.update({ libraryLoad: failedLoad(indexProblem(error)) }); }
   }
 
   private async metadata(annotations = true, index = true): Promise<void> {
@@ -416,7 +418,7 @@ export class ManuscriptWorkspace {
     try {
       const annotations = await this.backend.annotationPaths();
       if (this.disposed || generation !== this.metadataGeneration || annotationGeneration !== this.annotationGeneration) return;
-      if (!annotations.ok) return this.update({annotationsLoad: {phase: "failed", problem: annotations.message, details: annotations.details}});
+      if (!annotations.ok) return this.update({ annotationsLoad: failedLoad(annotations) });
       const paths = new Set(annotations.value);
       const changed = paths.size !== this.current.annotationPaths.size || [...paths].some((p) => !this.current.annotationPaths.has(p));
       this.update({ annotationPaths: paths, annotationVersion: this.current.annotationVersion + Number(changed), annotationsLoad: READY });
@@ -425,7 +427,7 @@ export class ManuscriptWorkspace {
       this.sendQuotations();
     } catch (error) {
       if (generation !== this.metadataGeneration || annotationGeneration !== this.annotationGeneration) return;
-      this.update({ annotationsLoad: { phase: "failed", problem: errorMessage(error) } });
+      this.update({ annotationsLoad: failedLoad(indexProblem(error)) });
     }
   }
 
@@ -465,8 +467,12 @@ export class ManuscriptWorkspace {
       const [comments, checked] = await Promise.all([this.backend.comments(scope), this.checkPeople()]);
       if (this.disposed || generation !== this.commentsGeneration) return;
       const people = checked ? { people: checked } : {};
-      this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, commentsLoad: READY, ...people } : { commentsProblem: comments.message, commentsLoad: { phase: "failed", problem: comments.message }, ...people });
-    } catch (error) { if (generation === this.commentsGeneration) this.update({ commentsProblem: errorMessage(error), commentsLoad: { phase: "failed", problem: errorMessage(error) } }); }
+      this.update(comments.ok ? { comments: comments.value, commentsProblem: undefined, commentsLoad: READY, ...people } : { commentsProblem: comments.message, commentsLoad: failedLoad(comments), ...people });
+    } catch (error) {
+      if (generation !== this.commentsGeneration) return;
+      const problem = indexProblem(error);
+      this.update({ commentsProblem: problem.message, commentsLoad: failedLoad(problem) });
+    }
   }
 
   /** Opens (once) and follows the session for a record. */
