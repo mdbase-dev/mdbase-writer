@@ -55,7 +55,7 @@ const measure = async (name, run) => {
   }, { start, actionMs });
 };
 try {
-  await page.goto(`${base}?demo=large&manuscript=manuscripts/main.md`);
+  await page.goto(`${base}?demo=large&largeManuscript=1&manuscript=manuscripts/main.md`);
   await page.waitForFunction(() => {
     const workspace = window.writer?.workspace;
     if (!workspace || !window.editorPaint) return false;
@@ -157,19 +157,7 @@ try {
     }
   });
   await measure("typingOutline", () => type(chapter(0)));
-  const outlineSearch = page.getByRole("searchbox", { name: "Search outline" });
-  const results = page.locator(".search-hit");
-  await measure("searchOutlineSparse", async () => {
-    await outlineSearch.fill("Evidence in chapter 60, section 8");
-    await results.first().waitFor();
-    assert.equal(await results.count(), 1);
-  });
-  await measure("searchOutlineBroad", async () => {
-    await outlineSearch.fill("supports the manuscript");
-    await page.waitForFunction(() => document.querySelectorAll(".search-hit").length === 480, null, { timeout: 60_000 });
-  });
   phase = "openMain";
-  await outlineSearch.fill("");
   await page.locator(".outline-manuscript").click();
   await page.locator('.cm-content[aria-label="Markdown for ' + main + '"]').waitFor();
   await page.getByRole("tab", { name: /Comments/ }).click();
@@ -202,6 +190,18 @@ try {
     assert.equal(bytes.subarray(0, 4).toString("hex"), "504b0304");
     assert.ok(bytes.includes(Buffer.from("word/document.xml")), "DOCX is missing its document part");
     report.docxBytes = bytes.length;
+  });
+  await page.getByRole("tab", { name: "Outline", exact: true }).click();
+  const outlineSearch = page.getByRole("searchbox", { name: "Search outline" });
+  const results = page.locator(".search-hit");
+  await measure("searchOutlineSparse", async () => {
+    await outlineSearch.fill("Evidence in chapter 60, section 8");
+    await results.first().waitFor();
+    assert.equal(await results.count(), 1);
+  });
+  await measure("searchOutlineBroad", async () => {
+    await outlineSearch.fill("supports the manuscript");
+    await page.waitForFunction(() => document.querySelectorAll(".search-hit").length === 480, null, { timeout: 60_000 });
   });
   // Use concrete prefixes so completion waits for results from the large index.
   for (const [name, input] of [["citeCompletion", " [@source000"], ["embedCompletion", "\n![[chapters/chapter-000"]]) {

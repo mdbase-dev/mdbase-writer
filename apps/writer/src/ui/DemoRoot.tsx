@@ -49,8 +49,9 @@ function DemoCollection() {
     void import("../backend/demo.js").then(async ({ createDemoBackend }) => {
       // StrictMode may have disposed this effect while the module was loading.
       if (!live) return;
-      const b = import.meta.env.DEV && new URL(location.href).searchParams.get("demo") === "large"
-        ? await (await import("../backend/large-demo.js")).createLargeDemoBackend()
+      const params = new URL(location.href).searchParams;
+      const b = import.meta.env.DEV && params.get("demo") === "large"
+        ? await (await import("../backend/large-demo.js")).createLargeDemoBackend(params.has("largeManuscript"))
         : await createDemoBackend();
       if (live) { owned = b; setBackend(b); }
       else b.dispose();

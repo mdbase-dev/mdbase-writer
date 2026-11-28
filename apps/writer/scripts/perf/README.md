@@ -27,6 +27,8 @@ apps/writer/scripts/perf/generator.ts
 apps/writer/scripts/perf/outline.bench.tsx
 apps/writer/scripts/perf/tsconfig.json
 apps/writer/scripts/perf/vitest.config.ts
+apps/writer/src/backend/large-demo.ts
+apps/writer/src/ui/DemoRoot.tsx
 ```
 
 Capture JSON (output path is relative to `apps/writer`):
@@ -87,7 +89,7 @@ Round 5 keeps the incremental traffic totals above, selected-body batching and w
 
 ## Chromium responsiveness profile (Round 4)
 
-Start the normal development server, then visit `http://127.0.0.1:5320/?demo=large&manuscript=manuscripts/main.md`. This mode shares `generator.ts` with the Node benchmark. The Chromium fixture adds 60 embedded chapters, 100 labelled main-record headings, 300 highlights on one source and one 149-reply thread. It uses NativeWriterBackend, SDK sessions, compiler and renderer over an in-memory SDK fixture. It is DEV-only, even for a production demo build.
+Start the normal development server, then visit `http://127.0.0.1:5320/?demo=large&largeManuscript=1&manuscript=manuscripts/main.md`. This mode shares `generator.ts` with the Node benchmark. The Chromium fixture adds 60 embedded chapters, 100 labelled main-record headings, 300 highlights on one source and one 149-reply thread. It uses NativeWriterBackend, SDK sessions, compiler and renderer over an in-memory SDK fixture. It is DEV-only, even for a production demo build.
 
 A 120-chapter attempt with SDK 0.2.58 opened the main record and 63 chapters. The SDK refused the other 57 with `record_session_budget` because Writer retains a session for each embedded chapter. The browser fixture uses 60 chapters so it can exercise the complete manuscript. The 120-chapter outline benchmark supplies record views directly.
 
