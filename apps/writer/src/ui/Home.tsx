@@ -12,8 +12,9 @@ import { Select } from "@mdbase-dev/ui/select";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { bodySummary, fail, type ManuscriptSummary, type ReadProblem, type Result, type UnavailableType, type WriterBackend } from "../backend/types.js";
+import { indexProblem } from "../backend/index-problem.js";
 import { TechnicalDetails } from "./TechnicalDetails.js";
-import { errorMessage, limitConcurrency, mapConcurrent } from "../async.js";
+import { limitConcurrency, mapConcurrent } from "../async.js";
 import { readerSourceHref } from "../apps.js";
 import { CommandPalette } from "@mdbase-dev/ui/command-palette";
 import { Dialog } from "@mdbase-dev/ui/dialog";
@@ -109,6 +110,10 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
     let live = true;
     setLoadingManuscripts(true);
     setStreamingCount(null);
+    const showProblem = (failure: ReadProblem) => {
+      if (failure.recovery === "reauthorize") onAccessRemoved(failure);
+      else setProblem(failure);
+    };
     const pending = (backend.flushChanges?.() ?? Promise.resolve()).then(() => {
       if (live) {setProblem(null); setBackgroundProblem(null);}
     });
@@ -121,14 +126,13 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
     })).then((r) => {
       if (!live) return;
       if (r.ok) setManuscripts(r.value);
-      else if (r.recovery === "reauthorize") { onAccessRemoved(r); return; }
-      else setProblem(r);
+      else showProblem(r);
       setLoadingManuscripts(false);
       setStreamingCount(null);
       setManuscriptsReady({backend, revision: remembered.revision});
     }).catch((error: unknown) => {
       if (!live) return;
-      setProblem({message: errorMessage(error)});
+      showProblem(indexProblem(error));
       setLoadingManuscripts(false);
       setStreamingCount(null);
       setManuscriptsReady({backend, revision: remembered.revision});
@@ -143,20 +147,22 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
   useEffect(() => {
     if (manuscriptsReady?.backend !== backend || manuscriptsReady.revision !== remembered.revision) return;
     let live = true;
+    const sourceFailure = (problem: ReadProblem) => setBackgroundProblem({ ...problem, message: t`Sources could not be loaded: ${problem.message}` });
+    const indexFailure = (problem: ReadProblem) => setBackgroundProblem({ ...problem, message: t`Index could not be loaded: ${problem.message}` });
     void backend.library().then((r) => {
       if (!live) return;
       if (r.ok) setSources(r.value.length);
-      else setBackgroundProblem({...r, message: t`Sources could not be loaded: ${r.message}`});
-    }).catch((error: unknown) => { if (live) setBackgroundProblem({message: errorMessage(error)}); });
+      else sourceFailure(r);
+    }).catch((error: unknown) => { if (live) sourceFailure(indexProblem(error)); });
     void backend.index().then((r) => {
       if (!live) return;
-      if (!r.ok) { setBackgroundProblem({...r, message: t`Index could not be loaded: ${r.message}`}); return; }
+      if (!r.ok) { indexFailure(r); return; }
       setNotes([...r.value.notePaths].sort());
       setUntyped([...r.value.untypedPaths ?? []].sort());
       setUnavailable(r.value.unavailableTypes ?? []);
       setRecordPaths(r.value.recordPaths);
       setCollectionIsEmpty(r.value.recordPaths.length === 0 && r.value.filePaths.length === 0);
-    }).catch((error: unknown) => { if (live) setBackgroundProblem({message: errorMessage(error)}); });
+    }).catch((error: unknown) => { if (live) indexFailure(indexProblem(error)); });
     return () => {
       live = false;
     };
@@ -292,7 +298,9 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
           {manuscripts && manuscripts.length > 0 && newButton}
         </header>
         {!loadingManuscripts && manuscripts !== null && !backgroundProblem && (sources === null || recordPaths === null) && <p className="muted small" role="status"><Trans>Loading collection data…</Trans></p>}
-        {backgroundProblem && <div className="muted" role="alert">{backgroundProblem.message} <button type="button" onClick={() => void backend.reconcile?.().then(() => { setBackgroundProblem(null); setReload((v) => v + 1); })}><Trans>Retry background data</Trans></button>{backgroundProblem.details && <TechnicalDetails details={backgroundProblem.details} />}</div>}
+        {backgroundProblem && <div className="muted" role="alert">{backgroundProblem.message} <button type="button" onClick={() => {
+          void (backend.reconcile?.() ?? Promise.resolve()).catch(() => {}).then(() => { setBackgroundProblem(null); setReload((v) => v + 1); });
+        }}><Trans>Retry background data</Trans></button>{backgroundProblem.details && <TechnicalDetails details={backgroundProblem.details} />}</div>}
         {manuscripts === null && !problem && (
           <>
             <div className="home-loading" role="status">

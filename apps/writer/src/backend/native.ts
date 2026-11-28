@@ -4,6 +4,7 @@ import { isMdbaseError, type JsonObject, type MdbaseApplicationConnection, type 
 import { t } from "@lingui/core/macro";
 import { changeFields, commentFromRecord, commentPath, newCommentFields, type CommentChange, type CommentRecord } from "@mdbase-dev/ui/comments";
 import { CollectionBodies, type WriterBodyRow } from "./bodies.js";
+import { IndexDiagnostic, indexProblem, SnapshotChanged, staleContinuation } from "./index-problem.js";
 import { CollectionStore, annotationContract, commentContract, domainContract, manuscriptContract, type Binding, type CollectionRow, type CollectionSchema, type Domain } from "./collection.js";
 import { NO_PEOPLE, peopleFromDirectory, type NewComment, type People } from "./comments.js";
 import { manifestContractDigest, nativeObject, sameDigest, nativeWriteFields, nativeWriterSchema } from "./native-schema.js";
@@ -51,18 +52,11 @@ const PEOPLE_RETRY_MS = [250, 1_000, 3_000];
  * in all; each further try first waits up to its pause for the change to arrive. */
 const METADATA_ATTEMPTS = 3;
 const METADATA_RESTART_MS = [200, 500];
-/** The collection's view changed while Writer was reading it page by page: the pages
- * no longer form one snapshot, and the whole load starts over. */
-class SnapshotChanged extends Error {}
-/** A user-facing operation refusal whose message is already safe and localized. */
+/** A user-facing operation refusal with copy suitable for the interface. */
 class OperationMessage extends Error {}
 interface ContractPageProgress {
   readonly onReset?: () => void;
   readonly onPage: (rows: readonly CollectionRow[], hasMore: boolean) => void;
-}
-/** A continuation the replica ended because the view changed (any change does). */
-function staleContinuation(error: unknown): boolean {
-  return isMdbaseError(error) && error.code === "invalid_request" && (error.reason === "cursor_stale" || error.reason === "cursor_expired");
 }
 function unprotected(record: RecordView): boolean {
   return record.state.state === "confirmed" && readable(record);
@@ -194,24 +188,15 @@ export class NativeWriterBackend implements WriterBackend {
   private async safely<T>(operation: () => Promise<T>, scope?: "index"): Promise<Result<T>> {
     try {this.check(); const value = await operation(); this.check(); return ok(value);}
     catch (error) {
-      if (this.signal.aborted || this.disposed) return fail("Writer's collection view has closed.");
-      if (scope === "index" && (error instanceof SnapshotChanged || isMdbaseError(error))) {
-        const details = error instanceof SnapshotChanged ? error.message : [error.code, error.reason].filter(Boolean).join(": ");
-        if (isMdbaseError(error) && (error.code === "unauthenticated" || error.reason === "access_removed" || error.reason === "installation_scope_removed")) {
-          return {ok: false, message: t`Writer no longer has access to this collection.`, recovery: "reauthorize", details};
-        }
-        const message = error instanceof SnapshotChanged || staleContinuation(error) ? t`The library changed while loading. Try again.`
-          : error.code === "too_large" ? t`This library is too large to index at once.`
-          : error.code === "upgrade_required" ? t`Update mdbase Connect, then try again.` : t`Writer could not load the library. Try again.`;
-        return {ok: false, message, details};
-      }
+      if (this.signal.aborted || this.disposed) return fail(t`Writer's collection view has closed.`);
       if (error instanceof OperationMessage) return fail(error.message);
+      if (scope === "index") return {ok: false, ...indexProblem(error)};
       return fail(isMdbaseError(error) ? `The native collection operation could not complete (${error.reason ? `${error.code}: ${error.reason}` : error.code}).`
         : error instanceof Error && error.message.startsWith("Writer") ? error.message : "Writer could not read or confirm this collection operation.");
     }
   }
-  private async safelyResult<T>(operation: () => Promise<Result<T>>): Promise<Result<T>> {
-    const result = await this.safely(operation);
+  private async safelyReadResult<T>(operation: () => Promise<Result<T>>): Promise<Result<T>> {
+    const result = await this.safely(operation, "index");
     return result.ok ? result.value : result;
   }
   private invalidate(paths: readonly string[]): void {
@@ -343,18 +328,18 @@ export class NativeWriterBackend implements WriterBackend {
       if (asOf !== undefined && asOf !== page.asOf) throw new SnapshotChanged("Writer's native query snapshot changed.");
       asOf = page.asOf;
       if (page.cursor) {
-        if (recordCursors.has(page.cursor)) throw new Error("Writer's native record cursor repeated.");
+        if (recordCursors.has(page.cursor)) throw new IndexDiagnostic("Writer's native record cursor repeated.");
         recordCursors.add(page.cursor);
       }
       for (const record of page.records) {
-        if (identities.has(record.path) || ids.has(record.id)) throw new Error("Writer's native query repeated a record identity.");
+        if (identities.has(record.path) || ids.has(record.id)) throw new IndexDiagnostic("Writer's native query repeated a record identity.");
         identities.set(record.path, {id: record.id, revision: record.revision}); ids.add(record.id);
         rows.set(record.id, {path: record.path, types: record.types,
           ...(record.mtime !== undefined ? {modified: new Date(record.mtime).toISOString()} : {})});
       }
       complete = page.complete && !page.cursor;
     }
-    if (!complete || asOf === undefined) throw new Error("Writer's native query did not return a complete snapshot.");
+    if (!complete || asOf === undefined) throw new IndexDiagnostic("Writer's native query did not return a complete snapshot.");
     await this.projectMetadata(catalog, schema, rows, identities, asOf, generation);
     store.upsert([...rows.values()], true);
     const files = new Map<string, FileView>();
@@ -365,14 +350,14 @@ export class NativeWriterBackend implements WriterBackend {
       const page = await this.connection.files.listPage({limit: 500, ...(cursor ? {cursor} : {}), signal: this.signal});
       this.check(generation);
       for (const file of page.files) {
-        if (files.has(file.path) || fileIds.has(file.id)) throw new Error("Writer's file listing repeated an identity.");
+        if (files.has(file.path) || fileIds.has(file.id)) throw new IndexDiagnostic("Writer's file listing repeated an identity.");
         files.set(file.path, file); fileIds.add(file.id);
       }
       cursor = page.cursor;
       if (cursor) {
-        if (cursors.has(cursor)) throw new Error("Writer's file cursor repeated.");
+        if (cursors.has(cursor)) throw new IndexDiagnostic("Writer's file cursor repeated.");
         cursors.add(cursor);
-      } else if (!page.complete) throw new Error("Writer's file listing is incomplete.");
+      } else if (!page.complete) throw new IndexDiagnostic("Writer's file listing is incomplete.");
     } while (cursor);
     store.files([...files.keys()]);
     this.check(generation);
@@ -427,12 +412,12 @@ export class NativeWriterBackend implements WriterBackend {
       const pageRows: CollectionRow[] = [];
       for (const projected of result.records) {
         const witness = witnesses.get(projected.id);
-        if (!witness || seen.has(projected.id) || seenPaths.has(witness.path)) throw new Error("Writer's contract metadata identity changed or repeated.");
+        if (!witness || seen.has(projected.id) || seenPaths.has(witness.path)) throw new IndexDiagnostic("Writer's contract metadata identity changed or repeated.");
         let row: CollectionRow;
         if (scope) {
           const existing = scope.selected.get(projected.id);
           const identity = existing && scope.identities.get(existing.path);
-          if (!existing || !identity || witness.path !== existing.path || witness.revision !== identity.revision) throw new Error("Writer's contract metadata identity changed or repeated.");
+          if (!existing || !identity || witness.path !== existing.path || witness.revision !== identity.revision) throw new IndexDiagnostic("Writer's contract metadata identity changed or repeated.");
           row = existing;
         } else {
           row = {path: witness.path, types: witness.types,
@@ -441,11 +426,11 @@ export class NativeWriterBackend implements WriterBackend {
         const binding = schema.roles(row.types).get(domain);
         if (!binding?.active) {
           if (!scope && row.types.some(type => schema.isUnavailableType(type))) {seen.add(projected.id); seenPaths.add(witness.path); continue;}
-          throw new Error("Writer's contract metadata projection is ambiguous.");
+          throw new IndexDiagnostic("Writer's contract metadata projection is ambiguous.");
         }
         const implementations = projected.implementations.filter(candidate => candidate.typeName === binding.name);
         const implementation = implementations[0];
-        if (implementations.length !== 1 || !implementation) throw new Error("Writer's contract metadata projection is ambiguous.");
+        if (implementations.length !== 1 || !implementation) throw new IndexDiagnostic("Writer's contract metadata projection is ambiguous.");
         seen.add(projected.id); seenPaths.add(witness.path);
         // One invalid record stays listed without its projected fields;
         // it never blocks the rest of the collection.
@@ -457,12 +442,12 @@ export class NativeWriterBackend implements WriterBackend {
       }
       cursor = result.page.cursor;
       if (cursor) {
-        if (cursors.has(cursor)) throw new Error("Writer's contract metadata cursor repeated.");
+        if (cursors.has(cursor)) throw new IndexDiagnostic("Writer's contract metadata cursor repeated.");
         cursors.add(cursor);
-      } else if (!result.page.complete) throw new Error("Writer's contract metadata query is incomplete.");
+      } else if (!result.page.complete) throw new IndexDiagnostic("Writer's contract metadata query is incomplete.");
       progress?.onPage(pageRows, Boolean(cursor));
     } while (cursor);
-    if (scope && seen.size !== scope.selected.size) throw new Error("Writer's contract metadata omitted an original record.");
+    if (scope && seen.size !== scope.selected.size) throw new IndexDiagnostic("Writer's contract metadata omitted an original record.");
     return rows;
   }
   manuscriptBindings(): Promise<Result<readonly Binding[]>> {return this.safely(async () => this.bindingList((await this.schema()).schema, "manuscript"));}
@@ -486,7 +471,7 @@ export class NativeWriterBackend implements WriterBackend {
   /** Fails with plain copy when every Writer type for the domain is unusable. */
   private available(schema: CollectionSchema, domain: Domain): void {
     const message = schema.unavailableMessage(domain);
-    if (message) throw new Error(message);
+    if (message) throw new OperationMessage(message);
   }
   index(): Promise<Result<CollectionIndex>> {return this.safely(async () => (await this.metadata()).store.index, "index");}
   library(): Promise<Result<LibraryEntry[]>> {return this.safely(async () => (await this.metadata()).store.library, "index");}
@@ -501,16 +486,16 @@ export class NativeWriterBackend implements WriterBackend {
         const identity = metadata.identities.get(path);
         if (!identity) throw new Error("Writer lost the original record identity.");
         const record = await this.client.get(identity.id, {include: {body: true}, signal: this.signal}); this.check(metadata.generation);
-        if (record.id !== identity.id || record.path !== path || record.revision !== identity.revision || !record.types.includes(entry.type) || !readable(record)) throw new Error("Writer's selected record changed or is protected.");
+        if (record.id !== identity.id || record.path !== path || record.revision !== identity.revision || !record.types.includes(entry.type) || !readable(record)) throw new OperationMessage("Writer's selected record changed or is protected.");
         const contract = metadata.store.comments.has(path) ? commentContract : annotationContract;
         const projected = await this.contractRecord(record, {...contract, type: entry.type}, readable); this.check(metadata.generation);
         rows.push({path: record.path, types: record.types, contractFields: nativeObject(projected.fields), body: record.body ?? ""});
       }
       return rows;
-    }));
+    }, "index"));
   }
   comments(scope?: readonly string[]): Promise<Result<CommentRecord[]>> {
-    return this.safelyResult(async () => {
+    return this.safelyReadResult(async () => {
       const metadata = await this.metadata();
       this.available(metadata.schema, "comment");
       const result = await this.bodies(metadata).commentsForScope(scope); this.check(metadata.generation);
@@ -518,7 +503,7 @@ export class NativeWriterBackend implements WriterBackend {
     });
   }
   annotationsForSource(path: string): Promise<Result<SourceAnnotation[]>> {
-    return this.safelyResult(async () => {
+    return this.safelyReadResult(async () => {
       const metadata = await this.metadata();
       const result = await this.bodies(metadata).annotationsForSource(path); this.check(metadata.generation);
       return result;

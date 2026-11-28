@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { MemoryReplica } from "@mdbase-dev/sdk/testing";
-import type { MdbaseClient } from "@mdbase-dev/sdk";
+import { MdbaseError, type MdbaseClient } from "@mdbase-dev/sdk";
 import { NextWriterRecords } from "../backend/next-records.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fail, ok, type CollectionDelta, type WriterBackend } from "../backend/types.js";
@@ -341,7 +341,7 @@ describe("workspace reliability", () => {
     expect(workspace.getSnapshot().annotationPaths).toEqual(new Set(["annotations/new.md"]));
     expect(states.every(phases => !phases.includes("loading"))).toBe(true);
     const latest = workspace.getSnapshot();
-    backend.index = async () => ({ok: false, message: "The library changed while loading. Try again.", details: "invalid_request: cursor_stale"});
+    backend.index = async () => { throw new MdbaseError({ code: "invalid_request", recovery: "fix_request", reason: "cursor_stale", message: "raw_server_failure" }); };
     backend.library = async () => ok([source]);
     backend.annotationPaths = async () => ok(["annotations/new.md"]);
     changed({ paths: [], reset: true });
@@ -693,11 +693,11 @@ describe("workspace reliability", () => {
     const workspace = open();
     await ready(workspace);
     await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad.phase).toBe("failed"));
-    expect(workspace.getSnapshot().indexLoad.problem).toContain("temporarily unavailable");
+    expect(workspace.getSnapshot().indexLoad.problem).toBe("Writer could not load the library. Try again.");
     expect(workspace.getSnapshot().problem).toBeUndefined();
     workspace.setBody("main.md", "Still editable");
     expect(workspace.getSnapshot().records.get("main.md")?.snapshot.body).toBe("Still editable");
-    await expect(workspace.exportBundle()).rejects.toThrow("temporarily unavailable");
+    await expect(workspace.exportBundle()).rejects.toThrow("Writer could not load the library. Try again.");
     backend.index = index;
     await workspace.retryMetadata();
     expect(workspace.getSnapshot().indexLoad.phase).toBe("ready");

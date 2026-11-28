@@ -283,7 +283,7 @@ msgstr "소속"
 msgid "All manuscripts"
 msgstr "모든 원고"
 
-#. placeholder {0}: snap.annotationsLoad.problem ?? ""
+#. placeholder {0}: (snap.annotationsLoad.problem ?? "").replace(/[.。]$/, "")
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
 msgstr "주석 검색을 사용할 수 없습니다: {0}. 인용문 메타데이터가 불완전할 수 있습니다."
@@ -292,7 +292,7 @@ msgstr "주석 검색을 사용할 수 없습니다: {0}. 인용문 메타데이
 msgid "Annotation index"
 msgstr "주석 색인"
 
-#. placeholder {0}: literal(problem)
+#. placeholder {0}: literal(problem.message)
 #: src/ui/SourcesPanel.tsx
 msgid "Annotations unavailable: {0} <0>Retry annotations</0>"
 msgstr "주석을 사용할 수 없습니다: {0} <0>주석 다시 시도</0>"
@@ -405,6 +405,10 @@ msgstr "장 <0>{0}</0>"
 #: src/ui/CommentSigning.tsx
 msgid "Check again"
 msgstr "다시 확인"
+
+#: src/backend/index-problem.ts
+msgid "Check your internet connection, then try again."
+msgstr "인터넷 연결을 확인한 후 다시 시도하세요."
 
 #. placeholder {0}: EXPORT_NAME[format]
 #: src/ui/WorkspaceView.tsx
@@ -1035,7 +1039,7 @@ msgstr "이 원고에서"
 msgid "In this manuscript <0>{0}</0>"
 msgstr "이 원고에서 <0>{0}</0>"
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Index could not be loaded: {0}"
 msgstr "색인을 불러오지 못했습니다: {0}"
@@ -1506,6 +1510,10 @@ msgstr "검토하려면 해당 원고 열기"
 #: src/ui/Home.tsx
 msgid "Open manuscript"
 msgstr "원고 열기"
+
+#: src/backend/index-problem.ts
+msgid "Open mdbase on the computer that holds this collection, then try again."
+msgstr "이 컬렉션이 있는 컴퓨터에서 mdbase를 연 후 다시 시도하세요."
 
 #: src/ui/Home.tsx
 msgid "Open mdbase Reader"
@@ -2075,7 +2083,7 @@ msgstr "출처"
 msgid "Sources are not set up in this collection."
 msgstr "이 컬렉션에는 출처가 설정되어 있지 않습니다."
 
-#. placeholder {0}: r.message
+#. placeholder {0}: problem.message
 #: src/ui/Home.tsx
 msgid "Sources could not be loaded: {0}"
 msgstr "출처를 불러오지 못했습니다: {0}"
@@ -2162,6 +2170,10 @@ msgstr "주석 {value}에 삽입할 인용문이 없습니다."
 msgid "The chapter is not open."
 msgstr "장이 열려 있지 않습니다."
 
+#: src/backend/index-problem.ts
+msgid "The collection is getting too many requests. Wait a moment, then try again."
+msgstr "컬렉션에 너무 많은 요청이 들어오고 있습니다. 잠시 기다렸다가 다시 시도하세요."
+
 #: src/ui/WorkspaceView.tsx
 msgid "The collection version is not available for comparison. Resolve the conflicting changes in the collection before saving here, or download your local drafts."
 msgstr "컬렉션 버전을 비교할 수 없습니다. 여기서 저장하기 전에 컬렉션의 충돌을 해결하거나 로컬 초안을 다운로드하세요."
@@ -2204,7 +2216,7 @@ msgstr "레이블 {value}이(가) 두 번 이상 사용되었습니다."
 msgid "The language could not be loaded. Your current language is unchanged. Try again."
 msgstr "언어를 불러오지 못했습니다. 현재 언어는 변경되지 않았습니다. 다시 시도하세요."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "The library changed while loading. Try again."
 msgstr "불러오는 동안 라이브러리가 변경되었습니다. 다시 시도하세요."
 
@@ -2282,6 +2294,10 @@ msgstr "이 장이 삭제되었습니다. 로컬 초안을 다운로드하여 �
 msgid "This collection does not accept files from Writer."
 msgstr "이 컬렉션은 Writer에서 파일을 받지 않습니다."
 
+#: src/backend/index-problem.ts
+msgid "This collection needs attention. Open it in mdbase, then try again."
+msgstr "이 컬렉션에 문제가 있습니다. mdbase에서 컬렉션을 연 후 다시 시도하세요."
+
 #: src/ui/NativeWriterView.tsx
 msgid "This collection view could not be opened. Choose another collection from the bar above, or reload to retry."
 msgstr "이 컬렉션 뷰를 열지 못했습니다. 위쪽 표시줄에서 다른 컬렉션을 선택하거나 새로고침하여 다시 시도하세요."
@@ -2299,9 +2315,9 @@ msgstr "이 문서는 다른 곳에서 변경되었습니다. 새로고침한 �
 msgid "This document has already been deleted."
 msgstr "이 문서는 이미 삭제되었습니다."
 
-#: src/backend/native.ts
-msgid "This library is too large to index at once."
-msgstr "라이브러리가 너무 커서 한 번에 색인을 만들 수 없습니다."
+#: src/backend/index-problem.ts
+msgid "This library is too large to index at once. Try opening a smaller collection."
+msgstr "라이브러리가 너무 커서 한 번에 색인을 만들 수 없습니다. 더 작은 컬렉션을 열어 보세요."
 
 #: src/ui/WorkspaceView.tsx
 msgid "This manuscript could not be opened"
@@ -2390,7 +2406,7 @@ msgstr "지원하지 않는 Markdown 블록입니다: {value}."
 msgid "Untitled figure"
 msgstr "제목 없는 그림"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Update mdbase Connect, then try again."
 msgstr "mdbase Connect를 업데이트한 후 다시 시도하세요."
 
@@ -2479,7 +2495,7 @@ msgstr "Writer는 여기에서 접근을 요청할 수 없습니다."
 msgid "Writer commands"
 msgstr "Writer 명령"
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
 msgid "Writer could not load the library. Try again."
 msgstr "Writer에서 라이브러리를 불러오지 못했습니다. 다시 시도하세요."
 
@@ -2487,17 +2503,29 @@ msgstr "Writer에서 라이브러리를 불러오지 못했습니다. 다시 시
 msgid "Writer could not open this collection"
 msgstr "Writer에서 이 컬렉션을 열지 못했습니다."
 
+#: src/backend/index-problem.ts
+msgid "Writer could not reach the collection. Check your connection and try again."
+msgstr "Writer가 컬렉션에 연결하지 못했습니다. 연결을 확인하고 다시 시도하세요."
+
 #: src/backend/native.ts
 msgid "Writer does not have permission to delete documents in this collection."
 msgstr "Writer에 이 컬렉션의 문서를 삭제할 권한이 없습니다."
 
-#: src/backend/native.ts
+#: src/backend/index-problem.ts
+msgid "Writer does not have permission to read this part of the collection. Check your collection access."
+msgstr "Writer에 컬렉션의 이 부분을 읽을 권한이 없습니다. 컬렉션 접근 권한을 확인하세요."
+
+#: src/backend/index-problem.ts
 msgid "Writer no longer has access to this collection."
 msgstr "Writer에는 더 이상 이 컬렉션에 접근할 권한이 없습니다."
 
 #: src/ui/CommentSigning.tsx
 msgid "Writer was not allowed to see your account."
 msgstr "Writer에서 계정 정보를 볼 수 있는 권한이 없습니다."
+
+#: src/backend/native.ts
+msgid "Writer's collection view has closed."
+msgstr "Writer의 컬렉션 화면이 닫혔습니다."
 
 #: src/main.tsx
 msgid "You can close this window."

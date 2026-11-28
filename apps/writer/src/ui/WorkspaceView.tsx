@@ -873,6 +873,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
       annotationVersion={snap.annotationVersion}
       loading={snap.libraryLoad.phase === "loading"}
       problem={snap.libraryLoad.problem}
+      details={snap.libraryLoad.details}
       onRetry={() => void workspace.retryMetadata()}
       notSetUp={workspace.setupStatus?.sources === false}
       annotationsNotSetUp={workspace.setupStatus?.annotations === false}
@@ -937,7 +938,10 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           since={since}
           {...(order.length > 1 ? { recordTitle: titleOf } : {})}
           hint={<Trans>Select a passage and press <kbd>{shortcutLabel("mod+alt+m")}</kbd> to comment, or <kbd>{shortcutLabel("mod+alt+s")}</kbd> to suggest an edit.</Trans>}
-          notice={<CommentSigning people={snap.people} onCheck={() => workspace.refreshPeople()} {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})} />}
+          notice={<>
+            <CommentSigning people={snap.people} onCheck={() => workspace.refreshPeople()} {...(workspace.kind === "connect" ? { onReviewAccess: () => workspace.reviewIdentityAccess() } : {})} />
+            {snap.commentsLoad.details && <TechnicalDetails details={snap.commentsLoad.details} />}
+          </>}
           onSelect={(thread) => selectThread(thread as PlacedThread)}
           onSubmit={submitComment}
           onCancel={() => setPendingComment(null)}
