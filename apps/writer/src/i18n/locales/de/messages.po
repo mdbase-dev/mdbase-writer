@@ -283,7 +283,7 @@ msgstr "Institution"
 msgid "All manuscripts"
 msgstr "Alle Manuskripte"
 
-#. placeholder {0}: snap.annotationsLoad.problem ?? ""
+#. placeholder {0}: (snap.annotationsLoad.problem ?? "").replace(/[.。]$/, "")
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
 msgstr "Anmerkungen konnten nicht ermittelt werden: {0}. Metadaten zu Zitaten können unvollständig sein."

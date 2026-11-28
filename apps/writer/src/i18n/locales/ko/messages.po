@@ -283,7 +283,7 @@ msgstr "소속"
 msgid "All manuscripts"
 msgstr "모든 원고"
 
-#. placeholder {0}: snap.annotationsLoad.problem ?? ""
+#. placeholder {0}: (snap.annotationsLoad.problem ?? "").replace(/[.。]$/, "")
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
 msgstr "주석 검색을 사용할 수 없습니다: {0}. 인용문 메타데이터가 불완전할 수 있습니다."

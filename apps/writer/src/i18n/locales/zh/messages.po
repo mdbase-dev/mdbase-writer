@@ -283,7 +283,7 @@ msgstr "所属机构"
 msgid "All manuscripts"
 msgstr "所有手稿"
 
-#. placeholder {0}: snap.annotationsLoad.problem ?? ""
+#. placeholder {0}: (snap.annotationsLoad.problem ?? "").replace(/[.。]$/, "")
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
 msgstr "无法查找注释：{0}。引文元数据可能不完整。"

@@ -283,7 +283,7 @@ msgstr "所属"
 msgid "All manuscripts"
 msgstr "すべての原稿"
 
-#. placeholder {0}: snap.annotationsLoad.problem ?? ""
+#. placeholder {0}: (snap.annotationsLoad.problem ?? "").replace(/[.。]$/, "")
 #: src/workspace/workspace.ts
 msgid "Annotation discovery unavailable: {0}. Quotation metadata may be incomplete."
 msgstr "注釈の検出を利用できません：{0}。引用のメタデータが不完全な可能性があります。"

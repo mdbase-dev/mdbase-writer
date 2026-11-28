@@ -1055,7 +1055,7 @@ export class ManuscriptWorkspace {
       const assets = assembly.assets.filter((path) => !attemptedAssets.has(path));
       if (!records.length && !assets.length) {
         const problems = [...new Set([
-          ...(snap.annotationsLoad.phase === "failed" ? [t`Annotation discovery unavailable: ${snap.annotationsLoad.problem ?? ""}. Quotation metadata may be incomplete.`] : []),
+          ...(snap.annotationsLoad.phase === "failed" ? [t`Annotation discovery unavailable: ${(snap.annotationsLoad.problem ?? "").replace(/[.。]$/, "")}. Quotation metadata may be incomplete.`] : []),
           ...assembly.diagnostics.map((diagnostic) => `${diagnostic.record}: ${diagnosticMessage(diagnostic.message, diagnostic.copy)}`),
           ...assembly.unloaded.map((path) => `${path}: ${snap.recordProblems.get(path) ?? t`Not loaded; it will be left out.`}`),
           ...assembly.assets.flatMap((path) => snap.assetProblems.has(path) ? [`${path}: ${snap.assetProblems.get(path)}`] : []),

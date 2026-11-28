@@ -172,9 +172,12 @@ try {
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().phase === "ready");
     await painted(page);
     assert.equal(await page.evaluate(() => window.writer.workspace.getSnapshot().annotationsLoad.phase), "failed");
+    const banner = page.getByRole("alert").filter({ hasText: "Annotation index unavailable: Writer could not load the library. Try again." });
+    await banner.waitFor();
     const problems = await page.evaluate(async () => (await window.writer.workspace.exportBundle()).problems);
-    assert.ok(problems.some((p) => p.includes("Temporary annotation discovery failure")));
-    await page.getByRole("button", { name: "Retry loading" }).click();
+    assert.ok(problems.includes("Annotation discovery unavailable: Writer could not load the library. Try again. Quotation metadata may be incomplete."));
+    assert.ok(problems.every(problem => !problem.includes("Temporary annotation discovery failure")));
+    await banner.getByRole("button", { name: "Retry loading" }).click();
     await page.waitForFunction(() => window.writer.workspace.getSnapshot().annotationsLoad.phase === "ready");
   });
 
