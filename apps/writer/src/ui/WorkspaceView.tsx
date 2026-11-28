@@ -1609,6 +1609,7 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
       disabled={!can[value] || busy}
       onClick={() => {
         setOpen(false);
+        trigger.current?.focus();
         onExport(value);
       }}
     >

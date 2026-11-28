@@ -13,3 +13,4 @@ onlyBuiltDependencies:
 
 patchedDependencies:
   citeproc: patches/citeproc.patch
+  pandoc-wasm@1.1.0: patches/pandoc-wasm@1.1.0.patch

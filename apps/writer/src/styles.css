@@ -272,9 +272,9 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .note-list > li.muted { padding: 0.35rem 0.55rem; }
 .note-option { display: flex; align-items: baseline; gap: 0.6rem; width: 100%; text-align: left; padding: 0.35rem 0.55rem; border: 0; border-radius: 4px; background: none; cursor: pointer; }
 .note-option:hover { background: var(--subtle); }
-[aria-selected="true"] > .note-option { background: var(--selected); font-weight: 700; }
+.note-option[aria-pressed="true"] { background: var(--selected); font-weight: 700; }
 .note-name { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.note-folder { margin-left: auto; flex: none; font-family: var(--mono); font-size: 11px; color: var(--faint); }
+.note-folder { margin-left: auto; flex: none; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .new-dialog .mdbase-dialog-body > p { margin: -0.5rem 0 0; }
 .new-dialog .mdbase-dialog-body > p.adopt-offer { margin: 0; }
 .new-manuscript .field-problem { display: block; margin-top: 0.3rem; }
@@ -315,6 +315,12 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .sidebar-tabs button:focus-visible { outline-offset: -2px; }
 .tab-count { font-size: 11px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sidebar-panel { min-height: 0; overflow: auto; padding: 0.5rem 0.5rem 1.5rem; scrollbar-gutter: stable; }
+/* Keep the active heading and keyboard-focused rows clear of the sticky search. */
+.sidebar-panel:has(> .manuscript-search) { scroll-padding-top: 3rem; }
+@media (pointer: coarse) {
+  .sidebar-panel:has(> .manuscript-search) { scroll-padding-top: 3.75rem; }
+  .outline button.heading-row { align-items: center; min-height: 44px; }
+}
 /* A second panel beneath the first, with its own small tabs. */
 .outline.has-lower { --lower-duration: 160ms; grid-template-rows: auto minmax(0, var(--sidebar-split, .5fr)) 7px minmax(0, var(--sidebar-lower, .5fr)); }
 .lower-resizer { grid-row: 3; cursor: row-resize; touch-action: none; border-block: 1px solid var(--line); }
@@ -405,7 +411,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .heading-problem { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); opacity: 0.8; }
 .record-line { display: flex; align-items: stretch; }
 .record-line > .record-row { flex: 1; min-width: 0; }
-.record-fold { flex: none; width: 22px; border: 0; background: none; color: var(--faint); cursor: pointer; border-radius: 4px; }
+.record-fold { flex: none; width: 22px; border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 4px; }
 .record-fold .icon { width: 12px; height: 12px; transition: transform var(--motion-quick) ease; }
 .record-fold[aria-expanded="true"] .icon { transform: rotate(90deg); }
 .record-fold:hover { color: var(--ink); background: var(--subtle); }
@@ -582,7 +588,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .editor .cm-chapter-card { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0; padding: 0.6rem 0.6rem 0.6rem 0.8rem; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); font-family: var(--sans); cursor: text; }
 .editor .cm-chapter-card:hover { border-color: var(--line-strong); }
 .editor .cm-chapter-card.is-missing { border-color: var(--color-warning-border); background: var(--color-warning-surface); }
-.cm-chapter-number { flex: none; min-width: 1.4rem; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.cm-chapter-number { flex: none; min-width: 1.4rem; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .cm-chapter-text { flex: 1; min-width: 0; display: grid; }
 .cm-chapter-title { font-size: 15px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cm-chapter-meta { font-size: 12px; line-height: 1.4; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -610,7 +616,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .cm-ref-tip { max-width: 26rem; padding: 0.5rem 0.7rem; display: grid; gap: 0.25rem; font-family: var(--sans); font-size: 13px; line-height: 1.45; }
 .cm-ref-kind { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .cm-ref-body { color: var(--ink); }
-.cm-ref-hint { font-size: 11px; color: var(--faint); }
+.cm-ref-hint { font-size: 11px; color: var(--muted); }
 
 /* Live preview: the editor reads like the manuscript until the cursor is on a line (live-preview.ts). */
 .cm-lp-chip { display: inline-block; max-width: 24em; margin: 0; padding: 0 0.2em; border-radius: 4px; vertical-align: -0.2em; font-size: 0.88em; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; }
@@ -620,7 +626,7 @@ kbd { font-family: var(--mono); font-size: 11.5px; padding: 1px 5px; border: 1px
 .cm-lp-chip.is-ref { color: var(--ink-soft); background: var(--subtle); padding-inline: 0.12em; }
 .cm-lp-chip.is-label { color: var(--muted); background: var(--subtle); font-family: var(--mono); font-size: 0.72em; letter-spacing: -0.01em; vertical-align: 0.1em; }
 .cm-lp-link { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--accent) 45%, transparent); text-underline-offset: 2px; }
-.cm-lp-quiet { color: var(--faint); }
+.cm-lp-quiet { color: var(--muted); }
 .cm-lp-fn-ref { color: var(--accent); font-size: 0.72em; font-weight: 700; line-height: 0; cursor: text; }
 .cm-lp-fn-number { color: var(--muted); font-size: 0.85em; font-variant-numeric: tabular-nums; margin-right: 0.35em; }
 /* Muted falls under 4.5:1 on a comment's highlight; match the footnote's own text there. */
@@ -735,7 +741,7 @@ fieldset.settings { margin: 0; padding: 0; border: 0; min-width: 0; }
   .pane-tabs button[aria-pressed="true"] { color: var(--ink); font-weight: 700; }
   .pane-tabs button[aria-pressed="true"] .icon { color: var(--app-writer); }
   .pane-tab-icon { position: relative; display: inline-grid; }
-  .tab-badge { position: absolute; top: -5px; left: 13px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; color: #fff; background: var(--warning); }
+  .tab-badge { position: absolute; top: -5px; left: 13px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; color: var(--color-on-accent); background: var(--color-warning-strong); }
   .tab-badge.tone-danger { background: var(--danger); }
   .tab-badge.tone-comments { background: var(--accent); }
   .sidebar-rail { display: none; }

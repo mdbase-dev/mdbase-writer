@@ -12,6 +12,7 @@ import { resolveCrossReferences } from "./crossref.js";
 import { manuscriptMeta } from "./meta.js";
 import type { CslItem } from "./citeproc.js";
 import { CITEKEY, markdownParser } from "./markdown.js";
+import { applyTextEdits, type TextEdit } from "./text-edits.js";
 import { IMAGE_EXTENSION, missingImageMessage, resolveLinkTarget, type WriterRecord } from "./records.js";
 
 export interface MaterializeInput {
@@ -64,7 +65,9 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
   const mediaPath = (collectionPath: string) => {
     const bundled = `${BUNDLE_MEDIA}/${collectionPath}`;
     media.set(collectionPath, bundled);
-    return bundled;
+    // Markdown destinations need URL escaping; the bundle retains the actual
+    // collection filename so Pandoc can open the decoded path.
+    return encodeURI(bundled).replace(/[()#?]/g, char => `%${char.charCodeAt(0).toString(16)}`);
   };
 
   const expand = (path: string, stack: readonly string[]): string => {
@@ -74,7 +77,7 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
       return "";
     }
     const body = record.body;
-    const edits: { from: number; to: number; text: string }[] = [];
+    const edits: TextEdit[] = [];
     const visit = (node: SyntaxNode) => {
       switch (node.name) {
         case "EmbedBlock": {
@@ -125,9 +128,7 @@ export function materialize(input: MaterializeInput): MaterializedManuscript {
     // inline content the block parser leaves unparsed). A stray match only
     // adds an unused entry to the bibliography file.
     for (const m of body.matchAll(CITED_KEY)) if (m[1] && input.library.has(m[1])) cited.add(m[1]);
-    let out = body;
-    for (const e of edits.sort((a, b) => b.from - a.from)) out = out.slice(0, e.from) + e.text + out.slice(e.to);
-    return out;
+    return applyTextEdits(body, edits);
   };
 
   const main = input.records.get(input.main);

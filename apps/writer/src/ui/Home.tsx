@@ -641,17 +641,17 @@ function NotePicker({ notes, value, onChange }: { notes: readonly string[]; valu
     <div className="note-picker">
       <label><Trans>
         Note
-        <input className="mdbase-field" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t`Find a note by name or folder`} aria-controls={listId} />
+        <input className="mdbase-field" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t`Find a note by name or folder`} aria-controls={notes.length ? listId : undefined} />
       </Trans></label>
       {notes.length === 0 ? (
         <p className="muted small"><Trans>No other notes in this collection.</Trans></p>
       ) : (
-        <ul id={listId} className="note-list" role="listbox" aria-label={t`Notes`}>
+        <ul id={listId} className="note-list" aria-label={t`Notes`}>
           {matches.map((p) => {
             const folder = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
             return (
-              <li key={p} role="option" aria-selected={p === value}>
-                <button type="button" className="note-option" onClick={() => onChange(p)} title={p}>
+              <li key={p}>
+                <button type="button" className="note-option" aria-pressed={p === value} onClick={() => onChange(p)} title={p}>
                   <span className="note-name">{noteName(p)}</span>
                   {folder && <span className="note-folder">{folder}</span>}
                 </button>

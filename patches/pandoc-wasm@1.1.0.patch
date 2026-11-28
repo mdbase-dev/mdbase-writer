@@ -1,0 +1,27 @@
+diff --git a/src/core.js b/src/core.js
+index 23e0eaee4522fe7f6650e4b8399e69f85383a266..d0856636f5f338e23ba456cfc9072079b33cae97 100644
+--- a/src/core.js
++++ b/src/core.js
+@@ -74,7 +74,21 @@ export function createPandocInstance(wasmBinary) {
+                 uint8Array = new Uint8Array(buffer)
+             }
+             const file = new File(uint8Array, {readonly: readonly})
+-            fileSystem.set(filename, file)
++            // WASI resolves path components by walking Directory entries.
++            const parts = filename.split("/")
++            const basename = parts.pop()
++            let directory = fileSystem
++            for (const part of parts) {
++                if (!part || part === ".") continue
++                let child = directory.get(part)
++                if (!child) {
++                    child = new Directory(new Map())
++                    directory.set(part, child)
++                }
++                if (!(child instanceof Directory)) throw new Error(`Invalid file path: ${filename}`)
++                directory = child.contents
++            }
++            directory.set(basename, file)
+         }
+ 
+         // Main API: query function

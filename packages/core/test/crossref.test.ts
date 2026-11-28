@@ -65,3 +65,13 @@ describe("resolveCrossReferences", () => {
     expect(resolveCrossReferences(doc, "de-DE").markdown).toContain("See [Abbildung 1](#fig-site)");
   });
 });
+
+it("numbers headings that begin with a reference and preserves mixed citations and code", () => {
+  const { markdown } = resolveCrossReferences(
+    "# First {#sec-first}\n\n## [@sec-first]\n\n\`[@sec-first]\` and [@sec-first; @writer2020]. Then @sec-first.\n",
+    "en",
+  );
+  expect(markdown).toBe(
+    "# 1 First {#sec-first}\n\n## 1.1 [Section 1](#sec-first)\n\n\`[@sec-first]\` and [@sec-first; @writer2020]. Then [Section 1](#sec-first).\n",
+  );
+});
