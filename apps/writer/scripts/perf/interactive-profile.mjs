@@ -26,6 +26,7 @@ async function profile(base, large, run) {
     const start = await now();
     await action();
     times[label] = await now() - start;
+    return start;
   };
   const startProfile = async () => {
     if (cpuProfiles) await cdp.send("Profiler.start");
@@ -86,13 +87,16 @@ async function profile(base, large, run) {
         }, { once: true, capture: true });
       }, key);
     }
-    await measure("sourceFilter", async () => {
+    const filterStart = await measure("sourceFilter", async () => {
       await sourceSearch.fill(key);
       await page.getByRole("list", { name: "Matching sources" }).locator(`[data-key="${key}"]`).waitFor();
     });
     if (smallFilterOnly) {
-      times.inputToResult = await page.evaluate(() => performance.getEntriesByName("source-filter-result")[0]?.duration);
-      assert.ok(Number.isFinite(times.inputToResult));
+      const entry = await page.evaluate(() => performance.getEntriesByName("source-filter-result")[0]?.toJSON());
+      assert.ok(entry, "The source filter must insert the matching DOM row");
+      times.beforeInput = entry.startTime - filterStart;
+      times.inputToResult = entry.duration;
+      times.afterResult = times.sourceFilter - times.beforeInput - times.inputToResult;
       assert.deepEqual(errors, []);
       assert.equal(await page.evaluate(() => performance.timeOrigin), timeOrigin);
       return times;

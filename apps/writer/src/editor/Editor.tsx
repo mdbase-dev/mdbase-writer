@@ -86,7 +86,7 @@ export interface EditorProps {
   onFollow?(target: FollowTarget): void;
   onReady?(handle: EditorHandle): void;
   /** The cursor moved (by typing, clicking or keys), to its body offset. */
-  onCursor?(offset: number): void;
+  onCursor?(offset: number, docChanged?: boolean): void;
   /** Cards for records embedded on lines of their own. */
   chapters?: ChapterCards;
   /** Looks for a source in the Sources panel (a quick fix for an unknown citekey). */
@@ -188,7 +188,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
           EditorView.editable.of(!readOnly),
           language.current.of(translatedExtensions()),
           EditorView.updateListener.of((u) => {
-            if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);
+            if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head, u.docChanged);
             if (!u.docChanged || u.transactions.some((tr) => tr.annotation(remote))) return;
             const next = u.state.doc.toString();
             emitted.current.push(next);

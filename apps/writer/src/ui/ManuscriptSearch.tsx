@@ -4,7 +4,7 @@ import { useLingui } from "@lingui/react";
 // Search across the whole manuscript, at the top of the outline. While the
 // field has text, matches grouped by record take the outline's place; a click
 // goes to a match, and Enter / Shift-Enter step through them from the field.
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode, type KeyboardEvent } from "react";
 
 import type { RecordView } from "../workspace/workspace.js";
 import { SearchIcon } from "./icons.js";
@@ -17,16 +17,16 @@ export interface SearchRequest {
 }
 
 export function ManuscriptSearch({
-  query,
-  onQuery,
+  savedQuery,
+  children,
   order,
   records,
   recordTitle,
   onGo,
   request,
 }: {
-  query: string;
-  onQuery(query: string): void;
+  savedQuery: { current: string };
+  children: ReactNode;
   /** Every record in reading order, the manuscript first. */
   order: readonly string[];
   records: ReadonlyMap<string, RecordView>;
@@ -36,6 +36,11 @@ export function ManuscriptSearch({
   request: SearchRequest | null;
 }) {
   useLingui();
+  const [query, setQuery] = useState(() => savedQuery.current);
+  const onQuery = (value: string) => {
+    savedQuery.current = value;
+    setQuery(value);
+  };
   const field = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(-1);
@@ -97,7 +102,7 @@ export function ManuscriptSearch({
           aria-describedby={query.trim() ? "manuscript-search-keys" : undefined}
         />
       </div>
-      {query.trim() && (
+      {query.trim() ? (
         <div ref={list} className="search-results" onKeyDown={onListKey}>
           <p id="manuscript-search-keys" className="muted small"><Trans>Enter and Shift-Enter go to the next and previous match; Down arrow moves to the matches.</Trans></p>
           <p className="search-summary muted small" role="status">
@@ -129,7 +134,7 @@ export function ManuscriptSearch({
             </section>
           ))}
         </div>
-      )}
+      ) : children}
     </>
   );
 }
