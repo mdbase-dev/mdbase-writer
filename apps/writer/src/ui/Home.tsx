@@ -216,11 +216,11 @@ function ManuscriptList({ backend, onOpen, collectionPicker, returnPath, opening
     const manuscriptPaths = new Set(manuscripts?.map((m) => m.path));
     return untyped.filter((p) => !manuscriptPaths.has(p));
   }, [untyped, manuscripts]);
+  const sorted = useMemo(() => byRecentlyEdited(manuscripts ?? []), [manuscripts]);
   const shown = useMemo(() => {
     const words = filter.toLowerCase().split(/\s+/).filter(Boolean);
-    const sorted = byRecentlyEdited(manuscripts ?? []);
     return words.length ? sorted.filter((m) => words.every((w) => `${m.title} ${m.path}`.toLowerCase().includes(w))) : sorted;
-  }, [manuscripts, filter]);
+  }, [sorted, filter]);
   const listed = filter.trim() ? shown : shown.filter(manuscript => manuscript.path !== continuing?.path);
   const commands: Command[] = [
     { id: "new", group: t`Manuscripts`, label: t`New manuscript`, run: () => setDialog(true) },
