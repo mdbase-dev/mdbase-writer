@@ -53,7 +53,7 @@
     "@mdbase-dev/sdk": "0.2.61",
     "@mdbase-dev/sdk-lab": "file:../../vendor/sdk-lab-beta188.tgz",
     "@mdbase-dev/sdk-staging": "file:../../vendor/sdk-staging-beta188.tgz",
-    "@mdbase-dev/ui": "0.2.63",
+    "@mdbase-dev/ui": "0.2.65",
     "@mdbase-writer/core": "workspace:*",
     "@myriaddreamin/typst-ts-renderer": "0.7.0",
     "@myriaddreamin/typst-ts-web-compiler": "0.7.0",
