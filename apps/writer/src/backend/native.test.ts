@@ -337,7 +337,7 @@ describe("native Writer domain backend", () => {
     });
     expect(await h.backend.index()).toMatchObject(failure === "changed snapshot"
       ? {ok: false, message: "The library changed while loading. Try again.", details: "Writer's native query snapshot changed."}
-      : {ok: false, message: expect.stringContaining("cursor repeated")});
+      : {ok: false, message: "Writer could not load the library. Try again.", details: "Writer's native record cursor repeated."});
   });
   // Connect #1502: a save's acknowledgement changes the view mid-load. The replica ends
   // the continuation (`cursor_stale`) or a later page reports another snapshot; Writer

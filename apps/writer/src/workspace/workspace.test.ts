@@ -693,7 +693,7 @@ describe("workspace reliability", () => {
     const workspace = open();
     await ready(workspace);
     await vi.waitFor(() => expect(workspace.getSnapshot().indexLoad.phase).toBe("failed"));
-    expect(workspace.getSnapshot().indexLoad.problem).toContain("temporarily unavailable");
+    expect(workspace.getSnapshot().indexLoad.problem).toBe("Writer could not load the library. Try again.");
     expect(workspace.getSnapshot().problem).toBeUndefined();
     workspace.setBody("main.md", "Still editable");
     expect(workspace.getSnapshot().records.get("main.md")?.snapshot.body).toBe("Still editable");

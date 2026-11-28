@@ -2,8 +2,10 @@ import { t } from "@lingui/core/macro";
 import { isMdbaseError } from "@mdbase-dev/sdk";
 import type { ReadProblem } from "./types.js";
 
+/** An internal discovery check with fixed diagnostic text. */
+export class IndexDiagnostic extends Error {}
 /** The pages no longer describe one snapshot. Discovery starts again at page one. */
-export class SnapshotChanged extends Error {}
+export class SnapshotChanged extends IndexDiagnostic {}
 
 export function staleContinuation(error: unknown): boolean {
   return isMdbaseError(error, "invalid_request") && (error.reason === "cursor_stale" || error.reason === "cursor_expired");
@@ -12,6 +14,7 @@ export function staleContinuation(error: unknown): boolean {
 /** Only typed codes select copy. SDK messages can contain server or collection data. */
 export function indexProblem(error: unknown): ReadProblem {
   if (error instanceof SnapshotChanged) return { message: t`The library changed while loading. Try again.`, details: error.message };
+  if (error instanceof IndexDiagnostic) return { message: t`Writer could not load the library. Try again.`, details: error.message };
   if (!isMdbaseError(error)) return { message: t`Writer could not load the library. Try again.` };
 
   const { code, reason } = error;
