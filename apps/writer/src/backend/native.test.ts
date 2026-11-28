@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MdbaseError, MdbasePeopleClient, type ChangesWatch, type DescribeResult, type MdbaseApplicationConnection, type MdbaseClient } from "@mdbase-dev/sdk";
 import { MemoryReplica, type MemoryContract } from "@mdbase-dev/sdk/testing";
 import manifest from "../generated/mdbase-app.json";
+import { createDemoApp, demoRecord } from "./demo-fixture.js";
 import { NativeWriterBackend } from "./native.js";
 import { nativeObject, nativeWriterSchema } from "./native-schema.js";
 import { byRecentlyEdited } from "../ui/names.js";
@@ -59,6 +60,36 @@ function controlledWatch(initialState: ChangesWatch["state"] = "active", ready: 
 }
 
 describe("native Writer domain backend", () => {
+  it("lists annotation identities immediately and shares a retryable source-link projection", async () => {
+    const source = "sources/paper.md";
+    const highlight = "annotations/one.md";
+    const app = await createDemoApp({name: "Highlights", records: [
+      demoRecord(source, {type: "reader-source", title: "Paper", csl: {id: "paper", type: "book"}}, ""),
+      demoRecord(highlight, {type: "reader-annotation", source: "[[sources/paper]]"}, "> A passage"),
+    ]});
+    const client = app.client();
+    const connection = app.mdbase.connection(client.collection)!;
+    const backend = new NativeWriterBackend(connection, {collectionName: "Highlights", signal: new AbortController().signal});
+    const original = connection.records.queryContract.bind(connection.records);
+    let attempts = 0;
+    vi.spyOn(connection.records, "queryContract").mockImplementation(async (contract, options) => {
+      const result = await original(contract, options);
+      if (contract.id.endsWith(".annotation") && ++attempts === 1) return {...result, records: []};
+      return result;
+    });
+    try {
+      expect(await backend.annotationPaths()).toEqual({ok: true, value: [highlight]});
+      expect(attempts).toBe(0);
+      expect((await backend.annotationsForSource(source)).ok).toBe(false);
+      const results = await Promise.all([backend.annotationsForSource(source), backend.annotationsForSource(source)]);
+      for (const result of results) expect(result).toMatchObject({ok: true, value: [{path: highlight, quote: "A passage"}]});
+      expect(attempts).toBe(2);
+    } finally {
+      backend.dispose();
+      await app.close();
+    }
+  });
+
   it("discovers mapped manuscripts/library/index without bodies or identity requests", async () => {
     const h = await fixture(); const query = vi.spyOn(h.client, "query"); const get = vi.spyOn(h.client, "get");
     const projected = await h.client.queryContract({id: "dev.mdbase.writer.manuscript", version: "1.0.0-beta.2"}, {pageSize: 128});

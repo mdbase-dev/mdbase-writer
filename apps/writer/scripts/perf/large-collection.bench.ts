@@ -227,7 +227,7 @@ it("large collection baseline (opt-in)", async () => {
           place3000CommentsFullPaths: measure(fullPathPlacement),
           place3000CommentsBareNames: measure(() => placeThreads(allComments.map((c) => ({ ...c, document: `[[${c.document.split("/").at(-1)}` })), [main], (p) => p === main ? f.body : undefined, snap.recordIndex), 1),
           oneThread3000Replies: measure(() => commentThreads([allComments[0]!, ...allComments.slice(1).map((c) => ({ ...c, inReplyTo: `[[${allComments[0]!.path}]]` }))])),
-          sourcePanelSSR: measure(() => renderToString(createElement(AppI18nProvider, null, createElement(SourcesPanel, { query: "", setQuery: noop, library, cited, loadAnnotations: () => Promise.resolve(annotations), onInsert: noop, onStepCitation: noop, canInsert: true }))), 3),
+          sourcePanelSSR: measure(() => renderToString(createElement(AppI18nProvider, null, createElement(SourcesPanel, { library, cited, loadAnnotations: () => Promise.resolve(annotations), onInsert: noop, onStepCitation: noop, canInsert: true }))), 3),
           commentsPanelSSR: measure(() => renderToString(createElement(AppI18nProvider, null, createElement(CommentsPanel, { threads: placed, people: snap.people, active: null, pending: null, recordTitle: (p) => p, onSelect: noop, onSubmit: ok, onCancel: noop, onReply: ok, onChange: ok, onAccept: ok, onStart: noop }))), 3),
           annotationFilter6: measure(() => annotations.ok ? annotations.value.filter((a) => a.source === library[0]!.path || library[0]!.path.endsWith(`/${a.source}`)) : []),
           cloneLibrary5000: measure(() => structuredClone({ type: "library", library: library.map((e) => e.item) })),

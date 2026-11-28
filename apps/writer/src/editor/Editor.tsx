@@ -86,7 +86,7 @@ export interface EditorProps {
   onFollow?(target: FollowTarget): void;
   onReady?(handle: EditorHandle): void;
   /** The cursor moved (by typing, clicking or keys), to its body offset. */
-  onCursor?(offset: number): void;
+  onCursor?(offset: number, docChanged?: boolean): void;
   /** Cards for records embedded on lines of their own. */
   chapters?: ChapterCards;
   /** Looks for a source in the Sources panel (a quick fix for an unknown citekey). */
@@ -125,6 +125,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
   // replaces the line's DOM, which would cancel a hover in progress.
   const shownDiagnostics = useRef("");
   const preview = useRef<ReturnType<typeof livePreviewExtension> | null>(null);
+  const decorated = useRef({ insight, chapters, livePreview });
   const latest = useRef({ onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, anchorCard, onSelectionAction, onImageFiles });
   latest.current = { onChange, completion, inserts, insight, onCursor, onFollow, chapters, onFindSource, onAnchor, anchorCard, onSelectionAction, onImageFiles };
 
@@ -132,6 +133,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
   // would reset scrollTop), including development's setup/cleanup/setup cycle.
   useLayoutEffect(() => {
     if (!host.current) return;
+    decorated.current = { insight, chapters, livePreview };
     preview.current = livePreviewExtension(() => latest.current.insight, livePreview);
     const imageFiles = (list: FileList | null | undefined) => {
       const files = [...(list ?? [])].filter((f) => /^image\//.test(f.type));
@@ -186,7 +188,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
           EditorView.editable.of(!readOnly),
           language.current.of(translatedExtensions()),
           EditorView.updateListener.of((u) => {
-            if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head);
+            if ((u.selectionSet || u.docChanged) && !u.transactions.some((tr) => tr.annotation(remote))) latest.current.onCursor?.(u.state.selection.main.head, u.docChanged);
             if (!u.docChanged || u.transactions.some((tr) => tr.annotation(remote))) return;
             const next = u.state.doc.toString();
             emitted.current.push(next);
@@ -209,7 +211,7 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     v.requestMeasure({ read: () => { measured = true; } });
     view.current = v;
     latest.current.onCursor?.(v.state.selection.main.head);
-    shownDiagnostics.current = "";
+    shownDiagnostics.current = retained ? "" : "[]";
     onReady?.({
       search: () => { openSearchPanel(v); },
       rememberPosition: () => savePosition(),
@@ -372,19 +374,19 @@ export const Editor = memo(function Editor({ states, position, onPosition, path,
     v.dispatch({ changes: { from, to: endA, insert: incoming.slice(from, endB) }, annotations: [remote.of(true), Transaction.addToHistory.of(false)] });
   }, [text]);
 
+  // The view builds decorations from these values on mount. Refresh only
+  // inputs that changed afterward, including when returning to a chapter.
   useEffect(() => {
-    if (view.current) preview.current?.set(view.current, livePreview);
-  }, [livePreview]);
-
-  // Chips and figures follow the sources, labels and images they draw.
-  useEffect(() => {
-    view.current?.dispatch({ effects: refreshLivePreview.of(null) });
-  }, [insight]);
-
-  // Chapter cards follow their records' titles, words and problems.
-  useEffect(() => {
-    view.current?.dispatch({ effects: refreshChapterCards.of(null) });
-  }, [chapters]);
+    const v = view.current;
+    if (!v) return;
+    const previous = decorated.current;
+    decorated.current = { insight, chapters, livePreview };
+    const effects = [];
+    if (previous.livePreview !== livePreview) preview.current?.set(v, livePreview);
+    else if (previous.insight !== insight && livePreview) effects.push(refreshLivePreview.of(null));
+    if (previous.chapters !== chapters) effects.push(refreshChapterCards.of(null));
+    if (effects.length) v.dispatch({ effects });
+  }, [insight, chapters, livePreview]);
 
   useEffect(() => {
     const v = view.current;

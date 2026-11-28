@@ -40,7 +40,7 @@ function outlineFor(view: RecordView) {
 
 const NO_HEADINGS: readonly OutlineHeading[] = [];
 
-export function OutlinePanel({
+export const OutlinePanel = memo(function OutlinePanel({
   main,
   order,
   records,
@@ -213,7 +213,7 @@ export function OutlinePanel({
       <span className="visually-hidden" role="status">{announcement}</span>
     </div>
   );
-}
+});
 
 const ChapterRow = memo(function ChapterRow({
   path, view, index, active, expanded, cursor, comments, problems, renaming, dragging, dropClass, canDrop,

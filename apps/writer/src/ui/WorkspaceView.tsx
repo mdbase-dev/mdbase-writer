@@ -217,8 +217,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const themeChoice = useContext(ThemeChoice);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sourcesRequest, setSourcesRequest] = useState<SourcesRequest | null>(null);
-  const [sourceQuery, setSourceQuery] = useState("");
+  const sourceQuery = useRef("");
   const [previewView, setPreviewView] = useState<PreviewView | null>(null);
+  const reportPreviewView = useCallback((view: PreviewView) => {
+    setPreviewView(previous => previous?.page === view.page && previous.pages === view.pages && previous.scale === view.scale ? previous : view);
+  }, []);
   const zoomLabel = formatNumber(layout.zoom === "fit" ? previewView?.scale ?? 1 : layout.zoom, { style: "percent", maximumFractionDigits: 0 });
   const [cursor, setCursor] = useState<{ record: string; offset: number } | null>(null);
   const [pendingComment, setPendingComment] = useState<PendingComment | null>(null);
@@ -237,7 +240,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const lastExport = useRef<ExportFormat>(exportFormat);
   useEffect(() => () => exportJob.current?.abort(), []);
   const revealRequest = useRef<{ record: string; offset: number; to?: number; focus?: boolean } | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = useRef("");
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null);
   const cursorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const grid = useRef<HTMLDivElement>(null);
@@ -466,11 +469,12 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   }, []);
 
   // The preview follows the cursor's block (after the cursor rests briefly).
-  const onCursor = useCallback((offset: number) => {
-    setLiveCursor({ record: active, offset });
+  const onCursor = useCallback((offset: number, docChanged = false) => {
+    // Only typing can suppress a diagnostic on the current line.
+    if (docChanged || typing) setLiveCursor({ record: active, offset });
     clearTimeout(cursorTimer.current);
-    cursorTimer.current = setTimeout(() => setCursor({ record: active, offset }), 120);
-  }, [active]);
+    cursorTimer.current = setTimeout(() => setCursor(previous => previous?.record === active && previous.offset === offset ? previous : { record: active, offset }), 120);
+  }, [active, typing]);
   useEffect(() => () => {
     clearTimeout(cursorTimer.current);
     clearTimeout(typingTimer.current);
@@ -520,6 +524,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     setPane("write");
   }, []);
   const moveChapter = useCallback((from: number, to: number) => workspace.moveChapter(from, to), [workspace]);
+  const addChapter = useCallback(async (title: string, intent: string) => signalFailure(await workspace.addChapter(title, intent)), [workspace]);
   const renameChapter = useCallback((path: string, title: string) => signalFailure(workspace.renameChapter(path, title)), [workspace]);
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const retryPreview = useCallback(() => { void workspace.retryPreview(); }, [workspace]);
@@ -708,7 +713,6 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     }
   }, [showSources, insertFootnote, insertReference, insertFigure, insertTable, insertEquation]);
   const inserts = useMemo<readonly InsertCommand[]>(() => insertionSpecs.map((spec) => ({ ...spec, run: () => runInsertion(spec.id) })), [insertionSpecs, runInsertion, interfaceLocale]);
-  const paletteInserts: Command[] = insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: translate`Insert`, label: spec.label, detail: spec.syntax, keywords: spec.keywords, ...(spec.id === "footnote" ? { shortcut: "mod+alt+f" } : {}), run: () => runInsertion(spec.id) }));
   const [insertOpen, setInsertOpen] = useState(false);
   const replyToThread = useCallback(async (thread: Parameters<typeof workspace.reply>[0], text: string) => signalResult(await workspace.reply(thread, text)), [workspace]);
   const changeComment = async (comment: Parameters<typeof workspace.changeComment>[0], change: Parameters<typeof workspace.changeComment>[1]) => signalResult(await workspace.changeComment(comment, change));
@@ -906,8 +910,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const retrySources = useCallback(() => { void workspace.retryMetadata(); }, [workspace]);
   const sourcesPanel = (
     <SourcesPanel
-      query={sourceQuery}
-      setQuery={setSourceQuery}
+      savedQuery={sourceQuery}
       library={snap.library}
       cited={stats.cited}
       atCursor={citedAtCursor}
@@ -932,17 +935,14 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
   const panelFor = (tab: SidebarTab) =>
     tab === "sources" ? sourcesPanel : (
           tab === "outline" ? (
-        <>
           <ManuscriptSearch
-            query={searchQuery}
-            onQuery={setSearchQuery}
+            savedQuery={searchQuery}
             order={order}
             records={records}
-            recordTitle={(path) => recordTitle(snap.records.get(path), path)}
+            recordTitle={titleOf}
             onGo={(hit, focus) => jump(hit.record, hit.from, { to: hit.to, focus })}
             request={searchRequest}
-          />
-          {!searchQuery.trim() && (
+          >
             <OutlinePanel
               main={workspace.main}
               order={order}
@@ -955,12 +955,11 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
               onOpen={openChapter}
               onJump={jump}
               onMove={moveChapter}
-              onAdd={async (title, intent) => signalFailure(await workspace.addChapter(title, intent))}
+              onAdd={addChapter}
               onRename={renameChapter}
               commentOffsets={commentOffsets}
             />
-          )}
-        </>
+          </ManuscriptSearch>
       ) : workspace.setupStatus?.comments === false ? (
         <p className="muted pad"><Trans>Comments are not set up in this collection.</Trans></p>
       ) : (
@@ -1030,7 +1029,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
     { id: "italic", group: translate`Format`, label: translate`Italic`, shortcut: "mod+i", run: () => editor.current?.format("italic") },
     { id: "code", group: translate`Format`, label: translate`Inline code`, run: () => editor.current?.format("code") },
     { id: "link", group: translate`Format`, label: translate`Link`, shortcut: "mod+shift+k", run: () => editor.current?.format("link") },
-    ...paletteInserts,
+    ...insertionSpecs.map((spec) => ({ id: `insert-${spec.id}`, group: translate`Insert`, label: spec.label, detail: spec.syntax, keywords: spec.keywords, ...(spec.id === "footnote" ? { shortcut: "mod+alt+f" } : {}), run: () => runInsertion(spec.id) })),
     { id: "comment", group: translate`Comments`, label: translate`Comment on the selection`, shortcut: "mod+alt+m", run: () => startComment("comment") },
     { id: "suggest", group: translate`Comments`, label: translate`Suggest an edit to the selection`, shortcut: "mod+alt+s", keywords: translate`track changes`, run: () => startComment("suggest") },
     { id: "comments", group: translate`Comments`, label: translate`Show comments`, shortcut: "mod+shift+m", run: showComments },
@@ -1350,7 +1349,7 @@ export function WorkspaceView({ workspace, since, onClose }: { workspace: Manusc
           onJump={onPreviewJump}
           follow={follow}
           zoom={layout.zoom}
-          onView={setPreviewView}
+          onView={reportPreviewView}
           onTitleClick={openSettings}
         />
       </section>
@@ -1587,6 +1586,7 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
+        {() => <>
           {commands.map((c) => (
             <button key={c.id} type="button" role="menuitem" className="menu-item" onClick={() => { setOpen(false); c.run(); }}>
               <strong>{c.label}</strong>
@@ -1594,7 +1594,8 @@ function InsertMenu({ open, setOpen, commands, disabled }: { open: boolean; setO
             </button>
           ))}
           <p className="popover-note"><Trans>Or type <kbd>/</kbd> in the text to pick one there.</Trans></p>
-        </Popover>
+        </>}
+      </Popover>
 
     </>
   );
@@ -1656,10 +1657,12 @@ function ExportMenu(props: { open: boolean; setOpen(open: boolean): void; busy: 
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
+        {() => <>
           {item("pdf", "PDF", translate`Typeset from your latest text, with chapters and images checked before download`)}
           {item("docx", translate`Word (DOCX)`, customTemplate ? translate`Your custom Typst layout is PDF-only. Word uses article styles and different pagination. First use downloads about 16 MB.` : translate`Uses the layout’s Word styles, but pagination can differ from PDF. First use downloads about 16 MB.`)}
           {item("bundle", translate`Pandoc bundle (zip)`, translate`Pandoc/Quarto Markdown with its sources, style and images, to build other formats yourself`)}
-        </Popover>
+        </>}
+      </Popover>
 
     </>
   );
@@ -1694,6 +1697,7 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onSettings, onFind, 
           setOpen(false);
           if (refocus) trigger.current?.focus();
         }}>
+        {() => <>
           <button type="button" role="menuitem" className="menu-item is-row keyboard-only" onClick={run(onCommands)}>
             <span><Trans>Commands</Trans></span>
             <kbd>{shortcutLabel("mod+k")}</kbd>
@@ -1731,7 +1735,8 @@ function MoreMenu({ open, setOpen, onCommands, onShortcuts, onSettings, onFind, 
               <Trans>Delete document…</Trans>
             </button>
           </div>
-        </Popover>
+        </>}
+      </Popover>
     </>
   );
 }

@@ -3,12 +3,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME });
+const browser = await chromium.launch({ chromiumSandbox: true, executablePath: process.env.CHROME });
 const samples = Number(process.env.PROFILE_RUNS ?? 7);
 assert.ok(Number.isInteger(samples) && samples > 0);
 const chapters = Number(process.env.PROFILE_CHAPTERS ?? 60);
 assert.ok(chapters === 60 || chapters === 120);
-const sizes = process.env.PROFILE_LARGE_ONLY === "1" ? [true] : [false, true];
+const smallFilterOnly = process.env.PROFILE_SMALL_FILTER_ONLY === "1";
+const sizes = smallFilterOnly ? [false] : process.env.PROFILE_LARGE_ONLY === "1" ? [true] : [false, true];
 const servers = [process.env.BASELINE, process.env.BASE].filter(Boolean);
 assert.ok(servers.length);
 const cpuProfiles = process.env.PROFILE_CPU;
@@ -25,6 +26,7 @@ async function profile(base, large, run) {
     const start = await now();
     await action();
     times[label] = await now() - start;
+    return start;
   };
   const startProfile = async () => {
     if (cpuProfiles) await cdp.send("Profiler.start");
@@ -72,10 +74,33 @@ async function profile(base, large, run) {
       await page.getByRole("list", { name: "In this manuscript" }).locator(".source-row").first().waitFor();
     });
     const sourceSearch = page.getByRole("searchbox", { name: "Find a source" });
-    await measure("sourceFilter", async () => {
+    if (smallFilterOnly) {
+      await sourceSearch.evaluate((input, key) => {
+        input.addEventListener("input", () => {
+          const start = performance.now();
+          const observer = new MutationObserver(() => {
+            if (!document.querySelector(`[aria-label="Matching sources"] [data-key="${key}"]`)) return;
+            performance.measure("source-filter-result", { start, end: performance.now() });
+            observer.disconnect();
+          });
+          observer.observe(input.closest("section") ?? document.body, { childList: true, subtree: true });
+        }, { once: true, capture: true });
+      }, key);
+    }
+    const filterStart = await measure("sourceFilter", async () => {
       await sourceSearch.fill(key);
       await page.getByRole("list", { name: "Matching sources" }).locator(`[data-key="${key}"]`).waitFor();
     });
+    if (smallFilterOnly) {
+      const entry = await page.evaluate(() => performance.getEntriesByName("source-filter-result")[0]?.toJSON());
+      assert.ok(entry, "The source filter must insert the matching DOM row");
+      times.beforeInput = entry.startTime - filterStart;
+      times.inputToResult = entry.duration;
+      times.afterResult = times.sourceFilter - times.beforeInput - times.inputToResult;
+      assert.deepEqual(errors, []);
+      assert.equal(await page.evaluate(() => performance.timeOrigin), timeOrigin);
+      return times;
+    }
     await sourceSearch.fill("");
     await page.getByRole("tab", { name: "Outline", exact: true }).click();
     const search = page.getByRole("searchbox", { name: "Search outline" });

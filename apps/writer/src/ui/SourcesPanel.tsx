@@ -60,8 +60,7 @@ export interface SourcesRequest {
 }
 
 export const SourcesPanel = memo(function SourcesPanel({
-  query,
-  setQuery,
+  savedQuery,
   library,
   cited,
   atCursor,
@@ -81,8 +80,7 @@ export const SourcesPanel = memo(function SourcesPanel({
   sitesFor,
   onJump,
 }: {
-  query: string;
-  setQuery(query: string): void;
+  savedQuery?: { current: string };
   /** Where a source is cited, by section, for an expanded row. */
   sitesFor?(key: string): readonly CitationSite[];
   onJump?(record: string, offset: number): void;
@@ -108,6 +106,11 @@ export const SourcesPanel = memo(function SourcesPanel({
   request?: SourcesRequest | null;
 }) {
   useLingui();
+  const [query, updateQuery] = useState(() => savedQuery?.current ?? "");
+  function setQuery(value: string) {
+    if (savedQuery) savedQuery.current = value;
+    updateQuery(value);
+  }
   const [open, setOpen] = useState<string | null>(null);
   const libraryWindow = useRowWindow(LIBRARY_PREVIEW);
   const citedWindow = useRowWindow();

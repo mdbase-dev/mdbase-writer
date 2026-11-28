@@ -50,7 +50,7 @@ The deterministic collection has 5,000 sources, 30,000 annotations, 3,000 commen
 - Real search, completion, comment placement/threading and component server rendering. A compiler stub counts message sizes and structured cloning without Typst, fonts, WASM, preview rendering or exports.
 - An additional fixture puts 300 annotations on one source and delays its contract query responses sixfold.
 
-The current backend reads one complete native metadata snapshot and invalidates it on collection changes. Legacy incremental-query, capability-probe and batch-transport measurements below are historical and are not directly comparable with this SDK fixture. `PERF_AUTHORITY_FEATURES` and `PERF_STRICT_CONTRACTS` no longer apply.
+Discovery reads record identities, annotation paths, files and Writer metadata. Source-to-highlight links are projected on the first highlight read, shared by concurrent readers, and checked against the discovered annotation identities and revisions. Collection changes outside ordinary note edits invalidate discovery. Legacy incremental-query, capability-probe and batch-transport measurements below are historical and are not directly comparable with this SDK fixture. `PERF_AUTHORITY_FEATURES` and `PERF_STRICT_CONTRACTS` no longer apply.
 
 Readiness/content assertions fail the run rather than emit a successful baseline with missing records. Times are Node proxies, not browser paint or runtime acceptance. Transfer sizes are logical JSON response bytes, not encrypted/compressed wire bytes. The benchmark does not plan queries, merge writes or validate contracts.
 
@@ -86,7 +86,7 @@ completion, checks the exact citation in the chapter, and undoes it before the
 typing phase. Typing must synchronously checkpoint the exact edit in local storage,
 and SDK autosave must confirm the same body. Renderer CPU uses CDP thread ticks.
 For a separate diagnostic run, set `PROFILE_CPU=out/perf/cpu` to capture V8
-profiles through hydration and during the switch pair.
+profiles through hydration and during the switch pair. Set `PROFILE_SMALL_FILTER_ONLY=1` for a separate seven-pair control ending at the first source match. It also records elapsed time from the input event to the matching list mutation. The interactive driver launches Chromium with its sandbox enabled.
 
 The 120-chapter demo explicitly checks the pinned SDK's session limit. The
 workspace must discover all 120 chapters and report 57 failed opens alongside

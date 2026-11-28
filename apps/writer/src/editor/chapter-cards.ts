@@ -5,7 +5,7 @@ import { i18n } from "../i18n/app.js";
 // annotation is drawn as the quotation it renders, with a button that detaches
 // it (writes the quotation in its place, to edit). The Markdown stays as
 // written; putting the cursor on the line shows it for editing.
-import { StateEffect, StateField, type EditorState, type Extension } from "@codemirror/state";
+import { StateEffect, StateField, type EditorState, type Extension, type Text } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view";
 
 import { embedTarget } from "../workspace/chapters.js";
@@ -148,22 +148,37 @@ class QuotationWidget extends WidgetType {
   }
 }
 
+interface EmbedLine { from: number; to: number; target: string }
+const embedLines = new WeakMap<Text, readonly EmbedLine[]>();
+
+function embeds(doc: Text): readonly EmbedLine[] {
+  const cached = embedLines.get(doc);
+  if (cached) return cached;
+  const lines: EmbedLine[] = [];
+  let from = 0;
+  for (const text of doc.iterLines()) {
+    const to = from + text.length;
+    const target = embedTarget(text);
+    if (target) lines.push({ from, to, target });
+    from = to + 1;
+  }
+  embedLines.set(doc, lines);
+  return lines;
+}
+
 function build(state: EditorState, cards: () => ChapterCards | undefined): DecorationSet {
   const source = cards();
   if (!source) return Decoration.none;
   const ranges = [];
   const selection = state.selection.ranges;
   let number = 0;
-  for (let i = 1; i <= state.doc.lines; i++) {
-    const line = state.doc.line(i);
-    const target = embedTarget(line.text);
-    if (!target) continue;
+  for (const { from, to, target } of embeds(state.doc)) {
     const card = source.card(target);
     if (!("quotation" in card)) number++;
     // The line being edited shows its Markdown.
-    if (selection.some((r) => r.to >= line.from && r.from <= line.to)) continue;
+    if (selection.some((r) => r.to >= from && r.from <= to)) continue;
     const widget = "quotation" in card ? new QuotationWidget(card) : new CardWidget(number, target, card, source.open);
-    ranges.push(Decoration.replace({ widget, block: true }).range(line.from, line.to));
+    ranges.push(Decoration.replace({ widget, block: true }).range(from, to));
   }
   return Decoration.set(ranges);
 }

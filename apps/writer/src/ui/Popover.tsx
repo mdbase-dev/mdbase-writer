@@ -11,11 +11,11 @@ interface PopoverProps {
   align?: "start" | "end";
   focus?: string;
   onClose(refocus: boolean): void;
-  children: ReactNode;
+  children: ReactNode | (() => ReactNode);
 }
 
 export function Popover({ open, id, trigger, width, label, align = "start", focus, onClose, children }: PopoverProps) {
   const { ref, present } = useOverlay<HTMLDivElement>(open);
   useMenuPopover(ref, trigger, onClose, { width, align, focus, open });
-  return present ? <div ref={ref} id={id} className="mdbase-menu popover mdbase-overlay" data-open={open} inert={!open} aria-hidden={!open || undefined} popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={event => moveMenuFocus(event, ref.current)}>{children}</div> : null;
+  return present ? <div ref={ref} id={id} className="mdbase-menu popover mdbase-overlay" data-open={open} inert={!open} aria-hidden={!open || undefined} popover="manual" role="menu" aria-label={label} tabIndex={-1} onKeyDown={event => moveMenuFocus(event, ref.current)}>{typeof children === "function" ? children() : children}</div> : null;
 }
